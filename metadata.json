@@ -1,0 +1,6 @@
+{
+  "name": "Arnaout Cell 2027 | Premium Electronics Lebanon",
+  "description": "Lebanon's premier 2027 electronics store in Saida. Smartphones, laptops, gaming gear, smart accessories, OMT, Whish, Western Union and Touch services.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

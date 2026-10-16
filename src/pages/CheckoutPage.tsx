@@ -1,0 +1,487 @@
+import React, { useState } from 'react';
+import { useShop } from '../context/ShopContext';
+import { PaymentMethod } from '../types';
+import {
+  ShieldCheck,
+  Truck,
+  MapPin,
+  Phone,
+  Banknote,
+  MessageSquare,
+  AlertCircle,
+  CheckCircle2,
+  Lock,
+} from 'lucide-react';
+
+export const CheckoutPage: React.FC = () => {
+  const {
+    lang,
+    t,
+    cart,
+    cartSubtotal,
+    storeSettings,
+    submitOrder,
+    setCurrentView,
+    generateWhatsAppOrderUrl,
+  } = useShop();
+
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [alternatePhone, setAlternatePhone] = useState('');
+  const [selectedZoneId, setSelectedZoneId] = useState(
+    storeSettings.deliveryZones[0]?.id || 'zone-saida-pickup'
+  );
+  const [addressLine, setAddressLine] = useState('');
+  const [notes, setNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const selectedZone =
+    storeSettings.deliveryZones.find((z) => z.id === selectedZoneId) ||
+    storeSettings.deliveryZones[0];
+
+  const deliveryFee = selectedZone ? selectedZone.fee : 0;
+  const grandTotal = cartSubtotal + deliveryFee;
+
+  if (cart.length === 0) {
+    return (
+      <div className="py-24 bg-[#F5F8FC] text-center min-h-[60vh] flex flex-col items-center justify-center">
+        <h2 className="text-xl font-bold text-[#172033] mb-2">{t.emptyCart}</h2>
+        <button
+          onClick={() => setCurrentView('products')}
+          className="px-6 py-2.5 rounded-xl bg-[#007AFF] text-white font-bold text-xs hover:bg-[#0066D6]"
+        >
+          {t.continueShopping}
+        </button>
+      </div>
+    );
+  }
+
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrorMessage('');
+
+    if (!fullName.trim()) {
+      setErrorMessage(lang === 'ar' ? 'يرجى إدخال الاسم الكريم' : 'Please provide your full name');
+      return;
+    }
+
+    if (!phone.trim() || phone.replace(/\D/g, '').length < 7) {
+      setErrorMessage(
+        lang === 'ar'
+          ? 'يرجى إدخال رقم هاتف لبناني صالح (مثال: 03 099 889 أو 70 xxx xxx)'
+          : 'Please provide a valid Lebanese phone number (e.g. 03 099 889)'
+      );
+      return;
+    }
+
+    if (!addressLine.trim()) {
+      setErrorMessage(
+        lang === 'ar'
+          ? 'يرجى توضيح تفاصيل العنوان (الشارع، البناية، أو نقطة علامة)'
+          : 'Please enter detailed address information'
+      );
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+
+      const orderItems = cart.map((item) => ({
+        productId: item.product.id,
+        productName: item.product.name,
+        brand: item.product.brand,
+        price: item.selectedVariant ? item.selectedVariant.price : item.product.price,
+        quantity: item.quantity,
+        image: item.product.images[0],
+        color: item.selectedColor,
+        variantName: item.selectedVariant?.name,
+      }));
+
+      submitOrder({
+        customer: {
+          fullName: fullName.trim(),
+          phone: phone.trim(),
+          alternatePhone: alternatePhone.trim() || undefined,
+          cityArea: lang === 'ar' ? selectedZone.nameAr : selectedZone.nameEn,
+          addressLine: addressLine.trim(),
+          notes: notes.trim() || undefined,
+        },
+        items: orderItems,
+        subtotal: cartSubtotal,
+        discount: 0,
+        deliveryFee,
+        total: grandTotal,
+        currency: 'USD',
+        status: 'new',
+        paymentMethod,
+        paymentStatus: paymentMethod === 'store_pickup' ? 'pending' : 'pay_on_delivery',
+      });
+
+      setCurrentView('order-confirmation');
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Failed to place order. Please try again.');
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleWhatsAppInstantOrder = () => {
+    if (!fullName.trim() || !phone.trim()) {
+      setErrorMessage(lang === 'ar' ? 'يرجى ملء الاسم ورقم الهاتف أولاً' : 'Please fill in Name and Phone first');
+      return;
+    }
+
+    const previewOrder = {
+      customer: {
+        fullName,
+        phone,
+        cityArea: lang === 'ar' ? selectedZone.nameAr : selectedZone.nameEn,
+        addressLine: addressLine || 'Saida Pickup',
+      },
+      items: cart,
+      total: grandTotal,
+      paymentMethod,
+    };
+
+    const url = generateWhatsAppOrderUrl(previewOrder);
+    window.open(url, '_blank');
+  };
+
+  return (
+    <div className="py-10 md:py-16 bg-[#FFFFFF] min-h-screen">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mb-8">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EAF3FF] border border-[#BAE6FD] text-[#007AFF] text-xs font-bold tracking-wider mb-2">
+            <Lock className="w-3.5 h-3.5" />
+            <span>{lang === 'ar' ? 'إتمام الطلب السريع والآمن' : 'FAST & SECURE CHECKOUT'}</span>
+          </div>
+          <h1 className="text-2xl sm:text-4xl font-black text-[#172033]">{t.checkout}</h1>
+          <p className="text-xs sm:text-sm text-[#64748B] mt-1">
+            {lang === 'ar'
+              ? 'توصيل لكافة الأراضي اللبنانية أو استلام مجاني من فرعنا في صيدا ساحة النجمة.'
+              : 'Direct delivery across Lebanon or free pickup at our Saida Nijme Square branch.'}
+          </p>
+        </div>
+
+        {errorMessage && (
+          <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-200 text-[#DC2626] text-xs flex items-center gap-2.5 font-medium">
+            <AlertCircle className="w-4 h-4 flex-shrink-0 text-[#DC2626]" />
+            <span>{errorMessage}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleFormSubmit}>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Customer & Delivery Information */}
+            <div className="lg:col-span-7 space-y-6">
+              {/* Customer Box */}
+              <div className="p-6 rounded-3xl bg-white border border-[#DCE5F0] shadow-xs space-y-4">
+                <h3 className="text-sm font-bold text-[#172033] flex items-center gap-2 pb-2 border-b border-[#DCE5F0]">
+                  <Phone className="w-4 h-4 text-[#007AFF]" />
+                  <span>{t.customerDetails}</span>
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="sm:col-span-2">
+                    <label className="text-xs text-[#172033] font-semibold block mb-1.5">
+                      {t.fullName} <span className="text-[#DC2626]">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. Rami Al-Baba"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="w-full bg-white border border-[#DCE5F0] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/15 transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-[#172033] font-semibold block mb-1.5">
+                      {t.phoneNumber} <span className="text-[#DC2626]">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      required
+                      placeholder="03 099 889 / 70 xxx xxx"
+                      value={phone}
+                      onChange={(e) => setPhone(e.target.value)}
+                      className="w-full bg-white border border-[#DCE5F0] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/15 font-mono transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs text-[#172033] font-semibold block mb-1.5">
+                      {t.alternatePhone}
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="07 72x xxx (Optional)"
+                      value={alternatePhone}
+                      onChange={(e) => setAlternatePhone(e.target.value)}
+                      className="w-full bg-white border border-[#DCE5F0] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/15 font-mono transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Delivery Zone & Address */}
+              <div className="p-6 rounded-3xl bg-white border border-[#DCE5F0] shadow-xs space-y-4">
+                <h3 className="text-sm font-bold text-[#172033] flex items-center gap-2 pb-2 border-b border-[#DCE5F0]">
+                  <Truck className="w-4 h-4 text-[#007AFF]" />
+                  <span>{lang === 'ar' ? 'منطقة التوصيل ورسوم الشحن' : 'Delivery Area & Fees'}</span>
+                </h3>
+
+                <div>
+                  <label className="text-xs text-[#172033] font-semibold block mb-1.5">
+                    {t.deliveryArea} <span className="text-[#DC2626]">*</span>
+                  </label>
+                  <select
+                    value={selectedZoneId}
+                    onChange={(e) => setSelectedZoneId(e.target.value)}
+                    className="w-full bg-white border border-[#DCE5F0] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] cursor-pointer"
+                  >
+                    {storeSettings.deliveryZones.map((zone) => (
+                      <option key={zone.id} value={zone.id}>
+                        {lang === 'ar' ? zone.nameAr : zone.nameEn} —{' '}
+                        {zone.fee === 0 ? (lang === 'ar' ? 'مجاني' : 'FREE') : `$${zone.fee} USD`} ({zone.estimatedDays})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-xs text-[#172033] font-semibold block mb-1.5">
+                    {t.addressDetails} <span className="text-[#DC2626]">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder={lang === 'ar' ? 'مثال: صيدا، شارع المصارف، بناية النور، الطابق الثالث' : 'Street name, Building, Floor, Landmark'}
+                    value={addressLine}
+                    onChange={(e) => setAddressLine(e.target.value)}
+                    className="w-full bg-white border border-[#DCE5F0] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-[#172033] font-semibold block mb-1.5">
+                    {t.orderNotes}
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder={lang === 'ar' ? 'ملاحظات للسائق، وقت الاتصال المفضل...' : 'Delivery instructions, preferred delivery hours...'}
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    className="w-full bg-white border border-[#DCE5F0] rounded-xl px-3.5 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
+                  />
+                </div>
+              </div>
+
+              {/* Payment Methods */}
+              <div className="p-6 rounded-3xl bg-white border border-[#DCE5F0] shadow-xs space-y-4">
+                <h3 className="text-sm font-bold text-[#172033] flex items-center gap-2 pb-2 border-b border-[#DCE5F0]">
+                  <Banknote className="w-4 h-4 text-[#007AFF]" />
+                  <span>{t.paymentMethod}</span>
+                </h3>
+
+                <div className="space-y-3">
+                  {/* COD */}
+                  <label
+                    className={`flex items-start gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                      paymentMethod === 'cod'
+                        ? 'bg-[#EAF3FF] border-[#007AFF] text-[#172033]'
+                        : 'bg-[#F5F8FC] border-[#DCE5F0] text-[#172033] hover:border-[#007AFF]'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="cod"
+                      checked={paymentMethod === 'cod'}
+                      onChange={() => setPaymentMethod('cod')}
+                      className="mt-1 accent-[#007AFF]"
+                    />
+                    <div>
+                      <span className="text-xs font-bold block">{t.cod}</span>
+                      <span className="text-[11px] text-[#64748B] block mt-0.5">
+                        {lang === 'ar'
+                          ? 'ادفع نقداً عند استلام ومعاينة الطلب (بالدولار كاش أو بالليرة بسعر الصرف المعتمد).'
+                          : 'Pay cash upon delivery after inspecting your items in USD or daily market rate.'}
+                      </span>
+                    </div>
+                  </label>
+
+                  {/* Saida Store Pickup */}
+                  <label
+                    className={`flex items-start gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                      paymentMethod === 'store_pickup'
+                        ? 'bg-[#EAF3FF] border-[#007AFF] text-[#172033]'
+                        : 'bg-[#F5F8FC] border-[#DCE5F0] text-[#172033] hover:border-[#007AFF]'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="store_pickup"
+                      checked={paymentMethod === 'store_pickup'}
+                      onChange={() => setPaymentMethod('store_pickup')}
+                      className="mt-1 accent-[#007AFF]"
+                    />
+                    <div>
+                      <span className="text-xs font-bold block">{t.storePickup}</span>
+                      <span className="text-[11px] text-[#64748B] block mt-0.5">
+                        {lang === 'ar'
+                          ? `استلم طلبك مجاناً مباشرة من فرعنا في صيدا، ساحة النجمة، الشارع الرئيسي.`
+                          : `Free pickup at ${storeSettings.storeName} Saida store (Nijme Square, Main Road).`}
+                      </span>
+                    </div>
+                  </label>
+
+                  {/* Whish Money */}
+                  <label
+                    className={`flex items-start gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                      paymentMethod === 'whish_money'
+                        ? 'bg-[#EAF3FF] border-[#007AFF] text-[#172033]'
+                        : 'bg-[#F5F8FC] border-[#DCE5F0] text-[#172033] hover:border-[#007AFF]'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="whish_money"
+                      checked={paymentMethod === 'whish_money'}
+                      onChange={() => setPaymentMethod('whish_money')}
+                      className="mt-1 accent-[#007AFF]"
+                    />
+                    <div>
+                      <span className="text-xs font-bold block">{t.whishTransfer}</span>
+                      <span className="text-[11px] text-[#64748B] block mt-0.5">
+                        {lang === 'ar'
+                          ? `تحويل عبر تطبيق ويش موني إلى حساب ${storeSettings.storeNameAr || 'أرناؤوط ستور'} وتأكيد الإشعار.`
+                          : 'Transfer via Whish Money app to our verified store account before dispatch.'}
+                      </span>
+                    </div>
+                  </label>
+
+                  {/* OMT */}
+                  <label
+                    className={`flex items-start gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                      paymentMethod === 'omt_western_union'
+                        ? 'bg-[#EAF3FF] border-[#007AFF] text-[#172033]'
+                        : 'bg-[#F5F8FC] border-[#DCE5F0] text-[#172033] hover:border-[#007AFF]'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="payment"
+                      value="omt_western_union"
+                      checked={paymentMethod === 'omt_western_union'}
+                      onChange={() => setPaymentMethod('omt_western_union')}
+                      className="mt-1 accent-[#007AFF]"
+                    />
+                    <div>
+                      <span className="text-xs font-bold block">{t.omtTransfer}</span>
+                      <span className="text-[11px] text-[#64748B] block mt-0.5">
+                        {lang === 'ar'
+                          ? 'إرسال حوالة OMT Intra أو ويسترن يونيون وتزويدنا برقم الإيصال MTCN.'
+                          : 'Send an OMT Intra / Western Union remittance with MTCN tracking.'}
+                      </span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Order Review Sidebar */}
+            <div className="lg:col-span-5">
+              <div className="p-6 rounded-3xl bg-white border border-[#DCE5F0] sticky top-28 space-y-5 shadow-sm">
+                <h3 className="text-base font-bold text-[#172033] pb-3 border-b border-[#DCE5F0]">
+                  {t.orderSummary} ({cart.length} {lang === 'ar' ? 'عناصر' : 'items'})
+                </h3>
+
+                {/* Items preview list */}
+                <div className="max-h-60 overflow-y-auto space-y-3 divide-y divide-[#DCE5F0] pr-1">
+                  {cart.map((item, idx) => {
+                    const price = item.selectedVariant ? item.selectedVariant.price : item.product.price;
+                    return (
+                      <div key={idx} className="pt-2 first:pt-0 flex items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <img
+                            src={item.product.images[0]}
+                            alt={item.product.name}
+                            className="w-10 h-10 object-cover rounded-lg bg-[#F5F8FC] border border-[#DCE5F0] flex-shrink-0"
+                          />
+                          <div className="truncate">
+                            <span className="font-semibold text-[#172033] block truncate">
+                              {lang === 'ar' ? item.product.nameAr || item.product.name : item.product.name}
+                            </span>
+                            <span className="text-[10px] text-[#64748B]">
+                              x{item.quantity} {item.selectedColor ? `• ${item.selectedColor}` : ''}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="font-black text-[#007AFF] flex-shrink-0">
+                          ${price * item.quantity}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Totals */}
+                <div className="space-y-2 pt-3 border-t border-[#DCE5F0] text-xs">
+                  <div className="flex justify-between text-[#172033]">
+                    <span>{t.subtotal}</span>
+                    <span className="font-bold">${cartSubtotal} USD</span>
+                  </div>
+
+                  <div className="flex justify-between text-[#172033]">
+                    <span>{t.deliveryFee} ({selectedZone ? (lang === 'ar' ? selectedZone.nameAr : selectedZone.nameEn) : ''})</span>
+                    <span className="font-bold text-[#007AFF]">
+                      {deliveryFee === 0 ? (lang === 'ar' ? 'مجاني' : 'FREE') : `$${deliveryFee} USD`}
+                    </span>
+                  </div>
+
+                  <div className="pt-3 border-t border-[#DCE5F0] flex items-baseline justify-between">
+                    <span className="text-sm font-bold text-[#172033]">{t.total}</span>
+                    <span className="text-2xl font-black text-[#007AFF]">${grandTotal} USD</span>
+                  </div>
+                </div>
+
+                {/* Order Submit CTA */}
+                <div className="space-y-2.5 pt-2">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full py-4 px-4 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white font-bold text-sm shadow-md shadow-[#007AFF]/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    <CheckCircle2 className="w-5 h-5" />
+                    <span>{isSubmitting ? (lang === 'ar' ? 'جاري التثبيت...' : 'Processing...') : t.placeOrder}</span>
+                  </button>
+
+                  {/* 1-Click WhatsApp Order Option */}
+                  <button
+                    type="button"
+                    onClick={handleWhatsAppInstantOrder}
+                    className="w-full py-3 px-4 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[#16A34A] font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  >
+                    <MessageSquare className="w-4 h-4" />
+                    <span>{lang === 'ar' ? 'تأكيد وإرسال الطلب عبر واتساب 03 099 889' : 'Confirm via WhatsApp (03 099 889)'}</span>
+                  </button>
+                </div>
+
+                <div className="pt-2 text-[10px] text-[#64748B] text-center">
+                  {lang === 'ar'
+                    ? 'سيصلكم إشعار وتواصل هاتفي لتأكيد موعد استلام أو وصول الطلب.'
+                    : 'Our Saida dispatch team will call to confirm delivery schedule.'}
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};

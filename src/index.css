@@ -1,0 +1,93 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-heading: 'Space Grotesk', 'Plus Jakarta Sans', sans-serif;
+    --font-arabic: 'Cairo', 'Plus Jakarta Sans', sans-serif;
+
+    /* Theme Tokens: White and Blue Palette */
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #F5F8FC;
+    --primary-blue: #007AFF;
+    --blue-hover: #0066D6;
+    --light-blue-accent: #EAF3FF;
+    --primary-text: #172033;
+    --secondary-text: #64748B;
+    --borders: #DCE5F0;
+    --success: #16A34A;
+    --error: #DC2626;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #FFFFFF;
+    color: #172033;
+    overflow-x: hidden;
+  }
+
+  [dir="rtl"] {
+    font-family: var(--font-arabic);
+  }
+}
+
+/* Custom Clean Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #F5F8FC;
+}
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #007AFF;
+}
+
+/* Apple-style White & Blue Panels */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid #DCE5F0;
+  box-shadow: 0 4px 20px -2px rgba(0, 122, 255, 0.05);
+}
+
+.glass-panel-glow {
+  background: #FFFFFF;
+  border: 1px solid #DCE5F0;
+  box-shadow: 0 10px 30px -5px rgba(0, 122, 255, 0.08), 0 0 15px 0 rgba(0, 122, 255, 0.04);
+}
+
+.card-white {
+  background: #FFFFFF;
+  border: 1px solid #DCE5F0;
+  border-radius: 1.25rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+}
+
+.card-white:hover {
+  border-color: #93C5FD;
+  box-shadow: 0 8px 24px -4px rgba(0, 122, 255, 0.12);
+}
+
+.text-gradient-blue {
+  background: linear-gradient(135deg, #007AFF 0%, #0056B3 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #007AFF 0%, #0284C7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-gold {
+  background: linear-gradient(135deg, #D97706 0%, #EA580C 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
