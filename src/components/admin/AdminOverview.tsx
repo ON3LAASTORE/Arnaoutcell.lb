@@ -8,7 +8,16 @@ import {
   AlertTriangle,
   TrendingUp,
   ArrowUpRight,
+  Search,
+  Activity,
+  Trash2,
+  RefreshCw,
 } from 'lucide-react';
+import {
+  getSearchAnalyticsSummary,
+  clearSearchAnalytics,
+  SearchAnalyticsSummary,
+} from '../../services/searchAnalyticsService';
 
 export const AdminOverview: React.FC<{ onNavigateTab?: (tab: string) => void }> = ({
   onNavigateTab,
@@ -53,6 +62,21 @@ export const AdminOverview: React.FC<{ onNavigateTab?: (tab: string) => void }> 
   });
 
   const bestSellers = Object.values(salesMap).sort((a, b) => b.count - a.count).slice(0, 4);
+
+  const [searchSummary, setSearchSummary] = React.useState<SearchAnalyticsSummary>(() =>
+    getSearchAnalyticsSummary(8)
+  );
+
+  const refreshSearchAnalytics = () => {
+    setSearchSummary(getSearchAnalyticsSummary(8));
+  };
+
+  const handleClearAnalytics = () => {
+    if (confirm(lang === 'ar' ? 'هل أنت متأكد من مسح سجلات البحث؟' : 'Are you sure you want to clear search logs?')) {
+      clearSearchAnalytics();
+      setSearchSummary(getSearchAnalyticsSummary(8));
+    }
+  };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
@@ -224,6 +248,160 @@ export const AdminOverview: React.FC<{ onNavigateTab?: (tab: string) => void }> 
               ))
             ) : (
               <p className="text-xs text-[#64748B] py-4 text-center">No sales records yet</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Search Analytics & User Intent Patterns */}
+      <div className="p-6 rounded-3xl bg-white border border-[#DCE5F0] shadow-sm space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-[#DCE5F0]">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#EAF3FF] flex items-center justify-center text-[#007AFF]">
+              <Search className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="font-bold text-[#172033] text-sm flex items-center gap-2">
+                <span>{lang === 'ar' ? 'سجل وتحليلات نوايا البحث' : 'Popular Search Terms & User Intent Analytics'}</span>
+                <span className="px-2 py-0.5 rounded-full bg-[#16A34A]/10 text-[#16A34A] text-[10px] font-bold">
+                  {lang === 'ar' ? 'مباشر (Console Logged)' : 'Console & Local Logged'}
+                </span>
+              </h3>
+              <p className="text-xs text-[#64748B]">
+                {lang === 'ar'
+                  ? 'رصد استفسارات الزبائن ونوايا الشراء لتحسين المخزون وتوريد الأجهزة الأكثر طلباً.'
+                  : 'Logs queries in real-time to analyze shopper intent patterns and demand trends in Lebanon.'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={refreshSearchAnalytics}
+              className="px-3 py-1.5 rounded-xl bg-[#F5F8FC] hover:bg-[#EAF3FF] text-[#172033] hover:text-[#007AFF] border border-[#DCE5F0] text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+              title="Refresh Analytics"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              <span>{lang === 'ar' ? 'تحديث' : 'Refresh'}</span>
+            </button>
+            {searchSummary.totalSearches > 0 && (
+              <button
+                onClick={handleClearAnalytics}
+                className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-[#DC2626] border border-rose-200 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                title="Clear Logs"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{lang === 'ar' ? 'مسح' : 'Clear'}</span>
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Analytics Highlights */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0]">
+            <span className="text-[11px] text-[#64748B] font-medium block">
+              {lang === 'ar' ? 'إجمالي عمليات البحث' : 'Total Searches Tracked'}
+            </span>
+            <span className="text-2xl font-black text-[#007AFF] font-mono mt-1 block">
+              {searchSummary.totalSearches}
+            </span>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0]">
+            <span className="text-[11px] text-[#64748B] font-medium block">
+              {lang === 'ar' ? 'كلمات فريدة' : 'Unique Keywords'}
+            </span>
+            <span className="text-2xl font-black text-[#172033] font-mono mt-1 block">
+              {searchSummary.uniqueTermsCount}
+            </span>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0]">
+            <span className="text-[11px] text-[#64748B] font-medium block">
+              {lang === 'ar' ? 'النمط السائد' : 'Top Intent Pattern'}
+            </span>
+            <span className="text-sm font-bold text-[#16A34A] mt-1 block truncate">
+              {searchSummary.intentDistribution[0]
+                ? searchSummary.intentDistribution[0].intent.replace(/_/g, ' ').toUpperCase()
+                : 'NO DATA'}
+            </span>
+          </div>
+        </div>
+
+        {/* Detailed Breakdown: Top Terms & Intent Patterns */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+          {/* Top Search Terms */}
+          <div className="lg:col-span-7 space-y-3">
+            <h4 className="text-xs font-bold text-[#172033] uppercase tracking-wider">
+              {lang === 'ar' ? 'أكثر الكلمات بحثاً' : 'Most Popular Search Queries'}
+            </h4>
+
+            {searchSummary.topTerms.length > 0 ? (
+              <div className="space-y-2">
+                {searchSummary.topTerms.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0] flex items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="w-5 h-5 rounded-full bg-white border border-[#DCE5F0] text-[10px] font-bold text-[#64748B] flex items-center justify-center flex-shrink-0">
+                        {idx + 1}
+                      </span>
+                      <div className="truncate">
+                        <span className="font-bold text-[#172033] block truncate">
+                          "{item.term}"
+                        </span>
+                        <span className="text-[10px] text-[#64748B]">
+                          Intent: {item.primaryIntent.replace(/_/g, ' ')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="px-2 py-0.5 rounded-full bg-[#EAF3FF] text-[#007AFF] font-bold text-[11px]">
+                        {item.count} {item.count === 1 ? 'search' : 'searches'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[#64748B] py-6 text-center border border-dashed border-[#DCE5F0] rounded-2xl">
+                {lang === 'ar'
+                  ? 'لم يتم تسجيل عمليات بحث بعد. جرب البحث في الموقع لرؤية البيانات مباشرة.'
+                  : 'No search queries recorded yet. Use the search bar to log live intent data.'}
+              </p>
+            )}
+          </div>
+
+          {/* User Intent Distribution */}
+          <div className="lg:col-span-5 space-y-3">
+            <h4 className="text-xs font-bold text-[#172033] uppercase tracking-wider">
+              {lang === 'ar' ? 'توزيع نوايا الشراء والاهتمامات' : 'Shopper Intent Distribution'}
+            </h4>
+
+            {searchSummary.intentDistribution.length > 0 ? (
+              <div className="space-y-3">
+                {searchSummary.intentDistribution.map((item, idx) => (
+                  <div key={idx} className="space-y-1">
+                    <div className="flex justify-between text-xs font-semibold text-[#172033]">
+                      <span className="capitalize">{item.intent.replace(/_/g, ' ')}</span>
+                      <span className="font-mono text-[#007AFF]">{item.percentage}% ({item.count})</span>
+                    </div>
+                    <div className="w-full bg-[#F5F8FC] rounded-full h-2 overflow-hidden border border-[#DCE5F0]">
+                      <div
+                        className="bg-[#007AFF] h-full rounded-full transition-all duration-500"
+                        style={{ width: `${item.percentage}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-[#64748B] py-6 text-center border border-dashed border-[#DCE5F0] rounded-2xl">
+                {lang === 'ar' ? 'لا توجد أنماط نوايا حتى الآن' : 'No intent patterns detected yet'}
+              </p>
             )}
           </div>
         </div>

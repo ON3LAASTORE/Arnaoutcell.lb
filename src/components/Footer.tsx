@@ -65,12 +65,12 @@ export const Footer: React.FC = () => {
                   <Clock className="w-3.5 h-3.5" />
                 </div>
                 <div className="space-y-0.5">
-                  <span className="font-bold text-[#172033] block">
+                  <span className="font-bold text-[#172033] dark:text-[#F8FAFC] block">
                     {lang === 'ar'
                       ? (storeSettings.openingSchedule?.customMessageAr || 'مفتوح يومياً — 17 ساعة يومياً')
                       : (storeSettings.openingSchedule?.customMessageEn || 'OPEN EVERY DAY — 17 HOURS DAILY')}
                   </span>
-                  <span className="text-[11px] text-[#64748B] block">
+                  <span className="text-[11px] text-[#64748B] dark:text-slate-400 block">
                     {lang === 'ar' ? storeSettings.openingHoursAr : storeSettings.openingHoursEn}
                   </span>
                 </div>
@@ -95,7 +95,7 @@ export const Footer: React.FC = () => {
 
           {/* Col 2: Popular Categories */}
           <div>
-            <h4 className="font-bold text-[#172033] uppercase tracking-wider text-xs mb-4 flex items-center gap-1.5">
+            <h4 className="font-bold text-[#172033] dark:text-[#F8FAFC] uppercase tracking-wider text-xs mb-4 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[#007AFF]" />
               <span>{t.allCategories}</span>
             </h4>
@@ -104,7 +104,7 @@ export const Footer: React.FC = () => {
                 <li key={cat.id}>
                   <button
                     onClick={() => selectCategory(cat.slug)}
-                    className="hover:text-[#007AFF] transition-colors cursor-pointer text-left rtl:text-right"
+                    className="hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors cursor-pointer text-left rtl:text-right"
                   >
                     {lang === 'ar' ? cat.nameAr : cat.name}
                   </button>
@@ -113,7 +113,7 @@ export const Footer: React.FC = () => {
               <li>
                 <button
                   onClick={() => setCurrentView('categories')}
-                  className="text-[#007AFF] hover:underline font-semibold"
+                  className="text-[#007AFF] dark:text-[#38BDF8] hover:underline font-semibold"
                 >
                   {lang === 'ar' ? 'عرض كافة الأقسام الـ 35 ←' : 'Browse All 35 Departments →'}
                 </button>
@@ -123,7 +123,7 @@ export const Footer: React.FC = () => {
 
           {/* Col 3: Top Brands */}
           <div>
-            <h4 className="font-bold text-[#172033] uppercase tracking-wider text-xs mb-4 flex items-center gap-1.5">
+            <h4 className="font-bold text-[#172033] dark:text-[#F8FAFC] uppercase tracking-wider text-xs mb-4 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[#007AFF]" />
               <span>{t.brands}</span>
             </h4>
@@ -132,7 +132,7 @@ export const Footer: React.FC = () => {
                 <li key={b.id}>
                   <button
                     onClick={() => selectBrand(b.name)}
-                    className="hover:text-[#007AFF] transition-colors cursor-pointer text-left rtl:text-right"
+                    className="hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors cursor-pointer text-left rtl:text-right"
                   >
                     {b.name}
                   </button>
@@ -141,7 +141,7 @@ export const Footer: React.FC = () => {
               <li>
                 <button
                   onClick={() => setCurrentView('brands')}
-                  className="text-[#007AFF] hover:underline font-semibold"
+                  className="text-[#007AFF] dark:text-[#38BDF8] hover:underline font-semibold"
                 >
                   {lang === 'ar' ? 'دليل الماركات الكامل ←' : 'All Tech Brands →'}
                 </button>
@@ -151,7 +151,7 @@ export const Footer: React.FC = () => {
 
           {/* Col 4: Store Services & Policies */}
           <div>
-            <h4 className="font-bold text-[#172033] uppercase tracking-wider text-xs mb-4 flex items-center gap-1.5">
+            <h4 className="font-bold text-[#172033] dark:text-[#F8FAFC] uppercase tracking-wider text-xs mb-4 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-[#007AFF]" />
               <span>{lang === 'ar' ? 'الخدمات والسياسات' : 'Services & Policies'}</span>
             </h4>
@@ -159,7 +159,7 @@ export const Footer: React.FC = () => {
               <li>
                 <button
                   onClick={() => setCurrentView('services')}
-                  className="text-[#172033] hover:text-[#007AFF] hover:underline font-semibold flex items-center gap-1"
+                  className="text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] hover:underline font-semibold flex items-center gap-1"
                 >
                   <Banknote className="w-3.5 h-3.5 text-[#007AFF]" />
                   <span>{lang === 'ar' ? 'خدمات OMT المالية' : 'OMT Services'}</span>
@@ -168,7 +168,7 @@ export const Footer: React.FC = () => {
               <li>
                 <button
                   onClick={() => setCurrentView('services')}
-                  className="text-[#172033] hover:text-[#007AFF] hover:underline font-semibold flex items-center gap-1"
+                  className="text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] hover:underline font-semibold flex items-center gap-1"
                 >
                   <Send className="w-3.5 h-3.5 text-[#007AFF]" />
                   <span>{lang === 'ar' ? 'ويسترن يونيون' : 'Western Union'}</span>
@@ -177,7 +177,7 @@ export const Footer: React.FC = () => {
               <li>
                 <button
                   onClick={() => setCurrentView('services')}
-                  className="text-[#172033] hover:text-[#007AFF] hover:underline font-semibold flex items-center gap-1"
+                  className="text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] hover:underline font-semibold flex items-center gap-1"
                 >
                   <CreditCard className="w-3.5 h-3.5 text-[#007AFF]" />
                   <span>{lang === 'ar' ? 'ويش موني (Whish Money)' : 'Whish Money Hub'}</span>
@@ -186,16 +186,16 @@ export const Footer: React.FC = () => {
               <li>
                 <button
                   onClick={() => setCurrentView('services')}
-                  className="text-[#172033] hover:text-[#007AFF] hover:underline font-semibold flex items-center gap-1"
+                  className="text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] hover:underline font-semibold flex items-center gap-1"
                 >
                   <Smartphone className="w-3.5 h-3.5 text-[#007AFF]" />
                   <span>{lang === 'ar' ? 'توتش ستور وخطوط الاتصال' : 'Touch Store Saida'}</span>
                 </button>
               </li>
-              <li className="pt-2 border-t border-[#DCE5F0]">
+              <li className="pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B]">
                 <button
                   onClick={() => handlePolicyClick('delivery')}
-                  className="hover:text-[#007AFF] transition-colors"
+                  className="hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors"
                 >
                   {lang === 'ar' ? 'سياسة التوصيل في لبنان' : 'Lebanon Delivery Policy'}
                 </button>
@@ -203,7 +203,7 @@ export const Footer: React.FC = () => {
               <li>
                 <button
                   onClick={() => handlePolicyClick('warranty')}
-                  className="hover:text-[#007AFF] transition-colors"
+                  className="hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors"
                 >
                   {lang === 'ar' ? 'شروط الكفالة الرسمية' : 'Official Warranty Terms'}
                 </button>
@@ -211,7 +211,7 @@ export const Footer: React.FC = () => {
               <li>
                 <button
                   onClick={() => handlePolicyClick('returns')}
-                  className="hover:text-[#007AFF] transition-colors"
+                  className="hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors"
                 >
                   {lang === 'ar' ? 'الاسترجاع والاستبدال' : 'Returns & Exchange'}
                 </button>
@@ -219,7 +219,7 @@ export const Footer: React.FC = () => {
               <li>
                 <button
                   onClick={() => handlePolicyClick('terms')}
-                  className="hover:text-[#007AFF] transition-colors"
+                  className="hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors"
                 >
                   {lang === 'ar' ? 'الشروط والأحكام' : 'Terms & Conditions'}
                 </button>
@@ -229,7 +229,7 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Bottom Bar */}
-        <div className="pt-8 border-t border-[#DCE5F0] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#64748B]">
+        <div className="pt-8 border-t border-[#DCE5F0] dark:border-[#1E293B] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#64748B] dark:text-slate-400">
           <p>
             {lang === 'ar'
               ? `© 2027 ${storeSettings.storeNameAr || 'أرناؤوط ستور'} (${storeSettings.storeName}). صيدا، ساحة النجمة، لبنان. هاتف: ${storeSettings.phone}.`

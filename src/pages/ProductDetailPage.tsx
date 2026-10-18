@@ -47,6 +47,15 @@ export const ProductDetailPage: React.FC = () => {
   const [newReviewComment, setNewReviewComment] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
+  // Synchronize variant, color, and image when viewing a different product
+  React.useEffect(() => {
+    setActiveImageIndex(0);
+    setSelectedColor(product?.colors?.[0]);
+    setSelectedVariant(product?.variants?.[0]);
+    setQuantity(1);
+    setReviewSubmitted(false);
+  }, [product?.id]);
+
   if (!product) return null;
 
   const isFavorited = isInWishlist(product.id);

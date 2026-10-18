@@ -19,6 +19,7 @@ import {
 import { StoreLogo } from './StoreLogo';
 import { querySearchSuggestions } from '../utils/searchSuggestions';
 import { SearchSuggestionsDropdown } from './SearchSuggestionsDropdown';
+import { trackSearchQuery } from '../services/searchAnalyticsService';
 import { Product, Category } from '../types';
 
 export const Navbar: React.FC = () => {
@@ -81,6 +82,13 @@ export const Navbar: React.FC = () => {
   }, []);
 
   const handleSelectProduct = (product: Product) => {
+    trackSearchQuery({
+      term: searchInput.trim() || product.name,
+      source: 'product_suggestion_click',
+      selectedEntityTitle: product.name,
+      categoryMatchesCount: searchResult.categories.length,
+      productMatchesCount: searchResult.products.length,
+    });
     viewProductDetail(product.id);
     setSearchFocused(false);
     setMobileSearchFocused(false);
@@ -89,6 +97,13 @@ export const Navbar: React.FC = () => {
   };
 
   const handleSelectCategory = (category: Category) => {
+    trackSearchQuery({
+      term: searchInput.trim() || category.name,
+      source: 'category_suggestion_click',
+      selectedEntityTitle: category.name,
+      categoryMatchesCount: searchResult.categories.length,
+      productMatchesCount: searchResult.products.length,
+    });
     selectCategory(category.slug);
     setSearchFocused(false);
     setMobileSearchFocused(false);
@@ -97,6 +112,12 @@ export const Navbar: React.FC = () => {
   };
 
   const handleSelectPopularTerm = (term: string) => {
+    trackSearchQuery({
+      term,
+      source: 'trending_term_click',
+      categoryMatchesCount: 0,
+      productMatchesCount: 0,
+    });
     setSearchInput(term);
     setSearchFocused(true);
     setMobileSearchFocused(true);
@@ -104,6 +125,12 @@ export const Navbar: React.FC = () => {
 
   const handleViewAllResults = () => {
     if (searchInput.trim()) {
+      trackSearchQuery({
+        term: searchInput.trim(),
+        source: 'desktop_input_submit',
+        categoryMatchesCount: searchResult.categories.length,
+        productMatchesCount: searchResult.products.length,
+      });
       setGlobalSearch(searchInput.trim());
       setCurrentView('products');
       setSearchFocused(false);
@@ -127,7 +154,7 @@ export const Navbar: React.FC = () => {
     }
   };
 
-  const handleSearchSubmit = (e?: React.FormEvent) => {
+  const handleSearchSubmit = (e?: React.FormEvent, isMobile = false) => {
     if (e) e.preventDefault();
     if (selectedIndex >= 0 && selectedIndex < totalInteractiveItems) {
       if (selectedIndex < searchResult.categories.length) {
@@ -141,6 +168,12 @@ export const Navbar: React.FC = () => {
     }
 
     if (searchInput.trim()) {
+      trackSearchQuery({
+        term: searchInput.trim(),
+        source: isMobile ? 'mobile_input_submit' : 'desktop_input_submit',
+        categoryMatchesCount: searchResult.categories.length,
+        productMatchesCount: searchResult.products.length,
+      });
       setGlobalSearch(searchInput.trim());
       setCurrentView('products');
       setSearchFocused(false);
@@ -194,7 +227,7 @@ export const Navbar: React.FC = () => {
 
           {/* Search Bar - Real-Time Search Suggestions */}
           <div ref={searchContainerRef} className="hidden md:flex flex-1 max-w-lg relative mx-2">
-            <form onSubmit={handleSearchSubmit} className="w-full">
+            <form onSubmit={(e) => handleSearchSubmit(e, false)} className="w-full">
               <div className="relative">
                 <input
                   ref={searchInputRef}
@@ -333,10 +366,10 @@ export const Navbar: React.FC = () => {
               <ShieldCheck className="w-5 h-5" />
             </button>
 
-            {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-xl text-[#64748B] dark:text-slate-300 hover:text-[#172033] dark:hover:text-white hover:bg-[#F5F8FC] dark:hover:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] transition-colors"
+              className="md:hidden p-2 rounded-xl text-[#64748B] dark:text-slate-300 hover:text-[#172033] dark:hover:text-white hover:bg-[#F5F8FC] dark:hover:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] transition-colors cursor-pointer"
+              aria-label="Toggle menu"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -429,7 +462,7 @@ export const Navbar: React.FC = () => {
         <div className="md:hidden bg-white dark:bg-[#0A0F1D] border-b border-[#DCE5F0] dark:border-[#1E293B] px-4 pt-3 pb-6 space-y-4 animate-in slide-in-from-top duration-200 shadow-lg">
           {/* Mobile Search with Real-time Suggestions */}
           <div ref={mobileSearchContainerRef} className="relative">
-            <form onSubmit={handleSearchSubmit}>
+            <form onSubmit={(e) => handleSearchSubmit(e, true)}>
               <div className="relative">
                 <input
                   ref={mobileSearchInputRef}
@@ -440,7 +473,7 @@ export const Navbar: React.FC = () => {
                   onFocus={() => setMobileSearchFocused(true)}
                   onKeyDown={handleKeyDown}
                   aria-label={t.searchPlaceholder}
-                  className="w-full bg-[#F5F8FC] dark:bg-[#111A2E] text-[#172033] dark:text-[#F8FAFC] placeholder-[#64748B] dark:placeholder-slate-400 text-sm rounded-xl pl-10 pr-20 rtl:pl-20 rtl:pr-10 py-2.5 border border-[#DCE5F0] dark:border-[#1E293B] focus:outline-none focus:border-[#007AFF]"
+                  className="w-full bg-[#F5F8FC] dark:bg-[#111A2E] text-[#172033] dark:text-[#F8FAFC] placeholder-[#64748B] dark:placeholder-slate-400 text-sm rounded-xl pl-10 pr-24 rtl:pl-24 rtl:pr-10 py-2.5 border border-[#DCE5F0] dark:border-[#1E293B] focus:outline-none focus:border-[#007AFF]"
                 />
                 <Search className="w-4 h-4 text-[#64748B] dark:text-slate-400 absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
 
@@ -448,8 +481,8 @@ export const Navbar: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleClearSearch(true)}
-                    className="absolute right-14 rtl:right-auto rtl:left-14 top-1/2 -translate-y-1/2 p-1 text-[#64748B] hover:text-[#172033] dark:hover:text-white rounded-full cursor-pointer"
-                    aria-label="Clear search"
+                    className="absolute right-20 rtl:right-auto rtl:left-20 top-1/2 -translate-y-1/2 p-1 text-[#64748B] hover:text-[#172033] dark:hover:text-white rounded-full cursor-pointer z-10"
+                    aria-label="Clear mobile search"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -457,7 +490,7 @@ export const Navbar: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="absolute right-1.5 rtl:right-auto rtl:left-1.5 top-1/2 -translate-y-1/2 bg-[#007AFF] text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer shadow-xs"
+                  className="absolute right-1.5 rtl:right-auto rtl:left-1.5 top-1/2 -translate-y-1/2 bg-[#007AFF] text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer shadow-xs z-10"
                 >
                   {lang === 'ar' ? 'بحث' : 'Search'}
                 </button>
