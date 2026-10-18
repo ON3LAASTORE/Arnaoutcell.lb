@@ -95,18 +95,18 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
 
           <div className="leading-tight">
             <span
-              className={`font-black tracking-tight text-[#172033] uppercase block group-hover:text-[#007AFF] transition-colors ${sizeClasses.title}`}
+              className={`font-black tracking-tight text-[#172033] dark:text-[#F8FAFC] uppercase block group-hover:text-[#007AFF] transition-colors ${sizeClasses.title}`}
             >
               {firstWord} <span className="text-[#007AFF]">{restWords}</span>
               {adminMode && (
-                <span className="ml-1.5 px-1.5 py-0.5 text-[10px] font-bold bg-[#EAF3FF] text-[#007AFF] border border-[#BAE6FD] rounded-md tracking-normal">
+                <span className="ml-1.5 px-1.5 py-0.5 text-[10px] font-bold bg-[#EAF3FF] dark:bg-[#1E293B] text-[#007AFF] dark:text-[#38BDF8] border border-[#BAE6FD] dark:border-slate-700 rounded-md tracking-normal">
                   ADMIN
                 </span>
               )}
             </span>
             {showTagline && tagline && (
               <span
-                className={`text-[#64748B] font-medium block truncate max-w-[220px] sm:max-w-xs ${sizeClasses.tagline}`}
+                className={`text-[#64748B] dark:text-slate-400 font-medium block truncate max-w-[220px] sm:max-w-xs ${sizeClasses.tagline}`}
               >
                 {tagline}
               </span>

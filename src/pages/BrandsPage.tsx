@@ -24,8 +24,8 @@ export const BrandsPage: React.FC = () => {
             </h1>
             <p className="text-xs sm:text-sm text-[#64748B] mt-1">
               {lang === 'ar'
-                ? 'تصفح أحدث أجهزة أبل، سامسونج، شاومي، أنكر، بورودو، جرين لايون، سوني وغيرها.'
-                : 'Browse original flagships from Apple, Samsung, Xiaomi, Anker, Porodo, Green Lion, Sony, JBL, and more.'}
+                ? 'تصفح أحدث أجهزة أبل، سامسونج، شاومي، أنكر، ايس فاست، فونينغ، يسيدو، دوجي، ليتو وسائر الماركات العالمية.'
+                : 'Browse original products from Apple, Samsung, Xiaomi, Anker, ACEFAST, FONENG, YESIDO, DOOGEE, LITO, and more.'}
             </p>
           </div>
 

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useShop } from '../../context/ShopContext';
+import { useAdmin } from '../../context/AdminContext';
 import { Product, ProductSpec } from '../../types';
 import { saveProduct, deleteProduct, readFileAsDataUrl } from '../../services/storageService';
 import {
@@ -13,9 +14,19 @@ import {
 
 export const AdminProducts: React.FC = () => {
   const { lang, products, categories, brands, refreshData } = useShop();
+  const { selectableBrands } = useAdmin();
+
+  // Unified list of selectable brand names guaranteeing all required brands are present
+  const allSelectableBrandNames = Array.from(
+    new Set([
+      ...selectableBrands,
+      ...brands.map((b) => b.name),
+    ])
+  );
 
   const [search, setSearch] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [selectedBrand, setSelectedBrand] = useState('all');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
@@ -219,11 +230,12 @@ export const AdminProducts: React.FC = () => {
 
   const filteredProducts = products.filter((p) => {
     const matchCategory = selectedCategory === 'all' || p.category === selectedCategory;
+    const matchBrand = selectedBrand === 'all' || p.brand.toLowerCase() === selectedBrand.toLowerCase();
     const matchSearch =
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.sku.toLowerCase().includes(search.toLowerCase()) ||
       p.brand.toLowerCase().includes(search.toLowerCase());
-    return matchCategory && matchSearch;
+    return matchCategory && matchBrand && matchSearch;
   });
 
   return (
@@ -283,10 +295,23 @@ export const AdminProducts: React.FC = () => {
           onChange={(e) => setSelectedCategory(e.target.value)}
           className="bg-white border border-[#DCE5F0] text-[#172033] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#007AFF] cursor-pointer shadow-xs font-medium"
         >
-          <option value="all">All Categories</option>
+          <option value="all">{lang === 'ar' ? 'كافة الأقسام' : 'All Categories'}</option>
           {categories.map((c) => (
             <option key={c.id} value={c.name}>
               {c.name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          value={selectedBrand}
+          onChange={(e) => setSelectedBrand(e.target.value)}
+          className="bg-white border border-[#DCE5F0] text-[#172033] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#007AFF] cursor-pointer shadow-xs font-medium"
+        >
+          <option value="all">{lang === 'ar' ? 'كافة الماركات' : 'All Brands'}</option>
+          {allSelectableBrandNames.map((brandName) => (
+            <option key={brandName} value={brandName}>
+              {brandName}
             </option>
           ))}
         </select>
@@ -439,9 +464,9 @@ export const AdminProducts: React.FC = () => {
                     onChange={(e) => setFormBrand(e.target.value)}
                     className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] cursor-pointer"
                   >
-                    {brands.map((b) => (
-                      <option key={b.id} value={b.name}>
-                        {b.name}
+                    {allSelectableBrandNames.map((brandName) => (
+                      <option key={brandName} value={brandName}>
+                        {brandName}
                       </option>
                     ))}
                   </select>

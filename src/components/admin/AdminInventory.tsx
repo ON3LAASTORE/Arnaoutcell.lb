@@ -1,12 +1,17 @@
 import React, { useState } from 'react';
 import { useShop } from '../../context/ShopContext';
+import { useAdmin } from '../../context/AdminContext';
 import { saveProduct } from '../../services/storageService';
 import { Product } from '../../types';
 import { Warehouse, AlertTriangle, Search } from 'lucide-react';
 
 export const AdminInventory: React.FC = () => {
-  const { lang, products, refreshData } = useShop();
+  const { lang, products, brands, refreshData } = useShop();
+  const { selectableBrands } = useAdmin();
+  const allBrandNames = Array.from(new Set([...selectableBrands, ...brands.map((b) => b.name)]));
+
   const [search, setSearch] = useState('');
+  const [selectedBrand, setSelectedBrand] = useState('all');
   const [feedback, setFeedback] = useState('');
 
   const handleAdjustStock = (product: Product, delta: number) => {
@@ -21,11 +26,14 @@ export const AdminInventory: React.FC = () => {
     setTimeout(() => setFeedback(''), 3000);
   };
 
-  const filtered = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.sku.toLowerCase().includes(search.toLowerCase()) ||
-    p.brand.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = products.filter((p) => {
+    const matchBrand = selectedBrand === 'all' || p.brand.toLowerCase() === selectedBrand.toLowerCase();
+    const matchSearch =
+      p.name.toLowerCase().includes(search.toLowerCase()) ||
+      p.sku.toLowerCase().includes(search.toLowerCase()) ||
+      p.brand.toLowerCase().includes(search.toLowerCase());
+    return matchBrand && matchSearch;
+  });
 
   const lowStockCount = products.filter((p) => p.stock <= (p.lowStockThreshold || 3)).length;
 
@@ -59,16 +67,31 @@ export const AdminInventory: React.FC = () => {
         </div>
       )}
 
-      {/* Search */}
-      <div className="relative">
-        <Search className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 rtl:left-auto rtl:right-3.5" />
-        <input
-          type="text"
-          placeholder="Filter inventory by name, SKU, or brand..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl pl-10 pr-3 rtl:pl-3 rtl:pr-10 py-2.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono shadow-xs"
-        />
+      {/* Search & Brand Filter */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 rtl:left-auto rtl:right-3.5" />
+          <input
+            type="text"
+            placeholder={lang === 'ar' ? 'بحث بالاسم، SKU أو الماركة...' : 'Filter inventory by name, SKU, or brand...'}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl pl-10 pr-3 rtl:pl-3 rtl:pr-10 py-2.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono shadow-xs"
+          />
+        </div>
+
+        <select
+          value={selectedBrand}
+          onChange={(e) => setSelectedBrand(e.target.value)}
+          className="bg-white border border-[#DCE5F0] text-[#172033] text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-[#007AFF] cursor-pointer shadow-xs font-medium"
+        >
+          <option value="all">{lang === 'ar' ? 'كافة الماركات' : 'All Brands'}</option>
+          {allBrandNames.map((bName) => (
+            <option key={bName} value={bName}>
+              {bName}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Inventory Table */}

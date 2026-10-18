@@ -89,19 +89,19 @@ export const CategoryGrid: React.FC = () => {
   };
 
   return (
-    <section className="py-16 md:py-24 bg-white border-b border-[#DCE5F0] relative">
+    <section className="py-16 md:py-24 bg-white dark:bg-[#0A0F1D] border-b border-[#DCE5F0] dark:border-[#1E293B] relative transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF3FF] border border-[#BAE6FD] text-[#007AFF] text-xs font-bold tracking-wider mb-2">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF3FF] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#007AFF]/40 text-[#007AFF] dark:text-[#38BDF8] text-xs font-bold tracking-wider mb-2">
               <Layers className="w-3.5 h-3.5" />
               <span>{lang === 'ar' ? '35 قسماً متخصصاً' : '35 SPECIALIZED DEPARTMENTS'}</span>
             </div>
-            <h2 className="text-2xl sm:text-4xl font-black text-[#172033] tracking-tight">
+            <h2 className="text-2xl sm:text-4xl font-black text-[#172033] dark:text-[#F8FAFC] tracking-tight">
               {lang === 'ar' ? 'تسوق حسب القسم' : 'Shop by Category'}
             </h2>
-            <p className="text-[#64748B] text-sm sm:text-base mt-1">
+            <p className="text-[#64748B] dark:text-slate-300 text-sm sm:text-base mt-1">
               {lang === 'ar'
                 ? 'استكشف كافة فئات الإلكترونيات، الملحقات والقطع التقنية من أرناؤوط ستور.'
                 : 'Browse through all electronics categories, mobile accessories, and tech essentials.'}
@@ -110,7 +110,7 @@ export const CategoryGrid: React.FC = () => {
 
           <button
             onClick={() => setShowAll(!showAll)}
-            className="self-start sm:self-auto px-4 py-2 rounded-xl bg-[#F5F8FC] hover:bg-[#EAF3FF] border border-[#DCE5F0] hover:border-[#007AFF] text-[#172033] text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+            className="self-start sm:self-auto px-4 py-2 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] hover:bg-[#EAF3FF] dark:hover:bg-[#162038] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-[#172033] dark:text-[#F8FAFC] text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
           >
             <span>
               {showAll
@@ -135,25 +135,25 @@ export const CategoryGrid: React.FC = () => {
               <div
                 key={cat.id}
                 onClick={() => selectCategory(cat.slug)}
-                className="group p-4 rounded-2xl bg-white hover:bg-[#F5F8FC] border border-[#DCE5F0] hover:border-[#007AFF] transition-all duration-300 cursor-pointer flex flex-col justify-between relative overflow-hidden shadow-xs hover:shadow-[0_6px_20px_-3px_rgba(0,122,255,0.1)]"
+                className="group p-4 rounded-2xl bg-white dark:bg-[#111A2E] hover:bg-[#F5F8FC] dark:hover:bg-[#162038] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] dark:hover:border-[#38BDF8] transition-all duration-300 cursor-pointer flex flex-col justify-between relative overflow-hidden shadow-xs hover:shadow-[0_6px_20px_-3px_rgba(0,122,255,0.1)]"
               >
                 <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0] group-hover:bg-[#EAF3FF] group-hover:border-[#BAE6FD] flex items-center justify-center text-[#007AFF] group-hover:scale-110 transition-transform">
+                  <div className="w-10 h-10 rounded-xl bg-[#F5F8FC] dark:bg-[#0A0F1D] border border-[#DCE5F0] dark:border-[#1E293B] group-hover:bg-[#EAF3FF] dark:group-hover:bg-[#1E293B] group-hover:border-[#BAE6FD] flex items-center justify-center text-[#007AFF] group-hover:scale-110 transition-transform">
                     <IconComponent className="w-5 h-5" />
                   </div>
                   {count > 0 && (
-                    <span className="text-[10px] font-bold text-[#007AFF] bg-[#EAF3FF] px-2 py-0.5 rounded-full border border-[#BAE6FD]">
+                    <span className="text-[10px] font-bold text-[#007AFF] dark:text-[#38BDF8] bg-[#EAF3FF] dark:bg-[#1E293B] px-2 py-0.5 rounded-full border border-[#BAE6FD] dark:border-[#007AFF]/30">
                       {count}
                     </span>
                   )}
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-[#172033] group-hover:text-[#007AFF] text-xs sm:text-sm line-clamp-1 transition-colors">
+                  <h3 className="font-bold text-[#172033] dark:text-[#F8FAFC] group-hover:text-[#007AFF] dark:group-hover:text-[#38BDF8] text-xs sm:text-sm line-clamp-1 transition-colors">
                     {lang === 'ar' ? cat.nameAr : cat.name}
                   </h3>
                   {cat.subcategories && cat.subcategories.length > 0 && (
-                    <p className="text-[10px] text-[#64748B] line-clamp-1 mt-0.5">
+                    <p className="text-[10px] text-[#64748B] dark:text-slate-400 line-clamp-1 mt-0.5">
                       {cat.subcategories.slice(0, 2).join(', ')}
                     </p>
                   )}

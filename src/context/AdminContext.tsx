@@ -6,6 +6,38 @@ import {
   initializeAdminAuth,
 } from '../services/authService';
 
+export const SELECTABLE_ADMIN_BRANDS: string[] = [
+  'Apple',
+  'Samsung',
+  'Xiaomi',
+  'Anker',
+  'Green Lion',
+  'JBL',
+  'Sony',
+  'Huawei',
+  'Honor',
+  'Infinix',
+  'Tecno',
+  'Oppo',
+  'Vivo',
+  'Baseus',
+  'UGREEN',
+  'Hoco',
+  'Oraimo',
+  'Logitech',
+  'Razer',
+  'HyperX',
+  'DJI',
+  'Kingston',
+  'SanDisk',
+  'TP-Link',
+  'ACEFAST',
+  'FONENG',
+  'YESIDO',
+  'DOOGEE',
+  'LITO',
+];
+
 interface AdminContextType {
   user: AdminUser | null;
   isAuthenticated: boolean;
@@ -17,6 +49,7 @@ interface AdminContextType {
     newPass: string,
     confirmPass: string
   ) => Promise<{ success: boolean; messageEn: string; messageAr: string }>;
+  selectableBrands: string[];
 }
 
 const DEMO_USERS: Record<string, AdminUser> = {
@@ -154,6 +187,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         logout,
         hasRole,
         changePassword: handleChangePassword,
+        selectableBrands: SELECTABLE_ADMIN_BRANDS,
       }}
     >
       {children}

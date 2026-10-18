@@ -41,7 +41,7 @@ const AppContent: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#FFFFFF] text-[#172033] selection:bg-[#007AFF] selection:text-white">
+    <div className="flex flex-col min-h-screen bg-[#FFFFFF] dark:bg-[#0A0F1D] text-[#172033] dark:text-[#F8FAFC] selection:bg-[#007AFF] selection:text-white transition-colors duration-200">
       <AnnouncementBar />
       <Navbar />
 

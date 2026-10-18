@@ -22,7 +22,7 @@ export const Footer: React.FC = () => {
   };
 
   return (
-    <footer className="bg-white border-t border-[#DCE5F0] text-[#64748B] text-xs pt-16 pb-12 relative overflow-hidden">
+    <footer className="bg-white dark:bg-[#070B14] border-t border-[#DCE5F0] dark:border-[#1E293B] text-[#64748B] dark:text-slate-400 text-xs pt-16 pb-12 relative overflow-hidden transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
           {/* Col 1: Brand Info */}
@@ -35,7 +35,7 @@ export const Footer: React.FC = () => {
               }}
             />
 
-            <p className="text-[#64748B] text-xs leading-relaxed max-w-sm">
+            <p className="text-[#64748B] dark:text-slate-300 text-xs leading-relaxed max-w-sm">
               {lang === 'ar'
                 ? 'وجهتكم الرائدة في صيدا وكافة مناطق لبنان لأحدث الهواتف الذكية، أجهزة اللابتوب، الملحقات والحلول المالية المتكاملة OMT، ويسترن يونيون و ويش موني.'
                 : "Lebanon's premier technology and electronics destination in Saida. Flagship smartphones, high-performance laptops, accessories, and certified financial services."}
@@ -45,23 +45,23 @@ export const Footer: React.FC = () => {
             <div className="space-y-2 pt-2 text-xs">
               <a
                 href="tel:03099889"
-                className="flex items-center gap-2.5 text-[#172033] hover:text-[#007AFF] transition-colors font-bold"
+                className="flex items-center gap-2.5 text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors font-bold"
               >
-                <div className="w-7 h-7 rounded-lg bg-[#EAF3FF] flex items-center justify-center text-[#007AFF] flex-shrink-0">
+                <div className="w-7 h-7 rounded-lg bg-[#EAF3FF] dark:bg-[#1E293B] flex items-center justify-center text-[#007AFF] flex-shrink-0">
                   <Phone className="w-3.5 h-3.5" />
                 </div>
                 <span>03 099 889</span>
               </a>
 
-              <div className="flex items-start gap-2.5 text-[#172033]">
-                <div className="w-7 h-7 rounded-lg bg-[#EAF3FF] flex items-center justify-center text-[#007AFF] flex-shrink-0 mt-0.5">
+              <div className="flex items-start gap-2.5 text-[#172033] dark:text-[#F8FAFC]">
+                <div className="w-7 h-7 rounded-lg bg-[#EAF3FF] dark:bg-[#1E293B] flex items-center justify-center text-[#007AFF] flex-shrink-0 mt-0.5">
                   <MapPin className="w-3.5 h-3.5" />
                 </div>
                 <span>{lang === 'ar' ? storeSettings.locationAr : storeSettings.locationEn}</span>
               </div>
 
-              <div className="flex items-start gap-2.5 text-[#64748B]">
-                <div className="w-7 h-7 rounded-lg bg-[#F5F8FC] border border-[#DCE5F0] flex items-center justify-center text-[#007AFF] flex-shrink-0 mt-0.5">
+              <div className="flex items-start gap-2.5 text-[#64748B] dark:text-slate-400">
+                <div className="w-7 h-7 rounded-lg bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] flex items-center justify-center text-[#007AFF] flex-shrink-0 mt-0.5">
                   <Clock className="w-3.5 h-3.5" />
                 </div>
                 <div className="space-y-0.5">

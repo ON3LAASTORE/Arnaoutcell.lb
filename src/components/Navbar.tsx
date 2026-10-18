@@ -13,8 +13,13 @@ import {
   Phone,
   Video,
   ChevronDown,
+  Sun,
+  Moon,
 } from 'lucide-react';
 import { StoreLogo } from './StoreLogo';
+import { querySearchSuggestions } from '../utils/searchSuggestions';
+import { SearchSuggestionsDropdown } from './SearchSuggestionsDropdown';
+import { Product, Category } from '../types';
 
 export const Navbar: React.FC = () => {
   const {
@@ -32,46 +37,133 @@ export const Navbar: React.FC = () => {
     products,
     viewProductDetail,
     setSearchQuery: setGlobalSearch,
+    isDarkMode,
+    toggleDarkMode,
   } = useShop();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchInput, setSearchInput] = useState('');
   const [searchFocused, setSearchFocused] = useState(false);
+  const [mobileSearchFocused, setMobileSearchFocused] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [categoriesDropdownOpen, setCategoriesDropdownOpen] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
 
-  // Search filtering
-  const matchingProducts = searchInput.trim()
-    ? products
-        .filter(
-          (p) =>
-            p.name.toLowerCase().includes(searchInput.toLowerCase()) ||
-            (p.nameAr && p.nameAr.includes(searchInput)) ||
-            p.brand.toLowerCase().includes(searchInput.toLowerCase()) ||
-            p.category.toLowerCase().includes(searchInput.toLowerCase()) ||
-            p.sku.toLowerCase().includes(searchInput.toLowerCase())
-        )
-        .slice(0, 6)
-    : [];
+  // Real-time search query matching current products & categories
+  const searchResult = querySearchSuggestions(searchInput, products, categories, {
+    maxProducts: 6,
+    maxCategories: 4,
+  });
+
+  const totalInteractiveItems = searchResult.categories.length + searchResult.products.length;
+
+  // Reset selected keyboard index when query changes
+  useEffect(() => {
+    setSelectedIndex(-1);
+  }, [searchInput]);
 
   // Close search suggestions on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (searchContainerRef.current && !searchContainerRef.current.contains(target)) {
         setSearchFocused(false);
+      }
+      if (mobileSearchContainerRef.current && !mobileSearchContainerRef.current.contains(target)) {
+        setMobileSearchFocused(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSelectProduct = (product: Product) => {
+    viewProductDetail(product.id);
+    setSearchFocused(false);
+    setMobileSearchFocused(false);
+    setMobileMenuOpen(false);
+    setSearchInput('');
+  };
+
+  const handleSelectCategory = (category: Category) => {
+    selectCategory(category.slug);
+    setSearchFocused(false);
+    setMobileSearchFocused(false);
+    setMobileMenuOpen(false);
+    setSearchInput('');
+  };
+
+  const handleSelectPopularTerm = (term: string) => {
+    setSearchInput(term);
+    setSearchFocused(true);
+    setMobileSearchFocused(true);
+  };
+
+  const handleViewAllResults = () => {
     if (searchInput.trim()) {
       setGlobalSearch(searchInput.trim());
       setCurrentView('products');
       setSearchFocused(false);
+      setMobileSearchFocused(false);
       setMobileMenuOpen(false);
+    } else {
+      setCurrentView('products');
+      setSearchFocused(false);
+      setMobileSearchFocused(false);
+      setMobileMenuOpen(false);
+    }
+  };
+
+  const handleClearSearch = (isMobile = false) => {
+    setSearchInput('');
+    setSelectedIndex(-1);
+    if (isMobile) {
+      mobileSearchInputRef.current?.focus();
+    } else {
+      searchInputRef.current?.focus();
+    }
+  };
+
+  const handleSearchSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (selectedIndex >= 0 && selectedIndex < totalInteractiveItems) {
+      if (selectedIndex < searchResult.categories.length) {
+        handleSelectCategory(searchResult.categories[selectedIndex]);
+        return;
+      } else {
+        const prod = searchResult.products[selectedIndex - searchResult.categories.length];
+        handleSelectProduct(prod);
+        return;
+      }
+    }
+
+    if (searchInput.trim()) {
+      setGlobalSearch(searchInput.trim());
+      setCurrentView('products');
+      setSearchFocused(false);
+      setMobileSearchFocused(false);
+      setMobileMenuOpen(false);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (totalInteractiveItems > 0) {
+        setSelectedIndex((prev) => (prev + 1) % totalInteractiveItems);
+      }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (totalInteractiveItems > 0) {
+        setSelectedIndex((prev) => (prev <= 0 ? totalInteractiveItems - 1 : prev - 1));
+      }
+    } else if (e.key === 'Escape') {
+      setSearchFocused(false);
+      setMobileSearchFocused(false);
+      setSelectedIndex(-1);
     }
   };
 
@@ -87,7 +179,7 @@ export const Navbar: React.FC = () => {
   ];
 
   return (
-    <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-xl border-b border-[#DCE5F0] shadow-[0_2px_15px_-3px_rgba(0,122,255,0.06)] transition-all">
+    <header className="sticky top-0 z-40 bg-white/95 dark:bg-[#0A0F1D]/95 backdrop-blur-xl border-b border-[#DCE5F0] dark:border-[#1E293B] shadow-[0_2px_15px_-3px_rgba(0,122,255,0.06)] dark:shadow-[0_2px_20px_-3px_rgba(0,0,0,0.6)] transition-colors duration-200">
       {/* Main Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20 gap-2 sm:gap-4">
@@ -100,77 +192,62 @@ export const Navbar: React.FC = () => {
             }}
           />
 
-          {/* Search Bar - Live Autocomplete */}
+          {/* Search Bar - Real-Time Search Suggestions */}
           <div ref={searchContainerRef} className="hidden md:flex flex-1 max-w-lg relative mx-2">
             <form onSubmit={handleSearchSubmit} className="w-full">
               <div className="relative">
                 <input
+                  ref={searchInputRef}
                   type="text"
                   placeholder={t.searchPlaceholder}
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
                   onFocus={() => setSearchFocused(true)}
-                  className="w-full bg-[#F5F8FC] text-[#172033] placeholder-[#64748B] text-sm rounded-full pl-11 pr-24 py-2.5 border border-[#DCE5F0] focus:bg-white focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/15 transition-all"
+                  onKeyDown={handleKeyDown}
+                  aria-label={t.searchPlaceholder}
+                  aria-expanded={searchFocused}
+                  role="combobox"
+                  className="w-full bg-[#F5F8FC] dark:bg-[#111A2E] text-[#172033] dark:text-[#F8FAFC] placeholder-[#64748B] dark:placeholder-slate-400 text-sm rounded-full pl-11 pr-24 rtl:pl-24 rtl:pr-11 py-2.5 border border-[#DCE5F0] dark:border-[#1E293B] focus:bg-white dark:focus:bg-[#162038] focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/15 transition-all"
                 />
-                <Search className="w-4 h-4 text-[#64748B] absolute left-4 top-1/2 -translate-y-1/2" />
+                <Search className="w-4 h-4 text-[#64748B] dark:text-slate-400 absolute left-4 rtl:left-auto rtl:right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+
+                {searchInput && (
+                  <button
+                    type="button"
+                    onClick={() => handleClearSearch(false)}
+                    className="absolute right-20 rtl:right-auto rtl:left-20 top-1/2 -translate-y-1/2 p-1 text-[#64748B] hover:text-[#172033] dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+
                 <button
                   type="submit"
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors cursor-pointer"
+                  className="absolute right-1.5 rtl:right-auto rtl:left-1.5 top-1/2 -translate-y-1/2 bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors cursor-pointer shadow-xs"
                 >
                   {lang === 'ar' ? 'بحث' : 'Search'}
                 </button>
               </div>
             </form>
 
-            {/* Live Autocomplete Dropdown */}
-            {searchFocused && searchInput.trim().length > 0 && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-[#DCE5F0] rounded-2xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
-                <div className="p-2 border-b border-[#DCE5F0] text-[11px] font-semibold text-[#64748B] flex justify-between items-center px-3 bg-[#F5F8FC]">
-                  <span>{lang === 'ar' ? 'نتائج مقترحة فورية' : 'Live Suggestions'}</span>
-                  <span>{matchingProducts.length} {lang === 'ar' ? 'منتجات' : 'matches'}</span>
-                </div>
-
-                {matchingProducts.length > 0 ? (
-                  <div className="max-h-80 overflow-y-auto divide-y divide-[#DCE5F0]">
-                    {matchingProducts.map((p) => (
-                      <div
-                        key={p.id}
-                        onClick={() => {
-                          viewProductDetail(p.id);
-                          setSearchFocused(false);
-                          setSearchInput('');
-                        }}
-                        className="p-3 hover:bg-[#EAF3FF]/60 cursor-pointer flex items-center gap-3 transition-colors group"
-                      >
-                        <img
-                          src={p.images[0]}
-                          alt={p.name}
-                          className="w-12 h-12 object-cover rounded-lg bg-[#F5F8FC] border border-[#DCE5F0] flex-shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-[#172033] group-hover:text-[#007AFF] truncate">
-                            {lang === 'ar' ? p.nameAr || p.name : p.name}
-                          </p>
-                          <div className="flex items-center gap-2 text-xs mt-0.5">
-                            <span className="text-[#64748B]">{p.brand}</span>
-                            <span className="text-[#DCE5F0]">•</span>
-                            <span className="font-bold text-[#007AFF]">${p.price}</span>
-                            {p.originalPrice > p.price && (
-                              <span className="text-[#64748B] line-through text-[11px]">
-                                ${p.originalPrice}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-4 text-center text-sm text-[#64748B]">
-                    {lang === 'ar' ? 'لا توجد نتائج مطابقة' : 'No matching products found'}
-                  </div>
-                )}
-              </div>
+            {/* Real-time Search Suggestion Dropdown */}
+            {searchFocused && (
+              <SearchSuggestionsDropdown
+                query={searchInput}
+                categories={searchResult.categories}
+                products={searchResult.products}
+                allCategories={categories}
+                totalCategoryMatches={searchResult.totalCategoryMatches}
+                totalProductMatches={searchResult.totalProductMatches}
+                lang={lang}
+                selectedIndex={selectedIndex}
+                onSelectProduct={handleSelectProduct}
+                onSelectCategory={handleSelectCategory}
+                onSelectPopularTerm={handleSelectPopularTerm}
+                onViewAllResults={handleViewAllResults}
+                onClose={() => setSearchFocused(false)}
+              />
             )}
           </div>
 
@@ -179,7 +256,7 @@ export const Navbar: React.FC = () => {
             {/* Call button */}
             <a
               href="tel:03099889"
-              className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F5F8FC] border border-[#DCE5F0] hover:border-[#007AFF] text-[#172033] text-xs font-semibold transition-all group"
+              className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-[#172033] dark:text-[#F8FAFC] text-xs font-semibold transition-all group"
             >
               <Phone className="w-3.5 h-3.5 text-[#007AFF] group-hover:scale-110 transition-transform" />
               <span>03 099 889</span>
@@ -188,7 +265,7 @@ export const Navbar: React.FC = () => {
             {/* Language Switcher */}
             <button
               onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#F5F8FC] hover:bg-[#EAF3FF] border border-[#DCE5F0] hover:border-[#007AFF] text-xs font-bold text-[#172033] transition-colors cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-xs font-bold text-[#172033] dark:text-[#F8FAFC] transition-colors cursor-pointer"
               title="Change Language / تغيير اللغة"
               aria-label="Toggle language"
             >
@@ -196,10 +273,28 @@ export const Navbar: React.FC = () => {
               <span className="font-bold">{lang === 'en' ? 'AR' : 'EN'}</span>
             </button>
 
+            {/* Global Dark Mode Theme Toggle */}
+            <button
+              onClick={toggleDarkMode}
+              className="flex items-center justify-center p-2 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-[#172033] dark:text-[#F8FAFC] transition-colors cursor-pointer group shadow-xs"
+              title={
+                isDarkMode
+                  ? (lang === 'ar' ? 'التبديل إلى الوضع الفاتح' : 'Switch to Light Mode')
+                  : (lang === 'ar' ? 'التبديل إلى الوضع الداكن' : 'Switch to Dark Mode')
+              }
+              aria-label={isDarkMode ? t.lightMode : t.darkMode}
+            >
+              {isDarkMode ? (
+                <Sun className="w-4 h-4 text-amber-400 group-hover:rotate-90 group-hover:scale-110 transition-all duration-300 fill-amber-400/20" />
+              ) : (
+                <Moon className="w-4 h-4 text-[#007AFF] group-hover:-rotate-12 group-hover:scale-110 transition-all duration-300 fill-[#007AFF]/20" />
+              )}
+            </button>
+
             {/* Wishlist */}
             <button
               onClick={() => setCurrentView('wishlist')}
-              className="hidden sm:flex relative p-2 rounded-xl text-[#64748B] hover:text-[#007AFF] hover:bg-[#EAF3FF]/50 transition-colors cursor-pointer"
+              className="hidden sm:flex relative p-2 rounded-xl text-[#64748B] dark:text-slate-300 hover:text-[#007AFF] dark:hover:text-[#38BDF8] hover:bg-[#EAF3FF]/50 dark:hover:bg-[#111A2E] transition-colors cursor-pointer"
               title={t.wishlist}
               aria-label="Wishlist"
             >
@@ -231,7 +326,7 @@ export const Navbar: React.FC = () => {
             {/* Admin Portal Shortcut */}
             <button
               onClick={() => setCurrentView('admin')}
-              className="hidden lg:flex p-2 rounded-xl text-[#64748B] hover:text-[#007AFF] hover:bg-[#EAF3FF] border border-transparent hover:border-[#BAE6FD] transition-all cursor-pointer"
+              className="hidden lg:flex p-2 rounded-xl text-[#64748B] dark:text-slate-300 hover:text-[#007AFF] dark:hover:text-[#38BDF8] hover:bg-[#EAF3FF] dark:hover:bg-[#111A2E] border border-transparent hover:border-[#BAE6FD] dark:hover:border-slate-700 transition-all cursor-pointer"
               title={t.adminPortal}
               aria-label="Admin Portal"
             >
@@ -241,7 +336,7 @@ export const Navbar: React.FC = () => {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-xl text-[#64748B] hover:text-[#172033] hover:bg-[#F5F8FC] border border-[#DCE5F0] transition-colors"
+              className="md:hidden p-2 rounded-xl text-[#64748B] dark:text-slate-300 hover:text-[#172033] dark:hover:text-white hover:bg-[#F5F8FC] dark:hover:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] transition-colors"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -249,7 +344,7 @@ export const Navbar: React.FC = () => {
         </div>
 
         {/* Desktop Secondary Navigation Bar */}
-        <div className="hidden md:flex items-center justify-between py-2.5 border-t border-[#DCE5F0] text-xs font-semibold">
+        <div className="hidden md:flex items-center justify-between py-2.5 border-t border-[#DCE5F0] dark:border-[#1E293B] text-xs font-semibold">
           <div className="flex items-center gap-6">
             {/* Categories Dropdown */}
             <div
@@ -259,22 +354,22 @@ export const Navbar: React.FC = () => {
             >
               <button
                 onClick={() => setCurrentView('categories')}
-                className="flex items-center gap-1.5 text-[#172033] hover:text-[#007AFF] py-1 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] py-1 transition-colors cursor-pointer"
               >
                 <span>{t.allCategories}</span>
                 <ChevronDown className="w-3.5 h-3.5 text-[#007AFF]" />
               </button>
 
               {categoriesDropdownOpen && (
-                <div className="absolute top-full left-0 w-72 bg-white border border-[#DCE5F0] rounded-2xl shadow-xl p-3 z-50 grid grid-cols-1 gap-1">
-                  <div className="px-3 py-1.5 text-[11px] font-bold text-[#007AFF] uppercase tracking-wider border-b border-[#DCE5F0] mb-1 flex justify-between bg-[#F5F8FC] rounded-lg">
+                <div className="absolute top-full left-0 w-72 bg-white dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] rounded-2xl shadow-xl p-3 z-50 grid grid-cols-1 gap-1">
+                  <div className="px-3 py-1.5 text-[11px] font-bold text-[#007AFF] uppercase tracking-wider border-b border-[#DCE5F0] dark:border-[#1E293B] mb-1 flex justify-between bg-[#F5F8FC] dark:bg-[#111A2E] rounded-lg">
                     <span>{lang === 'ar' ? 'الأقسام الرئيسية' : 'Popular Departments'}</span>
                     <button
                       onClick={() => {
                         setCurrentView('categories');
                         setCategoriesDropdownOpen(false);
                       }}
-                      className="text-[#64748B] hover:text-[#007AFF] underline text-[10px]"
+                      className="text-[#64748B] dark:text-slate-400 hover:text-[#007AFF] dark:hover:text-[#38BDF8] underline text-[10px]"
                     >
                       {lang === 'ar' ? 'عرض الكل' : 'View All'}
                     </button>
@@ -286,10 +381,10 @@ export const Navbar: React.FC = () => {
                         selectCategory(cat.slug);
                         setCategoriesDropdownOpen(false);
                       }}
-                      className="w-full text-left rtl:text-right px-3 py-2 rounded-lg text-[#172033] hover:bg-[#EAF3FF] hover:text-[#007AFF] text-xs transition-colors cursor-pointer flex items-center justify-between"
+                      className="w-full text-left rtl:text-right px-3 py-2 rounded-lg text-[#172033] dark:text-slate-200 hover:bg-[#EAF3FF] dark:hover:bg-[#1A253C] hover:text-[#007AFF] dark:hover:text-[#38BDF8] text-xs transition-colors cursor-pointer flex items-center justify-between"
                     >
                       <span>{lang === 'ar' ? cat.nameAr : cat.name}</span>
-                      <span className="text-[10px] text-[#64748B]">→</span>
+                      <span className="text-[10px] text-[#64748B] dark:text-slate-500">→</span>
                     </button>
                   ))}
                 </div>
@@ -308,8 +403,8 @@ export const Navbar: React.FC = () => {
                   currentView === item.view
                     ? 'text-[#007AFF] border-b-2 border-[#007AFF] font-bold'
                     : item.highlight
-                    ? 'text-[#007AFF] hover:text-[#0066D6] font-bold'
-                    : 'text-[#64748B] hover:text-[#007AFF]'
+                    ? 'text-[#007AFF] hover:text-[#0066D6] dark:text-[#38BDF8] dark:hover:text-sky-300 font-bold'
+                    : 'text-[#64748B] dark:text-slate-400 hover:text-[#007AFF] dark:hover:text-[#38BDF8]'
                 }`}
               >
                 {item.icon && <item.icon className="w-3.5 h-3.5" />}
@@ -321,7 +416,7 @@ export const Navbar: React.FC = () => {
           {/* Saida store location pill */}
           <div
             onClick={() => setCurrentView('contact')}
-            className="flex items-center gap-1.5 text-[#64748B] hover:text-[#007AFF] cursor-pointer transition-colors"
+            className="flex items-center gap-1.5 text-[#64748B] dark:text-slate-400 hover:text-[#007AFF] dark:hover:text-[#38BDF8] cursor-pointer transition-colors"
           >
             <MapPin className="w-3.5 h-3.5 text-[#007AFF]" />
             <span className="truncate max-w-xs">{t.saidaStore}</span>
@@ -331,20 +426,92 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white border-b border-[#DCE5F0] px-4 pt-3 pb-6 space-y-4 animate-in slide-in-from-top duration-200 shadow-lg">
-          {/* Mobile Search */}
-          <form onSubmit={handleSearchSubmit}>
-            <div className="relative">
-              <input
-                type="text"
-                placeholder={t.searchPlaceholder}
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                className="w-full bg-[#F5F8FC] text-[#172033] placeholder-[#64748B] text-sm rounded-xl pl-10 pr-4 py-2.5 border border-[#DCE5F0] focus:outline-none focus:border-[#007AFF]"
+        <div className="md:hidden bg-white dark:bg-[#0A0F1D] border-b border-[#DCE5F0] dark:border-[#1E293B] px-4 pt-3 pb-6 space-y-4 animate-in slide-in-from-top duration-200 shadow-lg">
+          {/* Mobile Search with Real-time Suggestions */}
+          <div ref={mobileSearchContainerRef} className="relative">
+            <form onSubmit={handleSearchSubmit}>
+              <div className="relative">
+                <input
+                  ref={mobileSearchInputRef}
+                  type="text"
+                  placeholder={t.searchPlaceholder}
+                  value={searchInput}
+                  onChange={(e) => setSearchInput(e.target.value)}
+                  onFocus={() => setMobileSearchFocused(true)}
+                  onKeyDown={handleKeyDown}
+                  aria-label={t.searchPlaceholder}
+                  className="w-full bg-[#F5F8FC] dark:bg-[#111A2E] text-[#172033] dark:text-[#F8FAFC] placeholder-[#64748B] dark:placeholder-slate-400 text-sm rounded-xl pl-10 pr-20 rtl:pl-20 rtl:pr-10 py-2.5 border border-[#DCE5F0] dark:border-[#1E293B] focus:outline-none focus:border-[#007AFF]"
+                />
+                <Search className="w-4 h-4 text-[#64748B] dark:text-slate-400 absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+
+                {searchInput && (
+                  <button
+                    type="button"
+                    onClick={() => handleClearSearch(true)}
+                    className="absolute right-14 rtl:right-auto rtl:left-14 top-1/2 -translate-y-1/2 p-1 text-[#64748B] hover:text-[#172033] dark:hover:text-white rounded-full cursor-pointer"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+
+                <button
+                  type="submit"
+                  className="absolute right-1.5 rtl:right-auto rtl:left-1.5 top-1/2 -translate-y-1/2 bg-[#007AFF] text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer shadow-xs"
+                >
+                  {lang === 'ar' ? 'بحث' : 'Search'}
+                </button>
+              </div>
+            </form>
+
+            {/* Mobile Real-time Search Suggestions Dropdown */}
+            {mobileSearchFocused && (
+              <SearchSuggestionsDropdown
+                query={searchInput}
+                categories={searchResult.categories}
+                products={searchResult.products}
+                allCategories={categories}
+                totalCategoryMatches={searchResult.totalCategoryMatches}
+                totalProductMatches={searchResult.totalProductMatches}
+                lang={lang}
+                selectedIndex={selectedIndex}
+                onSelectProduct={handleSelectProduct}
+                onSelectCategory={handleSelectCategory}
+                onSelectPopularTerm={handleSelectPopularTerm}
+                onViewAllResults={handleViewAllResults}
+                onClose={() => setMobileSearchFocused(false)}
               />
-              <Search className="w-4 h-4 text-[#64748B] absolute left-3 top-1/2 -translate-y-1/2" />
+            )}
+          </div>
+
+          {/* Mobile Theme Toggle Banner */}
+          <div className="flex items-center justify-between p-3 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B]">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-lg bg-white dark:bg-[#1E293B] border border-[#DCE5F0] dark:border-slate-700 shadow-xs">
+                {isDarkMode ? (
+                  <Sun className="w-4 h-4 text-amber-400 fill-amber-400/20" />
+                ) : (
+                  <Moon className="w-4 h-4 text-[#007AFF] fill-[#007AFF]/20" />
+                )}
+              </div>
+              <div>
+                <div className="text-xs font-bold text-[#172033] dark:text-[#F8FAFC]">
+                  {isDarkMode ? t.darkMode : t.lightMode}
+                </div>
+                <div className="text-[10px] text-[#64748B] dark:text-slate-400">
+                  {lang === 'ar' ? 'المظهر الليلي المريح للعين' : 'Sleek OLED dark experience'}
+                </div>
+              </div>
             </div>
-          </form>
+            <button
+              onClick={toggleDarkMode}
+              className="px-3 py-1.5 rounded-lg bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
+            >
+              {isDarkMode
+                ? (lang === 'ar' ? 'تفعيل الفاتح' : 'Light Mode')
+                : (lang === 'ar' ? 'تفعيل الداكن' : 'Dark Mode')}
+            </button>
+          </div>
 
           {/* Mobile Links */}
           <div className="grid grid-cols-2 gap-2 text-sm">
@@ -353,7 +520,7 @@ export const Navbar: React.FC = () => {
                 setCurrentView('offers');
                 setMobileMenuOpen(false);
               }}
-              className="p-2.5 rounded-xl bg-[#EAF3FF] border border-[#BAE6FD] text-[#007AFF] font-bold flex items-center gap-2"
+              className="p-2.5 rounded-xl bg-[#EAF3FF] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#007AFF]/40 text-[#007AFF] dark:text-[#38BDF8] font-bold flex items-center gap-2"
             >
               <Flame className="w-4 h-4 text-[#007AFF]" />
               <span>{t.specialOffers}</span>
@@ -363,7 +530,7 @@ export const Navbar: React.FC = () => {
                 setCurrentView('categories');
                 setMobileMenuOpen(false);
               }}
-              className="p-2.5 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0] text-[#172033] font-semibold flex items-center gap-2 hover:bg-[#EAF3FF]"
+              className="p-2.5 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] font-semibold flex items-center gap-2 hover:bg-[#EAF3FF] dark:hover:bg-[#162038]"
             >
               <span>{t.allCategories}</span>
             </button>
@@ -372,7 +539,7 @@ export const Navbar: React.FC = () => {
                 setCurrentView('brands');
                 setMobileMenuOpen(false);
               }}
-              className="p-2.5 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0] text-[#172033] font-semibold flex items-center gap-2 hover:bg-[#EAF3FF]"
+              className="p-2.5 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] font-semibold flex items-center gap-2 hover:bg-[#EAF3FF] dark:hover:bg-[#162038]"
             >
               <span>{t.brands}</span>
             </button>
@@ -381,7 +548,7 @@ export const Navbar: React.FC = () => {
                 setCurrentView('videos');
                 setMobileMenuOpen(false);
               }}
-              className="p-2.5 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0] text-[#172033] font-semibold flex items-center gap-2 hover:bg-[#EAF3FF]"
+              className="p-2.5 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] font-semibold flex items-center gap-2 hover:bg-[#EAF3FF] dark:hover:bg-[#162038]"
             >
               <Video className="w-4 h-4 text-[#007AFF]" />
               <span>{t.marketingVideos}</span>
@@ -391,7 +558,7 @@ export const Navbar: React.FC = () => {
                 setCurrentView('services');
                 setMobileMenuOpen(false);
               }}
-              className="p-2.5 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0] text-[#172033] font-semibold flex items-center gap-2 hover:bg-[#EAF3FF]"
+              className="p-2.5 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] font-semibold flex items-center gap-2 hover:bg-[#EAF3FF] dark:hover:bg-[#162038]"
             >
               <span>{t.storeServices}</span>
             </button>
@@ -400,7 +567,7 @@ export const Navbar: React.FC = () => {
                 setCurrentView('wishlist');
                 setMobileMenuOpen(false);
               }}
-              className="p-2.5 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0] text-[#172033] font-semibold flex items-center justify-between hover:bg-[#EAF3FF]"
+              className="p-2.5 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] font-semibold flex items-center justify-between hover:bg-[#EAF3FF] dark:hover:bg-[#162038]"
             >
               <div className="flex items-center gap-2">
                 <Heart className="w-4 h-4 text-[#DC2626]" />
@@ -417,13 +584,13 @@ export const Navbar: React.FC = () => {
                 setCurrentView('track-order');
                 setMobileMenuOpen(false);
               }}
-              className="p-2.5 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0] text-[#172033] font-semibold flex items-center gap-2 hover:bg-[#EAF3FF]"
+              className="p-2.5 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] font-semibold flex items-center gap-2 hover:bg-[#EAF3FF] dark:hover:bg-[#162038]"
             >
               <span>{t.trackOrder}</span>
             </button>
           </div>
 
-          <div className="pt-2 border-t border-[#DCE5F0] flex items-center justify-between text-xs text-[#64748B]">
+          <div className="pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B] flex items-center justify-between text-xs text-[#64748B] dark:text-slate-400">
             <a href="tel:03099889" className="flex items-center gap-1.5 text-[#007AFF] font-bold">
               <Phone className="w-3.5 h-3.5" />
               <span>03 099 889</span>
@@ -433,7 +600,7 @@ export const Navbar: React.FC = () => {
                 setCurrentView('admin');
                 setMobileMenuOpen(false);
               }}
-              className="text-[#64748B] hover:text-[#007AFF] flex items-center gap-1"
+              className="text-[#64748B] dark:text-slate-400 hover:text-[#007AFF] dark:hover:text-[#38BDF8] flex items-center gap-1"
             >
               <ShieldCheck className="w-3.5 h-3.5" />
               <span>{t.adminPortal}</span>

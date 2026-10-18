@@ -129,7 +129,22 @@ export function initStorage(): void {
 export function getProducts(): Product[] {
   try {
     const raw = localStorage.getItem(KEYS.PRODUCTS);
-    return raw ? JSON.parse(raw) : INITIAL_PRODUCTS;
+    if (!raw) return INITIAL_PRODUCTS;
+    const parsed: Product[] = JSON.parse(raw);
+    const existingIds = new Set(parsed.map((p) => p.id));
+    let changed = false;
+    const merged = [...parsed];
+    for (const initProd of INITIAL_PRODUCTS) {
+      if (!existingIds.has(initProd.id)) {
+        merged.push(initProd);
+        existingIds.add(initProd.id);
+        changed = true;
+      }
+    }
+    if (changed) {
+      localStorage.setItem(KEYS.PRODUCTS, JSON.stringify(merged));
+    }
+    return merged;
   } catch {
     return INITIAL_PRODUCTS;
   }
@@ -160,7 +175,22 @@ export function deleteProduct(productId: string): void {
 export function getCategories(): Category[] {
   try {
     const raw = localStorage.getItem(KEYS.CATEGORIES);
-    return raw ? JSON.parse(raw) : INITIAL_CATEGORIES;
+    if (!raw) return INITIAL_CATEGORIES;
+    const parsed: Category[] = JSON.parse(raw);
+    const existingNames = new Set(parsed.map((c) => c.name.toLowerCase()));
+    let changed = false;
+    const merged = [...parsed];
+    for (const initCat of INITIAL_CATEGORIES) {
+      if (!existingNames.has(initCat.name.toLowerCase())) {
+        merged.push(initCat);
+        existingNames.add(initCat.name.toLowerCase());
+        changed = true;
+      }
+    }
+    if (changed) {
+      localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(merged));
+    }
+    return merged;
   } catch {
     return INITIAL_CATEGORIES;
   }
@@ -174,7 +204,22 @@ export function saveCategories(categories: Category[]): void {
 export function getBrands(): Brand[] {
   try {
     const raw = localStorage.getItem(KEYS.BRANDS);
-    return raw ? JSON.parse(raw) : INITIAL_BRANDS;
+    if (!raw) return INITIAL_BRANDS;
+    const parsed: Brand[] = JSON.parse(raw);
+    const existingNames = new Set(parsed.map((b) => b.name.toLowerCase()));
+    let changed = false;
+    const merged = [...parsed];
+    for (const initBrand of INITIAL_BRANDS) {
+      if (!existingNames.has(initBrand.name.toLowerCase())) {
+        merged.push(initBrand);
+        existingNames.add(initBrand.name.toLowerCase());
+        changed = true;
+      }
+    }
+    if (changed) {
+      localStorage.setItem(KEYS.BRANDS, JSON.stringify(merged));
+    }
+    return merged;
   } catch {
     return INITIAL_BRANDS;
   }

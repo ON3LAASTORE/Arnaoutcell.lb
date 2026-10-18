@@ -36,17 +36,17 @@ export const SpecialOffersColumn: React.FC = () => {
   const col2 = filteredOffers.filter((_, idx) => idx % 2 === 1);
 
   return (
-    <section id="special-offers-section" className="py-16 md:py-24 bg-[#F5F8FC] relative border-b border-[#DCE5F0]">
+    <section id="special-offers-section" className="py-16 md:py-24 bg-[#F5F8FC] dark:bg-[#0A0F1D] relative border-b border-[#DCE5F0] dark:border-[#1E293B] transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         {/* Header with Title and Tabs */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 border border-red-200 text-[#DC2626] text-xs font-bold tracking-wider mb-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 text-[#DC2626] dark:text-red-400 text-xs font-bold tracking-wider mb-2">
               <Flame className="w-4 h-4 fill-current text-[#DC2626]" />
               <span>{lang === 'ar' ? 'عروض وتخفيضات حصرية' : 'EXCLUSIVE DEALS'}</span>
             </div>
 
-            <h2 className="text-2xl sm:text-4xl font-black text-[#172033] tracking-tight">
+            <h2 className="text-2xl sm:text-4xl font-black text-[#172033] dark:text-[#F8FAFC] tracking-tight">
               {lang === 'ar' ? (
                 <>
                   أقوى العروض الخاصة — <span className="text-[#007AFF]">{storeSettings.storeNameAr || 'أرناؤوط ستور'}</span>
@@ -57,7 +57,7 @@ export const SpecialOffersColumn: React.FC = () => {
                 </>
               )}
             </h2>
-            <p className="text-[#64748B] text-sm sm:text-base mt-1 max-w-xl">
+            <p className="text-[#64748B] dark:text-slate-300 text-sm sm:text-base mt-1 max-w-xl">
               {lang === 'ar'
                 ? 'تخفيضات أسبوعية حقيقية ومضمونة على أحدث الهواتف الذكية والإلكترونيات في صيدا وكافة مناطق لبنان.'
                 : 'Genuine, verified discounts on next-generation electronics with official warranty and fast Lebanon dispatch.'}
@@ -65,13 +65,13 @@ export const SpecialOffersColumn: React.FC = () => {
           </div>
 
           {/* Offer Tabs */}
-          <div className="flex items-center gap-1.5 p-1 bg-white rounded-xl border border-[#DCE5F0] self-start md:self-auto overflow-x-auto max-w-full shadow-xs">
+          <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-[#111A2E] rounded-xl border border-[#DCE5F0] dark:border-[#1E293B] self-start md:self-auto overflow-x-auto max-w-full shadow-xs">
             <button
               onClick={() => setActiveTab('all')}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === 'all'
                   ? 'bg-[#007AFF] text-white shadow-xs'
-                  : 'text-[#64748B] hover:text-[#172033]'
+                  : 'text-[#64748B] dark:text-slate-400 hover:text-[#172033] dark:hover:text-[#F8FAFC]'
               }`}
             >
               {lang === 'ar' ? 'كافة العروض' : 'All Offers'}
@@ -81,7 +81,7 @@ export const SpecialOffersColumn: React.FC = () => {
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === 'phones'
                   ? 'bg-[#007AFF] text-white shadow-xs'
-                  : 'text-[#64748B] hover:text-[#172033]'
+                  : 'text-[#64748B] dark:text-slate-400 hover:text-[#172033] dark:hover:text-[#F8FAFC]'
               }`}
             >
               {lang === 'ar' ? 'الهواتف' : 'Phones'}
@@ -91,7 +91,7 @@ export const SpecialOffersColumn: React.FC = () => {
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === 'accessories'
                   ? 'bg-[#007AFF] text-white shadow-xs'
-                  : 'text-[#64748B] hover:text-[#172033]'
+                  : 'text-[#64748B] dark:text-slate-400 hover:text-[#172033] dark:hover:text-[#F8FAFC]'
               }`}
             >
               {lang === 'ar' ? 'الإكسسوارات والشواحن' : 'Audio & Power'}
@@ -101,7 +101,7 @@ export const SpecialOffersColumn: React.FC = () => {
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === 'gaming'
                   ? 'bg-[#007AFF] text-white shadow-xs'
-                  : 'text-[#64748B] hover:text-[#172033]'
+                  : 'text-[#64748B] dark:text-slate-400 hover:text-[#172033] dark:hover:text-[#F8FAFC]'
               }`}
             >
               {lang === 'ar' ? 'الجيمنغ والدرونز' : 'Gaming & Gear'}

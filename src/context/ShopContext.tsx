@@ -67,6 +67,11 @@ interface ShopContextType {
   setLastCompletedOrder: (order: Order | null) => void;
   submitOrder: (orderData: Omit<Order, 'id' | 'orderDate' | 'statusHistory'>) => Order;
   generateWhatsAppOrderUrl: (order: Partial<Order> | { items: CartItem[]; customer?: any; total?: number }) => string;
+
+  // Theme / Dark Mode
+  isDarkMode: boolean;
+  toggleDarkMode: () => void;
+  setDarkMode: (dark: boolean) => void;
 }
 
 const ShopContext = createContext<ShopContextType | undefined>(undefined);
@@ -79,6 +84,37 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     return 'en';
   });
+
+  // Dark Mode Theme State & Persistence
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('arnaout_theme');
+        if (saved) return saved === 'dark';
+        return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      } catch {
+        return false;
+      }
+    }
+    return false;
+  });
+
+  // Synchronize document.documentElement 'dark' class
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const root = document.documentElement;
+      if (isDarkMode) {
+        root.classList.add('dark');
+        localStorage.setItem('arnaout_theme', 'dark');
+      } else {
+        root.classList.remove('dark');
+        localStorage.setItem('arnaout_theme', 'light');
+      }
+    }
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => setIsDarkMode((prev) => !prev);
+  const setDarkMode = (dark: boolean) => setIsDarkMode(dark);
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -336,6 +372,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setLastCompletedOrder,
         submitOrder,
         generateWhatsAppOrderUrl,
+        isDarkMode,
+        toggleDarkMode,
+        setDarkMode,
       }}
     >
       {children}

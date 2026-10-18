@@ -42,23 +42,23 @@ export const HeroSection: React.FC = () => {
   const current = slides[activeSlide % slides.length];
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-white via-[#F5F8FC] to-white py-12 md:py-20 border-b border-[#DCE5F0]">
+    <section className="relative overflow-hidden bg-gradient-to-b from-white via-[#F5F8FC] to-white dark:from-[#0A0F1D] dark:via-[#0E1726] dark:to-[#0A0F1D] py-12 md:py-20 border-b border-[#DCE5F0] dark:border-[#1E293B] transition-colors duration-200">
       {/* Background soft ambient accents */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-[#007AFF]/5 blur-[120px] rounded-full pointer-events-none"></div>
-      <div className="absolute bottom-0 right-10 w-[400px] h-[250px] bg-blue-100/40 blur-[100px] rounded-full pointer-events-none"></div>
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-[#007AFF]/5 dark:bg-[#007AFF]/10 blur-[120px] rounded-full pointer-events-none"></div>
+      <div className="absolute bottom-0 right-10 w-[400px] h-[250px] bg-blue-100/40 dark:bg-sky-950/30 blur-[100px] rounded-full pointer-events-none"></div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
           {/* Text & CTAs */}
           <div className="lg:col-span-7 space-y-6">
             {/* Tech Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EAF3FF] border border-[#BAE6FD] text-[#007AFF] text-xs font-bold tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EAF3FF] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#007AFF]/40 text-[#007AFF] dark:text-[#38BDF8] text-xs font-bold tracking-wider">
               <Sparkles className="w-4 h-4 text-[#007AFF]" />
               <span>{lang === 'ar' ? current.badgeAr : current.badgeEn}</span>
             </div>
 
             {/* Headline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-[#172033] tracking-tight leading-[1.1]">
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-[#172033] dark:text-[#F8FAFC] tracking-tight leading-[1.1]">
               {lang === 'ar' ? (
                 <>
                   <span className="block">{current.titleAr}</span>
@@ -77,12 +77,12 @@ export const HeroSection: React.FC = () => {
             </h1>
 
             {/* Subtitle */}
-            <p className="text-[#64748B] text-base sm:text-lg max-w-2xl font-normal leading-relaxed">
+            <p className="text-[#64748B] dark:text-slate-300 text-base sm:text-lg max-w-2xl font-normal leading-relaxed">
               {lang === 'ar' ? current.subtitleAr : current.subtitleEn}
             </p>
 
             {/* Flash Deal Live Countdown */}
-            <div className="p-3.5 sm:p-4 rounded-2xl bg-white border border-[#DCE5F0] shadow-sm max-w-md">
+            <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] shadow-sm max-w-md">
               <div className="flex items-center justify-between gap-2 mb-2">
                 <div className="flex items-center gap-1.5 text-xs font-bold text-[#DC2626] uppercase tracking-wider">
                   <Flame className="w-4 h-4 text-[#DC2626]" />
@@ -91,19 +91,19 @@ export const HeroSection: React.FC = () => {
                 <span className="text-[11px] font-semibold text-[#007AFF]">Saida In-Stock</span>
               </div>
               <div className="flex items-center gap-2 text-center font-mono">
-                <div className="flex-1 bg-[#F5F8FC] rounded-xl py-1.5 border border-[#DCE5F0]">
-                  <span className="text-lg font-black text-[#172033]">{String(timeLeft.hours).padStart(2, '0')}</span>
-                  <span className="block text-[9px] uppercase tracking-wider text-[#64748B]">{lang === 'ar' ? 'ساعة' : 'Hours'}</span>
+                <div className="flex-1 bg-[#F5F8FC] dark:bg-[#0A0F1D] rounded-xl py-1.5 border border-[#DCE5F0] dark:border-[#1E293B]">
+                  <span className="text-lg font-black text-[#172033] dark:text-[#F8FAFC]">{String(timeLeft.hours).padStart(2, '0')}</span>
+                  <span className="block text-[9px] uppercase tracking-wider text-[#64748B] dark:text-slate-400">{lang === 'ar' ? 'ساعة' : 'Hours'}</span>
                 </div>
                 <span className="text-[#007AFF] font-bold">:</span>
-                <div className="flex-1 bg-[#F5F8FC] rounded-xl py-1.5 border border-[#DCE5F0]">
+                <div className="flex-1 bg-[#F5F8FC] dark:bg-[#0A0F1D] rounded-xl py-1.5 border border-[#DCE5F0] dark:border-[#1E293B]">
                   <span className="text-lg font-black text-[#007AFF]">{String(timeLeft.minutes).padStart(2, '0')}</span>
-                  <span className="block text-[9px] uppercase tracking-wider text-[#64748B]">{lang === 'ar' ? 'دقيقة' : 'Mins'}</span>
+                  <span className="block text-[9px] uppercase tracking-wider text-[#64748B] dark:text-slate-400">{lang === 'ar' ? 'دقيقة' : 'Mins'}</span>
                 </div>
                 <span className="text-[#007AFF] font-bold">:</span>
-                <div className="flex-1 bg-[#F5F8FC] rounded-xl py-1.5 border border-[#DCE5F0]">
+                <div className="flex-1 bg-[#F5F8FC] dark:bg-[#0A0F1D] rounded-xl py-1.5 border border-[#DCE5F0] dark:border-[#1E293B]">
                   <span className="text-lg font-black text-[#DC2626]">{String(timeLeft.seconds).padStart(2, '0')}</span>
-                  <span className="block text-[9px] uppercase tracking-wider text-[#64748B]">{lang === 'ar' ? 'ثانية' : 'Secs'}</span>
+                  <span className="block text-[9px] uppercase tracking-wider text-[#64748B] dark:text-slate-400">{lang === 'ar' ? 'ثانية' : 'Secs'}</span>
                 </div>
               </div>
             </div>
@@ -127,14 +127,14 @@ export const HeroSection: React.FC = () => {
 
               <button
                 onClick={() => setCurrentView('products')}
-                className="px-6 py-3.5 rounded-xl bg-white hover:bg-[#EAF3FF] border border-[#DCE5F0] hover:border-[#007AFF] text-[#172033] font-bold text-sm transition-all cursor-pointer shadow-xs"
+                className="px-6 py-3.5 rounded-xl bg-white dark:bg-[#111A2E] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-[#172033] dark:text-[#F8FAFC] font-bold text-sm transition-all cursor-pointer shadow-xs"
               >
                 {lang === 'ar' ? 'تصفح كافة المنتجات' : 'Browse All Tech'}
               </button>
             </div>
 
             {/* Trust Badges Bar */}
-            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#DCE5F0] text-xs text-[#64748B]">
+            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#DCE5F0] dark:border-[#1E293B] text-xs text-[#64748B] dark:text-slate-400">
               <div className="flex items-center gap-2">
                 <Truck className="w-4 h-4 text-[#007AFF] flex-shrink-0" />
                 <span>{lang === 'ar' ? 'توصيل لكافة لبنان' : 'Lebanon Fast Delivery'}</span>
@@ -153,23 +153,23 @@ export const HeroSection: React.FC = () => {
           {/* Clean Apple-style Product Showcase Box */}
           <div className="lg:col-span-5 relative">
             <div className="relative mx-auto max-w-md lg:max-w-none">
-              <div className="relative rounded-3xl overflow-hidden border border-[#DCE5F0] bg-white shadow-xl shadow-[#007AFF]/5">
+              <div className="relative rounded-3xl overflow-hidden border border-[#DCE5F0] dark:border-[#1E293B] bg-white dark:bg-[#111A2E] shadow-xl shadow-[#007AFF]/5 dark:shadow-[0_4px_30px_rgba(0,0,0,0.6)]">
                 <img
                   src={current.image}
                   alt="Featured Electronics"
                   className="w-full h-80 sm:h-96 object-cover object-center transform hover:scale-105 transition-transform duration-700"
                 />
 
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
 
                 {/* Floating Tech Card */}
-                <div className="absolute bottom-4 left-4 right-4 p-4 rounded-2xl bg-white/95 backdrop-blur-md border border-[#DCE5F0] shadow-lg">
+                <div className="absolute bottom-4 left-4 right-4 p-4 rounded-2xl bg-white/95 dark:bg-[#0E1726]/95 backdrop-blur-md border border-[#DCE5F0] dark:border-[#1E293B] shadow-lg">
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="text-[10px] font-bold text-[#007AFF] uppercase tracking-widest block">
                         {(storeSettings.storeName || 'ARNAOUT STORE').toUpperCase()} • SAIDA
                       </span>
-                      <h4 className="font-bold text-[#172033] text-sm sm:text-base">
+                      <h4 className="font-bold text-[#172033] dark:text-[#F8FAFC] text-sm sm:text-base">
                         {lang === 'ar' ? 'أقوى العروض بانتظاركم' : 'Special In-Store & Online Deals'}
                       </h4>
                     </div>
@@ -184,10 +184,10 @@ export const HeroSection: React.FC = () => {
 
                 {/* Navigation Dots if multiple slides */}
                 {slides.length > 1 && (
-                  <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-white/90 backdrop-blur-md p-1.5 rounded-full border border-[#DCE5F0] shadow-sm">
+                  <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-white/90 dark:bg-[#0E1726]/90 backdrop-blur-md p-1.5 rounded-full border border-[#DCE5F0] dark:border-[#1E293B] shadow-sm">
                     <button
                       onClick={() => setActiveSlide((prev) => (prev > 0 ? prev - 1 : slides.length - 1))}
-                      className="p-1 hover:text-[#007AFF] text-[#172033] transition-colors"
+                      className="p-1 hover:text-[#007AFF] text-[#172033] dark:text-[#F8FAFC] transition-colors"
                     >
                       <ChevronLeft className="w-3.5 h-3.5" />
                     </button>
@@ -195,13 +195,13 @@ export const HeroSection: React.FC = () => {
                       <span
                         key={i}
                         className={`w-2 h-2 rounded-full transition-colors ${
-                          i === activeSlide ? 'bg-[#007AFF]' : 'bg-[#DCE5F0]'
+                          i === activeSlide ? 'bg-[#007AFF]' : 'bg-[#DCE5F0] dark:bg-slate-700'
                         }`}
                       />
                     ))}
                     <button
                       onClick={() => setActiveSlide((prev) => (prev + 1) % slides.length)}
-                      className="p-1 hover:text-[#007AFF] text-[#172033] transition-colors"
+                      className="p-1 hover:text-[#007AFF] text-[#172033] dark:text-[#F8FAFC] transition-colors"
                     >
                       <ChevronRight className="w-3.5 h-3.5" />
                     </button>
