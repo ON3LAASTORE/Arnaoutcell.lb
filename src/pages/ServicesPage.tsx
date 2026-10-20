@@ -52,20 +52,20 @@ export const ServicesPage: React.FC = () => {
 
           <div className="flex items-center gap-3">
             <a
-              href="tel:03099889"
+              href="tel:81900916"
               className="px-5 py-2.5 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs"
             >
               <Phone className="w-4 h-4" />
-              <span>03 099 889</span>
+              <span>81 900 916</span>
             </a>
             <a
-              href="https://wa.me/96103099889?text=Hello%20Arnaout%20Cell%2C%20I%20have%20an%20inquiry%20regarding%20OMT%2FWhish%20services"
+              href="https://wa.me/96181900916?text=Hello%20Arnaout%20Cell%2C%20I%20have%20an%20inquiry%20regarding%20OMT%2FWhish%20services"
               target="_blank"
               rel="noopener noreferrer"
               className="px-5 py-2.5 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs"
             >
               <MessageSquare className="w-4 h-4" />
-              <span>WhatsApp</span>
+              <span>WhatsApp 81 900 916</span>
             </a>
           </div>
         </div>

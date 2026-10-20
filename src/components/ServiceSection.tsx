@@ -171,11 +171,11 @@ export const ServiceSection: React.FC = () => {
                 </div>
 
                 <a
-                  href="tel:03099889"
+                  href="tel:81900916"
                   className="px-4 py-2 rounded-xl bg-[#F5F8FC] hover:bg-[#EAF3FF] border border-[#DCE5F0] text-[#172033] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
                 >
                   <Phone className="w-3.5 h-3.5 text-[#007AFF]" />
-                  <span>03 099 889</span>
+                  <span>81 900 916</span>
                 </a>
               </div>
             </div>
@@ -197,13 +197,13 @@ export const ServiceSection: React.FC = () => {
 
           <div className="flex items-center gap-3 flex-shrink-0">
             <a
-              href="https://wa.me/96103099889?text=Hello%20ARNAOUT%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20store%20services"
+              href="https://wa.me/96181900916?text=Hello%20ARNAOUT%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20store%20services"
               target="_blank"
               rel="noopener noreferrer"
               className="px-5 py-3 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer"
             >
               <MessageSquare className="w-4 h-4" />
-              <span>{lang === 'ar' ? 'محادثة عبر واتساب' : 'WhatsApp 03 099 889'}</span>
+              <span>{lang === 'ar' ? 'محادثة عبر واتساب 81 900 916' : 'WhatsApp 81 900 916'}</span>
             </a>
 
             <button

@@ -300,6 +300,27 @@ export function createOrder(orderData: Omit<Order, 'id' | 'orderDate' | 'statusH
 
   orders.unshift(newOrder);
   saveOrders(orders);
+
+  // Sync to Firestore in background
+  if (typeof window !== 'undefined') {
+    import('../firebase').then(({ db }) => {
+      import('firebase/firestore').then(({ doc, setDoc }) => {
+        setDoc(doc(db, 'orders', newOrder.id), {
+          id: newOrder.id,
+          customer: newOrder.customer,
+          items: newOrder.items,
+          subtotal: newOrder.subtotal,
+          deliveryFee: newOrder.deliveryFee || 0,
+          total: newOrder.total,
+          paymentMethod: newOrder.paymentMethod === 'cod' ? 'cod' : newOrder.paymentMethod === 'whish_money' ? 'whish_money' : 'omt_western_union',
+          status: newOrder.status,
+          orderDate: newOrder.orderDate,
+          statusHistory: newOrder.statusHistory,
+        }).catch((err) => console.warn('Firestore order sync:', err));
+      }).catch(() => {});
+    }).catch(() => {});
+  }
+
   return newOrder;
 }
 
@@ -360,6 +381,19 @@ export function updateOrderStatus(orderId: string, newStatus: OrderStatus, note?
 
   orders[index] = currentOrder;
   saveOrders(orders);
+
+  // Sync to Firestore in background
+  if (typeof window !== 'undefined') {
+    import('../firebase').then(({ db }) => {
+      import('firebase/firestore').then(({ doc, updateDoc }) => {
+        updateDoc(doc(db, 'orders', orderId), {
+          status: newStatus,
+          statusHistory: currentOrder.statusHistory,
+        }).catch((err) => console.warn('Firestore status update:', err));
+      }).catch(() => {});
+    }).catch(() => {});
+  }
+
   return currentOrder;
 }
 

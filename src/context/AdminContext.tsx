@@ -5,6 +5,13 @@ import {
   changeAdminPassword,
   initializeAdminAuth,
 } from '../services/authService';
+import { auth } from '../firebase';
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut as fbSignOut,
+  onAuthStateChanged,
+} from 'firebase/auth';
 
 export const SELECTABLE_ADMIN_BRANDS: string[] = [
   'Apple',
@@ -42,6 +49,7 @@ interface AdminContextType {
   user: AdminUser | null;
   isAuthenticated: boolean;
   login: (username: string, password?: string, role?: AdminRole) => Promise<boolean>;
+  loginWithGoogle: () => Promise<boolean>;
   logout: () => void;
   hasRole: (roles: AdminRole[]) => boolean;
   changePassword: (
@@ -156,8 +164,50 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return true;
   };
 
+  // Listen to Firebase auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
+      if (fbUser) {
+        const isAdminEmail = fbUser.email === 'optimatech.lb@gmail.com';
+        const adminProfile: AdminUser = {
+          id: fbUser.uid,
+          username: fbUser.email?.split('@')[0] || 'admin',
+          name: fbUser.displayName || 'Authorized Admin',
+          role: isAdminEmail ? 'super_admin' : 'product_manager',
+          email: fbUser.email || 'optimatech.lb@gmail.com',
+        };
+        setUser(adminProfile);
+      }
+    });
+    return () => unsubscribe();
+  }, []);
+
+  const loginWithGoogle = async (): Promise<boolean> => {
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        const isAdminEmail = result.user.email === 'optimatech.lb@gmail.com';
+        const adminProfile: AdminUser = {
+          id: result.user.uid,
+          username: result.user.email?.split('@')[0] || 'admin',
+          name: result.user.displayName || 'Authorized Admin',
+          role: isAdminEmail ? 'super_admin' : 'product_manager',
+          email: result.user.email || 'optimatech.lb@gmail.com',
+        };
+        setUser(adminProfile);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Firebase Google Sign-In error:', err);
+      return false;
+    }
+  };
+
   const logout = () => {
     setUser(null);
+    fbSignOut(auth).catch(() => {});
     if (typeof window !== 'undefined') {
       sessionStorage.removeItem('arnaout_admin_session_token');
     }
@@ -184,6 +234,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         user,
         isAuthenticated: !!user,
         login,
+        loginWithGoogle,
         logout,
         hasRole,
         changePassword: handleChangePassword,

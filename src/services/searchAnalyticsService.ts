@@ -138,7 +138,98 @@ export function normalizeAnalyticsTerm(rawTerm: string): string {
 /**
  * In-memory fallback if localStorage is unavailable
  */
-let inMemoryEvents: SearchAnalyticsEvent[] = [];
+export const INITIAL_DEMO_SEARCH_EVENTS: SearchAnalyticsEvent[] = [
+  {
+    id: 'srch_init_1',
+    term: 'iPhone 16 Pro Max',
+    normalizedTerm: 'iphone 16 pro max',
+    timestamp: new Date(Date.now() - 3600000 * 2).toISOString(),
+    source: 'desktop_input_submit',
+    intentPattern: 'flagship_smartphones',
+    categoryMatchesCount: 1,
+    productMatchesCount: 3,
+    hasResults: true,
+  },
+  {
+    id: 'srch_init_2',
+    term: 'Anker 737 Power Bank',
+    normalizedTerm: 'anker 737 power bank',
+    timestamp: new Date(Date.now() - 3600000 * 3).toISOString(),
+    source: 'trending_term_click',
+    intentPattern: 'charging_and_power',
+    categoryMatchesCount: 1,
+    productMatchesCount: 2,
+    hasResults: true,
+  },
+  {
+    id: 'srch_init_3',
+    term: 'Samsung Galaxy S25 Ultra',
+    normalizedTerm: 'samsung galaxy s25 ultra',
+    timestamp: new Date(Date.now() - 3600000 * 4).toISOString(),
+    source: 'desktop_input_submit',
+    intentPattern: 'flagship_smartphones',
+    categoryMatchesCount: 1,
+    productMatchesCount: 2,
+    hasResults: true,
+  },
+  {
+    id: 'srch_init_4',
+    term: 'شاحن سريع GaN',
+    normalizedTerm: 'شاحن سريع gan',
+    timestamp: new Date(Date.now() - 3600000 * 5).toISOString(),
+    source: 'mobile_input_submit',
+    intentPattern: 'charging_and_power',
+    categoryMatchesCount: 1,
+    productMatchesCount: 3,
+    hasResults: true,
+  },
+  {
+    id: 'srch_init_5',
+    term: 'AirPods Pro 2 USB-C',
+    normalizedTerm: 'airpods pro 2 usb-c',
+    timestamp: new Date(Date.now() - 3600000 * 6).toISOString(),
+    source: 'product_suggestion_click',
+    intentPattern: 'wearables_and_audio',
+    categoryMatchesCount: 1,
+    productMatchesCount: 1,
+    hasResults: true,
+  },
+  {
+    id: 'srch_init_6',
+    term: 'MacBook Pro M4',
+    normalizedTerm: 'macbook pro m4',
+    timestamp: new Date(Date.now() - 3600000 * 7).toISOString(),
+    source: 'desktop_input_submit',
+    intentPattern: 'laptops_and_computing',
+    categoryMatchesCount: 1,
+    productMatchesCount: 1,
+    hasResults: true,
+  },
+  {
+    id: 'srch_init_7',
+    term: 'iPhone 16 Pro',
+    normalizedTerm: 'iphone 16 pro',
+    timestamp: new Date(Date.now() - 3600000 * 8).toISOString(),
+    source: 'trending_term_click',
+    intentPattern: 'flagship_smartphones',
+    categoryMatchesCount: 1,
+    productMatchesCount: 2,
+    hasResults: true,
+  },
+  {
+    id: 'srch_init_8',
+    term: 'OMT تحويل',
+    normalizedTerm: 'omt تحويل',
+    timestamp: new Date(Date.now() - 3600000 * 9).toISOString(),
+    source: 'desktop_input_submit',
+    intentPattern: 'store_services',
+    categoryMatchesCount: 1,
+    productMatchesCount: 0,
+    hasResults: true,
+  },
+];
+
+let inMemoryEvents: SearchAnalyticsEvent[] = [...INITIAL_DEMO_SEARCH_EVENTS];
 
 /**
  * Retrieve raw search analytics events
@@ -149,9 +240,12 @@ export function getStoredSearchEvents(): SearchAnalyticsEvent[] {
   }
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return inMemoryEvents;
+    if (!raw) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(INITIAL_DEMO_SEARCH_EVENTS));
+      return INITIAL_DEMO_SEARCH_EVENTS;
+    }
     const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? parsed : [];
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : INITIAL_DEMO_SEARCH_EVENTS;
   } catch {
     return inMemoryEvents;
   }
@@ -228,6 +322,15 @@ export async function trackSearchQuery(params: {
   const existing = getStoredSearchEvents();
   const updated = [event, ...existing];
   saveSearchEvents(updated);
+
+  // Sync to Firestore in background
+  if (typeof window !== 'undefined') {
+    import('../firebase').then(({ db }) => {
+      import('firebase/firestore').then(({ doc, setDoc }) => {
+        setDoc(doc(db, 'search_analytics', event.id), event).catch(() => {});
+      }).catch(() => {});
+    }).catch(() => {});
+  }
 
   // Simulate mock API resolution
   return event;

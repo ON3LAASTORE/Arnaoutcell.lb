@@ -44,13 +44,13 @@ export const Footer: React.FC = () => {
             {/* Contact details */}
             <div className="space-y-2 pt-2 text-xs">
               <a
-                href="tel:03099889"
+                href="tel:81900916"
                 className="flex items-center gap-2.5 text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors font-bold"
               >
                 <div className="w-7 h-7 rounded-lg bg-[#EAF3FF] dark:bg-[#1E293B] flex items-center justify-center text-[#007AFF] flex-shrink-0">
                   <Phone className="w-3.5 h-3.5" />
                 </div>
-                <span>03 099 889</span>
+                <span>81 900 916</span>
               </a>
 
               <div className="flex items-start gap-2.5 text-[#172033] dark:text-[#F8FAFC]">
@@ -80,7 +80,7 @@ export const Footer: React.FC = () => {
             {/* WhatsApp Contact Button */}
             <div className="pt-2">
               <a
-                href={`https://wa.me/${storeSettings.whatsapp || '96103099889'}?text=${encodeURIComponent(
+                href={`https://wa.me/${storeSettings.whatsapp || '96181900916'}?text=${encodeURIComponent(
                   `Hello ${storeSettings.storeName}! I am inquiring about your products.`
                 )}`}
                 target="_blank"

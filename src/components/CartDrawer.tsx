@@ -188,7 +188,7 @@ export const CartDrawer: React.FC = () => {
                   className="w-full py-2.5 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 text-[#16A34A] dark:text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <MessageSquare className="w-3.5 h-3.5" />
-                  <span>{lang === 'ar' ? 'طلب فوري عبر واتساب 03 099 889' : 'Instant WhatsApp Order'}</span>
+                  <span>{lang === 'ar' ? 'طلب فوري عبر واتساب 81 900 916' : 'Instant WhatsApp Order (81 900 916)'}</span>
                 </button>
               </div>
 

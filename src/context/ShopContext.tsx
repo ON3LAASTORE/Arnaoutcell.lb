@@ -298,7 +298,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Generate WhatsApp Order link for store
   const generateWhatsAppOrderUrl = (order: any): string => {
-    const phone = storeSettings.whatsapp || '96103099889';
+    const phone = storeSettings.whatsapp || '96181900916';
     let text = `*New Order Inquiry - ${storeSettings.storeName} (${storeSettings.phone})* 🏠\n\n`;
 
     if (order.id) {

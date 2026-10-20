@@ -1,0 +1,151 @@
+{
+  "entities": {
+    "Order": {
+      "title": "Order",
+      "description": "Customer purchase order for electronics, mobile devices, and accessories with Lebanon delivery tracking",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique Order ID such as ARN-2027-1001",
+          "maxLength": 64
+        },
+        "orderDate": {
+          "type": "string",
+          "description": "ISO timestamp of when the order was submitted"
+        },
+        "customer": {
+          "type": "object",
+          "description": "Customer contact and delivery details"
+        },
+        "items": {
+          "type": "array",
+          "description": "List of ordered products and quantities"
+        },
+        "subtotal": {
+          "type": "number",
+          "description": "Order items subtotal in USD"
+        },
+        "deliveryFee": {
+          "type": "number",
+          "description": "Delivery fee based on zone"
+        },
+        "total": {
+          "type": "number",
+          "description": "Grand total in USD"
+        },
+        "paymentMethod": {
+          "type": "string",
+          "enum": ["cod", "whish_money", "omt_western_union"]
+        },
+        "status": {
+          "type": "string",
+          "enum": ["new", "confirmed", "preparing", "dispatched", "delivered", "cancelled", "returned"]
+        },
+        "trackingNumber": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "statusHistory": {
+          "type": "array",
+          "description": "Timeline of status transitions"
+        },
+        "userId": {
+          "type": "string",
+          "description": "Firebase Auth UID if submitted by logged-in user",
+          "maxLength": 128
+        }
+      },
+      "required": ["id", "customer", "items", "subtotal", "total", "paymentMethod", "status"]
+    },
+    "SearchAnalytics": {
+      "title": "SearchAnalytics",
+      "description": "Tracked search terms and user intent patterns for market demand analysis",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Search event identifier",
+          "maxLength": 128
+        },
+        "term": {
+          "type": "string",
+          "description": "Raw searched term",
+          "maxLength": 200
+        },
+        "normalizedTerm": {
+          "type": "string",
+          "description": "Normalized lowercase search term",
+          "maxLength": 200
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "Timestamp of search event"
+        },
+        "source": {
+          "type": "string",
+          "description": "Source interaction type",
+          "maxLength": 64
+        },
+        "intentPattern": {
+          "type": "string",
+          "description": "Classified shopping intent",
+          "maxLength": 64
+        },
+        "categoryMatchesCount": {
+          "type": "number",
+          "description": "Number of matching categories"
+        },
+        "productMatchesCount": {
+          "type": "number",
+          "description": "Number of matching products"
+        },
+        "hasResults": {
+          "type": "boolean",
+          "description": "Whether query matched any store items"
+        }
+      },
+      "required": ["id", "term", "normalizedTerm", "timestamp", "source", "intentPattern"]
+    },
+    "AdminProfile": {
+      "title": "AdminProfile",
+      "description": "Authorized administrator or staff role record",
+      "type": "object",
+      "properties": {
+        "email": {
+          "type": "string",
+          "description": "Admin email address",
+          "maxLength": 128
+        },
+        "role": {
+          "type": "string",
+          "enum": ["super_admin", "product_manager", "order_manager", "inventory_manager"]
+        },
+        "createdAt": {
+          "type": "string"
+        }
+      },
+      "required": ["email", "role"]
+    }
+  },
+  "firestore": {
+    "/orders/{orderId}": {
+      "schema": {
+        "$ref": "Order"
+      },
+      "description": "Customer purchase orders and status tracking"
+    },
+    "/search_analytics/{eventId}": {
+      "schema": {
+        "$ref": "SearchAnalytics"
+      },
+      "description": "Aggregated popular search terms and buyer intent patterns"
+    },
+    "/admins/{adminUid}": {
+      "schema": {
+        "$ref": "AdminProfile"
+      },
+      "description": "RBAC admin access control mapping"
+    }
+  }
+}

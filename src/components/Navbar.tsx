@@ -288,11 +288,11 @@ export const Navbar: React.FC = () => {
           <div className="flex items-center gap-2 sm:gap-3">
             {/* Call button */}
             <a
-              href="tel:03099889"
+              href="tel:81900916"
               className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-[#172033] dark:text-[#F8FAFC] text-xs font-semibold transition-all group"
             >
               <Phone className="w-3.5 h-3.5 text-[#007AFF] group-hover:scale-110 transition-transform" />
-              <span>03 099 889</span>
+              <span>81 900 916</span>
             </a>
 
             {/* Language Switcher */}
@@ -624,9 +624,9 @@ export const Navbar: React.FC = () => {
           </div>
 
           <div className="pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B] flex items-center justify-between text-xs text-[#64748B] dark:text-slate-400">
-            <a href="tel:03099889" className="flex items-center gap-1.5 text-[#007AFF] font-bold">
+            <a href="tel:81900916" className="flex items-center gap-1.5 text-[#007AFF] font-bold">
               <Phone className="w-3.5 h-3.5" />
-              <span>03 099 889</span>
+              <span>81 900 916</span>
             </a>
             <button
               onClick={() => {

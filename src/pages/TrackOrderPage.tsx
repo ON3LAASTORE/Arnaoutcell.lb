@@ -25,16 +25,33 @@ export const TrackOrderPage: React.FC = () => {
   const [orderQuery, setOrderQuery] = useState('');
   const [searchedOrder, setSearchedOrder] = useState<Order | null>(null);
   const [hasSearched, setHasSearched] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!orderQuery.trim()) return;
 
     const orders = getOrders();
     const cleanId = orderQuery.trim().toUpperCase();
-    const found = orders.find(
+    let found = orders.find(
       (o) => o.id.toUpperCase() === cleanId || o.customer.phone.includes(orderQuery.trim())
     );
+
+    if (!found) {
+      setIsSearching(true);
+      try {
+        const { db } = await import('../firebase');
+        const { doc, getDoc } = await import('firebase/firestore');
+        const snap = await getDoc(doc(db, 'orders', cleanId));
+        if (snap.exists()) {
+          found = snap.data() as Order;
+        }
+      } catch (err) {
+        console.warn('Firestore tracking query:', err);
+      } finally {
+        setIsSearching(false);
+      }
+    }
 
     setSearchedOrder(found || null);
     setHasSearched(true);
@@ -235,11 +252,11 @@ export const TrackOrderPage: React.FC = () => {
                 {/* Help button */}
                 <div className="text-center pt-2">
                   <a
-                    href="tel:03099889"
+                    href="tel:81900916"
                     className="inline-flex items-center gap-2 text-xs text-[#007AFF] hover:underline font-semibold"
                   >
                     <Phone className="w-3.5 h-3.5" />
-                    <span>{lang === 'ar' ? 'هل تحتاج لمساعدة بخصوص طلبك؟ اتصل بنا: 03 099 889' : 'Need help with this order? Call us: 03 099 889'}</span>
+                    <span>{lang === 'ar' ? 'هل تحتاج لمساعدة بخصوص طلبك؟ اتصل بنا: 81 900 916' : 'Need help with this order? Call us: 81 900 916'}</span>
                   </a>
                 </div>
               </div>

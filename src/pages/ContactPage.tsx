@@ -64,8 +64,8 @@ export const ContactPage: React.FC = () => {
                 </div>
                 <div>
                   <span className="text-[#64748B] block font-semibold">{lang === 'ar' ? 'الهاتف المباشر:' : 'Direct Call:'}</span>
-                  <a href="tel:03099889" className="text-base font-black text-[#172033] hover:text-[#007AFF] transition-colors">
-                    03 099 889
+                  <a href="tel:81900916" className="text-base font-black text-[#172033] hover:text-[#007AFF] transition-colors">
+                    81 900 916
                   </a>
                 </div>
               </div>
@@ -78,12 +78,12 @@ export const ContactPage: React.FC = () => {
                 <div>
                   <span className="text-[#64748B] block font-semibold">{lang === 'ar' ? 'خدمة واتساب الرسمية:' : 'Official WhatsApp:'}</span>
                   <a
-                    href="https://wa.me/96103099889"
+                    href="https://wa.me/96181900916"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-sm font-bold text-[#16A34A] hover:underline"
                   >
-                    +961 03 099 889
+                    +961 81 900 916
                   </a>
                 </div>
               </div>
@@ -217,7 +217,7 @@ export const ContactPage: React.FC = () => {
                     <input
                       type="tel"
                       required
-                      placeholder="03 099 889 / 70 xxx xxx"
+                      placeholder="81 900 916 / 70 xxx xxx"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono"

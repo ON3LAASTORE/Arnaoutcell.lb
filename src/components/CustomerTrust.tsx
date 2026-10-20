@@ -40,11 +40,11 @@ export const CustomerTrust: React.FC = () => {
       icon: Headphones,
       color: 'text-purple-600 bg-purple-50 border-purple-200',
       titleEn: 'Friendly Lebanese Support',
-      titleAr: 'خدمة عملاء مباشرة 03 099 889',
+      titleAr: 'خدمة عملاء مباشرة 81 900 916',
       descEn:
-        'Need advice before purchasing? Reach our experienced technicians directly via call or WhatsApp at 03 099 889.',
+        'Need advice before purchasing? Reach our experienced technicians directly via call or WhatsApp at 81 900 916.',
       descAr:
-        'استشارة تقنية صادقة وسريعة لاختيار الجهاز والملحقات المناسبة لميزانيتك واحتياجاتك عبر الهاتف أو واتساب.',
+        'استشارة تقنية صادقة وسريعة لاختيار الجهاز والملحقات المناسبة لميزانيتك واحتياجاتك عبر الهاتف أو واتساب على 81 900 916.',
     },
   ];
 
@@ -106,10 +106,10 @@ export const CustomerTrust: React.FC = () => {
               {lang === 'ar' ? 'معاينة الخريطة والتفاصيل' : 'Get Directions & Map'}
             </button>
             <a
-              href="tel:03099889"
+              href="tel:81900916"
               className="px-5 py-2.5 rounded-xl bg-white hover:bg-[#EAF3FF] text-[#172033] font-bold text-xs border border-[#DCE5F0] transition-colors"
             >
-              03 099 889
+              81 900 916
             </a>
           </div>
         </div>

@@ -793,8 +793,8 @@ export const INITIAL_STORE_SETTINGS: StoreSettings = {
   storeNameAr: 'أرناؤوط ستور',
   tagline: 'Your Home in Electronics 🏠',
   taglineAr: 'بيتك في عالم الإلكترونيات 🏠',
-  phone: '03 099 889',
-  whatsapp: '96103099889', // formatted for wa.me link
+  phone: '81 900 916',
+  whatsapp: '96181900916', // formatted for wa.me link
   locationEn: 'Saida, Nijme Square, Main Road, Lebanon',
   locationAr: 'صيدا، ساحة النجمة، الشارع الرئيسي، لبنان',
   openingHoursEn: 'Monday – Sunday: 8:00 AM – 1:00 AM',
@@ -811,8 +811,8 @@ export const INITIAL_STORE_SETTINGS: StoreSettings = {
   },
   announcementBar: {
     enabled: true,
-    textEn: '🔥 OPEN EVERY DAY — 17 HOURS DAILY (8:00 AM – 1:00 AM) | ARNAOUT STORE Saida & Fast Lebanon Delivery | Call 03 099 889',
-    textAr: '🔥 مفتوح يومياً — 17 ساعة يومياً (8:00 ص – 1:00 ص) | أرناؤوط ستور صيدا وتوصيل سريع لكافة لبنان | اتصل: 03 099 889',
+    textEn: '🔥 OPEN EVERY DAY — 17 HOURS DAILY (8:00 AM – 1:00 AM) | ARNAOUT STORE Saida & Fast Lebanon Delivery | Call 81 900 916',
+    textAr: '🔥 مفتوح يومياً — 17 ساعة يومياً (8:00 ص – 1:00 ص) | أرناؤوط ستور صيدا وتوصيل سريع لكافة لبنان | اتصل: 81 900 916',
     bgColor: '#007AFF',
     textColor: '#FFFFFF',
     linkUrl: '#special-offers',

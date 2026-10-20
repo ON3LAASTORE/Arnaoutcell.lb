@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net: Default-deny catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 2. Global Primitive Helpers
+    function isValidId(id) {
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Bootstrapped Admin check with runtime email optimatech.lb@gmail.com
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        (request.auth.token.email == 'optimatech.lb@gmail.com' && request.auth.token.email_verified == true)
+      );
+    }
+
+    // 3. Validation Blueprints
+    function isValidOrder(data) {
+      return data.keys().hasAll(['id', 'customer', 'items', 'subtotal', 'total', 'paymentMethod', 'status'])
+        && data.id is string && data.id.size() <= 64
+        && data.subtotal is number && data.subtotal >= 0
+        && data.total is number && data.total >= 0
+        && data.paymentMethod in ['cod', 'whish_money', 'omt_western_union']
+        && data.status in ['new', 'confirmed', 'preparing', 'dispatched', 'delivered', 'cancelled', 'returned']
+        && data.items is list && data.items.size() > 0 && data.items.size() <= 50;
+    }
+
+    function isValidSearchAnalytics(data) {
+      return data.keys().hasAll(['id', 'term', 'normalizedTerm', 'timestamp', 'source', 'intentPattern'])
+        && data.id is string && data.id.size() <= 128
+        && data.term is string && data.term.size() > 0 && data.term.size() <= 200
+        && data.normalizedTerm is string && data.normalizedTerm.size() > 0 && data.normalizedTerm.size() <= 200
+        && data.source is string && data.source.size() <= 64
+        && data.intentPattern is string && data.intentPattern.size() <= 64;
+    }
+
+    function isValidAdminProfile(data) {
+      return data.keys().hasAll(['email', 'role'])
+        && data.email is string && data.email.size() <= 128
+        && data.role in ['super_admin', 'product_manager', 'order_manager', 'inventory_manager'];
+    }
+
+    // 4. Connection Test Document for getDocFromServer
+    match /test/connection {
+      allow read: if true;
+    }
+
+    // 5. Orders Collection: Public order submission with Lebanese tracking, admin fulfillment
+    match /orders/{orderId} {
+      allow get: if isValidId(orderId) && (
+        isAdmin() ||
+        (isSignedIn() && resource.data.userId == request.auth.uid) ||
+        // Allow customer tracking verification by order ID
+        resource.data.id == orderId
+      );
+
+      allow list: if isAdmin() || (isSignedIn() && resource.data.userId == request.auth.uid);
+
+      allow create: if isValidId(orderId)
+        && isValidOrder(incoming())
+        && incoming().id == orderId
+        && (!('userId' in incoming()) || !isSignedIn() || incoming().userId == request.auth.uid);
+
+      allow update: if isValidId(orderId)
+        && isValidOrder(incoming())
+        && (
+          // Admin override
+          isAdmin() ||
+          // Customer can only cancel their own pending new order
+          (
+            isSignedIn()
+            && existing().userId == request.auth.uid
+            && existing().status == 'new'
+            && incoming().status == 'cancelled'
+            && incoming().diff(existing()).affectedKeys().hasOnly(['status'])
+          )
+        );
+
+      allow delete: if isAdmin();
+    }
+
+    // 6. Search Analytics: Client query intent logging & admin dashboard reporting
+    match /search_analytics/{eventId} {
+      allow get, list: if isAdmin();
+
+      allow create: if isValidId(eventId)
+        && isValidSearchAnalytics(incoming())
+        && incoming().id == eventId;
+
+      allow update, delete: if isAdmin();
+    }
+
+    // 7. Admin RBAC Collection
+    match /admins/{adminUid} {
+      allow get: if isSignedIn() && (request.auth.uid == adminUid || isAdmin());
+      allow list: if isAdmin();
+      allow write: if isAdmin();
+    }
+  }
+}
