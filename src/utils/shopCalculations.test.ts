@@ -38,6 +38,7 @@ test('validateStockAvailability checks limits safely', () => {
 });
 
 test('formatLebanesePhoneNumber formats standard 8-digit or international numbers', () => {
-  assert.equal(formatLebanesePhoneNumber('03099889'), '03 099 889');
-  assert.equal(formatLebanesePhoneNumber('+961 3 099889'), '03 099 889');
+  assert.equal(formatLebanesePhoneNumber('81900916'), '81 900 916');
+  assert.equal(formatLebanesePhoneNumber('+961 81 900916'), '81 900 916');
+  assert.equal(formatLebanesePhoneNumber('96181900916'), '81 900 916');
 });

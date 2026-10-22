@@ -1,12 +1,37 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { useShop } from '../context/ShopContext';
-import { Sparkles, ArrowRight, ShieldCheck, Truck, Clock, Flame, ChevronLeft, ChevronRight } from 'lucide-react';
+import {
+  Flame,
+  Sparkles,
+  ArrowRight,
+  ShieldCheck,
+  Truck,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  Star,
+  CheckCircle,
+} from 'lucide-react';
+import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon, Orbit3DIcon } from './icons/ThreeDIcons';
+import { Product } from '../types';
 
 export const HeroSection: React.FC = () => {
-  const { lang, storeSettings, setCurrentView } = useShop();
-  const [activeSlide, setActiveSlide] = useState(0);
+  const {
+    lang,
+    storeSettings,
+    setCurrentView,
+    products,
+    addToCart,
+    setQuickViewProduct,
+  } = useShop();
 
-  // Countdown timer for flash deals
+  // Filter actual offer products from inventory
+  const offerProducts = products.filter((p) => p.isSpecialOffer && p.isPublished);
+  // Default to first offer or fallback
+  const [selectedOfferIndex, setSelectedOfferIndex] = useState(0);
+
+  // Live countdown timer for deals
   const [timeLeft, setTimeLeft] = useState({ hours: 14, minutes: 35, seconds: 48 });
 
   useEffect(() => {
@@ -21,194 +46,320 @@ export const HeroSection: React.FC = () => {
     return () => clearInterval(timer);
   }, []);
 
-  const slides = storeSettings.heroSlides && storeSettings.heroSlides.length > 0
-    ? storeSettings.heroSlides
-    : [
-        {
-          id: '1',
-          badgeEn: 'PREMIUM TECHNOLOGY STORE',
-          badgeAr: 'متجر الإلكترونيات الرائد',
-          titleEn: 'YOUR HOME IN ELECTRONICS',
-          titleAr: 'بيتك في عالم الإلكترونيات',
-          subtitleEn: 'Discover the Latest Technology, Smartphones, Smart Accessories & Audiophile Gear with Official Lebanon Warranty.',
-          subtitleAr: 'اكتشف أحدث الهواتف الذكية، أجهزة اللابتوب، الملحقات المتطورة والأنظمة الصوتية بكفالة معتمدة.',
-          image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=1200&auto=format&fit=crop&q=80',
-          ctaLink: 'special-offers',
-          ctaTextEn: 'Explore Exclusive Offers',
-          ctaTextAr: 'استكشف العروض الحصرية',
-        },
-      ];
+  // Active featured product on the welcome offer stage
+  const currentOffer: Product | undefined =
+    offerProducts[selectedOfferIndex % (offerProducts.length || 1)] || offerProducts[0];
 
-  const current = slides[activeSlide % slides.length];
+  const discountAmount =
+    currentOffer && currentOffer.originalPrice > currentOffer.price
+      ? currentOffer.originalPrice - currentOffer.price
+      : 0;
+
+  const handleWhatsAppInquiry = (product: Product) => {
+    const phone = storeSettings.whatsapp || '96181900916';
+    const text = encodeURIComponent(
+      lang === 'ar'
+        ? `مرحباً أرناؤوط ستور! أود الاستفسار والطلب الفوري لعرض:\n- ${product.nameAr || product.name}\n- السعر المخفض: $${product.price} (وفرت $${product.originalPrice - product.price})\n- الكود: ${product.id}\nالرجاء تأكيد التوفر والتوصيل إلى منطقتي.`
+        : `Hello ARNAOUT STORE! I want to inquire / order this special offer:\n- ${product.name}\n- Discounted Price: $${product.price} USD (Save $${product.originalPrice - product.price})\n- SKU: ${product.id}\nPlease confirm availability and delivery.`
+    );
+    window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+  };
+
+  const handleBuyNow = (product: Product) => {
+    addToCart(product, 1);
+    setCurrentView('checkout');
+  };
 
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-white via-[#F5F8FC] to-white dark:from-[#0A0F1D] dark:via-[#0E1726] dark:to-[#0A0F1D] py-12 md:py-20 border-b border-[#DCE5F0] dark:border-[#1E293B] transition-colors duration-200">
-      {/* Background soft ambient accents */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-[#007AFF]/5 dark:bg-[#007AFF]/10 blur-[120px] rounded-full pointer-events-none"></div>
-      <div className="absolute bottom-0 right-10 w-[400px] h-[250px] bg-blue-100/40 dark:bg-sky-950/30 blur-[100px] rounded-full pointer-events-none"></div>
+    <section className="relative overflow-hidden bg-gradient-to-b from-[#0A101E] via-[#0E172B] to-[#070B14] text-white py-10 md:py-16 border-b border-blue-900/30 selection:bg-[#007AFF] selection:text-white">
+      {/* Modern Maximalist Ambient Glow Grid */}
+      <div className="absolute inset-0 bg-[radial-gradient(#007AFF_1px,transparent_1px)] [background-size:28px_28px] opacity-15 pointer-events-none" />
+      <div className="absolute top-0 left-1/4 -translate-x-1/2 w-[600px] h-[400px] bg-[#007AFF]/20 blur-[140px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-0 right-10 w-[500px] h-[350px] bg-red-600/15 blur-[130px] rounded-full pointer-events-none" />
+      <div className="absolute top-1/2 right-1/3 w-[350px] h-[350px] bg-amber-500/10 blur-[120px] rounded-full pointer-events-none" />
+
+      {/* Dynamic Top Live Deal Marquee */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
+        <div className="flex items-center justify-between gap-4 p-2.5 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 text-xs text-slate-300 overflow-hidden">
+          <div className="flex items-center gap-2 flex-shrink-0 text-[#FF3B30] font-black uppercase tracking-wider text-[11px] px-2.5 py-1 rounded-xl bg-red-500/10 border border-red-500/30">
+            <Flame className="w-4 h-4 fill-current animate-pulse text-[#FF3B30]" />
+            <span>{lang === 'ar' ? 'أقوى العروض الحصرية' : 'EXCLUSIVE OFFERS HUB'}</span>
+          </div>
+
+          <div className="flex-1 truncate text-[11px] md:text-xs font-semibold text-slate-300">
+            {lang === 'ar'
+              ? '⚡ أسعار مخفضة فورية • كفالة معتمدة صيدا ساحة النجمة • خدمة توصيل سريعة لكافة المحافظات • استفسار فوري عبر واتساب 81900916'
+              : '⚡ Instant Savings on Flagship Tech • Official Saida Warranty • Express Dispatch Across Lebanon • Instant WhatsApp 81900916'}
+          </div>
+
+          <a
+            href={`https://wa.me/${storeSettings.whatsapp || '96181900916'}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hidden sm:flex items-center gap-2 text-emerald-400 font-bold hover:text-emerald-300 transition-colors flex-shrink-0 group"
+          >
+            <WhatsApp3DIcon size={18} />
+            <span>81 900 916</span>
+          </a>
+        </div>
+      </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-          {/* Text & CTAs */}
-          <div className="lg:col-span-7 space-y-6">
-            {/* Tech Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EAF3FF] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#007AFF]/40 text-[#007AFF] dark:text-[#38BDF8] text-xs font-bold tracking-wider">
-              <Sparkles className="w-4 h-4 text-[#007AFF]" />
-              <span>{lang === 'ar' ? current.badgeAr : current.badgeEn}</span>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
+          {/* Left Column: Maximalist Welcome & Offer Pitch */}
+          <div className="lg:col-span-6 space-y-6">
+            {/* Super Badge */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600/30 to-purple-600/30 border border-blue-400/40 text-[#38BDF8] text-xs font-extrabold tracking-wider uppercase backdrop-blur-md">
+              <Sparkles className="w-4 h-4 text-[#38BDF8] animate-spin-slow" />
+              <span>
+                {lang === 'ar'
+                  ? 'صيدا ساحة النجمة • بيتك في عالم الإلكترونيات'
+                  : 'Saida Nijme Square • Your Home In Electronics 🏠'}
+              </span>
             </div>
 
-            {/* Headline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-[#172033] dark:text-[#F8FAFC] tracking-tight leading-[1.1]">
+            {/* Bold Maximalist Headline */}
+            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.1]">
               {lang === 'ar' ? (
                 <>
-                  <span className="block">{current.titleAr}</span>
-                  <span className="text-[#007AFF]">
-                    أحدث التقنيات والأجهزة الذكية
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300">
+                    أقوى عروض وتخفيضات
+                  </span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38BDF8] via-[#007AFF] to-[#60A5FA]">
+                    التكنولوجيا والأجهزة الذكية
                   </span>
                 </>
               ) : (
                 <>
-                  <span className="block">{current.titleEn}</span>
-                  <span className="text-[#007AFF]">
-                    Premium Tech & Electronics
+                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300">
+                    Next-Gen Tech Offers &
+                  </span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38BDF8] via-[#007AFF] to-[#60A5FA]">
+                    Exclusive Flash Deals
                   </span>
                 </>
               )}
             </h1>
 
-            {/* Subtitle */}
-            <p className="text-[#64748B] dark:text-slate-300 text-base sm:text-lg max-w-2xl font-normal leading-relaxed">
-              {lang === 'ar' ? current.subtitleAr : current.subtitleEn}
+            {/* Subtitle with Real Guarantee */}
+            <p className="text-slate-300 text-sm sm:text-base font-normal leading-relaxed max-w-xl">
+              {lang === 'ar'
+                ? 'استمتع بأحدث الهواتف الذكية، شواحن GaN الفائقة، والأنظمة الصوتية المتطورة بأفضل أسعار صيدا ولبنان، مع كفالة رسمية موثقة ودعم تقني متخصص.'
+                : 'Discover verified discounts on flagship smartphones, audiophile headsets, and high-speed GaN power gear with official Lebanon warranty and express dispatch.'}
             </p>
 
-            {/* Flash Deal Live Countdown */}
-            <div className="p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] shadow-sm max-w-md">
-              <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-[#DC2626] uppercase tracking-wider">
-                  <Flame className="w-4 h-4 text-[#DC2626]" />
-                  <span>{lang === 'ar' ? 'ينتهي العرض الخاطف خلال:' : 'Flash Deal Ends In:'}</span>
+            {/* Live Flash Deal Countdown Block */}
+            <div className="p-4 rounded-2xl bg-white/[0.07] backdrop-blur-xl border border-white/15 shadow-xl max-w-md">
+              <div className="flex items-center justify-between gap-2 mb-2.5">
+                <div className="flex items-center gap-2 text-xs font-black text-[#FF453A] uppercase tracking-wider">
+                  <Flame className="w-4 h-4 fill-current text-[#FF453A]" />
+                  <span>{lang === 'ar' ? 'ينتهي العرض الخاطف خلال:' : 'Flash Deal Countdown:'}</span>
                 </div>
-                <span className="text-[11px] font-semibold text-[#007AFF]">Saida In-Stock</span>
+                <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                  {lang === 'ar' ? 'متوفر للتسليم الفوري' : 'Live In Saida'}
+                </span>
               </div>
+
+              {/* Digital Numerals */}
               <div className="flex items-center gap-2 text-center font-mono">
-                <div className="flex-1 bg-[#F5F8FC] dark:bg-[#0A0F1D] rounded-xl py-1.5 border border-[#DCE5F0] dark:border-[#1E293B]">
-                  <span className="text-lg font-black text-[#172033] dark:text-[#F8FAFC]">{String(timeLeft.hours).padStart(2, '0')}</span>
-                  <span className="block text-[9px] uppercase tracking-wider text-[#64748B] dark:text-slate-400">{lang === 'ar' ? 'ساعة' : 'Hours'}</span>
+                <div className="flex-1 bg-black/40 rounded-xl py-2 border border-white/10 shadow-inner">
+                  <span className="text-xl sm:text-2xl font-black text-white">{String(timeLeft.hours).padStart(2, '0')}</span>
+                  <span className="block text-[9px] uppercase tracking-widest text-slate-400 font-sans mt-0.5">
+                    {lang === 'ar' ? 'ساعة' : 'Hours'}
+                  </span>
                 </div>
-                <span className="text-[#007AFF] font-bold">:</span>
-                <div className="flex-1 bg-[#F5F8FC] dark:bg-[#0A0F1D] rounded-xl py-1.5 border border-[#DCE5F0] dark:border-[#1E293B]">
-                  <span className="text-lg font-black text-[#007AFF]">{String(timeLeft.minutes).padStart(2, '0')}</span>
-                  <span className="block text-[9px] uppercase tracking-wider text-[#64748B] dark:text-slate-400">{lang === 'ar' ? 'دقيقة' : 'Mins'}</span>
+                <span className="text-[#38BDF8] font-bold text-lg animate-pulse">:</span>
+                <div className="flex-1 bg-black/40 rounded-xl py-2 border border-white/10 shadow-inner">
+                  <span className="text-xl sm:text-2xl font-black text-[#38BDF8]">{String(timeLeft.minutes).padStart(2, '0')}</span>
+                  <span className="block text-[9px] uppercase tracking-widest text-slate-400 font-sans mt-0.5">
+                    {lang === 'ar' ? 'دقيقة' : 'Mins'}
+                  </span>
                 </div>
-                <span className="text-[#007AFF] font-bold">:</span>
-                <div className="flex-1 bg-[#F5F8FC] dark:bg-[#0A0F1D] rounded-xl py-1.5 border border-[#DCE5F0] dark:border-[#1E293B]">
-                  <span className="text-lg font-black text-[#DC2626]">{String(timeLeft.seconds).padStart(2, '0')}</span>
-                  <span className="block text-[9px] uppercase tracking-wider text-[#64748B] dark:text-slate-400">{lang === 'ar' ? 'ثانية' : 'Secs'}</span>
+                <span className="text-[#38BDF8] font-bold text-lg animate-pulse">:</span>
+                <div className="flex-1 bg-black/40 rounded-xl py-2 border border-white/10 shadow-inner">
+                  <span className="text-xl sm:text-2xl font-black text-[#FF453A]">{String(timeLeft.seconds).padStart(2, '0')}</span>
+                  <span className="block text-[9px] uppercase tracking-widest text-slate-400 font-sans mt-0.5">
+                    {lang === 'ar' ? 'ثانية' : 'Secs'}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* CTAs */}
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <button
-                onClick={() => {
-                  const elem = document.getElementById('special-offers-section');
-                  if (elem) {
-                    elem.scrollIntoView({ behavior: 'smooth' });
-                  } else {
-                    setCurrentView('offers');
-                  }
-                }}
-                className="px-6 py-3.5 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white font-bold text-sm tracking-wide shadow-md shadow-[#007AFF]/25 transition-all flex items-center gap-2 cursor-pointer group"
-              >
-                <span>{lang === 'ar' ? current.ctaTextAr : current.ctaTextEn}</span>
-                <ArrowRight className="w-4 h-4 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
-              </button>
+            {/* Quick Offer Selector Chips */}
+            {offerProducts.length > 0 && (
+              <div className="space-y-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
+                  {lang === 'ar' ? 'أبرز عروض الواجهة الرئيسية:' : 'Spotlight Offer Products:'}
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {offerProducts.slice(0, 4).map((item, idx) => (
+                    <button
+                      key={item.id}
+                      onClick={() => setSelectedOfferIndex(idx)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                        selectedOfferIndex === idx
+                          ? 'bg-[#007AFF] text-white shadow-lg shadow-[#007AFF]/40 border border-blue-400'
+                          : 'bg-white/10 hover:bg-white/20 text-slate-300 border border-white/10'
+                      }`}
+                    >
+                      <span>{item.brand}</span>
+                      <span className="text-[10px] text-amber-300">-${item.originalPrice - item.price}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
-              <button
-                onClick={() => setCurrentView('products')}
-                className="px-6 py-3.5 rounded-xl bg-white dark:bg-[#111A2E] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-[#172033] dark:text-[#F8FAFC] font-bold text-sm transition-all cursor-pointer shadow-xs"
-              >
-                {lang === 'ar' ? 'تصفح كافة المنتجات' : 'Browse All Tech'}
-              </button>
-            </div>
-
-            {/* Trust Badges Bar */}
-            <div className="grid grid-cols-3 gap-3 pt-4 border-t border-[#DCE5F0] dark:border-[#1E293B] text-xs text-[#64748B] dark:text-slate-400">
+            {/* Quick Guarantees Row */}
+            <div className="grid grid-cols-3 gap-3 pt-3 border-t border-white/10 text-xs text-slate-300">
               <div className="flex items-center gap-2">
-                <Truck className="w-4 h-4 text-[#007AFF] flex-shrink-0" />
-                <span>{lang === 'ar' ? 'توصيل لكافة لبنان' : 'Lebanon Fast Delivery'}</span>
+                <Truck className="w-4 h-4 text-[#38BDF8] flex-shrink-0" />
+                <span>{lang === 'ar' ? 'شحن لكافة لبنان' : 'Lebanon Fast Dispatch'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#16A34A] flex-shrink-0" />
-                <span>{lang === 'ar' ? 'كفالة رسمية معتمدة' : 'Official Warranty'}</span>
+                <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                <span>{lang === 'ar' ? 'كفالة معتمدة رسمياً' : 'Official Warranty'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#007AFF] flex-shrink-0" />
-                <span>{lang === 'ar' ? 'خدمات OMT و Whish' : 'OMT & Whish Hub'}</span>
+                <Clock className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                <span>{lang === 'ar' ? 'مركز صيدا 8ص-1ص' : 'Open 8AM - 1AM'}</span>
               </div>
             </div>
           </div>
 
-          {/* Clean Apple-style Product Showcase Box */}
-          <div className="lg:col-span-5 relative">
-            <div className="relative mx-auto max-w-md lg:max-w-none">
-              <div className="relative rounded-3xl overflow-hidden border border-[#DCE5F0] dark:border-[#1E293B] bg-white dark:bg-[#111A2E] shadow-xl shadow-[#007AFF]/5 dark:shadow-[0_4px_30px_rgba(0,0,0,0.6)]">
-                <img
-                  src={current.image}
-                  alt="Featured Electronics"
-                  className="w-full h-80 sm:h-96 object-cover object-center transform hover:scale-105 transition-transform duration-700"
-                />
-
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
-
-                {/* Floating Tech Card */}
-                <div className="absolute bottom-4 left-4 right-4 p-4 rounded-2xl bg-white/95 dark:bg-[#0E1726]/95 backdrop-blur-md border border-[#DCE5F0] dark:border-[#1E293B] shadow-lg">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="text-[10px] font-bold text-[#007AFF] uppercase tracking-widest block">
-                        {(storeSettings.storeName || 'ARNAOUT STORE').toUpperCase()} • SAIDA
-                      </span>
-                      <h4 className="font-bold text-[#172033] dark:text-[#F8FAFC] text-sm sm:text-base">
-                        {lang === 'ar' ? 'أقوى العروض بانتظاركم' : 'Special In-Store & Online Deals'}
-                      </h4>
-                    </div>
-                    <button
-                      onClick={() => setCurrentView('offers')}
-                      className="px-3.5 py-1.5 rounded-lg bg-[#007AFF] text-white font-bold text-xs hover:bg-[#0066D6] transition-colors shadow-xs"
-                    >
-                      {lang === 'ar' ? 'عرض' : 'View'}
-                    </button>
-                  </div>
+          {/* Right Column: Interactive 3D Modern Maximalist Stage */}
+          <div className="lg:col-span-6 relative">
+            {currentOffer ? (
+              <motion.div
+                key={currentOffer.id}
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+                className="relative rounded-3xl bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-2xl border border-white/20 p-5 sm:p-7 shadow-[0_20px_60px_-15px_rgba(0,122,255,0.3)] overflow-hidden"
+              >
+                {/* Floating Discount Tag */}
+                <div className="absolute top-4 left-4 rtl:right-4 rtl:left-auto flex flex-col gap-1.5 z-20">
+                  <span className="px-3 py-1 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#EF4444] text-white font-black text-xs shadow-lg shadow-red-600/30 tracking-wider">
+                    {currentOffer.discountPercentage
+                      ? `-${currentOffer.discountPercentage}% OFF`
+                      : `SAVE $${discountAmount}`}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-lg bg-black/60 backdrop-blur-md text-[#38BDF8] text-[10px] font-bold border border-white/10">
+                    {currentOffer.brand} OFFICIAL
+                  </span>
                 </div>
 
-                {/* Navigation Dots if multiple slides */}
-                {slides.length > 1 && (
-                  <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-white/90 dark:bg-[#0E1726]/90 backdrop-blur-md p-1.5 rounded-full border border-[#DCE5F0] dark:border-[#1E293B] shadow-sm">
-                    <button
-                      onClick={() => setActiveSlide((prev) => (prev > 0 ? prev - 1 : slides.length - 1))}
-                      className="p-1 hover:text-[#007AFF] text-[#172033] dark:text-[#F8FAFC] transition-colors"
-                    >
-                      <ChevronLeft className="w-3.5 h-3.5" />
-                    </button>
-                    {slides.map((_, i) => (
-                      <span
-                        key={i}
-                        className={`w-2 h-2 rounded-full transition-colors ${
-                          i === activeSlide ? 'bg-[#007AFF]' : 'bg-[#DCE5F0] dark:bg-slate-700'
-                        }`}
-                      />
-                    ))}
-                    <button
-                      onClick={() => setActiveSlide((prev) => (prev + 1) % slides.length)}
-                      className="p-1 hover:text-[#007AFF] text-[#172033] dark:text-[#F8FAFC] transition-colors"
-                    >
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </button>
+                {/* 3D Preview Trigger Button */}
+                <button
+                  onClick={() => setQuickViewProduct(currentOffer)}
+                  className="absolute top-4 right-4 rtl:left-4 rtl:right-auto px-3 py-1.5 rounded-xl bg-white/10 hover:bg-[#007AFF] text-white text-xs font-bold border border-white/20 backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer shadow-md group"
+                >
+                  <Orbit3DIcon size={18} />
+                  <span>{lang === 'ar' ? 'معاينة 3D' : '3D View'}</span>
+                </button>
+
+                {/* Main Product Showcase Stage */}
+                <div className="relative h-64 sm:h-72 w-full flex items-center justify-center p-4 my-2">
+                  <div className="absolute w-48 h-48 bg-[#007AFF]/25 blur-[60px] rounded-full pointer-events-none" />
+                  <motion.img
+                    src={currentOffer.images[0]}
+                    alt={currentOffer.name}
+                    className="max-h-full max-w-full object-contain filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.5)] transform hover:scale-105 transition-transform duration-500 cursor-pointer"
+                    onClick={() => setQuickViewProduct(currentOffer)}
+                  />
+                </div>
+
+                {/* Product Info & Specs Bar */}
+                <div className="space-y-3 pt-3 border-t border-white/10">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-[#38BDF8] font-bold uppercase tracking-wider text-[11px]">
+                      {currentOffer.category}
+                    </span>
+                    <span className="flex items-center gap-1 text-emerald-400 font-bold text-[11px]">
+                      <CheckCircle className="w-3.5 h-3.5" />
+                      {lang === 'ar' ? 'متوفر في صيدا' : 'In Stock Saida'}
+                    </span>
                   </div>
-                )}
+
+                  <h3
+                    onClick={() => setQuickViewProduct(currentOffer)}
+                    className="text-lg sm:text-xl font-black text-white hover:text-[#38BDF8] transition-colors cursor-pointer line-clamp-1"
+                  >
+                    {lang === 'ar' ? currentOffer.nameAr || currentOffer.name : currentOffer.name}
+                  </h3>
+
+                  {/* Pricing Matrix */}
+                  <div className="flex items-baseline justify-between p-3 rounded-2xl bg-black/40 border border-white/10">
+                    <div>
+                      <span className="text-xs text-slate-400 block font-medium">
+                        {lang === 'ar' ? 'السعر المخفض الآن:' : 'Offer Price:'}
+                      </span>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                          ${currentOffer.price}
+                        </span>
+                        {currentOffer.originalPrice > currentOffer.price && (
+                          <span className="text-sm text-slate-400 line-through">
+                            ${currentOffer.originalPrice}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {discountAmount > 0 && (
+                      <div className="text-right rtl:text-left">
+                        <span className="text-[10px] uppercase font-bold text-slate-400 block">
+                          {lang === 'ar' ? 'قيمة التوفير:' : 'Net Savings:'}
+                        </span>
+                        <span className="text-sm font-black text-[#10B981]">
+                          +${discountAmount} USD
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Primary Direct CTAs */}
+                  <div className="space-y-2 pt-1">
+                    {/* The Official WhatsApp Order / Inquire Button */}
+                    <button
+                      onClick={() => handleWhatsAppInquiry(currentOffer)}
+                      className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 via-green-600 to-emerald-700 hover:from-emerald-600 hover:to-green-700 text-white font-black text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-lg shadow-emerald-700/40 active:scale-[0.98] group"
+                    >
+                      <WhatsApp3DIcon size={24} />
+                      <span className="tracking-tight">
+                        {lang === 'ar'
+                          ? 'استفسار / طلب عبر واتساب (81900916)'
+                          : 'Inquire / Order on WhatsApp (81900916)'}
+                      </span>
+                    </button>
+
+                    {/* Dual Action: Pack It + Direct Order */}
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => addToCart(currentOffer, 1)}
+                        className="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all border border-white/15 cursor-pointer active:scale-95 group"
+                      >
+                        <Cart3DIcon size={18} />
+                        <span>{lang === 'ar' ? 'احجز قطعتك' : 'Pack It 🛍️'}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleBuyNow(currentOffer)}
+                        className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#007AFF] to-[#0055D6] hover:from-[#0066D6] hover:to-[#0048B8] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-[#007AFF]/30 cursor-pointer active:scale-95 group"
+                      >
+                        <Zap3DIcon size={18} />
+                        <span>{lang === 'ar' ? 'شراء فوري' : 'Direct Order ⚡'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ) : (
+              <div className="p-8 text-center bg-white/5 rounded-3xl border border-white/10">
+                <Sparkles className="w-8 h-8 text-[#007AFF] mx-auto mb-2" />
+                <p>{lang === 'ar' ? 'جاري تحميل العروض الحصرية...' : 'Loading Special Offers...'}</p>
               </div>
-            </div>
+            )}
           </div>
         </div>
       </div>

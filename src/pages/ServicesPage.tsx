@@ -11,6 +11,7 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react';
+import { WhatsApp3DIcon } from '../components/icons/ThreeDIcons';
 
 export const ServicesPage: React.FC = () => {
   const { lang, storeSettings } = useShop();
@@ -62,10 +63,10 @@ export const ServicesPage: React.FC = () => {
               href="https://wa.me/96181900916?text=Hello%20Arnaout%20Cell%2C%20I%20have%20an%20inquiry%20regarding%20OMT%2FWhish%20services"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-5 py-2.5 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs"
+              className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white font-black text-xs flex items-center gap-2 transition-all shadow-md shadow-emerald-700/30 active:scale-95 group"
             >
-              <MessageSquare className="w-4 h-4" />
-              <span>WhatsApp 81 900 916</span>
+              <WhatsApp3DIcon size={18} />
+              <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (81900916)' : 'Inquire / Order on WhatsApp (81900916)'}</span>
             </a>
           </div>
         </div>

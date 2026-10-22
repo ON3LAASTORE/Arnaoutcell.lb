@@ -6,6 +6,7 @@ import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
 import { ProductQuickViewModal } from './components/ProductQuickViewModal';
+import { FloatingWhatsAppButton } from './components/FloatingWhatsAppButton';
 
 // Pages
 import { HomePage } from './pages/HomePage';
@@ -70,6 +71,7 @@ const AppContent: React.FC = () => {
       <Footer />
       <CartDrawer />
       <ProductQuickViewModal />
+      <FloatingWhatsAppButton />
     </div>
   );
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useShop } from '../context/ShopContext';
-import { Trash2, ShoppingBag, ArrowRight, ShieldCheck, Tag, MessageSquare } from 'lucide-react';
+import { Trash2, ShoppingBag, ArrowRight, ShieldCheck, Tag } from 'lucide-react';
+import { WhatsApp3DIcon, Cart3DIcon } from '../components/icons/ThreeDIcons';
 
 export const CartPage: React.FC = () => {
   const {
@@ -241,10 +242,10 @@ export const CartPage: React.FC = () => {
                     const url = generateWhatsAppOrderUrl({ items: cart, total: finalTotal });
                     window.open(url, '_blank');
                   }}
-                  className="w-full py-3 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 text-[#16A34A] dark:text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100 hover:from-emerald-100 hover:to-green-100 dark:from-emerald-950/40 dark:via-emerald-900/40 dark:to-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 font-extrabold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-sm hover:shadow-md hover:shadow-emerald-500/20 group active:scale-98"
                 >
-                  <MessageSquare className="w-4 h-4" />
-                  <span>{lang === 'ar' ? 'طلب فوري عبر واتساب 03 099 889' : 'Order via WhatsApp (03 099 889)'}</span>
+                  <WhatsApp3DIcon size={22} />
+                  <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (81900916)' : 'Inquire / Order on WhatsApp (81900916)'}</span>
                 </button>
               </div>
 

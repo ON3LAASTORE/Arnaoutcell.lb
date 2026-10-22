@@ -52,7 +52,7 @@ interface ShopContextType {
   currentView: string;
   setCurrentView: (view: string) => void;
   selectedProductId: string | null;
-  viewProductDetail: (productId: string) => void;
+  viewProductDetail: (productId: string, openAsModal?: boolean) => void;
   selectedCategorySlug: string | null;
   selectCategory: (slug: string | null) => void;
   selectedBrandName: string | null;
@@ -268,10 +268,15 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const isInWishlist = (productId: string) => wishlist.includes(productId);
 
-  const viewProductDetail = (productId: string) => {
+  const viewProductDetail = (productId: string, openAsModal = true) => {
     setSelectedProductId(productId);
-    setCurrentView('product-detail');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const p = products.find((item) => item.id === productId);
+    if (openAsModal && p) {
+      setQuickViewProduct(p);
+    } else {
+      setCurrentView('product-detail');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const selectCategory = (slug: string | null) => {

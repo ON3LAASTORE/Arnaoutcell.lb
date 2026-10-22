@@ -10,6 +10,7 @@ import {
   MessageSquare,
   CheckCircle,
 } from 'lucide-react';
+import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 
 export const ServiceSection: React.FC = () => {
   const { lang, setCurrentView } = useShop();
@@ -200,10 +201,10 @@ export const ServiceSection: React.FC = () => {
               href="https://wa.me/96181900916?text=Hello%20ARNAOUT%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20store%20services"
               target="_blank"
               rel="noopener noreferrer"
-              className="px-5 py-3 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white text-xs font-bold shadow-sm transition-all flex items-center gap-2 cursor-pointer"
+              className="px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white text-xs font-black shadow-md shadow-emerald-700/30 transition-all flex items-center gap-2.5 cursor-pointer group active:scale-95"
             >
-              <MessageSquare className="w-4 h-4" />
-              <span>{lang === 'ar' ? 'محادثة عبر واتساب 81 900 916' : 'WhatsApp 81 900 916'}</span>
+              <WhatsApp3DIcon size={20} />
+              <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (81900916)' : 'Inquire / Order on WhatsApp (81900916)'}</span>
             </a>
 
             <button

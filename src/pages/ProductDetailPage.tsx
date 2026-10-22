@@ -15,6 +15,7 @@ import {
   Play,
   Sparkles,
 } from 'lucide-react';
+import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon } from '../components/icons/ThreeDIcons';
 
 export const ProductDetailPage: React.FC = () => {
   const {
@@ -87,7 +88,7 @@ export const ProductDetailPage: React.FC = () => {
 
   const handleWhatsAppInquiry = () => {
     const msg = `Hello ${storeSettings.storeName} (${storeSettings.phone})! I'm inquiring about: ${product.name} (SKU: ${product.sku}, Price: $${activePrice}). Is it available at your Saida store for immediate pickup or delivery?`;
-    window.open(`https://wa.me/${storeSettings.whatsapp || '96103099889'}?text=${encodeURIComponent(msg)}`, '_blank');
+    window.open(`https://wa.me/${storeSettings.whatsapp || '96181900916'}?text=${encodeURIComponent(msg)}`, '_blank');
   };
 
   const handleShare = () => {
@@ -408,37 +409,37 @@ export const ProductDetailPage: React.FC = () => {
                 <button
                   onClick={handleAddToCart}
                   disabled={isOutOfStock}
-                  className={`py-3.5 px-4 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  className={`py-3.5 px-4 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-2 cursor-pointer group ${
                     isOutOfStock
                       ? 'bg-slate-100 text-slate-400 cursor-not-allowed border-slate-200'
                       : 'bg-[#F5F8FC] hover:bg-[#EAF3FF] text-[#172033] border-[#DCE5F0] hover:border-[#007AFF]'
                   }`}
                 >
-                  <ShoppingCart className="w-4 h-4 text-[#007AFF]" />
+                  <Cart3DIcon size={18} />
                   <span>{t.addToCart}</span>
                 </button>
 
                 <button
                   onClick={handleBuyNow}
                   disabled={isOutOfStock}
-                  className={`py-3.5 px-4 rounded-xl text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  className={`py-3.5 px-4 rounded-xl text-xs font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer group ${
                     isOutOfStock
                       ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                      : 'bg-[#007AFF] hover:bg-[#0066D6] text-white shadow-[#007AFF]/25'
+                      : 'bg-gradient-to-r from-[#007AFF] to-[#0055D6] hover:from-[#0066D6] hover:to-[#0048B8] text-white shadow-[#007AFF]/25'
                   }`}
                 >
-                  <Zap className="w-4 h-4 fill-current" />
+                  <Zap3DIcon size={18} />
                   <span>{t.buyNow}</span>
                 </button>
               </div>
 
-              {/* WhatsApp direct inquiry button */}
+              {/* WhatsApp direct inquiry button with Real 3D WhatsApp Icon */}
               <button
                 onClick={handleWhatsAppInquiry}
-                className="w-full py-3 px-4 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-[#16A34A] font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100 hover:from-emerald-100 hover:to-green-100 border border-emerald-300 text-emerald-800 font-extrabold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-sm hover:shadow-md hover:shadow-emerald-500/20 group active:scale-98"
               >
-                <MessageSquare className="w-4 h-4" />
-                <span>{lang === 'ar' ? 'استفسر أو اطلب فورياً عبر واتساب (03 099 889)' : 'Inquire / Order on WhatsApp (03 099 889)'}</span>
+                <WhatsApp3DIcon size={22} />
+                <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (81900916)' : 'Inquire / Order on WhatsApp (81900916)'}</span>
               </button>
             </div>
 

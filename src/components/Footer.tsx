@@ -11,6 +11,7 @@ import {
   Banknote,
   Smartphone,
 } from 'lucide-react';
+import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import { StoreLogo } from './StoreLogo';
 
 export const Footer: React.FC = () => {
@@ -85,10 +86,10 @@ export const Footer: React.FC = () => {
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#16A34A] hover:bg-[#15803D] text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
+                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white font-black text-xs shadow-md shadow-emerald-700/30 transition-all cursor-pointer group active:scale-95"
               >
-                <MessageSquare className="w-4 h-4" />
-                <span>{lang === 'ar' ? `تواصل عبر واتساب: ${storeSettings.phone}` : `WhatsApp Us: ${storeSettings.phone}`}</span>
+                <WhatsApp3DIcon size={20} />
+                <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (81900916)' : 'Inquire / Order on WhatsApp (81900916)'}</span>
               </a>
             </div>
           </div>

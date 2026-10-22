@@ -8,7 +8,10 @@ import {
   LayoutGrid,
   List,
   Sparkles,
+  ArrowUpDown,
+  Check,
 } from 'lucide-react';
+import { sortProducts } from '../utils/sortingHelpers';
 
 export const ProductsPage: React.FC = () => {
   const {
@@ -32,6 +35,40 @@ export const ProductsPage: React.FC = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'column'>('grid');
   const [mobileFilterOpen, setMobileFilterOpen] = useState<boolean>(false);
 
+  // Sorting configurations with clear descriptive labels
+  const SORT_OPTIONS = [
+    {
+      value: 'recommended',
+      labelEn: 'Recommended (Best Rated)',
+      labelAr: 'المقترح (الأعلى تقييماً)',
+      icon: '⭐',
+    },
+    {
+      value: 'price_asc',
+      labelEn: 'Price: Low to High ($ → $$$)',
+      labelAr: 'السعر: من الأقل للأعلى ($)',
+      icon: '💵',
+    },
+    {
+      value: 'price_desc',
+      labelEn: 'Price: High to Low ($$$ → $)',
+      labelAr: 'السعر: من الأعلى للأقل ($$$)',
+      icon: '💎',
+    },
+    {
+      value: 'newest',
+      labelEn: 'Newest Arrivals (Latest Tech)',
+      labelAr: 'الأحدث أولاً (أحدث المنتجات)',
+      icon: '✨',
+    },
+    {
+      value: 'discount',
+      labelEn: 'Biggest Discounts (% OFF)',
+      labelAr: 'أكبر نسبة تخفيض (% خصم)',
+      icon: '🔥',
+    },
+  ];
+
   // Active Category name lookup
   const activeCategory = selectedCategorySlug
     ? categories.find((c) => c.slug === selectedCategorySlug)
@@ -39,7 +76,7 @@ export const ProductsPage: React.FC = () => {
 
   // Filtered and sorted products
   const filteredProducts = useMemo(() => {
-    return products
+    const filtered = products
       .filter((p) => p.isPublished)
       .filter((p) => {
         // Search filter
@@ -73,14 +110,9 @@ export const ProductsPage: React.FC = () => {
         if (onlyOffers && !p.isSpecialOffer) return false;
 
         return true;
-      })
-      .sort((a, b) => {
-        if (sortOption === 'price_asc') return a.price - b.price;
-        if (sortOption === 'price_desc') return b.price - a.price;
-        if (sortOption === 'discount') return (b.discountPercentage || 0) - (a.discountPercentage || 0);
-        if (sortOption === 'newest') return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-        return b.rating - a.rating; // recommended
       });
+
+    return sortProducts(filtered, sortOption);
   }, [
     products,
     searchQuery,
@@ -112,12 +144,12 @@ export const ProductsPage: React.FC = () => {
     onlyOffers;
 
   return (
-    <div className="py-8 md:py-14 bg-white min-h-screen">
+    <div className="py-8 md:py-14 bg-white dark:bg-[#0A0F1D] min-h-screen transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Page Title & Breadcrumb Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-[#DCE5F0]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-[#DCE5F0] dark:border-[#1E293B]">
           <div>
-            <h1 className="text-2xl sm:text-4xl font-black text-[#172033] tracking-tight">
+            <h1 className="text-2xl sm:text-4xl font-black text-[#172033] dark:text-[#F8FAFC] tracking-tight">
               {activeCategory
                 ? lang === 'ar'
                   ? activeCategory.nameAr
@@ -130,7 +162,7 @@ export const ProductsPage: React.FC = () => {
                 ? 'كافة المنتجات والإلكترونيات'
                 : 'All Products & Electronics'}
             </h1>
-            <p className="text-[#64748B] text-xs sm:text-sm mt-1">
+            <p className="text-[#64748B] dark:text-slate-400 text-xs sm:text-sm mt-1">
               {lang === 'ar'
                 ? `عرض ${filteredProducts.length} منتج متوفر للتوصيل في لبنان أو الاستلام من صيدا.`
                 : `Showing ${filteredProducts.length} products available for Lebanon delivery or Saida pickup.`}
@@ -148,20 +180,25 @@ export const ProductsPage: React.FC = () => {
               <span>{t.filterBy}</span>
             </button>
 
-            {/* Sort Dropdown */}
-            <div className="flex items-center gap-1.5 bg-[#F5F8FC] border border-[#DCE5F0] rounded-xl px-3 py-1.5 text-xs">
-              <span className="text-[#64748B] font-semibold">{t.sortBy}:</span>
+            {/* Enhanced Sort Dropdown */}
+            <div className="flex items-center gap-2 bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] dark:hover:border-[#007AFF] rounded-2xl px-3.5 py-2 text-xs transition-colors shadow-xs group">
+              <ArrowUpDown className="w-3.5 h-3.5 text-[#007AFF] group-hover:scale-110 transition-transform" />
+              <span className="text-[#64748B] dark:text-slate-400 font-semibold hidden md:inline">{t.sortBy}:</span>
               <select
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value)}
                 aria-label={t.sortBy}
-                className="bg-transparent text-[#172033] font-bold focus:outline-none cursor-pointer"
+                className="bg-transparent text-[#172033] dark:text-[#F8FAFC] font-extrabold focus:outline-none cursor-pointer pr-1"
               >
-                <option value="recommended">{t.sortRecommended}</option>
-                <option value="price_asc">{t.sortPriceLow}</option>
-                <option value="price_desc">{t.sortPriceHigh}</option>
-                <option value="discount">{t.sortDiscount}</option>
-                <option value="newest">{t.sortNewest}</option>
+                {SORT_OPTIONS.map((opt) => (
+                  <option
+                    key={opt.value}
+                    value={opt.value}
+                    className="bg-white dark:bg-[#111A2E] text-[#172033] dark:text-[#F8FAFC]"
+                  >
+                    {opt.icon} {lang === 'ar' ? opt.labelAr : opt.labelEn}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -359,6 +396,33 @@ export const ProductsPage: React.FC = () => {
               </div>
             )}
 
+            {/* Quick Sorting Filter Pills */}
+            <div className="flex flex-wrap items-center gap-2 mb-6 p-2 rounded-2xl bg-[#F8FAFC] dark:bg-[#111A2E]/60 border border-[#DCE5F0] dark:border-[#1E293B]">
+              <span className="text-xs font-bold text-[#64748B] dark:text-slate-400 flex items-center gap-1.5 px-2">
+                <ArrowUpDown className="w-3.5 h-3.5 text-[#007AFF]" />
+                {lang === 'ar' ? 'ترتيب سريع:' : 'Quick Sort:'}
+              </span>
+              <div className="flex flex-wrap items-center gap-1.5">
+                {SORT_OPTIONS.map((opt) => {
+                  const isActive = sortOption === opt.value;
+                  return (
+                    <button
+                      key={opt.value}
+                      onClick={() => setSortOption(opt.value)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                        isActive
+                          ? 'bg-[#007AFF] text-white shadow-sm shadow-[#007AFF]/30 scale-102 ring-2 ring-[#007AFF]/25'
+                          : 'bg-white dark:bg-[#152033] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] text-[#172033] dark:text-slate-300 border border-[#DCE5F0] dark:border-[#1E293B]'
+                      }`}
+                    >
+                      <span>{opt.icon}</span>
+                      <span>{lang === 'ar' ? opt.labelAr : opt.labelEn}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             {filteredProducts.length > 0 ? (
               <div
                 className={`grid gap-5 ${
@@ -384,7 +448,7 @@ export const ProductsPage: React.FC = () => {
                 <p className="text-xs text-[#64748B] max-w-sm mx-auto mb-6">
                   {lang === 'ar'
                     ? 'جرب تقليل شروط التصفية أو البحث عن مسمى آخر أو تواصل معنا عبر واتساب للمساعدة.'
-                    : 'Try broadening your filters or contact our Saida shop directly at 03 099 889.'}
+                    : 'Try broadening your filters or contact our Saida shop directly at 81 900 916.'}
                 </p>
                 <button
                   onClick={clearAllFilters}
@@ -414,6 +478,36 @@ export const ProductsPage: React.FC = () => {
               >
                 <X className="w-5 h-5" />
               </button>
+            </div>
+
+            {/* Mobile Sort Options */}
+            <div>
+              <span className="text-xs font-bold text-[#172033] block mb-2.5 flex items-center gap-1.5">
+                <ArrowUpDown className="w-3.5 h-3.5 text-[#007AFF]" />
+                {t.sortBy}
+              </span>
+              <div className="space-y-1.5">
+                {SORT_OPTIONS.map((opt) => (
+                  <button
+                    key={opt.value}
+                    onClick={() => {
+                      setSortOption(opt.value);
+                      setMobileFilterOpen(false);
+                    }}
+                    className={`w-full text-left rtl:text-right px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                      sortOption === opt.value
+                        ? 'bg-[#007AFF] text-white shadow-xs'
+                        : 'bg-slate-50 hover:bg-slate-100 text-[#172033]'
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span>{opt.icon}</span>
+                      <span>{lang === 'ar' ? opt.labelAr : opt.labelEn}</span>
+                    </span>
+                    {sortOption === opt.value && <Check className="w-3.5 h-3.5" />}
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Price Max */}

@@ -8,10 +8,11 @@ import {
   Phone,
   Banknote,
   MessageSquare,
-  AlertCircle,
   CheckCircle2,
   Lock,
+  AlertCircle,
 } from 'lucide-react';
+import { WhatsApp3DIcon } from '../components/icons/ThreeDIcons';
 
 export const CheckoutPage: React.FC = () => {
   const {
@@ -70,8 +71,8 @@ export const CheckoutPage: React.FC = () => {
     if (!phone.trim() || phone.replace(/\D/g, '').length < 7) {
       setErrorMessage(
         lang === 'ar'
-          ? 'يرجى إدخال رقم هاتف لبناني صالح (مثال: 03 099 889 أو 70 xxx xxx)'
-          : 'Please provide a valid Lebanese phone number (e.g. 03 099 889)'
+          ? 'يرجى إدخال رقم هاتف لبناني صالح (مثال: 81 900 916 أو 70 xxx xxx)'
+          : 'Please provide a valid Lebanese phone number (e.g. 81 900 916)'
       );
       return;
     }
@@ -204,7 +205,7 @@ export const CheckoutPage: React.FC = () => {
                     <input
                       type="tel"
                       required
-                      placeholder="03 099 889 / 70 xxx xxx"
+                      placeholder="81 900 916 / 70 xxx xxx"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="w-full bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] dark:text-[#F8FAFC] focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/15 font-mono transition-all"
@@ -465,10 +466,10 @@ export const CheckoutPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={handleWhatsAppInstantOrder}
-                    className="w-full py-3 px-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 text-[#16A34A] dark:text-emerald-400 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100 hover:from-emerald-100 hover:to-green-100 dark:from-emerald-950/40 dark:via-emerald-900/40 dark:to-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 font-extrabold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-sm hover:shadow-md hover:shadow-emerald-500/20 group active:scale-98"
                   >
-                    <MessageSquare className="w-4 h-4" />
-                    <span>{lang === 'ar' ? 'تأكيد وإرسال الطلب عبر واتساب 03 099 889' : 'Confirm via WhatsApp (03 099 889)'}</span>
+                    <WhatsApp3DIcon size={22} />
+                    <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (81900916)' : 'Inquire / Order on WhatsApp (81900916)'}</span>
                   </button>
                 </div>
 

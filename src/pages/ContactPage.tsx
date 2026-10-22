@@ -10,6 +10,7 @@ import {
   Building2,
   Sparkles,
 } from 'lucide-react';
+import { WhatsApp3DIcon } from '../components/icons/ThreeDIcons';
 import { checkStoreOpenStatus } from '../utils/storeSchedule';
 
 export const ContactPage: React.FC = () => {
@@ -72,8 +73,8 @@ export const ContactPage: React.FC = () => {
 
               {/* WhatsApp */}
               <div className="flex items-start gap-3.5 text-xs">
-                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#16A34A] flex items-center justify-center flex-shrink-0">
-                  <MessageSquare className="w-4 h-4" />
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center flex-shrink-0 shadow-sm">
+                  <WhatsApp3DIcon size={24} />
                 </div>
                 <div>
                   <span className="text-[#64748B] block font-semibold">{lang === 'ar' ? 'خدمة واتساب الرسمية:' : 'Official WhatsApp:'}</span>

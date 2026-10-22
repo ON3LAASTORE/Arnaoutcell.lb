@@ -64,7 +64,7 @@ const DEMO_USERS: Record<string, AdminUser> = {
   admin: {
     id: 'u-1',
     username: 'admin',
-    name: 'Ahmad Arnaout',
+    name: '3Laa Hassan',
     role: 'super_admin',
     email: 'admin@arnaoutcell.com',
   },
@@ -98,7 +98,14 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     if (typeof window !== 'undefined') {
       try {
         const raw = localStorage.getItem('arnaout_admin_user');
-        return raw ? JSON.parse(raw) : null;
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed.role === 'super_admin' || parsed.username === 'admin') {
+            parsed.name = '3Laa Hassan';
+          }
+          return parsed;
+        }
+        return null;
       } catch {
         return null;
       }
@@ -142,10 +149,11 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     // Custom role login
     if (role && trimmedUser.length >= 3) {
+      const isSuper = role === 'super_admin' || trimmedUser === 'admin';
       const newUser: AdminUser = {
         id: `u-${Date.now()}`,
         username: trimmedUser,
-        name: trimmedUser.charAt(0).toUpperCase() + trimmedUser.slice(1),
+        name: isSuper ? '3Laa Hassan' : trimmedUser.charAt(0).toUpperCase() + trimmedUser.slice(1),
         role,
         email: `${trimmedUser}@arnaoutcell.com`,
       };
@@ -154,10 +162,11 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
 
     // Default to super_admin if authorized
+    const isSuper = (role || 'super_admin') === 'super_admin' || trimmedUser === 'admin';
     setUser({
       id: `u-${Date.now()}`,
       username: trimmedUser,
-      name: trimmedUser.charAt(0).toUpperCase() + trimmedUser.slice(1),
+      name: isSuper ? '3Laa Hassan' : trimmedUser.charAt(0).toUpperCase() + trimmedUser.slice(1),
       role: role || 'super_admin',
       email: `${trimmedUser}@arnaoutcell.com`,
     });
@@ -172,7 +181,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const adminProfile: AdminUser = {
           id: fbUser.uid,
           username: fbUser.email?.split('@')[0] || 'admin',
-          name: fbUser.displayName || 'Authorized Admin',
+          name: fbUser.displayName || (isAdminEmail ? '3Laa Hassan' : 'Authorized Admin'),
           role: isAdminEmail ? 'super_admin' : 'product_manager',
           email: fbUser.email || 'optimatech.lb@gmail.com',
         };
@@ -191,7 +200,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         const adminProfile: AdminUser = {
           id: result.user.uid,
           username: result.user.email?.split('@')[0] || 'admin',
-          name: result.user.displayName || 'Authorized Admin',
+          name: result.user.displayName || (isAdminEmail ? '3Laa Hassan' : 'Authorized Admin'),
           role: isAdminEmail ? 'super_admin' : 'product_manager',
           email: result.user.email || 'optimatech.lb@gmail.com',
         };

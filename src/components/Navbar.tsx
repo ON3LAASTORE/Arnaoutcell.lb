@@ -21,6 +21,7 @@ import { querySearchSuggestions } from '../utils/searchSuggestions';
 import { SearchSuggestionsDropdown } from './SearchSuggestionsDropdown';
 import { trackSearchQuery } from '../services/searchAnalyticsService';
 import { Product, Category } from '../types';
+import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 
 export const Navbar: React.FC = () => {
   const {
@@ -286,6 +287,18 @@ export const Navbar: React.FC = () => {
 
           {/* Quick Actions & Cart */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* WhatsApp 3D direct link */}
+            <a
+              href="https://wa.me/96181900916"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition-all group hover:shadow-sm"
+              title="WhatsApp: 81 900 916"
+            >
+              <WhatsApp3DIcon size={18} />
+              <span>81 900 916</span>
+            </a>
+
             {/* Call button */}
             <a
               href="tel:81900916"

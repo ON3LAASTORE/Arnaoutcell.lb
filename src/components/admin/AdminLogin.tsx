@@ -224,7 +224,7 @@ export const AdminLogin: React.FC = () => {
                     : 'bg-[#F5F8FC] hover:bg-[#EAF3FF]/50 border-[#DCE5F0] text-[#172033]'
                 }`}
               >
-                Super Admin
+                3Laa Hassan (Super Admin)
               </button>
               <button
                 type="button"
