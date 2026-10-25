@@ -47,7 +47,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-[#F5F8FC] text-[#172033] flex flex-col lg:flex-row">
+    <div className="min-h-[100dvh] w-full bg-[#F5F8FC] text-[#172033] flex flex-col lg:flex-row">
       {/* Mobile Top Header */}
       <div className="lg:hidden bg-white border-b border-[#DCE5F0] p-4 flex items-center justify-between sticky top-0 z-30 shadow-xs">
         <div className="flex items-center gap-2">

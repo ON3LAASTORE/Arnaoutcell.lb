@@ -129,7 +129,7 @@ export const ProductDetailPage: React.FC = () => {
     .slice(0, 4);
 
   return (
-    <div className="py-10 md:py-16 bg-[#FFFFFF] min-h-screen">
+    <div className="py-10 md:py-16 bg-[#FFFFFF] dark:bg-[#0A0F1D] min-h-[100dvh] w-full transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Breadcrumb Navigation */}
         <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-xs text-[#64748B] mb-8 overflow-x-auto whitespace-nowrap pb-2">

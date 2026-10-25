@@ -9,7 +9,7 @@ import { CustomerTrust } from '../components/CustomerTrust';
 
 export const HomePage: React.FC = () => {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-[100dvh] w-full">
       <HeroSection />
       <SpecialOffersColumn />
       <CategoryGrid />

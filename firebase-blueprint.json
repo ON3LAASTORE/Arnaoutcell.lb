@@ -126,6 +126,133 @@
         }
       },
       "required": ["email", "role"]
+    },
+    "Product": {
+      "title": "Product",
+      "description": "Store merchandise product with specifications, pricing, stock, high-res images, and multi-language descriptions",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique product SKU or identifier",
+          "maxLength": 128
+        },
+        "name": {
+          "type": "string",
+          "description": "English product title",
+          "maxLength": 255
+        },
+        "nameAr": {
+          "type": "string",
+          "description": "Arabic product title",
+          "maxLength": 255
+        },
+        "brand": {
+          "type": "string",
+          "description": "Manufacturer or brand name",
+          "maxLength": 64
+        },
+        "category": {
+          "type": "string",
+          "description": "Department or category name",
+          "maxLength": 64
+        },
+        "subcategory": {
+          "type": "string",
+          "description": "Optional subcategory name",
+          "maxLength": 64
+        },
+        "sku": {
+          "type": "string",
+          "description": "Stock Keeping Unit code",
+          "maxLength": 64
+        },
+        "barcode": {
+          "type": "string",
+          "description": "Barcode or serial identifier",
+          "maxLength": 64
+        },
+        "originalPrice": {
+          "type": "number",
+          "description": "Original retail price in USD"
+        },
+        "price": {
+          "type": "number",
+          "description": "Active selling price in USD"
+        },
+        "discountPercentage": {
+          "type": "number",
+          "description": "Calculated discount percentage"
+        },
+        "stock": {
+          "type": "number",
+          "description": "Available inventory units in Saida store"
+        },
+        "lowStockThreshold": {
+          "type": "number",
+          "description": "Threshold for low stock warnings"
+        },
+        "images": {
+          "type": "array",
+          "description": "List of high-resolution product image URLs"
+        },
+        "videoUrl": {
+          "type": "string",
+          "description": "Optional demonstration video link",
+          "maxLength": 512
+        },
+        "description": {
+          "type": "string",
+          "description": "English rich product overview",
+          "maxLength": 5000
+        },
+        "descriptionAr": {
+          "type": "string",
+          "description": "Arabic rich product overview",
+          "maxLength": 5000
+        },
+        "specifications": {
+          "type": "array",
+          "description": "Technical specifications"
+        },
+        "colors": {
+          "type": "array",
+          "description": "Available color variants"
+        },
+        "rating": {
+          "type": "number",
+          "description": "Customer average rating score (1-5)"
+        },
+        "reviewCount": {
+          "type": "number",
+          "description": "Number of customer reviews"
+        },
+        "isSpecialOffer": {
+          "type": "boolean",
+          "description": "Whether product is in special offers spotlight"
+        },
+        "isFeatured": {
+          "type": "boolean",
+          "description": "Whether product is in featured spotlight"
+        },
+        "isNewArrival": {
+          "type": "boolean",
+          "description": "Whether product is marked as newest arrival"
+        },
+        "isPublished": {
+          "type": "boolean",
+          "description": "Whether product is visible on public storefront"
+        },
+        "warrantyMonths": {
+          "type": "number",
+          "description": "Official Lebanese warranty period in months"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO creation timestamp"
+        }
+      },
+      "required": ["id", "name", "brand", "category", "sku", "price", "stock", "images", "description", "isPublished"]
     }
   },
   "firestore": {
@@ -146,6 +273,12 @@
         "$ref": "AdminProfile"
       },
       "description": "RBAC admin access control mapping"
+    },
+    "/products/{productId}": {
+      "schema": {
+        "$ref": "Product"
+      },
+      "description": "Store electronics inventory catalog documents synced live across clients"
     }
   }
 }

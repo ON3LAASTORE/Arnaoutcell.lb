@@ -63,7 +63,7 @@ export const CartPage: React.FC = () => {
   }
 
   return (
-    <div className="py-12 md:py-20 bg-white dark:bg-[#0A0F1D] text-[#172033] dark:text-[#F8FAFC] min-h-screen transition-colors duration-200">
+    <div className="py-12 md:py-20 bg-white dark:bg-[#0A0F1D] text-[#172033] dark:text-[#F8FAFC] min-h-[100dvh] w-full transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8 pb-4 border-b border-[#DCE5F0] dark:border-[#1E293B]">
           <div>

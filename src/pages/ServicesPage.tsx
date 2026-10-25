@@ -17,7 +17,7 @@ export const ServicesPage: React.FC = () => {
   const { lang, storeSettings } = useShop();
 
   return (
-    <div className="py-12 md:py-20 bg-white min-h-screen">
+    <div className="py-12 md:py-20 bg-white dark:bg-[#0A0F1D] min-h-[100dvh] w-full transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
@@ -143,6 +143,30 @@ export const ServicesPage: React.FC = () => {
                 <span>{lang === 'ar' ? 'دعم كامل للمغتربين وعائلاتهم' : 'Support for diaspora remittances'}</span>
               </div>
             </div>
+
+            {/* Direct Line for Western Union: 03 099 899 */}
+            <div className="pt-4 border-t border-[#DCE5F0] flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span className="text-[#64748B] font-semibold">{lang === 'ar' ? 'الخط المباشر لويسترن يونيون:' : 'Western Union Direct Line:'}</span>
+              <div className="flex items-center gap-2">
+                <a
+                  href="tel:03099899"
+                  className="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 border border-amber-300 text-amber-900 font-bold flex items-center gap-1.5 transition-colors"
+                >
+                  <Phone className="w-3.5 h-3.5 text-amber-700" />
+                  <span>03 099 899</span>
+                </a>
+                <a
+                  href="https://wa.me/96103099899?text=Hello%20Arnaout%20Cell%2C%20I%20have%20an%20inquiry%20regarding%20Western%20Union%20money%20transfers"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold flex items-center gap-1 transition-all"
+                  title="WhatsApp: 03 099 899"
+                >
+                  <WhatsApp3DIcon size={16} />
+                  <span>واتساب</span>
+                </a>
+              </div>
+            </div>
           </div>
 
           {/* Whish Money */}
@@ -205,6 +229,30 @@ export const ServicesPage: React.FC = () => {
               <div className="flex items-center gap-2">
                 <CheckCircle className="w-4 h-4 text-[#16A34A]" />
                 <span>{lang === 'ar' ? 'شحن فوري للأيام والدولارات' : 'Instant days and recharge top-ups'}</span>
+              </div>
+            </div>
+
+            {/* Direct Line for Touch Store: 03 099 899 */}
+            <div className="pt-4 border-t border-[#DCE5F0] flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span className="text-[#64748B] font-semibold">{lang === 'ar' ? 'الخط المباشر لتوتش ستور:' : 'Touch Store Direct Line:'}</span>
+              <div className="flex items-center gap-2">
+                <a
+                  href="tel:03099899"
+                  className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold flex items-center gap-1.5 transition-colors"
+                >
+                  <Phone className="w-3.5 h-3.5 text-emerald-700" />
+                  <span>03 099 899</span>
+                </a>
+                <a
+                  href="https://wa.me/96103099899?text=Hello%20Arnaout%20Cell%2C%20I%20have%20an%20inquiry%20regarding%20Touch%20telecom%20services"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold flex items-center gap-1 transition-all"
+                  title="WhatsApp: 03 099 899"
+                >
+                  <WhatsApp3DIcon size={16} />
+                  <span>واتساب</span>
+                </a>
               </div>
             </div>
           </div>

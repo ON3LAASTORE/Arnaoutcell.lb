@@ -171,13 +171,32 @@ export const ServiceSection: React.FC = () => {
                   <span>{lang === 'ar' ? 'صيدا - ساحة النجمة' : 'Saida, Nijme Square'}</span>
                 </div>
 
-                <a
-                  href="tel:81900916"
-                  className="px-4 py-2 rounded-xl bg-[#F5F8FC] hover:bg-[#EAF3FF] border border-[#DCE5F0] text-[#172033] font-bold flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <Phone className="w-3.5 h-3.5 text-[#007AFF]" />
-                  <span>81 900 916</span>
-                </a>
+                <div className="flex items-center gap-2">
+                  <a
+                    href={`tel:${svc.id === 'western-union' || svc.id === 'touch-store' ? '03099899' : '81900916'}`}
+                    className={`px-3 py-1.5 rounded-xl border font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer ${
+                      svc.id === 'western-union' || svc.id === 'touch-store'
+                        ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-300 hover:bg-amber-100'
+                        : 'bg-[#F5F8FC] dark:bg-[#111A2E] hover:bg-[#EAF3FF] border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC]'
+                    }`}
+                    title={svc.id === 'western-union' || svc.id === 'touch-store' ? 'Western Union & Touch Hotline: 03 099 899' : 'Store Hotline: 81 900 916'}
+                  >
+                    <Phone className="w-3.5 h-3.5 text-[#007AFF]" />
+                    <span>{svc.id === 'western-union' || svc.id === 'touch-store' ? '03 099 899' : '81 900 916'}</span>
+                  </a>
+                  {(svc.id === 'western-union' || svc.id === 'touch-store') && (
+                    <a
+                      href="https://wa.me/96103099899?text=Hello%20Arnaout%20Cell%2C%20I%20have%20an%20inquiry%20regarding%20Western%20Union%20or%20Touch%20service"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 font-bold text-xs flex items-center gap-1 transition-all"
+                      title="WhatsApp: 03 099 899"
+                    >
+                      <WhatsApp3DIcon size={16} />
+                      <span className="text-[11px]">03 099 899</span>
+                    </a>
+                  )}
+                </div>
               </div>
             </div>
           ))}

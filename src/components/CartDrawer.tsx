@@ -158,7 +158,10 @@ export const CartDrawer: React.FC = () => {
 
           {/* Footer Checkout Summary */}
           {cart.length > 0 && (
-            <div className="p-5 border-t border-[#DCE5F0] dark:border-[#1E293B] bg-[#F5F8FC] dark:bg-[#111A2E] space-y-4">
+            <div
+              style={{ paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 1.25rem)' }}
+              className="p-5 border-t border-[#DCE5F0] dark:border-[#1E293B] bg-[#F5F8FC] dark:bg-[#111A2E] space-y-4"
+            >
               <div className="flex items-center justify-between text-sm">
                 <span className="text-[#64748B] dark:text-slate-400 font-medium">{t.subtotal}</span>
                 <span className="text-xl font-black text-[#007AFF] dark:text-[#38BDF8]">${cartSubtotal} USD</span>

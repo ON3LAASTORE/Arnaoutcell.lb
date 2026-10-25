@@ -215,7 +215,15 @@ export const ProductQuickViewModal: React.FC = () => {
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 md:p-8 overflow-y-auto">
+      <div
+        style={{
+          paddingTop: 'max(env(safe-area-inset-top, 0px), 0.75rem)',
+          paddingBottom: 'max(env(safe-area-inset-bottom, 0px), 0.75rem)',
+          paddingLeft: 'max(env(safe-area-inset-left, 0px), 0.75rem)',
+          paddingRight: 'max(env(safe-area-inset-right, 0px), 0.75rem)',
+        }}
+        className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto"
+      >
         {/* Layered Glassmorphic Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}

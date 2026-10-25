@@ -214,17 +214,17 @@ export const AdminProducts: React.FC = () => {
     setIsModalOpen(false);
     setFeedback({
       type: 'success',
-      msg: `Product "${savedProduct.name}" saved successfully.`,
+      msg: `Product "${savedProduct.name}" saved and live in database.`,
     });
-    setTimeout(() => setFeedback(null), 3000);
+    setTimeout(() => setFeedback(null), 3500);
   };
 
   const handleDelete = (id: string, name: string) => {
     if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
       deleteProduct(id);
       refreshData();
-      setFeedback({ type: 'success', msg: `Product deleted.` });
-      setTimeout(() => setFeedback(null), 3000);
+      setFeedback({ type: 'success', msg: `Product deleted and removed from live database.` });
+      setTimeout(() => setFeedback(null), 3500);
     }
   };
 

@@ -11,7 +11,7 @@ export const BrandsPage: React.FC = () => {
   );
 
   return (
-    <div className="py-12 md:py-20 bg-white min-h-screen">
+    <div className="py-12 md:py-20 bg-white dark:bg-[#0A0F1D] min-h-[100dvh] w-full transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10 pb-6 border-b border-[#DCE5F0]">
           <div>

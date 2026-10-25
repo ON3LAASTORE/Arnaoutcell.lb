@@ -163,12 +163,27 @@ export function saveProduct(product: Product): Product {
     products.unshift(product);
   }
   saveProducts(products);
+
+  // Automatically persist to Firebase Firestore live cloud database
+  import('./productFirestoreService').then(({ persistProductToCloud }) => {
+    persistProductToCloud(product).catch((err) => {
+      console.warn('Live product sync notice:', err);
+    });
+  });
+
   return product;
 }
 
 export function deleteProduct(productId: string): void {
   const products = getProducts().filter((p) => p.id !== productId);
   saveProducts(products);
+
+  // Automatically remove from Firebase Firestore live cloud database
+  import('./productFirestoreService').then(({ removeProductFromCloud }) => {
+    removeProductFromCloud(productId).catch((err) => {
+      console.warn('Live product deletion notice:', err);
+    });
+  });
 }
 
 // Categories

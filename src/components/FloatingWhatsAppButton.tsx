@@ -60,7 +60,12 @@ export const FloatingWhatsAppButton: React.FC = () => {
 
   return (
     <div
-      className={`fixed bottom-6 right-6 rtl:right-auto rtl:left-6 z-50 flex items-end gap-3 select-none pointer-events-auto transition-transform ${
+      style={{
+        bottom: 'max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1rem))',
+        right: lang === 'ar' ? 'auto' : 'max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1rem))',
+        left: lang === 'ar' ? 'max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1rem))' : 'auto',
+      }}
+      className={`fixed z-50 flex items-end gap-3 select-none pointer-events-auto transition-transform ${
         lang === 'ar' ? 'flex-row-reverse' : 'flex-row'
       }`}
     >

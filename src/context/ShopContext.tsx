@@ -19,7 +19,12 @@ import {
   getMarketingVideos,
   getStoreSettings,
   createOrder as createOrderStorage,
+  saveProducts,
 } from '../services/storageService';
+import {
+  subscribeToLiveProducts,
+  seedInitialProductsToCloud,
+} from '../services/productFirestoreService';
 
 interface ShopContextType {
   lang: Language;
@@ -157,10 +162,28 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [lastCompletedOrder, setLastCompletedOrder] = useState<Order | null>(null);
 
-  // Initialize data on mount
+  // Initialize data on mount and subscribe to real-time live product updates
   useEffect(() => {
     initStorage();
     refreshData();
+
+    // Attach real-time cloud listener for live updates across all devices
+    const unsubscribe = subscribeToLiveProducts(
+      (liveProducts) => {
+        if (liveProducts && liveProducts.length > 0) {
+          setProducts(liveProducts);
+          saveProducts(liveProducts);
+        }
+      },
+      () => {
+        // If cloud database is empty, seed initial catalog
+        seedInitialProductsToCloud().catch(console.error);
+      }
+    );
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   // Update HTML direction when language changes

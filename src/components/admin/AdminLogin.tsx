@@ -46,14 +46,8 @@ export const AdminLogin: React.FC = () => {
     }
   };
 
-  const selectDemoRole = (userVal: string, roleVal: AdminRole) => {
-    setUsername(userVal);
-    setRole(roleVal);
-    setError('');
-  };
-
   return (
-    <div className="min-h-screen py-16 bg-[#F5F8FC] flex items-center justify-center px-4 relative overflow-hidden">
+    <div className="min-h-[100dvh] w-full py-16 bg-[#F5F8FC] flex items-center justify-center px-4 relative overflow-hidden">
       {/* Background Subtle Gradient Blobs */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[32rem] h-[32rem] bg-[#007AFF]/10 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-80 h-80 bg-blue-100/60 blur-[90px] rounded-full pointer-events-none" />
@@ -124,9 +118,6 @@ export const AdminLogin: React.FC = () => {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              <p className="text-[10px] text-[#64748B] mt-1">
-                {lang === 'ar' ? 'كلمة المرور التجريبية: admin123' : 'Demo password: admin123'}
-              </p>
             </div>
 
             <div>
@@ -209,61 +200,10 @@ export const AdminLogin: React.FC = () => {
             </button>
           </form>
 
-          {/* Quick Demo Switcher - ONLY sets username/role, never pre-fills passwords */}
-          <div className="pt-4 border-t border-[#DCE5F0] space-y-2">
-            <span className="text-[11px] font-bold text-[#64748B] block uppercase tracking-wider text-center">
-              {lang === 'ar' ? 'اختيار حساب الإدارة السريع:' : 'Quick Profile Switcher:'}
-            </span>
-            <div className="grid grid-cols-2 gap-1.5 text-[10px]">
-              <button
-                type="button"
-                onClick={() => selectDemoRole('admin', 'super_admin')}
-                className={`p-2 rounded-lg border text-left rtl:text-right font-semibold truncate transition-colors cursor-pointer ${
-                  username === 'admin'
-                    ? 'bg-[#EAF3FF] border-[#007AFF] text-[#007AFF]'
-                    : 'bg-[#F5F8FC] hover:bg-[#EAF3FF]/50 border-[#DCE5F0] text-[#172033]'
-                }`}
-              >
-                3Laa Hassan (Super Admin)
-              </button>
-              <button
-                type="button"
-                onClick={() => selectDemoRole('products', 'product_manager')}
-                className={`p-2 rounded-lg border text-left rtl:text-right font-semibold truncate transition-colors cursor-pointer ${
-                  username === 'products'
-                    ? 'bg-[#EAF3FF] border-[#007AFF] text-[#007AFF]'
-                    : 'bg-[#F5F8FC] hover:bg-[#EAF3FF]/50 border-[#DCE5F0] text-[#172033]'
-                }`}
-              >
-                Product Manager
-              </button>
-              <button
-                type="button"
-                onClick={() => selectDemoRole('orders', 'order_manager')}
-                className={`p-2 rounded-lg border text-left rtl:text-right font-semibold truncate transition-colors cursor-pointer ${
-                  username === 'orders'
-                    ? 'bg-[#EAF3FF] border-[#007AFF] text-[#007AFF]'
-                    : 'bg-[#F5F8FC] hover:bg-[#EAF3FF]/50 border-[#DCE5F0] text-[#172033]'
-                }`}
-              >
-                Order Manager
-              </button>
-              <button
-                type="button"
-                onClick={() => selectDemoRole('inventory', 'inventory_manager')}
-                className={`p-2 rounded-lg border text-left rtl:text-right font-semibold truncate transition-colors cursor-pointer ${
-                  username === 'inventory'
-                    ? 'bg-[#EAF3FF] border-[#007AFF] text-[#007AFF]'
-                    : 'bg-[#F5F8FC] hover:bg-[#EAF3FF]/50 border-[#DCE5F0] text-[#172033]'
-                }`}
-              >
-                Inventory Manager
-              </button>
-            </div>
-            <div className="flex items-center justify-center gap-1.5 text-[11px] text-[#64748B] pt-2">
-              <Shield className="w-3.5 h-3.5 text-[#007AFF]" />
-              <span>{lang === 'ar' ? 'جلسة مشفرة بتقنية SHA-256' : 'SHA-256 Encrypted Session'}</span>
-            </div>
+          {/* Secure Encrypted Session Footer */}
+          <div className="pt-4 border-t border-[#DCE5F0] flex items-center justify-center gap-1.5 text-[11px] text-[#64748B]">
+            <Shield className="w-3.5 h-3.5 text-[#007AFF]" />
+            <span>{lang === 'ar' ? 'جلسة مشفرة ومحمية بتقنية SHA-256' : 'SHA-256 Encrypted & Protected Session'}</span>
           </div>
         </div>
       </div>

@@ -58,6 +58,20 @@ service cloud.firestore {
         && data.role in ['super_admin', 'product_manager', 'order_manager', 'inventory_manager'];
     }
 
+    function isValidProduct(data) {
+      return data.keys().hasAll(['id', 'name', 'brand', 'category', 'sku', 'price', 'stock', 'images', 'description', 'isPublished'])
+        && data.id is string && data.id.size() > 0 && data.id.size() <= 128
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 255
+        && data.brand is string && data.brand.size() > 0 && data.brand.size() <= 64
+        && data.category is string && data.category.size() > 0 && data.category.size() <= 64
+        && data.sku is string && data.sku.size() > 0 && data.sku.size() <= 64
+        && data.price is number && data.price >= 0
+        && data.stock is number && data.stock >= 0
+        && data.images is list && data.images.size() > 0 && data.images.size() <= 30
+        && data.description is string && data.description.size() <= 5000
+        && data.isPublished is bool;
+    }
+
     // 4. Connection Test Document for getDocFromServer
     match /test/connection {
       allow read: if true;
@@ -113,6 +127,21 @@ service cloud.firestore {
       allow get: if isSignedIn() && (request.auth.uid == adminUid || isAdmin());
       allow list: if isAdmin();
       allow write: if isAdmin();
+    }
+
+    // 8. Products Collection: Public live catalog, validated management
+    match /products/{productId} {
+      allow get, list: if true;
+
+      allow create: if isValidId(productId)
+        && isValidProduct(incoming())
+        && incoming().id == productId;
+
+      allow update: if isValidId(productId)
+        && isValidProduct(incoming())
+        && incoming().id == existing().id;
+
+      allow delete: if isValidId(productId);
     }
   }
 }

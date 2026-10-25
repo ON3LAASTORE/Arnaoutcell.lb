@@ -11,7 +11,7 @@ export const PoliciesPage: React.FC<PoliciesPageProps> = ({ initialTab = 'delive
   const [activeTab, setActiveTab] = useState(initialTab.replace('policy-', ''));
 
   return (
-    <div className="py-12 md:py-20 bg-white min-h-screen">
+    <div className="py-12 md:py-20 bg-white dark:bg-[#0A0F1D] min-h-[100dvh] w-full transition-colors duration-200">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-10 space-y-2">

@@ -65,7 +65,7 @@ export const TrackOrderPage: React.FC = () => {
   const currentStepIdx = searchedOrder ? getStepIndex(searchedOrder.status) : 0;
 
   return (
-    <div className="py-12 md:py-20 bg-[#FFFFFF] min-h-screen">
+    <div className="py-12 md:py-20 bg-[#FFFFFF] dark:bg-[#0A0F1D] min-h-[100dvh] w-full transition-colors duration-200">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-xl mx-auto mb-10 space-y-2">

@@ -18,8 +18,11 @@ export const AnnouncementBar: React.FC = () => {
       style={{
         backgroundColor: bar.bgColor && bar.bgColor !== '#064e3b' ? bar.bgColor : '#007AFF',
         color: bar.textColor && bar.textColor !== '#a7f3d0' ? bar.textColor : '#FFFFFF',
+        paddingTop: 'max(env(safe-area-inset-top, 0px), 0.5rem)',
+        paddingLeft: 'max(env(safe-area-inset-left, 0px), 1rem)',
+        paddingRight: 'max(env(safe-area-inset-right, 0px), 1rem)',
       }}
-      className="relative z-50 py-2 px-4 text-xs md:text-sm font-medium border-b border-blue-400/20 transition-colors duration-300"
+      className="relative z-50 pb-2 text-xs md:text-sm font-medium border-b border-blue-400/20 transition-colors duration-300"
     >
       <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
         {/* Schedule & Live Status Pill */}

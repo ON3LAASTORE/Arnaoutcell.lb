@@ -39,7 +39,7 @@ export const OrderConfirmationPage: React.FC = () => {
   };
 
   return (
-    <div className="py-12 md:py-20 bg-[#FFFFFF] min-h-screen">
+    <div className="py-12 md:py-20 bg-[#FFFFFF] dark:bg-[#0A0F1D] min-h-[100dvh] w-full transition-colors duration-200">
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         {/* Success Header */}
         <div className="text-center space-y-4 mb-10">

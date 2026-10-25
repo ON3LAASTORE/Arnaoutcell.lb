@@ -9,7 +9,7 @@ export const WishlistPage: React.FC = () => {
   const favoritedProducts = products.filter((p) => wishlist.includes(p.id));
 
   return (
-    <div className="py-12 md:py-20 bg-white min-h-screen">
+    <div className="py-12 md:py-20 bg-white dark:bg-[#0A0F1D] min-h-[100dvh] w-full transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between mb-8 pb-4 border-b border-[#DCE5F0]">
           <div>
