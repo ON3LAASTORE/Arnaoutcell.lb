@@ -25,24 +25,24 @@ import { ServicesPage } from './pages/ServicesPage';
 import { ContactPage } from './pages/ContactPage';
 import { PoliciesPage } from './pages/PoliciesPage';
 import { AdminPage } from './pages/AdminPage';
+import { SEOHead } from './components/SEOHead';
 
 const AppContent: React.FC = () => {
-  const { currentView, storeSettings } = useShop();
-
-  // Dynamic browser tab title synchronization
-  React.useEffect(() => {
-    const storeName = storeSettings.storeName || 'ARNAOUT STORE';
-    const tagline = storeSettings.tagline || 'Your Home in Electronics 🏠';
-    document.title = `${storeName} | ${tagline}`;
-  }, [storeSettings.storeName, storeSettings.tagline]);
+  const { currentView } = useShop();
 
   // If in admin view, AdminPage has its own dedicated dashboard shell
   if (currentView === 'admin') {
-    return <AdminPage />;
+    return (
+      <>
+        <SEOHead />
+        <AdminPage />
+      </>
+    );
   }
 
   return (
     <div className="flex flex-col min-h-[100dvh] w-full overflow-x-hidden bg-[#FFFFFF] dark:bg-[#0A0F1D] text-[#172033] dark:text-[#F8FAFC] selection:bg-[#007AFF] selection:text-white transition-colors duration-200">
+      <SEOHead />
       <AnnouncementBar />
       <Navbar />
 

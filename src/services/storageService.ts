@@ -6,6 +6,12 @@ import {
   INITIAL_MARKETING_VIDEOS,
   INITIAL_STORE_SETTINGS,
 } from '../data/initialData';
+import {
+  persistProductToCloud,
+  removeProductFromCloud,
+} from './productFirestoreService';
+import { db } from '../firebase';
+import { doc, setDoc, updateDoc } from 'firebase/firestore';
 
 const KEYS = {
   PRODUCTS: 'arnaout_cell_products_v2',
@@ -165,10 +171,8 @@ export function saveProduct(product: Product): Product {
   saveProducts(products);
 
   // Automatically persist to Firebase Firestore live cloud database
-  import('./productFirestoreService').then(({ persistProductToCloud }) => {
-    persistProductToCloud(product).catch((err) => {
-      console.warn('Live product sync notice:', err);
-    });
+  persistProductToCloud(product).catch((err) => {
+    console.warn('Live product sync notice:', err);
   });
 
   return product;
@@ -179,10 +183,8 @@ export function deleteProduct(productId: string): void {
   saveProducts(products);
 
   // Automatically remove from Firebase Firestore live cloud database
-  import('./productFirestoreService').then(({ removeProductFromCloud }) => {
-    removeProductFromCloud(productId).catch((err) => {
-      console.warn('Live product deletion notice:', err);
-    });
+  removeProductFromCloud(productId).catch((err) => {
+    console.warn('Live product deletion notice:', err);
   });
 }
 
@@ -318,9 +320,7 @@ export function createOrder(orderData: Omit<Order, 'id' | 'orderDate' | 'statusH
 
   // Sync to Firestore in background
   if (typeof window !== 'undefined') {
-    import('../firebase').then(({ db }) => {
-      import('firebase/firestore').then(({ doc, setDoc }) => {
-        setDoc(doc(db, 'orders', newOrder.id), {
+    setDoc(doc(db, 'orders', newOrder.id), {
           id: newOrder.id,
           customer: newOrder.customer,
           items: newOrder.items,
@@ -332,8 +332,6 @@ export function createOrder(orderData: Omit<Order, 'id' | 'orderDate' | 'statusH
           orderDate: newOrder.orderDate,
           statusHistory: newOrder.statusHistory,
         }).catch((err) => console.warn('Firestore order sync:', err));
-      }).catch(() => {});
-    }).catch(() => {});
   }
 
   return newOrder;
@@ -399,14 +397,10 @@ export function updateOrderStatus(orderId: string, newStatus: OrderStatus, note?
 
   // Sync to Firestore in background
   if (typeof window !== 'undefined') {
-    import('../firebase').then(({ db }) => {
-      import('firebase/firestore').then(({ doc, updateDoc }) => {
-        updateDoc(doc(db, 'orders', orderId), {
-          status: newStatus,
-          statusHistory: currentOrder.statusHistory,
-        }).catch((err) => console.warn('Firestore status update:', err));
-      }).catch(() => {});
-    }).catch(() => {});
+    updateDoc(doc(db, 'orders', orderId), {
+      status: newStatus,
+      statusHistory: currentOrder.statusHistory,
+    }).catch((err) => console.warn('Firestore status update:', err));
   }
 
   return currentOrder;

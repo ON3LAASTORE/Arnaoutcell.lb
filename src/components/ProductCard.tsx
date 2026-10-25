@@ -23,6 +23,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     toggleWishlist,
     isInWishlist,
     setCurrentView,
+    viewProductDetail,
     storeSettings,
   } = useShop();
 
@@ -87,10 +88,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         }`}
       >
         <img
-          src={product.images[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=600'}
-          alt={product.name}
+          src={product.images[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=600&auto=format&fit=crop&q=80'}
+          alt={`${product.name} - ${product.brand} authentic tech in Lebanon`}
+          width={350}
+          height={350}
           className="w-full h-full object-contain object-center group-hover:scale-108 transition-transform duration-500"
           loading="lazy"
+          decoding="async"
         />
 
         {/* Badges Overlay */}
@@ -159,9 +163,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             )}
           </div>
 
-          {/* Product Title */}
+          {/* Crawlable Product Title */}
           <h3 className="font-bold text-[#172033] dark:text-[#F8FAFC] text-sm sm:text-base group-hover:text-[#007AFF] dark:group-hover:text-[#38BDF8] transition-colors line-clamp-2 leading-snug">
-            {lang === 'ar' ? product.nameAr || product.name : product.name}
+            <a
+              href={`#/product/${product.id}`}
+              onClick={(e) => {
+                e.preventDefault();
+                viewProductDetail(product.id, false);
+              }}
+              className="hover:underline focus:outline-none"
+              title={`${product.name} - ${product.brand} Lebanon`}
+            >
+              {lang === 'ar' ? product.nameAr || product.name : product.name}
+            </a>
           </h3>
 
           {/* Rating & Warranty Row */}

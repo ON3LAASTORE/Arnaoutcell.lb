@@ -156,7 +156,11 @@ export const ProductDetailPage: React.FC = () => {
             >
               <img
                 src={product.images[activeImageIndex] || product.images[0]}
-                alt={product.name}
+                alt={`${product.name} - ${product.brand} authentic tech at ARNAOUT STORE Saida Lebanon`}
+                width={500}
+                height={500}
+                loading="eager"
+                decoding="async"
                 className="max-h-full max-w-full object-contain select-none"
               />
 
@@ -220,7 +224,15 @@ export const ProductDetailPage: React.FC = () => {
                       activeImageIndex === idx ? 'border-[#007AFF] shadow-sm' : 'border-[#DCE5F0] opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <img src={img} alt={`${product.name} thumb ${idx}`} className="w-full h-full object-contain" />
+                    <img
+                      src={img}
+                      alt={`${product.name} gallery image ${idx + 1}`}
+                      width={80}
+                      height={80}
+                      loading="lazy"
+                      decoding="async"
+                      className="w-full h-full object-contain"
+                    />
                   </button>
                 ))}
               </div>

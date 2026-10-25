@@ -10,6 +10,8 @@ import {
   Phone,
   AlertCircle,
 } from 'lucide-react';
+import { db } from '../firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 const STATUS_STEPS: { status: OrderStatus; labelEn: string; labelAr: string; descEn: string; descAr: string }[] = [
   { status: 'new', labelEn: 'New Order', labelAr: 'تم استلام الطلب', descEn: 'Order placed online', descAr: 'تم تسجيل الطلب في النظام' },
@@ -40,8 +42,6 @@ export const TrackOrderPage: React.FC = () => {
     if (!found) {
       setIsSearching(true);
       try {
-        const { db } = await import('../firebase');
-        const { doc, getDoc } = await import('firebase/firestore');
         const snap = await getDoc(doc(db, 'orders', cleanId));
         if (snap.exists()) {
           found = snap.data() as Order;

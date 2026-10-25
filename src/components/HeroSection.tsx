@@ -263,7 +263,14 @@ export const HeroSection: React.FC = () => {
                   <div className="absolute w-48 h-48 bg-[#007AFF]/25 blur-[60px] rounded-full pointer-events-none" />
                   <motion.img
                     src={currentOffer.images[0]}
-                    alt={currentOffer.name}
+                    alt={`${currentOffer.name} - ${currentOffer.brand} flagship electronics at ARNAOUT STORE Saida Lebanon`}
+                    loading="eager"
+                    // @ts-expect-error React 18 / 19 HTML fetchPriority attribute
+                    fetchpriority="high"
+                    fetchPriority="high"
+                    decoding="async"
+                    width={600}
+                    height={600}
                     className="max-h-full max-w-full object-contain filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.5)] transform hover:scale-105 transition-transform duration-500 cursor-pointer"
                     onClick={() => setQuickViewProduct(currentOffer)}
                   />

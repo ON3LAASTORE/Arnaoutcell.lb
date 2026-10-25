@@ -319,7 +319,10 @@ export const ProductQuickViewModal: React.FC = () => {
                 {/* Main Product Image with 3D Depth */}
                 <img
                   src={images[selectedImageIndex] || images[0]}
-                  alt={product.name}
+                  alt={`${product.name} - ${product.brand} interactive 3D view at ARNAOUT STORE Lebanon`}
+                  width={500}
+                  height={500}
+                  decoding="async"
                   style={{
                     transform: 'translateZ(40px)',
                     filter: 'drop-shadow(0 20px 25px rgba(0,0,0,0.22))',

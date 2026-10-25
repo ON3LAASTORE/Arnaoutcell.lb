@@ -12,6 +12,12 @@ import {
   Check,
 } from 'lucide-react';
 import { sortProducts } from '../utils/sortingHelpers';
+import { PriceFilter } from '../components/PriceFilter';
+import {
+  matchesPriceFilter,
+  countProductsPerTier,
+  BUDGET_TIERS,
+} from '../utils/priceFilterHelpers';
 
 export const ProductsPage: React.FC = () => {
   const {
@@ -29,11 +35,21 @@ export const ProductsPage: React.FC = () => {
   } = useShop();
 
   const [sortOption, setSortOption] = useState<string>('recommended');
+  const [priceMin, setPriceMin] = useState<number>(0);
   const [priceMax, setPriceMax] = useState<number>(3000);
+  const [selectedBudgetTiers, setSelectedBudgetTiers] = useState<string[]>([]);
   const [onlyInStock, setOnlyInStock] = useState<boolean>(false);
   const [onlyOffers, setOnlyOffers] = useState<boolean>(false);
   const [viewMode, setViewMode] = useState<'grid' | 'column'>('grid');
   const [mobileFilterOpen, setMobileFilterOpen] = useState<boolean>(false);
+
+  const toggleBudgetTier = (tierId: string) => {
+    setSelectedBudgetTiers((prev) =>
+      prev.includes(tierId) ? prev.filter((id) => id !== tierId) : [...prev, tierId]
+    );
+  };
+
+  const tierCounts = useMemo(() => countProductsPerTier(products), [products]);
 
   // Sorting configurations with clear descriptive labels
   const SORT_OPTIONS = [
@@ -100,8 +116,10 @@ export const ProductsPage: React.FC = () => {
           if (p.brand.toLowerCase() !== selectedBrandName.toLowerCase()) return false;
         }
 
-        // Price filter
-        if (p.price > priceMax) return false;
+        // Price & Budget filter (slider and/or budget range checkboxes)
+        if (!matchesPriceFilter(p.price, priceMin, priceMax, selectedBudgetTiers)) {
+          return false;
+        }
 
         // Stock filter
         if (onlyInStock && p.stock <= 0) return false;
@@ -119,7 +137,9 @@ export const ProductsPage: React.FC = () => {
     selectedCategorySlug,
     activeCategory,
     selectedBrandName,
+    priceMin,
     priceMax,
+    selectedBudgetTiers,
     onlyInStock,
     onlyOffers,
     sortOption,
@@ -129,7 +149,9 @@ export const ProductsPage: React.FC = () => {
     selectCategory(null);
     selectBrand(null);
     setSearchQuery('');
+    setPriceMin(0);
     setPriceMax(3000);
+    setSelectedBudgetTiers([]);
     setOnlyInStock(false);
     setOnlyOffers(false);
     setSortOption('recommended');
@@ -139,7 +161,9 @@ export const ProductsPage: React.FC = () => {
     Boolean(selectedCategorySlug) ||
     Boolean(selectedBrandName) ||
     Boolean(searchQuery.trim()) ||
+    priceMin > 0 ||
     priceMax < 3000 ||
+    selectedBudgetTiers.length > 0 ||
     onlyInStock ||
     onlyOffers;
 
@@ -246,23 +270,17 @@ export const ProductsPage: React.FC = () => {
                 )}
               </div>
 
-              {/* Price Range */}
-              <div>
-                <div className="flex items-center justify-between text-xs mb-2">
-                  <span className="text-[#172033] font-semibold">{t.priceRange}</span>
-                  <span className="font-bold text-[#007AFF]">$0 - ${priceMax}</span>
-                </div>
-                <input
-                  type="range"
-                  min="20"
-                  max="3000"
-                  step="20"
-                  value={priceMax}
-                  onChange={(e) => setPriceMax(Number(e.target.value))}
-                  aria-label={t.priceRange}
-                  className="w-full accent-[#007AFF] bg-slate-200 rounded-lg cursor-pointer"
-                />
-              </div>
+              {/* Price Range Slider & Budget Range Checkboxes */}
+              <PriceFilter
+                priceMin={priceMin}
+                setPriceMin={setPriceMin}
+                priceMax={priceMax}
+                setPriceMax={setPriceMax}
+                selectedBudgetTiers={selectedBudgetTiers}
+                toggleBudgetTier={toggleBudgetTier}
+                tierCounts={tierCounts}
+                lang={lang}
+              />
 
               {/* Toggles */}
               <div className="space-y-3 pt-2 border-t border-[#DCE5F0] text-xs">
@@ -387,6 +405,34 @@ export const ProductsPage: React.FC = () => {
                     />
                   </span>
                 )}
+                {(priceMin > 0 || priceMax < 3000) && (
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#EAF3FF] text-[#007AFF] border border-[#BAE6FD] text-xs font-semibold">
+                    <span>${priceMin} — ${priceMax}</span>
+                    <X
+                      className="w-3.5 h-3.5 cursor-pointer hover:text-[#007AFF]"
+                      onClick={() => {
+                        setPriceMin(0);
+                        setPriceMax(3000);
+                      }}
+                    />
+                  </span>
+                )}
+                {selectedBudgetTiers.map((tierId) => {
+                  const tier = BUDGET_TIERS.find((t) => t.id === tierId);
+                  if (!tier) return null;
+                  return (
+                    <span
+                      key={tierId}
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 text-[#007AFF] border border-blue-200 text-xs font-semibold"
+                    >
+                      <span>{lang === 'ar' ? tier.labelAr : tier.labelEn}</span>
+                      <X
+                        className="w-3.5 h-3.5 cursor-pointer hover:text-[#007AFF]"
+                        onClick={() => toggleBudgetTier(tierId)}
+                      />
+                    </span>
+                  );
+                })}
                 <button
                   onClick={clearAllFilters}
                   className="text-xs text-[#DC2626] hover:underline font-semibold ml-2"
@@ -510,23 +556,18 @@ export const ProductsPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Price Max */}
-            <div>
-              <div className="flex justify-between text-xs mb-2">
-                <span className="text-[#172033] font-semibold">{t.priceRange}</span>
-                <span className="text-[#007AFF] font-bold">${priceMax}</span>
-              </div>
-              <input
-                type="range"
-                min="20"
-                max="3000"
-                step="20"
-                value={priceMax}
-                onChange={(e) => setPriceMax(Number(e.target.value))}
-                aria-label={t.priceRange}
-                className="w-full accent-[#007AFF]"
-              />
-            </div>
+            {/* Price Range Slider & Budget Range Checkboxes */}
+            <PriceFilter
+              priceMin={priceMin}
+              setPriceMin={setPriceMin}
+              priceMax={priceMax}
+              setPriceMax={setPriceMax}
+              selectedBudgetTiers={selectedBudgetTiers}
+              toggleBudgetTier={toggleBudgetTier}
+              tierCounts={tierCounts}
+              lang={lang}
+              compact={true}
+            />
 
             {/* Brands */}
             <div>

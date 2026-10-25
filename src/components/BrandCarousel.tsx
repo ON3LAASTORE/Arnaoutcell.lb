@@ -47,9 +47,12 @@ export const BrandCarousel: React.FC = () => {
               <div className="w-12 h-12 rounded-full overflow-hidden bg-[#F5F8FC] dark:bg-[#0A0F1D] border border-[#DCE5F0] dark:border-[#1E293B] mb-2 p-1 flex items-center justify-center group-hover:border-[#007AFF] transition-colors">
                 <img
                   src={brand.logo}
-                  alt={brand.name}
+                  alt={`${brand.name} official electronics brand at ARNAOUT STORE Lebanon`}
+                  width={48}
+                  height={48}
                   className="w-full h-full object-cover rounded-full"
                   loading="lazy"
+                  decoding="async"
                 />
               </div>
               <span className="font-bold text-xs text-[#172033] dark:text-[#F8FAFC] group-hover:text-[#007AFF] dark:group-hover:text-[#38BDF8] transition-colors truncate max-w-full">

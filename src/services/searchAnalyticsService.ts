@@ -4,6 +4,9 @@
  * Logs to console with structured intent analysis and persists records to local mock storage.
  */
 
+import { db } from '../firebase';
+import { doc, setDoc } from 'firebase/firestore';
+
 export type SearchSource =
   | 'desktop_input_submit'
   | 'mobile_input_submit'
@@ -325,11 +328,7 @@ export async function trackSearchQuery(params: {
 
   // Sync to Firestore in background
   if (typeof window !== 'undefined') {
-    import('../firebase').then(({ db }) => {
-      import('firebase/firestore').then(({ doc, setDoc }) => {
-        setDoc(doc(db, 'search_analytics', event.id), event).catch(() => {});
-      }).catch(() => {});
-    }).catch(() => {});
+    setDoc(doc(db, 'search_analytics', event.id), event).catch(() => {});
   }
 
   // Simulate mock API resolution
