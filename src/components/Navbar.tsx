@@ -20,7 +20,7 @@ import { StoreLogo } from './StoreLogo';
 import { querySearchSuggestions } from '../utils/searchSuggestions';
 import { SearchSuggestionsDropdown } from './SearchSuggestionsDropdown';
 import { trackSearchQuery } from '../services/searchAnalyticsService';
-import { Product, Category } from '../types';
+import { Product, Category, Brand } from '../types';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 
 export const Navbar: React.FC = () => {
@@ -36,6 +36,8 @@ export const Navbar: React.FC = () => {
     setCurrentView,
     selectCategory,
     categories,
+    brands,
+    selectBrand,
     products,
     viewProductDetail,
     setSearchQuery: setGlobalSearch,
@@ -54,13 +56,15 @@ export const Navbar: React.FC = () => {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mobileSearchInputRef = useRef<HTMLInputElement>(null);
 
-  // Real-time search query matching current products & categories
-  const searchResult = querySearchSuggestions(searchInput, products, categories, {
+  // Real-time search query matching current products, categories, and brands
+  const searchResult = querySearchSuggestions(searchInput, products, categories, brands, {
     maxProducts: 6,
     maxCategories: 4,
+    maxBrands: 4,
   });
 
-  const totalInteractiveItems = searchResult.categories.length + searchResult.products.length;
+  const totalInteractiveItems =
+    searchResult.brands.length + searchResult.categories.length + searchResult.products.length;
 
   // Reset selected keyboard index when query changes
   useEffect(() => {
@@ -106,6 +110,23 @@ export const Navbar: React.FC = () => {
       productMatchesCount: searchResult.products.length,
     });
     selectCategory(category.slug);
+    setSearchFocused(false);
+    setMobileSearchFocused(false);
+    setMobileMenuOpen(false);
+    setSearchInput('');
+  };
+
+  const handleSelectBrand = (brand: Brand) => {
+    trackSearchQuery({
+      term: searchInput.trim() || brand.name,
+      // @ts-expect-error brand click tracking
+      source: 'brand_suggestion_click',
+      selectedEntityTitle: brand.name,
+      categoryMatchesCount: searchResult.categories.length,
+      productMatchesCount: searchResult.products.length,
+    });
+    selectBrand(brand.name);
+    setCurrentView('products');
     setSearchFocused(false);
     setMobileSearchFocused(false);
     setMobileMenuOpen(false);
@@ -158,11 +179,16 @@ export const Navbar: React.FC = () => {
   const handleSearchSubmit = (e?: React.FormEvent, isMobile = false) => {
     if (e) e.preventDefault();
     if (selectedIndex >= 0 && selectedIndex < totalInteractiveItems) {
-      if (selectedIndex < searchResult.categories.length) {
-        handleSelectCategory(searchResult.categories[selectedIndex]);
+      if (selectedIndex < searchResult.brands.length) {
+        handleSelectBrand(searchResult.brands[selectedIndex]);
+        return;
+      } else if (selectedIndex < searchResult.brands.length + searchResult.categories.length) {
+        const catIdx = selectedIndex - searchResult.brands.length;
+        handleSelectCategory(searchResult.categories[catIdx]);
         return;
       } else {
-        const prod = searchResult.products[selectedIndex - searchResult.categories.length];
+        const prodIdx = selectedIndex - searchResult.brands.length - searchResult.categories.length;
+        const prod = searchResult.products[prodIdx];
         handleSelectProduct(prod);
         return;
       }
@@ -275,15 +301,19 @@ export const Navbar: React.FC = () => {
             {searchFocused && (
               <SearchSuggestionsDropdown
                 query={searchInput}
+                brands={searchResult.brands}
                 categories={searchResult.categories}
                 products={searchResult.products}
                 allCategories={categories}
+                allBrands={brands}
+                totalBrandMatches={searchResult.totalBrandMatches}
                 totalCategoryMatches={searchResult.totalCategoryMatches}
                 totalProductMatches={searchResult.totalProductMatches}
                 lang={lang}
                 selectedIndex={selectedIndex}
                 onSelectProduct={handleSelectProduct}
                 onSelectCategory={handleSelectCategory}
+                onSelectBrand={handleSelectBrand}
                 onSelectPopularTerm={handleSelectPopularTerm}
                 onViewAllResults={handleViewAllResults}
                 onClose={() => setSearchFocused(false)}
@@ -395,6 +425,67 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
 
+        {/* Mobile Dedicated Global Search Bar (Directly accessible on mobile/tablet) */}
+        <div ref={mobileSearchContainerRef} className="md:hidden pb-3 relative">
+          <form onSubmit={(e) => handleSearchSubmit(e, true)}>
+            <div className="relative">
+              <input
+                ref={mobileSearchInputRef}
+                type="text"
+                placeholder={t.searchPlaceholder}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
+                onFocus={() => setMobileSearchFocused(true)}
+                onKeyDown={handleKeyDown}
+                aria-label={t.searchPlaceholder}
+                className="w-full bg-[#F5F8FC] dark:bg-[#111A2E] text-[#172033] dark:text-[#F8FAFC] placeholder-[#64748B] dark:placeholder-slate-400 text-xs sm:text-sm rounded-full pl-10 pr-22 rtl:pl-22 rtl:pr-10 py-2.5 border border-[#DCE5F0] dark:border-[#1E293B] focus:outline-none focus:border-[#007AFF] shadow-xs"
+              />
+              <Search className="w-4 h-4 text-[#64748B] dark:text-slate-400 absolute left-3.5 rtl:left-auto rtl:right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+
+              {searchInput && (
+                <button
+                  type="button"
+                  onClick={() => handleClearSearch(true)}
+                  className="absolute right-18 rtl:right-auto rtl:left-18 top-1/2 -translate-y-1/2 p-1 text-[#64748B] hover:text-[#172033] dark:hover:text-white rounded-full cursor-pointer z-10"
+                  aria-label="Clear mobile search"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              <button
+                type="submit"
+                className="absolute right-1.5 rtl:right-auto rtl:left-1.5 top-1/2 -translate-y-1/2 bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer shadow-xs z-10"
+              >
+                {lang === 'ar' ? 'بحث' : 'Search'}
+              </button>
+            </div>
+          </form>
+
+          {/* Mobile Real-time Search Suggestions Dropdown */}
+          {mobileSearchFocused && (
+            <SearchSuggestionsDropdown
+              query={searchInput}
+              brands={searchResult.brands}
+              categories={searchResult.categories}
+              products={searchResult.products}
+              allCategories={categories}
+              allBrands={brands}
+              totalBrandMatches={searchResult.totalBrandMatches}
+              totalCategoryMatches={searchResult.totalCategoryMatches}
+              totalProductMatches={searchResult.totalProductMatches}
+              lang={lang}
+              selectedIndex={selectedIndex}
+              onSelectProduct={handleSelectProduct}
+              onSelectCategory={handleSelectCategory}
+              onSelectBrand={handleSelectBrand}
+              onSelectPopularTerm={handleSelectPopularTerm}
+              onViewAllResults={handleViewAllResults}
+              onClose={() => setMobileSearchFocused(false)}
+            />
+          )}
+        </div>
+
         {/* Desktop Secondary Navigation Bar */}
         <div className="hidden md:flex items-center justify-between py-2.5 border-t border-[#DCE5F0] dark:border-[#1E293B] text-xs font-semibold">
           <div className="flex items-center gap-6">
@@ -479,61 +570,18 @@ export const Navbar: React.FC = () => {
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-white dark:bg-[#0A0F1D] border-b border-[#DCE5F0] dark:border-[#1E293B] px-4 pt-3 pb-6 space-y-4 animate-in slide-in-from-top duration-200 shadow-lg">
-          {/* Mobile Search with Real-time Suggestions */}
-          <div ref={mobileSearchContainerRef} className="relative">
-            <form onSubmit={(e) => handleSearchSubmit(e, true)}>
-              <div className="relative">
-                <input
-                  ref={mobileSearchInputRef}
-                  type="text"
-                  placeholder={t.searchPlaceholder}
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onFocus={() => setMobileSearchFocused(true)}
-                  onKeyDown={handleKeyDown}
-                  aria-label={t.searchPlaceholder}
-                  className="w-full bg-[#F5F8FC] dark:bg-[#111A2E] text-[#172033] dark:text-[#F8FAFC] placeholder-[#64748B] dark:placeholder-slate-400 text-sm rounded-xl pl-10 pr-24 rtl:pl-24 rtl:pr-10 py-2.5 border border-[#DCE5F0] dark:border-[#1E293B] focus:outline-none focus:border-[#007AFF]"
-                />
-                <Search className="w-4 h-4 text-[#64748B] dark:text-slate-400 absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-
-                {searchInput && (
-                  <button
-                    type="button"
-                    onClick={() => handleClearSearch(true)}
-                    className="absolute right-20 rtl:right-auto rtl:left-20 top-1/2 -translate-y-1/2 p-1 text-[#64748B] hover:text-[#172033] dark:hover:text-white rounded-full cursor-pointer z-10"
-                    aria-label="Clear mobile search"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-
-                <button
-                  type="submit"
-                  className="absolute right-1.5 rtl:right-auto rtl:left-1.5 top-1/2 -translate-y-1/2 bg-[#007AFF] text-white text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer shadow-xs z-10"
-                >
-                  {lang === 'ar' ? 'بحث' : 'Search'}
-                </button>
-              </div>
-            </form>
-
-            {/* Mobile Real-time Search Suggestions Dropdown */}
-            {mobileSearchFocused && (
-              <SearchSuggestionsDropdown
-                query={searchInput}
-                categories={searchResult.categories}
-                products={searchResult.products}
-                allCategories={categories}
-                totalCategoryMatches={searchResult.totalCategoryMatches}
-                totalProductMatches={searchResult.totalProductMatches}
-                lang={lang}
-                selectedIndex={selectedIndex}
-                onSelectProduct={handleSelectProduct}
-                onSelectCategory={handleSelectCategory}
-                onSelectPopularTerm={handleSelectPopularTerm}
-                onViewAllResults={handleViewAllResults}
-                onClose={() => setMobileSearchFocused(false)}
-              />
-            )}
+          {/* Quick Category Navigation Shortcuts */}
+          <div className="pt-1">
+            <button
+              onClick={() => {
+                setCurrentView('categories');
+                setMobileMenuOpen(false);
+              }}
+              className="w-full flex items-center justify-between p-3 rounded-xl bg-[#007AFF]/10 text-[#007AFF] dark:text-[#38BDF8] font-bold text-xs"
+            >
+              <span>{lang === 'ar' ? 'تصفح كافة الأقسام (35 قسماً)' : 'Browse All 35 Departments'}</span>
+              <span>→</span>
+            </button>
           </div>
 
           {/* Mobile Theme Toggle Banner */}

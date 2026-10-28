@@ -5,7 +5,7 @@
  * timezone adjustments, duration calculations, and live open/closed badges.
  */
 
-import { StoreOpeningSchedule } from '../types';
+import type { StoreOpeningSchedule } from '../types/index.ts';
 
 export interface ScheduleCalculationResult {
   isOpen: boolean;

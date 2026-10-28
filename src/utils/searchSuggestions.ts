@@ -1,13 +1,19 @@
-import { Product, Category } from '../types/index';
+import type { Product, Category, Brand } from '../types';
 
 export interface CategorySuggestion extends Category {
   productCount: number;
 }
 
+export interface BrandSuggestion extends Brand {
+  productCount: number;
+}
+
 export interface SearchSuggestionsResult {
   query: string;
+  brands: BrandSuggestion[];
   categories: CategorySuggestion[];
   products: Product[];
+  totalBrandMatches: number;
   totalCategoryMatches: number;
   totalProductMatches: number;
 }
@@ -28,6 +34,12 @@ const ARABIC_SYNONYMS: Record<string, string[]> = {
   كفر: ['كفرات', 'غطاء', 'حماية'],
   كفرات: ['كفر', 'كفرات', 'حماية'],
   باوربانك: ['باور بانك', 'بطارية', 'شاحن متنقل'],
+  اوبو: ['أوبو', 'oppo'],
+  ابل: ['أبل', 'apple', 'ايفون', 'آيفون'],
+  سامسونج: ['samsung', 'جالاكسي'],
+  انكر: ['anker'],
+  سوني: ['sony'],
+  شاومي: ['xiaomi'],
 };
 
 /**
@@ -46,7 +58,7 @@ export function normalizeSearchTerm(str: string = ''): string {
 /**
  * Checks if search text matches target text, considering Arabic variations
  */
-function matchesSearch(targetText: string, searchWords: string[]): boolean {
+export function matchesSearch(targetText: string, searchWords: string[]): boolean {
   const normalizedTarget = normalizeSearchTerm(targetText);
   if (!normalizedTarget) return false;
 
@@ -64,24 +76,28 @@ function matchesSearch(targetText: string, searchWords: string[]): boolean {
 }
 
 /**
- * Pure search function querying both current products and categories
+ * Pure search function querying products, categories, and brands
  */
 export function querySearchSuggestions(
   rawQuery: string,
   products: Product[] = [],
   categories: Category[] = [],
-  options: { maxProducts?: number; maxCategories?: number } = {}
+  brands: Brand[] = [],
+  options: { maxProducts?: number; maxCategories?: number; maxBrands?: number } = {}
 ): SearchSuggestionsResult {
   const maxProducts = options.maxProducts ?? 6;
   const maxCategories = options.maxCategories ?? 4;
+  const maxBrands = options.maxBrands ?? 3;
   const cleanQuery = rawQuery.trim();
   const normalizedQuery = normalizeSearchTerm(cleanQuery);
 
   if (!normalizedQuery) {
     return {
       query: '',
+      brands: [],
       categories: [],
       products: [],
+      totalBrandMatches: 0,
       totalCategoryMatches: 0,
       totalProductMatches: 0,
     };
@@ -89,15 +105,58 @@ export function querySearchSuggestions(
 
   const searchWords = normalizedQuery.split(/\s+/).filter(Boolean);
 
-  // Pre-calculate product counts per category slug/name for published products
+  // Pre-calculate product counts per category and brand for published products
   const categoryCountMap = new Map<string, number>();
+  const brandCountMap = new Map<string, number>();
+
   for (const p of products) {
     if (p.isPublished === false) continue;
     const catKey = (p.category || '').toLowerCase();
     categoryCountMap.set(catKey, (categoryCountMap.get(catKey) || 0) + 1);
+
+    const brandKey = (p.brand || '').toLowerCase();
+    brandCountMap.set(brandKey, (brandCountMap.get(brandKey) || 0) + 1);
   }
 
-  // 1. Filter and rank Categories
+  // 1. Filter and rank Brands
+  const matchedBrandsWithScore = brands
+    .map((b) => {
+      const name = normalizeSearchTerm(b.name);
+      const desc = normalizeSearchTerm(b.description || '');
+
+      let score = 0;
+      if (name === normalizedQuery) {
+        score = 100;
+      } else if (name.startsWith(normalizedQuery)) {
+        score = 85;
+      } else if (matchesSearch(b.name, searchWords)) {
+        score = 70;
+      } else if (desc && matchesSearch(b.description || '', searchWords)) {
+        score = 45;
+      }
+
+      // Check Arabic synonyms for brand
+      for (const word of searchWords) {
+        const variants = ARABIC_SYNONYMS[word] || [];
+        if (variants.some((v) => name.includes(normalizeSearchTerm(v)))) {
+          score = Math.max(score, 80);
+        }
+      }
+
+      const count = brandCountMap.get(b.name.toLowerCase()) || b.productCount || 0;
+
+      return {
+        brand: {
+          ...b,
+          productCount: count,
+        },
+        score,
+      };
+    })
+    .filter((item) => item.score > 0)
+    .sort((a, b) => b.score - a.score || b.brand.productCount - a.brand.productCount);
+
+  // 2. Filter and rank Categories
   const matchedCategoriesWithScore = categories
     .map((cat) => {
       const nameEn = normalizeSearchTerm(cat.name);
@@ -136,7 +195,7 @@ export function querySearchSuggestions(
     .filter((item) => item.score > 0)
     .sort((a, b) => b.score - a.score || b.category.productCount - a.category.productCount);
 
-  // 2. Filter and rank Products
+  // 3. Filter and rank Products
   const matchedProductsWithScore = products
     .filter((p) => p.isPublished !== false)
     .map((p) => {
@@ -179,20 +238,24 @@ export function querySearchSuggestions(
 
   return {
     query: cleanQuery,
+    brands: matchedBrandsWithScore.slice(0, maxBrands).map((item) => item.brand),
     categories: matchedCategoriesWithScore.slice(0, maxCategories).map((item) => item.category),
     products: matchedProductsWithScore.slice(0, maxProducts).map((item) => item.product),
+    totalBrandMatches: matchedBrandsWithScore.length,
     totalCategoryMatches: matchedCategoriesWithScore.length,
     totalProductMatches: matchedProductsWithScore.length,
   };
 }
 
 export const POPULAR_SEARCH_TERMS = [
+  'OPPO Find X8',
   'iPhone 16 Pro',
   'Samsung Galaxy S25',
   'AirPods',
   'Anker Power Bank',
+  'OPPO Reno',
   'Smartwatch',
   'Fast Charger',
   'Green Lion',
-  'iPad',
+  'Sony Headphones',
 ];

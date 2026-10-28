@@ -1,19 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useShop } from '../context/ShopContext';
 import {
-  Flame,
   Sparkles,
   ArrowRight,
   ShieldCheck,
   Truck,
   Clock,
-  ChevronLeft,
-  ChevronRight,
-  Star,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  Camera,
+  Zap,
+  Smartphone,
   CheckCircle,
+  X,
+  Layers,
+  ChevronRight,
 } from 'lucide-react';
-import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon, Orbit3DIcon } from './icons/ThreeDIcons';
+import { WhatsApp3DIcon, Orbit3DIcon } from './icons/ThreeDIcons';
 import { Product } from '../types';
 
 export const HeroSection: React.FC = () => {
@@ -21,355 +27,369 @@ export const HeroSection: React.FC = () => {
     lang,
     storeSettings,
     setCurrentView,
+    selectBrand,
     products,
-    addToCart,
     setQuickViewProduct,
   } = useShop();
 
-  // Filter actual offer products from inventory
-  const offerProducts = products.filter((p) => p.isSpecialOffer && p.isPublished);
-  // Default to first offer or fallback
-  const [selectedOfferIndex, setSelectedOfferIndex] = useState(0);
+  // Video element ref & state
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [isInteractiveModalOpen, setIsInteractiveModalOpen] = useState(false);
 
-  // Live countdown timer for deals
-  const [timeLeft, setTimeLeft] = useState({ hours: 14, minutes: 35, seconds: 48 });
+  // Reno 16 Series 5G product from inventory
+  const renoProduct: Product | undefined =
+    products.find((p) => p.id === 'prod-oppo-reno16-series-5g' && p.isPublished) ||
+    products.find((p) => p.brand.toLowerCase() === 'oppo' && p.isPublished) ||
+    products[0];
 
+  // Toggle Video Playback
+  const togglePlay = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!videoRef.current) return;
+    if (isPlaying) {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      videoRef.current.play().catch(() => {});
+      setIsPlaying(true);
+    }
+  };
+
+  // Toggle Video Audio Mute
+  const toggleMute = (e?: React.MouseEvent) => {
+    if (e) e.stopPropagation();
+    if (!videoRef.current) return;
+    const nextMuted = !isMuted;
+    videoRef.current.muted = nextMuted;
+    setIsMuted(nextMuted);
+
+    // If video was paused, unmuting should play it
+    if (videoRef.current.paused) {
+      videoRef.current.play().catch(() => {});
+      setIsPlaying(true);
+    }
+  };
+
+  // Auto-play on mount
   useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
-        if (prev.minutes > 0) return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        if (prev.hours > 0) return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        return { hours: 23, minutes: 59, seconds: 59 };
+    if (videoRef.current) {
+      videoRef.current.muted = true;
+      videoRef.current.play().catch(() => {
+        setIsPlaying(false);
       });
-    }, 1000);
-    return () => clearInterval(timer);
+    }
   }, []);
 
-  // Active featured product on the welcome offer stage
-  const currentOffer: Product | undefined =
-    offerProducts[selectedOfferIndex % (offerProducts.length || 1)] || offerProducts[0];
+  const handleExploreReno = () => {
+    selectBrand('Oppo');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
-  const discountAmount =
-    currentOffer && currentOffer.originalPrice > currentOffer.price
-      ? currentOffer.originalPrice - currentOffer.price
-      : 0;
-
-  const handleWhatsAppInquiry = (product: Product) => {
+  const handleWhatsAppBuyNow = () => {
     const phone = storeSettings.whatsapp || '96181900916';
     const text = encodeURIComponent(
       lang === 'ar'
-        ? `مرحباً أرناؤوط ستور! أود الاستفسار والطلب الفوري لعرض:\n- ${product.nameAr || product.name}\n- السعر المخفض: $${product.price} (وفرت $${product.originalPrice - product.price})\n- الكود: ${product.id}\nالرجاء تأكيد التوفر والتوصيل إلى منطقتي.`
-        : `Hello ARNAOUT STORE! I want to inquire / order this special offer:\n- ${product.name}\n- Discounted Price: $${product.price} USD (Save $${product.originalPrice - product.price})\n- SKU: ${product.id}\nPlease confirm availability and delivery.`
+        ? `مرحباً أرناؤوط ستور! أود طلب وشراء هاتف OPPO Reno 16 Series 5G الجديد (إصدار 3D Pop Planet):\n- السعر: $${renoProduct?.price || 629} USD\n- الكفالة: كفالة رسمية معتمدة 12 شهراً\nالرجاء تأكيد التوفر والتوصيل في صيدا / لبنان.`
+        : `Hello ARNAOUT STORE! I want to buy the all-new OPPO Reno 16 Series 5G (3D Pop Planet Edition):\n- Price: $${renoProduct?.price || 629} USD\n- Warranty: 1-Year Official Lebanon Warranty\nPlease confirm availability and express delivery across Lebanon.`
     );
     window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
   };
 
-  const handleBuyNow = (product: Product) => {
-    addToCart(product, 1);
-    setCurrentView('checkout');
-  };
-
   return (
-    <section className="relative overflow-hidden bg-gradient-to-b from-[#0A101E] via-[#0E172B] to-[#070B14] text-white py-10 md:py-16 border-b border-blue-900/30 selection:bg-[#007AFF] selection:text-white">
-      {/* Modern Maximalist Ambient Glow Grid */}
-      <div className="absolute inset-0 bg-[radial-gradient(#007AFF_1px,transparent_1px)] [background-size:28px_28px] opacity-15 pointer-events-none" />
-      <div className="absolute top-0 left-1/4 -translate-x-1/2 w-[600px] h-[400px] bg-[#007AFF]/20 blur-[140px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 right-10 w-[500px] h-[350px] bg-red-600/15 blur-[130px] rounded-full pointer-events-none" />
-      <div className="absolute top-1/2 right-1/3 w-[350px] h-[350px] bg-amber-500/10 blur-[120px] rounded-full pointer-events-none" />
+    <>
+      <section className="relative w-full min-h-[100dvh] lg:min-h-[780px] flex items-center justify-center overflow-hidden bg-[#0A0718] dark:bg-[#060410] text-white selection:bg-[#9333EA] selection:text-white pt-8 pb-14 md:py-16 border-b border-purple-950/40">
+        {/* =========================================================================
+            1. DYNAMIC COLOROS 16 AMBIENT PURPLE & VIOLET GLOWS
+        ========================================================================== */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {/* Subtle Grid Matrix */}
+          <div className="absolute inset-0 bg-[radial-gradient(#9333EA_1px,transparent_1px)] [background-size:32px_32px] opacity-15" />
 
-      {/* Dynamic Top Live Deal Marquee */}
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-6">
-        <div className="flex items-center justify-between gap-4 p-2.5 rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 text-xs text-slate-300 overflow-hidden">
-          <div className="flex items-center gap-2 flex-shrink-0 text-[#FF3B30] font-black uppercase tracking-wider text-[11px] px-2.5 py-1 rounded-xl bg-red-500/10 border border-red-500/30">
-            <Flame className="w-4 h-4 fill-current animate-pulse text-[#FF3B30]" />
-            <span>{lang === 'ar' ? 'أقوى العروض الحصرية' : 'EXCLUSIVE OFFERS HUB'}</span>
-          </div>
+          {/* Deep Violet / Cosmic Purple Radial Glows */}
+          <div className="absolute top-1/4 -left-20 w-[600px] h-[600px] bg-purple-600/20 blur-[160px] rounded-full" />
+          <div className="absolute top-1/3 -right-20 w-[600px] h-[600px] bg-violet-600/25 blur-[170px] rounded-full" />
+          <div className="absolute -bottom-20 left-1/3 w-[500px] h-[500px] bg-fuchsia-600/15 blur-[160px] rounded-full" />
+          <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[700px] h-[260px] bg-indigo-500/10 blur-[130px] rounded-full" />
 
-          <div className="flex-1 truncate text-[11px] md:text-xs font-semibold text-slate-300">
-            {lang === 'ar'
-              ? '⚡ أسعار مخفضة فورية • كفالة معتمدة صيدا ساحة النجمة • خدمة توصيل سريعة لكافة المحافظات • استفسار فوري عبر واتساب 81900916'
-              : '⚡ Instant Savings on Flagship Tech • Official Saida Warranty • Express Dispatch Across Lebanon • Instant WhatsApp 81900916'}
-          </div>
-
-          <a
-            href={`https://wa.me/${storeSettings.whatsapp || '96181900916'}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hidden sm:flex items-center gap-2 text-emerald-400 font-bold hover:text-emerald-300 transition-colors flex-shrink-0 group"
-          >
-            <WhatsApp3DIcon size={18} />
-            <span>81 900 916</span>
-          </a>
+          {/* 3D Pop Planet Ambient Orbit Ring */}
+          <div className="hidden lg:block absolute right-12 top-1/2 -translate-y-1/2 w-[550px] h-[550px] rounded-full border border-purple-400/15 animate-[spin_60s_linear_infinite]" />
+          <div className="hidden lg:block absolute right-24 top-1/2 -translate-y-1/2 w-[430px] h-[430px] rounded-full border border-violet-400/10 animate-[spin_40s_linear_infinite_reverse]" />
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
-          {/* Left Column: Maximalist Welcome & Offer Pitch */}
-          <div className="lg:col-span-6 space-y-6">
-            {/* Super Badge */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-blue-600/30 to-purple-600/30 border border-blue-400/40 text-[#38BDF8] text-xs font-extrabold tracking-wider uppercase backdrop-blur-md">
-              <Sparkles className="w-4 h-4 text-[#38BDF8] animate-spin-slow" />
-              <span>
+        {/* =========================================================================
+            2. MAIN HERO CONTAINER (RESPONSIVE SPLIT ON DESKTOP, MOBILE-FIRST TOUCH)
+        ========================================================================== */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+            {/* -----------------------------------------------------------------------
+                LEFT COLUMN: COPYWRITING, 3 BADGES, AND CTA BUTTONS
+            ------------------------------------------------------------------------ */}
+            <div className="lg:col-span-7 space-y-6 text-center lg:text-left rtl:lg:text-right order-2 lg:order-1">
+              {/* Brand Kicker / Star Badge */}
+              <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-purple-500/15 border border-purple-400/30 text-[#C084FC] text-xs font-black tracking-wider uppercase backdrop-blur-md shadow-sm shadow-purple-950/30">
+                <span className="w-2 h-2 rounded-full bg-[#C084FC] animate-ping" />
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>
+                  {lang === 'ar'
+                    ? 'هاتف الذكاء الاصطناعي • COLOROS 16'
+                    : 'OPPO AI PHONE • POWERED BY COLOROS 16'}
+                </span>
+              </div>
+
+              {/* Main Heading */}
+              <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.1]">
+                {lang === 'ar' ? (
+                  <>
+                    <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-purple-200">
+                      تعرّف على سلسلة
+                    </span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C084FC] via-[#A855F7] to-[#E879F9]">
+                      أوبو رينو 16 الجديدة كلياً 5G
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-purple-200">
+                      Meet the All-New
+                    </span>
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#C084FC] via-[#A855F7] to-[#E879F9]">
+                      OPPO Reno 16 Series 5G
+                    </span>
+                  </>
+                )}
+              </h1>
+
+              {/* Subtitle */}
+              <p className="text-slate-200 text-sm sm:text-base lg:text-lg leading-relaxed max-w-2xl font-normal drop-shadow-sm mx-auto lg:mx-0">
                 {lang === 'ar'
-                  ? 'صيدا ساحة النجمة • بيتك في عالم الإلكترونيات'
-                  : 'Saida Nijme Square • Your Home In Electronics 🏠'}
-              </span>
-            </div>
+                  ? 'اكتشف تصميم 3D Pop Planet الفريد، تقنية HoloVerse 3D، وأحدث ميزات كاميرا الذكاء الاصطناعي.'
+                  : 'Experience 3D Pop Planet Design, HoloVerse 3D Tech, and Advanced AI Camera Features.'}
+              </p>
 
-            {/* Bold Maximalist Headline */}
-            <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-[1.1]">
-              {lang === 'ar' ? (
-                <>
-                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300">
-                    أقوى عروض وتخفيضات
-                  </span>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38BDF8] via-[#007AFF] to-[#60A5FA]">
-                    التكنولوجيا والأجهزة الذكية
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="block text-transparent bg-clip-text bg-gradient-to-r from-white via-slate-100 to-slate-300">
-                    Next-Gen Tech Offers &
-                  </span>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#38BDF8] via-[#007AFF] to-[#60A5FA]">
-                    Exclusive Flash Deals
-                  </span>
-                </>
-              )}
-            </h1>
-
-            {/* Subtitle with Real Guarantee */}
-            <p className="text-slate-300 text-sm sm:text-base font-normal leading-relaxed max-w-xl">
-              {lang === 'ar'
-                ? 'استمتع بأحدث الهواتف الذكية، شواحن GaN الفائقة، والأنظمة الصوتية المتطورة بأفضل أسعار صيدا ولبنان، مع كفالة رسمية موثقة ودعم تقني متخصص.'
-                : 'Discover verified discounts on flagship smartphones, audiophile headsets, and high-speed GaN power gear with official Lebanon warranty and express dispatch.'}
-            </p>
-
-            {/* Live Flash Deal Countdown Block */}
-            <div className="p-4 rounded-2xl bg-white/[0.07] backdrop-blur-xl border border-white/15 shadow-xl max-w-md">
-              <div className="flex items-center justify-between gap-2 mb-2.5">
-                <div className="flex items-center gap-2 text-xs font-black text-[#FF453A] uppercase tracking-wider">
-                  <Flame className="w-4 h-4 fill-current text-[#FF453A]" />
-                  <span>{lang === 'ar' ? 'ينتهي العرض الخاطف خلال:' : 'Flash Deal Countdown:'}</span>
-                </div>
-                <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                  {lang === 'ar' ? 'متوفر للتسليم الفوري' : 'Live In Saida'}
-                </span>
-              </div>
-
-              {/* Digital Numerals */}
-              <div className="flex items-center gap-2 text-center font-mono">
-                <div className="flex-1 bg-black/40 rounded-xl py-2 border border-white/10 shadow-inner">
-                  <span className="text-xl sm:text-2xl font-black text-white">{String(timeLeft.hours).padStart(2, '0')}</span>
-                  <span className="block text-[9px] uppercase tracking-widest text-slate-400 font-sans mt-0.5">
-                    {lang === 'ar' ? 'ساعة' : 'Hours'}
-                  </span>
-                </div>
-                <span className="text-[#38BDF8] font-bold text-lg animate-pulse">:</span>
-                <div className="flex-1 bg-black/40 rounded-xl py-2 border border-white/10 shadow-inner">
-                  <span className="text-xl sm:text-2xl font-black text-[#38BDF8]">{String(timeLeft.minutes).padStart(2, '0')}</span>
-                  <span className="block text-[9px] uppercase tracking-widest text-slate-400 font-sans mt-0.5">
-                    {lang === 'ar' ? 'دقيقة' : 'Mins'}
-                  </span>
-                </div>
-                <span className="text-[#38BDF8] font-bold text-lg animate-pulse">:</span>
-                <div className="flex-1 bg-black/40 rounded-xl py-2 border border-white/10 shadow-inner">
-                  <span className="text-xl sm:text-2xl font-black text-[#FF453A]">{String(timeLeft.seconds).padStart(2, '0')}</span>
-                  <span className="block text-[9px] uppercase tracking-widest text-slate-400 font-sans mt-0.5">
-                    {lang === 'ar' ? 'ثانية' : 'Secs'}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Offer Selector Chips */}
-            {offerProducts.length > 0 && (
-              <div className="space-y-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  {lang === 'ar' ? 'أبرز عروض الواجهة الرئيسية:' : 'Spotlight Offer Products:'}
-                </span>
-                <div className="flex flex-wrap gap-2">
-                  {offerProducts.slice(0, 4).map((item, idx) => (
-                    <button
-                      key={item.id}
-                      onClick={() => setSelectedOfferIndex(idx)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                        selectedOfferIndex === idx
-                          ? 'bg-[#007AFF] text-white shadow-lg shadow-[#007AFF]/40 border border-blue-400'
-                          : 'bg-white/10 hover:bg-white/20 text-slate-300 border border-white/10'
-                      }`}
-                    >
-                      <span>{item.brand}</span>
-                      <span className="text-[10px] text-amber-300">-${item.originalPrice - item.price}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Quick Guarantees Row */}
-            <div className="grid grid-cols-3 gap-3 pt-3 border-t border-white/10 text-xs text-slate-300">
-              <div className="flex items-center gap-2">
-                <Truck className="w-4 h-4 text-[#38BDF8] flex-shrink-0" />
-                <span>{lang === 'ar' ? 'شحن لكافة لبنان' : 'Lebanon Fast Dispatch'}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                <span>{lang === 'ar' ? 'كفالة معتمدة رسمياً' : 'Official Warranty'}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                <span>{lang === 'ar' ? 'مركز صيدا 8ص-1ص' : 'Open 8AM - 1AM'}</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Interactive 3D Modern Maximalist Stage */}
-          <div className="lg:col-span-6 relative">
-            {currentOffer ? (
-              <motion.div
-                key={currentOffer.id}
-                initial={{ opacity: 0, scale: 0.96 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.35, ease: 'easeOut' }}
-                className="relative rounded-3xl bg-gradient-to-b from-white/10 to-white/5 backdrop-blur-2xl border border-white/20 p-5 sm:p-7 shadow-[0_20px_60px_-15px_rgba(0,122,255,0.3)] overflow-hidden"
-              >
-                {/* Floating Discount Tag */}
-                <div className="absolute top-4 left-4 rtl:right-4 rtl:left-auto flex flex-col gap-1.5 z-20">
-                  <span className="px-3 py-1 rounded-xl bg-gradient-to-r from-[#DC2626] to-[#EF4444] text-white font-black text-xs shadow-lg shadow-red-600/30 tracking-wider">
-                    {currentOffer.discountPercentage
-                      ? `-${currentOffer.discountPercentage}% OFF`
-                      : `SAVE $${discountAmount}`}
-                  </span>
-                  <span className="px-2.5 py-0.5 rounded-lg bg-black/60 backdrop-blur-md text-[#38BDF8] text-[10px] font-bold border border-white/10">
-                    {currentOffer.brand} OFFICIAL
-                  </span>
+              {/* ===================================================================
+                  FEATURE BADGES (THE 3 MANDATORY HIGHLIGHTS)
+              ==================================================================== */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-left rtl:text-right">
+                {/* Badge 1: 3D Pop Planet & HoloVerse Tech */}
+                <div className="p-3.5 rounded-2xl bg-white/5 dark:bg-[#130E26]/80 border border-purple-400/25 backdrop-blur-md shadow-sm hover:border-purple-400/60 transition-all group">
+                  <div className="flex items-center gap-2.5 mb-1.5">
+                    <span className="text-base">✨</span>
+                    <h4 className="text-xs font-black text-white leading-tight">
+                      {lang === 'ar'
+                        ? 'تصميم 3D Pop Planet وتقنية HoloVerse'
+                        : '3D Pop Planet & HoloVerse Tech'}
+                    </h4>
+                  </div>
+                  <p className="text-[11px] text-purple-200/80 leading-snug">
+                    {lang === 'ar'
+                      ? 'طبقات ثلاثية الأبعاد انسيابية تعكس الضوء والأناقة'
+                      : 'Futuristic floating planet finish & holographic 3D depth'}
+                  </p>
                 </div>
 
-                {/* 3D Preview Trigger Button */}
+                {/* Badge 2: 50MP Ultra-Wide Selfie Camera & AI Remix Collage */}
+                <div className="p-3.5 rounded-2xl bg-white/5 dark:bg-[#130E26]/80 border border-purple-400/25 backdrop-blur-md shadow-sm hover:border-purple-400/60 transition-all group">
+                  <div className="flex items-center gap-2.5 mb-1.5">
+                    <span className="text-base">📸</span>
+                    <h4 className="text-xs font-black text-white leading-tight">
+                      {lang === 'ar'
+                        ? 'كاميرا سيلفي 50MP وكولاج AI Remix'
+                        : '50MP Ultra-Wide Selfie Camera & AI Remix Collage'}
+                    </h4>
+                  </div>
+                  <p className="text-[11px] text-purple-200/80 leading-snug">
+                    {lang === 'ar'
+                      ? 'تصوير بورتريه سينمائي فائق الدقة بالذكاء الاصطناعي'
+                      : 'AI portrait engine with instant smart composition'}
+                  </p>
+                </div>
+
+                {/* Badge 3: Ultra-Slim One-Piece Body */}
+                <div className="p-3.5 rounded-2xl bg-white/5 dark:bg-[#130E26]/80 border border-purple-400/25 backdrop-blur-md shadow-sm hover:border-purple-400/60 transition-all group">
+                  <div className="flex items-center gap-2.5 mb-1.5">
+                    <span className="text-base">⚡</span>
+                    <h4 className="text-xs font-black text-white leading-tight">
+                      {lang === 'ar'
+                        ? 'هيكل انسيابي فائق النحافة'
+                        : 'Ultra-Slim One-Piece Body'}
+                    </h4>
+                  </div>
+                  <p className="text-[11px] text-purple-200/80 leading-snug">
+                    {lang === 'ar'
+                      ? 'ملمس ناعم بدون حواف حادة مع خفة وزن مذهلة'
+                      : 'One-piece sculpted glass with aerospace lightweight alloy'}
+                  </p>
+                </div>
+              </div>
+
+              {/* ===================================================================
+                  ACTION BUTTONS (PRIMARY & SECONDARY CTAs)
+              ==================================================================== */}
+              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-3">
+                {/* Primary Button: Explore Reno 16 Series */}
                 <button
-                  onClick={() => setQuickViewProduct(currentOffer)}
-                  className="absolute top-4 right-4 rtl:left-4 rtl:right-auto px-3 py-1.5 rounded-xl bg-white/10 hover:bg-[#007AFF] text-white text-xs font-bold border border-white/20 backdrop-blur-md transition-all flex items-center gap-1.5 cursor-pointer shadow-md group"
+                  type="button"
+                  onClick={handleExploreReno}
+                  className="w-full sm:w-auto px-7 py-4 rounded-2xl bg-gradient-to-r from-[#9333EA] via-[#A855F7] to-[#7E22CE] hover:from-[#A855F7] hover:to-[#9333EA] text-white font-black text-sm shadow-xl shadow-purple-600/35 hover:shadow-purple-600/50 transition-all flex items-center justify-center gap-2.5 cursor-pointer transform hover:-translate-y-0.5 active:scale-98 group"
                 >
-                  <Orbit3DIcon size={18} />
-                  <span>{lang === 'ar' ? 'معاينة 3D' : '3D View'}</span>
+                  <span>{lang === 'ar' ? 'استكشف سلسلة Reno 16' : 'Explore Reno 16 Series'}</span>
+                  <ArrowRight className="w-4 h-4 rtl:rotate-180 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform" />
                 </button>
 
-                {/* Main Product Showcase Stage */}
-                <div className="relative h-64 sm:h-72 w-full flex items-center justify-center p-4 my-2">
-                  <div className="absolute w-48 h-48 bg-[#007AFF]/25 blur-[60px] rounded-full pointer-events-none" />
-                  <motion.img
-                    src={currentOffer.images[0]}
-                    alt={`${currentOffer.name} - ${currentOffer.brand} flagship electronics at ARNAOUT STORE Saida Lebanon`}
-                    loading="eager"
-                    // @ts-expect-error React 18 / 19 HTML fetchPriority attribute
-                    fetchpriority="high"
-                    fetchPriority="high"
-                    decoding="async"
-                    width={600}
-                    height={600}
-                    className="max-h-full max-w-full object-contain filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.5)] transform hover:scale-105 transition-transform duration-500 cursor-pointer"
-                    onClick={() => setQuickViewProduct(currentOffer)}
-                  />
-                </div>
+                {/* Secondary Button: Buy Now via WhatsApp */}
+                <button
+                  type="button"
+                  onClick={handleWhatsAppBuyNow}
+                  className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white font-black text-sm shadow-lg shadow-emerald-700/30 hover:shadow-emerald-700/50 transition-all flex items-center justify-center gap-2.5 cursor-pointer transform hover:-translate-y-0.5 active:scale-98"
+                >
+                  <WhatsApp3DIcon size={20} />
+                  <span>{lang === 'ar' ? 'شراء فوري عبر واتساب' : 'Buy Now via WhatsApp'}</span>
+                </button>
 
-                {/* Product Info & Specs Bar */}
-                <div className="space-y-3 pt-3 border-t border-white/10">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#38BDF8] font-bold uppercase tracking-wider text-[11px]">
-                      {currentOffer.category}
-                    </span>
-                    <span className="flex items-center gap-1 text-emerald-400 font-bold text-[11px]">
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      {lang === 'ar' ? 'متوفر في صيدا' : 'In Stock Saida'}
-                    </span>
-                  </div>
-
-                  <h3
-                    onClick={() => setQuickViewProduct(currentOffer)}
-                    className="text-lg sm:text-xl font-black text-white hover:text-[#38BDF8] transition-colors cursor-pointer line-clamp-1"
+                {/* 3D Model Quick Trigger */}
+                {renoProduct && (
+                  <button
+                    type="button"
+                    onClick={() => setQuickViewProduct(renoProduct)}
+                    className="w-full sm:w-auto px-4 py-4 rounded-2xl bg-white/10 hover:bg-white/20 text-purple-200 hover:text-white font-bold text-xs border border-purple-400/30 backdrop-blur-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    title="Interactive 3D View"
                   >
-                    {lang === 'ar' ? currentOffer.nameAr || currentOffer.name : currentOffer.name}
-                  </h3>
-
-                  {/* Pricing Matrix */}
-                  <div className="flex items-baseline justify-between p-3 rounded-2xl bg-black/40 border border-white/10">
-                    <div>
-                      <span className="text-xs text-slate-400 block font-medium">
-                        {lang === 'ar' ? 'السعر المخفض الآن:' : 'Offer Price:'}
-                      </span>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                          ${currentOffer.price}
-                        </span>
-                        {currentOffer.originalPrice > currentOffer.price && (
-                          <span className="text-sm text-slate-400 line-through">
-                            ${currentOffer.originalPrice}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {discountAmount > 0 && (
-                      <div className="text-right rtl:text-left">
-                        <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                          {lang === 'ar' ? 'قيمة التوفير:' : 'Net Savings:'}
-                        </span>
-                        <span className="text-sm font-black text-[#10B981]">
-                          +${discountAmount} USD
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Primary Direct CTAs */}
-                  <div className="space-y-2 pt-1">
-                    {/* The Official WhatsApp Order / Inquire Button */}
-                    <button
-                      onClick={() => handleWhatsAppInquiry(currentOffer)}
-                      className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-500 via-green-600 to-emerald-700 hover:from-emerald-600 hover:to-green-700 text-white font-black text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-lg shadow-emerald-700/40 active:scale-[0.98] group"
-                    >
-                      <WhatsApp3DIcon size={24} />
-                      <span className="tracking-tight">
-                        {lang === 'ar'
-                          ? 'استفسار / طلب عبر واتساب (81900916)'
-                          : 'Inquire / Order on WhatsApp (81900916)'}
-                      </span>
-                    </button>
-
-                    {/* Dual Action: Pack It + Direct Order */}
-                    <div className="grid grid-cols-2 gap-2">
-                      <button
-                        onClick={() => addToCart(currentOffer, 1)}
-                        className="py-2.5 px-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all border border-white/15 cursor-pointer active:scale-95 group"
-                      >
-                        <Cart3DIcon size={18} />
-                        <span>{lang === 'ar' ? 'احجز قطعتك' : 'Pack It 🛍️'}</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleBuyNow(currentOffer)}
-                        className="py-2.5 px-3 rounded-xl bg-gradient-to-r from-[#007AFF] to-[#0055D6] hover:from-[#0066D6] hover:to-[#0048B8] text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md shadow-[#007AFF]/30 cursor-pointer active:scale-95 group"
-                      >
-                        <Zap3DIcon size={18} />
-                        <span>{lang === 'ar' ? 'شراء فوري' : 'Direct Order ⚡'}</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            ) : (
-              <div className="p-8 text-center bg-white/5 rounded-3xl border border-white/10">
-                <Sparkles className="w-8 h-8 text-[#007AFF] mx-auto mb-2" />
-                <p>{lang === 'ar' ? 'جاري تحميل العروض الحصرية...' : 'Loading Special Offers...'}</p>
+                    <Orbit3DIcon size={18} />
+                    <span className="hidden sm:inline">{lang === 'ar' ? 'معاينة 3D' : '3D View'}</span>
+                  </button>
+                )}
               </div>
-            )}
+
+              {/* Trust & Saida Delivery Guarantees */}
+              <div className="grid grid-cols-3 gap-2 pt-3 border-t border-purple-900/30 text-[11px] text-purple-200/80">
+                <div className="flex items-center justify-center lg:justify-start gap-1.5">
+                  <Truck className="w-3.5 h-3.5 text-[#38BDF8] flex-shrink-0" />
+                  <span className="truncate">{lang === 'ar' ? 'توصيل لكافة لبنان' : 'Lebanon Express'}</span>
+                </div>
+                <div className="flex items-center justify-center lg:justify-start gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
+                  <span className="truncate">{lang === 'ar' ? 'كفالة معتمدة 12 شهر' : '1-Year Warranty'}</span>
+                </div>
+                <div className="flex items-center justify-center lg:justify-start gap-1.5">
+                  <Clock className="w-3.5 h-3.5 text-amber-300 flex-shrink-0" />
+                  <span className="truncate">{lang === 'ar' ? 'صيدا ساحة النجمة' : 'Saida Showroom'}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* -----------------------------------------------------------------------
+                RIGHT COLUMN: GLASSMORPHISM DEVICE FRAME (9:16 VERTICAL PROMOTIONAL VIDEO)
+            ------------------------------------------------------------------------ */}
+            <div className="lg:col-span-5 flex flex-col items-center justify-center relative order-1 lg:order-2">
+              {/* Outer Cosmic Halo */}
+              <div className="absolute w-[320px] sm:w-[420px] h-[540px] sm:h-[680px] bg-gradient-to-tr from-purple-600/30 via-violet-600/20 to-pink-600/25 blur-[90px] rounded-full pointer-events-none" />
+
+              {/* Floating Holographic Badge */}
+              <div className="relative mb-3 flex items-center justify-between w-full max-w-[280px] sm:max-w-[340px] px-2 text-xs">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-500/20 border border-purple-400/40 text-purple-200 font-extrabold text-[11px] shadow-sm backdrop-blur-md">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span>OPPO RENO 16 SERIES 5G</span>
+                </span>
+                <span className="text-[11px] font-mono text-purple-300 font-bold bg-black/40 px-2 py-0.5 rounded-md border border-white/10">
+                  ${renoProduct?.price || 629} USD
+                </span>
+              </div>
+
+              {/* ===================================================================
+                  THE GLASSMORPHISM SMARTPHONE DEVICE FRAME (9:16 RATIO)
+              ==================================================================== */}
+              <div
+                className="relative aspect-[9/16] w-[270px] sm:w-[320px] md:w-[350px] lg:w-[370px] rounded-[44px] sm:rounded-[52px] p-[6px] sm:p-[8px] bg-gradient-to-b from-purple-300/40 via-purple-900/30 to-violet-500/40 border-2 border-purple-300/50 shadow-[0_20px_70px_-15px_rgba(168,85,247,0.55)] backdrop-blur-2xl group transition-transform duration-500 hover:scale-[1.01]"
+              >
+                {/* Sleek Inner Metallic Frame Rim */}
+                <div className="relative w-full h-full rounded-[38px] sm:rounded-[46px] overflow-hidden bg-black shadow-inner border border-white/20 flex items-center justify-center">
+                  {/* Dynamic Island / Front Camera Punch Hole */}
+                  <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 w-24 h-4 bg-black/80 rounded-full border border-white/15 flex items-center justify-center gap-2 px-2 pointer-events-none">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400/90" />
+                    <span className="text-[8px] font-mono tracking-wider text-purple-200">OPPO AI</span>
+                  </div>
+
+                  {/* High Quality 9:16 Video Player */}
+                  <video
+                    ref={videoRef}
+                    autoPlay
+                    loop
+                    muted={isMuted}
+                    playsInline
+                    preload="auto"
+                    onLoadedData={() => setVideoLoaded(true)}
+                    className="w-full h-full object-cover object-center cursor-pointer"
+                    onClick={togglePlay}
+                  >
+                    <source src="/videos/oppo-reno16-series-5g.mp4" type="video/mp4" />
+                    <source
+                      src="/assets/aistudio/____..._________________________________________________OPPO_Reno16_F_5G__OPPOReno16Series__1__4ef3f86a.mp4"
+                      type="video/mp4"
+                    />
+                  </video>
+
+                  {/* Gradient Overlay for Edge Depth */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none z-10" />
+
+                  {/* Custom Sleek Sound Toggle Overlay (Prominent button with state feedback) */}
+                  <button
+                    type="button"
+                    onClick={toggleMute}
+                    aria-label={isMuted ? 'Unmute video sound' : 'Mute video sound'}
+                    className={`absolute bottom-4 right-4 rtl:right-auto rtl:left-4 z-30 p-2.5 sm:p-3 rounded-full backdrop-blur-xl border transition-all cursor-pointer shadow-lg active:scale-95 flex items-center gap-2 group ${
+                      isMuted
+                        ? 'bg-black/75 hover:bg-black/90 text-slate-200 border-white/25 hover:border-purple-400/60'
+                        : 'bg-gradient-to-r from-purple-600 to-violet-600 text-white border-purple-300 shadow-purple-600/50'
+                    }`}
+                  >
+                    {isMuted ? (
+                      <>
+                        <VolumeX className="w-4 h-4 text-purple-300 group-hover:scale-110 transition-transform" />
+                        <span className="text-[10px] font-bold tracking-tight pr-1 rtl:pr-0 rtl:pl-1">
+                          {lang === 'ar' ? 'تشغيل الصوت' : 'Unmute'}
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <Volume2 className="w-4 h-4 text-white animate-pulse" />
+                        <span className="text-[10px] font-bold tracking-tight pr-1 rtl:pr-0 rtl:pl-1">
+                          {lang === 'ar' ? 'الصوت يعمل' : 'Sound On'}
+                        </span>
+                      </>
+                    )}
+                  </button>
+
+                  {/* Play/Pause Minimal Indicator Overlay */}
+                  <button
+                    type="button"
+                    onClick={togglePlay}
+                    aria-label={isPlaying ? 'Pause video' : 'Play video'}
+                    className="absolute bottom-4 left-4 rtl:left-auto rtl:right-4 z-30 p-2.5 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-md transition-all cursor-pointer opacity-70 hover:opacity-100"
+                  >
+                    {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+                  </button>
+
+                  {/* Glass Reflection Highlight */}
+                  <div className="absolute top-0 right-0 w-2/3 h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none z-20" />
+                </div>
+              </div>
+
+              {/* Under-Frame Quick Caption */}
+              <div className="mt-3 text-center text-xs text-purple-200/90 font-medium flex items-center gap-2">
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>
+                  {lang === 'ar'
+                    ? 'فيديو ترويجي رسمي • اضغط لتشغيل الصوت والموسيقى'
+                    : 'Official Promo Reel • Tap video frame for audio'}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </>
   );
 };

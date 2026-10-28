@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import { StoreLogo } from './StoreLogo';
+import { NewsletterFooterSection } from './NewsletterFooterSection';
 
 export const Footer: React.FC = () => {
   const { lang, t, storeSettings, setCurrentView, selectCategory, selectBrand, categories, brands } = useShop();
@@ -25,6 +26,9 @@ export const Footer: React.FC = () => {
   return (
     <footer className="bg-white dark:bg-[#070B14] border-t border-[#DCE5F0] dark:border-[#1E293B] text-[#64748B] dark:text-slate-400 text-xs pt-16 pb-12 relative overflow-hidden transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Newsletter Subscription Banner */}
+        <NewsletterFooterSection />
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
           {/* Col 1: Brand Info */}
           <div className="lg:col-span-2 space-y-4">

@@ -253,6 +253,36 @@
         }
       },
       "required": ["id", "name", "brand", "category", "sku", "price", "stock", "images", "description", "isPublished"]
+    },
+    "NewsletterSubscriber": {
+      "title": "NewsletterSubscriber",
+      "description": "Customer email subscription for tech updates and promotional marketing",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Sanitized subscriber ID based on email",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "Subscriber email address",
+          "maxLength": 128
+        },
+        "subscribedAt": {
+          "type": "string",
+          "description": "ISO timestamp of subscription"
+        },
+        "lang": {
+          "type": "string",
+          "description": "User language preference (en or ar)"
+        },
+        "source": {
+          "type": "string",
+          "description": "Acquisition source (footer, popup, checkout)"
+        }
+      },
+      "required": ["email", "subscribedAt", "source"]
     }
   },
   "firestore": {
@@ -279,6 +309,12 @@
         "$ref": "Product"
       },
       "description": "Store electronics inventory catalog documents synced live across clients"
+    },
+    "/newsletter_subscribers/{subscriberId}": {
+      "schema": {
+        "$ref": "NewsletterSubscriber"
+      },
+      "description": "Customer emails captured for marketing updates and tech deals"
     }
   }
 }

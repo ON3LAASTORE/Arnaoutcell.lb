@@ -5,7 +5,7 @@ import {
   querySearchSuggestions,
   POPULAR_SEARCH_TERMS,
 } from './searchSuggestions.ts';
-import { Product, Category } from '../types/index.ts';
+import type { Product, Category, Brand } from '../types/index.ts';
 
 const mockCategories: Category[] = [
   {
@@ -38,6 +38,13 @@ const mockCategories: Category[] = [
     displayOrder: 3,
     subcategories: ['Apple Watch', 'Galaxy Watch'],
   },
+];
+
+const mockBrands: Brand[] = [
+  { id: 'b-samsung', name: 'Samsung', logo: 'https://example.com/samsung.png', description: 'Galaxy ecosystem', featured: true },
+  { id: 'b-anker', name: 'Anker', logo: 'https://example.com/anker.png', description: 'Fast charging', featured: true },
+  { id: 'b-apple', name: 'Apple', logo: 'https://example.com/apple.png', description: 'iPhone & Mac', featured: true },
+  { id: 'b-oppo', name: 'Oppo', logo: 'https://example.com/oppo.png', description: 'Portrait masters', featured: true },
 ];
 
 const mockProducts: Product[] = [
@@ -187,4 +194,19 @@ test('querySearchSuggestions prioritizes in-stock items when both have title mat
 test('POPULAR_SEARCH_TERMS provides rich list of common queries', () => {
   assert.ok(POPULAR_SEARCH_TERMS.length >= 5);
   assert.ok(POPULAR_SEARCH_TERMS.includes('iPhone 16 Pro'));
+});
+
+test('querySearchSuggestions matches brands and calculates product counts accurately', () => {
+  const result = querySearchSuggestions('Samsung', mockProducts, mockCategories, mockBrands);
+  assert.equal(result.brands.length, 1);
+  assert.equal(result.brands[0].name, 'Samsung');
+  assert.equal(result.brands[0].productCount, 2); // p-1 and p-5 are published Samsung items
+  assert.equal(result.totalBrandMatches, 1);
+  assert.equal(result.products.length, 2);
+});
+
+test('querySearchSuggestions matches brands via partial input', () => {
+  const result = querySearchSuggestions('opp', mockProducts, mockCategories, mockBrands);
+  assert.equal(result.brands.length, 1);
+  assert.equal(result.brands[0].name, 'Oppo');
 });
