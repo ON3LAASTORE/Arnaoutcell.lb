@@ -25,6 +25,7 @@ import {
   subscribeToLiveProducts,
   seedInitialProductsToCloud,
 } from '../services/productFirestoreService';
+import { validateAddToCompare, toggleCompareList } from '../utils/compareHelpers';
 
 interface ShopContextType {
   lang: Language;
@@ -52,6 +53,16 @@ interface ShopContextType {
   wishlist: string[];
   toggleWishlist: (productId: string) => void;
   isInWishlist: (productId: string) => boolean;
+
+  // Compare Products (Max 3)
+  compareList: Product[];
+  addToCompare: (product: Product) => { success: boolean; message?: string };
+  removeFromCompare: (productId: string) => void;
+  clearCompareList: () => void;
+  toggleCompare: (product: Product) => void;
+  isInCompare: (productId: string) => boolean;
+  isCompareModalOpen: boolean;
+  setIsCompareModalOpen: (open: boolean) => void;
 
   // Navigation & Filtering
   currentView: string;
@@ -161,6 +172,59 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
   const [lastCompletedOrder, setLastCompletedOrder] = useState<Order | null>(null);
+
+  // Compare Products State & Persistence (up to 3 products)
+  const [compareList, setCompareList] = useState<Product[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('arnaout_compare_list');
+        return raw ? JSON.parse(raw) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+  const [isCompareModalOpen, setIsCompareModalOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('arnaout_compare_list', JSON.stringify(compareList));
+      } catch {
+        // storage fallback
+      }
+    }
+  }, [compareList]);
+
+  const addToCompare = (product: Product) => {
+    const validation = validateAddToCompare(compareList, product);
+    if (!validation.canAdd) {
+      return {
+        success: false,
+        message: lang === 'ar' ? validation.messageAr : validation.messageEn,
+      };
+    }
+    setCompareList((prev) => [...prev, product]);
+    return { success: true };
+  };
+
+  const removeFromCompare = (productId: string) => {
+    setCompareList((prev) => prev.filter((p) => p.id !== productId));
+  };
+
+  const clearCompareList = () => {
+    setCompareList([]);
+  };
+
+  const toggleCompare = (product: Product) => {
+    const res = toggleCompareList(compareList, product);
+    setCompareList(res.updatedList);
+  };
+
+  const isInCompare = (productId: string) => {
+    return compareList.some((p) => p.id === productId);
+  };
 
   // Initialize data on mount and subscribe to real-time live product updates
   useEffect(() => {
@@ -384,6 +448,14 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         wishlist,
         toggleWishlist,
         isInWishlist,
+        compareList,
+        addToCompare,
+        removeFromCompare,
+        clearCompareList,
+        toggleCompare,
+        isInCompare,
+        isCompareModalOpen,
+        setIsCompareModalOpen,
         currentView,
         setCurrentView,
         selectedProductId,

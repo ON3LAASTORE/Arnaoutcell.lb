@@ -16,6 +16,7 @@ import {
   Menu,
   X,
   ShieldCheck,
+  Share2,
 } from 'lucide-react';
 import { StoreLogo } from '../StoreLogo';
 
@@ -37,6 +38,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   const navItems = [
     { id: 'overview', labelEn: 'Overview', labelAr: 'نظرة عامة', icon: LayoutDashboard, roles: ['super_admin', 'product_manager', 'order_manager', 'inventory_manager'] },
     { id: 'products', labelEn: 'Products', labelAr: 'إدارة المنتجات', icon: Package, roles: ['super_admin', 'product_manager'] },
+    { id: 'social_marketing', labelEn: 'Social Media Manager', labelAr: 'مدير وسائل التواصل', icon: Share2, roles: ['super_admin', 'product_manager'] },
     { id: 'offers', labelEn: 'Offers & Deals', labelAr: 'العروض والخصومات', icon: Flame, roles: ['super_admin', 'product_manager'] },
     { id: 'orders', labelEn: 'Orders & Sales', labelAr: 'الطلبات والمبيعات', icon: ShoppingBag, roles: ['super_admin', 'order_manager'] },
     { id: 'inventory', labelEn: 'Inventory', labelAr: 'المستودع والمخزون', icon: Warehouse, roles: ['super_admin', 'inventory_manager'] },

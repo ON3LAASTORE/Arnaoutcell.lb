@@ -2,9 +2,13 @@ import React, { useState } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { saveProduct } from '../../services/storageService';
 import { Product } from '../../types';
-import { Flame, Search } from 'lucide-react';
+import { Flame, Search, Share2 } from 'lucide-react';
 
-export const AdminOffers: React.FC = () => {
+interface AdminOffersProps {
+  onShareProduct?: (productId: string) => void;
+}
+
+export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
   const { lang, products, refreshData } = useShop();
   const [search, setSearch] = useState('');
   const [feedback, setFeedback] = useState('');
@@ -142,16 +146,25 @@ export const AdminOffers: React.FC = () => {
                   </td>
 
                   <td className="py-3 px-4 text-right rtl:text-left">
-                    <button
-                      onClick={() => handleToggleOffer(p)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
-                        p.isSpecialOffer
-                          ? 'bg-red-50 text-[#DC2626] hover:bg-red-100 border border-red-200'
-                          : 'bg-[#EAF3FF] text-[#007AFF] hover:bg-[#007AFF] hover:text-white border border-[#BAE6FD]'
-                      }`}
-                    >
-                      {p.isSpecialOffer ? 'Remove' : 'Make Offer'}
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => onShareProduct && onShareProduct(p.id)}
+                        className="p-1.5 rounded-xl bg-[#EAF3FF] hover:bg-[#007AFF] hover:text-white border border-[#BAE6FD] text-[#007AFF] transition-colors cursor-pointer"
+                        title={lang === 'ar' ? 'تسويق ونشر العرض' : 'Share Offer Campaign'}
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleToggleOffer(p)}
+                        className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-colors ${
+                          p.isSpecialOffer
+                            ? 'bg-red-50 text-[#DC2626] hover:bg-red-100 border border-red-200'
+                            : 'bg-[#EAF3FF] text-[#007AFF] hover:bg-[#007AFF] hover:text-white border border-[#BAE6FD]'
+                        }`}
+                      >
+                        {p.isSpecialOffer ? 'Remove' : 'Make Offer'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}

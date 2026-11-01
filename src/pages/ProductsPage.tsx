@@ -10,6 +10,7 @@ import {
   Sparkles,
   ArrowUpDown,
   Check,
+  Scale,
 } from 'lucide-react';
 import { sortProducts } from '../utils/sortingHelpers';
 import { PriceFilter } from '../components/PriceFilter';
@@ -32,6 +33,8 @@ export const ProductsPage: React.FC = () => {
     selectBrand,
     searchQuery,
     setSearchQuery,
+    compareList,
+    setIsCompareModalOpen,
   } = useShop();
 
   const [sortOption, setSortOption] = useState<string>('recommended');
@@ -225,6 +228,22 @@ export const ProductsPage: React.FC = () => {
                 ))}
               </select>
             </div>
+
+            {/* Compare Trigger Button */}
+            {compareList.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setIsCompareModalOpen(true)}
+                className="px-3 py-1.5 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
+              >
+                <Scale className="w-3.5 h-3.5" />
+                <span>
+                  {lang === 'ar'
+                    ? `المقارنة (${compareList.length})`
+                    : `Compare (${compareList.length})`}
+                </span>
+              </button>
+            )}
 
             {/* Layout Toggle */}
             <div className="hidden sm:flex items-center bg-[#F5F8FC] border border-[#DCE5F0] rounded-xl p-1 gap-1">

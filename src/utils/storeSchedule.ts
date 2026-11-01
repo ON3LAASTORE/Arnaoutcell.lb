@@ -1,8 +1,10 @@
 /**
  * Store Opening Hours & Real-time Schedule Utilities
  * 
- * Handles overnight schedules (e.g. 08:00 AM to 01:00 AM next day = 17 continuous hours),
- * timezone adjustments, duration calculations, and live open/closed badges.
+ * Target Schedule:
+ * SQUARE ARNAOUT CELL STORE, SAIDA - NEJMEH, Sidon
+ * Open 17 hours (08:00 AM to 01:00 AM next day continuous, 7 days a week)
+ * Timezone: Asia/Beirut (Lebanon Standard Time / Daylight Time)
  */
 
 import type { StoreOpeningSchedule } from '../types/index.ts';
@@ -19,6 +21,14 @@ export interface ScheduleCalculationResult {
   nextEventTextAr: string;
   formattedHoursEn: string;
   formattedHoursAr: string;
+  currentLebanonTime: string;
+  currentLebanonTimeFormatted: string;
+  currentMinutes: number;
+  minutesUntilChange: number;
+  timeRemainingTextEn: string;
+  timeRemainingTextAr: string;
+  operatingHoursLabel: string;
+  operatingHoursLabelAr: string;
 }
 
 /**
@@ -27,7 +37,7 @@ export interface ScheduleCalculationResult {
 export function parseTimeToMinutes(timeStr: string): number {
   if (!timeStr) return 0;
   
-  // Format "08:00" or "01:00"
+  // Format "08:00" or "01:00" or "8:00 AM"
   const colonMatch = timeStr.trim().match(/^(\d{1,2}):(\d{2})\s*(AM|PM)?$/i);
   if (colonMatch) {
     let hours = parseInt(colonMatch[1], 10);
@@ -85,8 +95,57 @@ export function formatTimeDisplay(timeStr: string, lang: 'en' | 'ar' = 'en'): st
 }
 
 /**
- * Checks if the store is currently open based on target timezone (e.g. Asia/Beirut).
+ * Gets current hour, minute and formatted time string in Lebanon timezone (Asia/Beirut)
+ */
+export function getLebanonTimeParts(now: Date = new Date(), timezone = 'Asia/Beirut'): {
+  currentMinutes: number;
+  formatted12h: string;
+  hour: number;
+  minute: number;
+} {
+  try {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone,
+      hour: 'numeric',
+      minute: 'numeric',
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(now);
+    const hPart = parts.find((p) => p.type === 'hour')?.value;
+    const mPart = parts.find((p) => p.type === 'minute')?.value;
+    if (hPart !== undefined && mPart !== undefined) {
+      let h = parseInt(hPart, 10);
+      if (h === 24) h = 0;
+      const m = parseInt(mPart, 10);
+      const currentMinutes = h * 60 + m;
+
+      // 12-hour formatted representation
+      const h12 = h % 12 || 12;
+      const ampm = h < 12 ? 'AM' : 'PM';
+      const formatted12h = `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
+
+      return { currentMinutes, formatted12h, hour: h, minute: m };
+    }
+  } catch {
+    // Fallback if Intl timeZone not supported
+  }
+
+  const h = now.getHours();
+  const m = now.getMinutes();
+  const h12 = h % 12 || 12;
+  const ampm = h < 12 ? 'AM' : 'PM';
+  return {
+    currentMinutes: h * 60 + m,
+    formatted12h: `${h12}:${m.toString().padStart(2, '0')} ${ampm}`,
+    hour: h,
+    minute: m,
+  };
+}
+
+/**
+ * Checks if the store is currently open based on target timezone (Asia/Beirut).
  * Handles overnight schedules accurately so 12:30 AM is recognized as OPEN when closing is 1:00 AM.
+ * Calculates remaining time until closing or opening.
  */
 export function checkStoreOpenStatus(
   schedule?: Partial<StoreOpeningSchedule>,
@@ -102,35 +161,59 @@ export function checkStoreOpenStatus(
   const openMinutes = parseTimeToMinutes(openTime);
   const closeMinutes = parseTimeToMinutes(closeTime);
 
-  // Get current hour and minute in configured store timezone
-  let currentMinutes = now.getHours() * 60 + now.getMinutes();
-  try {
-    const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone,
-      hour: 'numeric',
-      minute: 'numeric',
-      hour12: false,
-    });
-    const parts = formatter.formatToParts(now);
-    const hPart = parts.find((p) => p.type === 'hour')?.value;
-    const mPart = parts.find((p) => p.type === 'minute')?.value;
-    if (hPart !== undefined && mPart !== undefined) {
-      let h = parseInt(hPart, 10);
-      if (h === 24) h = 0;
-      currentMinutes = h * 60 + parseInt(mPart, 10);
-    }
-  } catch {
-    // fallback to local time
-    currentMinutes = now.getHours() * 60 + now.getMinutes();
-  }
+  // Get current hour and minute in configured store timezone (Asia/Beirut)
+  const { currentMinutes, formatted12h } = getLebanonTimeParts(now, timezone);
 
   let isOpen = false;
+  let minutesUntilChange = 0;
+
   if (spansMidnight) {
-    // Open from openMinutes (e.g. 480 = 8 AM) through midnight until closeMinutes (e.g. 60 = 1 AM)
-    isOpen = currentMinutes >= openMinutes || currentMinutes < closeMinutes;
+    // Open from openMinutes (480 = 8 AM) through midnight (1440) until closeMinutes (60 = 1 AM)
+    if (currentMinutes >= openMinutes) {
+      // Current time is between 8:00 AM and 11:59 PM
+      isOpen = true;
+      minutesUntilChange = (1440 - currentMinutes) + closeMinutes;
+    } else if (currentMinutes < closeMinutes) {
+      // Current time is between 12:00 AM midnight and 1:00 AM closing
+      isOpen = true;
+      minutesUntilChange = closeMinutes - currentMinutes;
+    } else {
+      // Current time is between 1:00 AM and 8:00 AM (store is closed)
+      isOpen = false;
+      minutesUntilChange = openMinutes - currentMinutes;
+    }
   } else {
     isOpen = currentMinutes >= openMinutes && currentMinutes < closeMinutes;
+    if (isOpen) {
+      minutesUntilChange = closeMinutes - currentMinutes;
+    } else {
+      if (currentMinutes < openMinutes) {
+        minutesUntilChange = openMinutes - currentMinutes;
+      } else {
+        minutesUntilChange = (1440 - currentMinutes) + openMinutes;
+      }
+    }
   }
+
+  // Format remaining time in hours & minutes
+  const remainingHours = Math.floor(minutesUntilChange / 60);
+  const remainingMins = minutesUntilChange % 60;
+
+  const timeRemainingTextEn = isOpen
+    ? remainingHours > 0
+      ? `Closes in ${remainingHours}h ${remainingMins}m`
+      : `Closes in ${remainingMins}m`
+    : remainingHours > 0
+      ? `Opens in ${remainingHours}h ${remainingMins}m`
+      : `Opens in ${remainingMins}m`;
+
+  const timeRemainingTextAr = isOpen
+    ? remainingHours > 0
+      ? `يغلق خلال ${remainingHours} س و ${remainingMins} د`
+      : `يغلق خلال ${remainingMins} دقيقة`
+    : remainingHours > 0
+      ? `يفتح خلال ${remainingHours} س و ${remainingMins} د`
+      : `يفتح خلال ${remainingMins} دقيقة`;
 
   const openDisplayEn = formatTimeDisplay(openTime, 'en');
   const closeDisplayEn = formatTimeDisplay(closeTime, 'en');
@@ -150,11 +233,11 @@ export function checkStoreOpenStatus(
 
   const nextEventTextEn = isOpen
     ? `Open today until ${closeDisplayEn} (${durationHours} Hours Daily)`
-    : `Opens at ${openDisplayEn} tomorrow morning`;
+    : `Opens at ${openDisplayEn} in the morning (${durationHours} Hours Daily)`;
 
   const nextEventTextAr = isOpen
     ? `مفتوح اليوم حتى ${closeDisplayAr} (${durationHours} ساعة يومياً)`
-    : `يفتح عند ${openDisplayAr} صباحاً`;
+    : `يفتح عند ${openDisplayAr} صباحاً (${durationHours} ساعة يومياً)`;
 
   return {
     isOpen,
@@ -168,5 +251,13 @@ export function checkStoreOpenStatus(
     nextEventTextAr,
     formattedHoursEn,
     formattedHoursAr,
+    currentLebanonTime: formatted12h,
+    currentLebanonTimeFormatted: formatted12h,
+    currentMinutes,
+    minutesUntilChange,
+    timeRemainingTextEn,
+    timeRemainingTextAr,
+    operatingHoursLabel: `Open ${durationHours} hours`,
+    operatingHoursLabelAr: `مفتوح ${durationHours} ساعة`,
   };
 }

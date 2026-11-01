@@ -25,6 +25,7 @@ import {
   Sparkles,
   Share2,
   Check,
+  Scale,
 } from 'lucide-react';
 import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon, Orbit3DIcon } from './icons/ThreeDIcons';
 
@@ -38,6 +39,10 @@ export const ProductQuickViewModal: React.FC = () => {
     viewProductDetail,
     setCurrentView,
     storeSettings,
+    isInCompare,
+    addToCompare,
+    removeFromCompare,
+    setIsCompareModalOpen,
   } = useShop();
 
   const [activeTab, setActiveTab] = useState<'overview' | 'specs' | 'delivery' | 'reviews'>('overview');
@@ -243,6 +248,37 @@ export const ProductQuickViewModal: React.FC = () => {
         >
           {/* Top Bar Controls */}
           <div className="absolute top-4 right-4 rtl:left-4 rtl:right-auto z-30 flex items-center gap-2">
+            {/* Compare Button */}
+            <button
+              type="button"
+              onClick={() => {
+                if (isInCompare(product.id)) {
+                  removeFromCompare(product.id);
+                } else {
+                  const res = addToCompare(product);
+                  if (!res.success && res.message) {
+                    alert(res.message);
+                  }
+                }
+              }}
+              className={`p-2.5 rounded-full border shadow-sm backdrop-blur-md transition-all cursor-pointer ${
+                isInCompare(product.id)
+                  ? 'bg-[#007AFF] text-white border-[#007AFF]'
+                  : 'bg-white/90 dark:bg-[#152033]/90 hover:bg-[#F5F8FC] dark:hover:bg-[#1E293B] text-[#64748B] dark:text-slate-300 hover:text-[#007AFF] border-[#DCE5F0] dark:border-[#1E293B]'
+              }`}
+              title={
+                isInCompare(product.id)
+                  ? lang === 'ar'
+                    ? 'إزالة من المقارنة'
+                    : 'Remove from Compare'
+                  : lang === 'ar'
+                  ? 'مقارنة المواصفات'
+                  : 'Compare Specs'
+              }
+            >
+              <Scale className="w-4 h-4" />
+            </button>
+
             <button
               onClick={handleShare}
               className="p-2.5 rounded-full bg-white/90 dark:bg-[#152033]/90 hover:bg-[#F5F8FC] dark:hover:bg-[#1E293B] text-[#64748B] dark:text-slate-300 hover:text-[#007AFF] border border-[#DCE5F0] dark:border-[#1E293B] shadow-sm backdrop-blur-md transition-all cursor-pointer"

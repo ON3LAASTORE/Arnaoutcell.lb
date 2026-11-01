@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useShop } from '../context/ShopContext';
 import {
   Phone,
@@ -10,13 +10,47 @@ import {
   CreditCard,
   Banknote,
   Smartphone,
+  Navigation,
+  Share2,
+  Compass,
+  Check,
 } from 'lucide-react';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import { StoreLogo } from './StoreLogo';
 import { NewsletterFooterSection } from './NewsletterFooterSection';
+import { StoreStatusBadge } from './StoreStatusBadge';
+import {
+  SAIDA_STORE_DATA,
+  buildSendToPhoneUrl,
+  buildLocationShareData,
+} from '../utils/storeLocatorHelpers';
 
 export const Footer: React.FC = () => {
   const { lang, t, storeSettings, setCurrentView, selectCategory, selectBrand, categories, brands } = useShop();
+  const [copiedShare, setCopiedShare] = useState(false);
+
+  const handleShare = async () => {
+    const shareData = buildLocationShareData(lang === 'ar');
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: shareData.title,
+          text: shareData.text,
+          url: shareData.url,
+        });
+        return;
+      } catch {
+        // fallback
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(shareData.fullMessage);
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 2200);
+    } catch {
+      // fallback
+    }
+  };
 
   const handlePolicyClick = (policyType: string) => {
     setCurrentView(`policy-${policyType}`);
@@ -30,7 +64,7 @@ export const Footer: React.FC = () => {
         <NewsletterFooterSection />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
-          {/* Col 1: Brand Info */}
+          {/* Col 1: Brand Info & Location */}
           <div className="lg:col-span-2 space-y-4">
             <StoreLogo
               size="md"
@@ -46,8 +80,17 @@ export const Footer: React.FC = () => {
                 : "Lebanon's premier technology and electronics destination in Saida. Flagship smartphones, high-performance laptops, accessories, and certified financial services."}
             </p>
 
-            {/* Contact details */}
-            <div className="space-y-2 pt-2 text-xs">
+            {/* Dynamic Real-time Open/Closed Status Indicator */}
+            <div className="pt-1">
+              <StoreStatusBadge
+                schedule={storeSettings.openingSchedule}
+                isArabic={lang === 'ar'}
+                variant="pill"
+              />
+            </div>
+
+            {/* Contact & Location details */}
+            <div className="space-y-2 pt-1 text-xs">
               <a
                 href="tel:81900916"
                 className="flex items-center gap-2.5 text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors font-bold"
@@ -62,39 +105,63 @@ export const Footer: React.FC = () => {
                 <div className="w-7 h-7 rounded-lg bg-[#EAF3FF] dark:bg-[#1E293B] flex items-center justify-center text-[#007AFF] flex-shrink-0 mt-0.5">
                   <MapPin className="w-3.5 h-3.5" />
                 </div>
-                <span>{lang === 'ar' ? storeSettings.locationAr : storeSettings.locationEn}</span>
+                <div className="space-y-0.5">
+                  <span className="font-bold block">
+                    {lang === 'ar' ? SAIDA_STORE_DATA.nameAr : SAIDA_STORE_DATA.name}
+                  </span>
+                  <div className="flex items-center gap-2 text-[11px] text-[#007AFF] dark:text-[#38BDF8]">
+                    <span className="font-mono font-bold bg-[#EAF3FF] dark:bg-[#1E293B] px-1.5 py-0.5 rounded">
+                      {SAIDA_STORE_DATA.plusCode}
+                    </span>
+                    <span>• {lang === 'ar' ? 'ساحة النجمة صيدا' : 'Nejmeh Square'}</span>
+                  </div>
+                </div>
               </div>
 
               <div className="flex items-start gap-2.5 text-[#64748B] dark:text-slate-400">
-                <div className="w-7 h-7 rounded-lg bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] flex items-center justify-center text-[#007AFF] flex-shrink-0 mt-0.5">
+                <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-shrink-0 mt-0.5">
                   <Clock className="w-3.5 h-3.5" />
                 </div>
                 <div className="space-y-0.5">
                   <span className="font-bold text-[#172033] dark:text-[#F8FAFC] block">
-                    {lang === 'ar'
-                      ? (storeSettings.openingSchedule?.customMessageAr || 'مفتوح يومياً — 17 ساعة يومياً')
-                      : (storeSettings.openingSchedule?.customMessageEn || 'OPEN EVERY DAY — 17 HOURS DAILY')}
+                    {lang === 'ar' ? 'مفتوح 17 ساعة يومياً (8:00 ص – 1:00 ص)' : 'OPEN 17 HOURS DAILY (8:00 AM – 1:00 AM)'}
                   </span>
                   <span className="text-[11px] text-[#64748B] dark:text-slate-400 block">
-                    {lang === 'ar' ? storeSettings.openingHoursAr : storeSettings.openingHoursEn}
+                    {lang === 'ar' ? SAIDA_STORE_DATA.openingHoursAr : SAIDA_STORE_DATA.openingHoursEn}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* WhatsApp Contact Button */}
-            <div className="pt-2">
+            {/* Quick Actions Bar: Live Route & Send to Phone 81900916 & Share */}
+            <div className="flex flex-wrap items-center gap-2 pt-2">
               <a
-                href={`https://wa.me/${storeSettings.whatsapp || '96181900916'}?text=${encodeURIComponent(
-                  `Hello ${storeSettings.storeName}! I am inquiring about your products.`
-                )}`}
+                href={SAIDA_STORE_DATA.googleDirectionsUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white font-black text-xs shadow-md shadow-emerald-700/30 transition-all cursor-pointer group active:scale-95"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#007AFF] hover:bg-[#0066D6] text-white text-[11px] font-bold shadow-xs transition-colors cursor-pointer"
               >
-                <WhatsApp3DIcon size={20} />
-                <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (81900916)' : 'Inquire / Order on WhatsApp (81900916)'}</span>
+                <Navigation className="w-3 h-3" />
+                <span>{lang === 'ar' ? 'الطريق المباشر' : 'Live Route'}</span>
               </a>
+
+              <a
+                href={buildSendToPhoneUrl('81900916', 'whatsapp', lang === 'ar')}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-xs transition-colors cursor-pointer"
+              >
+                <WhatsApp3DIcon size={14} />
+                <span>{lang === 'ar' ? 'إرسال للهاتف 81900916' : 'Send to Phone 81900916'}</span>
+              </a>
+
+              <button
+                onClick={handleShare}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F1F5F9] dark:bg-[#1E293B] hover:bg-slate-200 text-[#172033] dark:text-white text-[11px] font-bold transition-colors cursor-pointer"
+              >
+                {copiedShare ? <Check className="w-3 h-3 text-emerald-500" /> : <Share2 className="w-3 h-3 text-[#007AFF]" />}
+                <span>{copiedShare ? (lang === 'ar' ? 'تم النسخ!' : 'Copied!') : (lang === 'ar' ? 'مشاركة' : 'Share')}</span>
+              </button>
             </div>
           </div>
 

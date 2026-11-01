@@ -6,6 +6,8 @@ import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
 import { CartDrawer } from './components/CartDrawer';
 import { ProductQuickViewModal } from './components/ProductQuickViewModal';
+import { CompareFloatingBar } from './components/CompareFloatingBar';
+import { ProductCompareModal } from './components/ProductCompareModal';
 import { FloatingWhatsAppButton } from './components/FloatingWhatsAppButton';
 
 // Pages
@@ -71,6 +73,8 @@ const AppContent: React.FC = () => {
       <Footer />
       <CartDrawer />
       <ProductQuickViewModal />
+      <CompareFloatingBar />
+      <ProductCompareModal />
       <FloatingWhatsAppButton />
     </div>
   );

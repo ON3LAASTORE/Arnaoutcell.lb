@@ -1,0 +1,75 @@
+[
+  {
+    "id": "log-1793495324040",
+    "postId": "post-1793495323937",
+    "productId": "prod-acefast-t8",
+    "productName": "OPPO Reno16 F 5G 8GB/256GB",
+    "platforms": [
+      "facebook",
+      "instagram",
+      "whatsapp",
+      "telegram"
+    ],
+    "results": {
+      "facebook": {
+        "success": false,
+        "message": "Facebook Page credentials not configured. Please connect your Facebook Page in Settings.",
+        "errorDetails": "Missing pageId or pageAccessToken. Go to Social Media Manager > Accounts to connect.",
+        "timestamp": "2026-11-01T01:08:44.040Z"
+      },
+      "instagram": {
+        "success": false,
+        "message": "Instagram Professional account not connected or missing permissions.",
+        "errorDetails": "Requires instagram_content_publish permission and connected Instagram Business Account ID.",
+        "timestamp": "2026-11-01T01:08:44.040Z"
+      },
+      "whatsapp": {
+        "success": true,
+        "message": "Ready for 1-click sharing via official whatsapp protocol.",
+        "timestamp": "2026-11-01T01:08:44.040Z"
+      },
+      "telegram": {
+        "success": false,
+        "message": "Telegram Bot credentials not configured.",
+        "errorDetails": "Missing bot token or channel ID. Configure in Settings.",
+        "timestamp": "2026-11-01T01:08:44.040Z"
+      }
+    },
+    "caption": "🔥 OPPO Reno16 F 5G 8GB/256GB\n💥 SPECIAL OFFER: Save 7% (Was $600)\n\n💰 CASH PRICE: $559 USD\n🟢 In Stock (1 units in Saida)\n\n📋 KEY SPECIFICATIONS:\n• Display: 6.57-inch FHD+ OLED, 120Hz refresh rate, up to 1400 nits peak brightness\n• Processor: MediaTek Dimensity 7300-Energy (4nm)\n• RAM & Storage: 8GB or 12GB RAM, paired with 256GB UFS 3.1 storage (supports microSD expansion)\n• Rear Cameras: 50MP main camera (OIS), 50MP telephoto portrait (3.5x optical zoom), and an 8MP ultra-wide camera\n\n🛡️ WARRANTY: 12 Months Store & Agent Warranty\n🚚 DELIVERY: Express delivery to all Lebanese areas & free pickup at SQUARE ARNAOUT CELL STORE, SAIDA - NEJMEH, Sidon (Plus Code: H97G+W2P, Sidon)\n\n📲 Direct WhatsApp Order:\nhttps://wa.me/96181900916?text=Hello%20ARNAOUT%20STORE!%20I%20am%20interested%20in%20ordering%3A%20OPPO%20Reno16%20F%205G%208GB%2F256GB%20(%24559%20USD)\n\n🛒 View product on website:\nhttps://arnaoutstore.com/?product=prod-acefast-t8\n\n#ArnaoutStore #ArnaoutSaida #Oppo #Audio #LebanonTech #Saida #Beirut #LebanonShopping #CashUSD #OfficialWarranty #OPPOLebanon #Reno16Series #HotDeal #LebanonDeals #Discount\n\n---\n\n🔥 OPPO Reno16 F 5G\n💥 عرض خاص ومميز: وفر 7% (بدل $600)\n\n💰 السعر كاش: $559 دولار\n🟢 متوفر حالياً في متجرنا بصيدا (1 قطع)\n\n📋 أبرز المواصفات:\n• Display: 6.57-inch FHD+ OLED, 120Hz refresh rate, up to 1400 nits peak brightness\n• Processor: MediaTek Dimensity 7300-Energy (4nm)\n• RAM & Storage: 8GB or 12GB RAM, paired with 256GB UFS 3.1 storage (supports microSD expansion)\n• Rear Cameras: 50MP main camera (OIS), 50MP telephoto portrait (3.5x optical zoom), and an 8MP ultra-wide camera\n\n🛡️ الكفالة: كفالة رسمية 12 شهراً\n🚚 التوصيل: خدمة توصيل سريع لكافة الأراضي اللبنانية أو استلام فوري من معرضنا في سكوير أرناؤوط سيل ستور، صيدا - ساحة النجمة، صيدا (رمز بلس: H97G+W2P, Sidon)\n\n📲 للطلب الفوري عبر واتساب:\nhttps://wa.me/96181900916?text=Hello%20ARNAOUT%20STORE!%20I%20am%20interested%20in%20ordering%3A%20OPPO%20Reno16%20F%205G%208GB%2F256GB%20(%24559%20USD)\n\n🛒 تصفح المنتج عبر المتجر:\nhttps://arnaoutstore.com/?product=prod-acefast-t8\n\n#ArnaoutStore #ArnaoutSaida #Oppo #Audio #LebanonTech #Saida #Beirut #LebanonShopping #CashUSD #OfficialWarranty #OPPOLebanon #Reno16Series #HotDeal #LebanonDeals #Discount",
+    "imageUrl": "https://ais-dev-ps2e3kgyt3igjmkzxob7f7-103630295871.europe-west2.run.app/api/social/media/post-1793495324039-ro9sti.png",
+    "createdAt": "2026-11-01T01:08:44.040Z"
+  },
+  {
+    "id": "log-1793495161584",
+    "postId": "post-1793495161584",
+    "productId": "prod-oppo-reno16",
+    "productName": "OPPO Reno 16",
+    "platforms": [
+      "whatsapp",
+      "telegram",
+      "facebook"
+    ],
+    "results": {
+      "whatsapp": {
+        "success": true,
+        "message": "Ready for 1-click sharing via official whatsapp protocol.",
+        "timestamp": "2026-11-01T01:06:01.584Z"
+      },
+      "telegram": {
+        "success": false,
+        "message": "Telegram Bot credentials not configured.",
+        "errorDetails": "Missing bot token or channel ID. Configure in Settings.",
+        "timestamp": "2026-11-01T01:06:01.584Z"
+      },
+      "facebook": {
+        "success": false,
+        "message": "Facebook Page credentials not configured. Please connect your Facebook Page in Settings.",
+        "errorDetails": "Missing pageId or pageAccessToken. Go to Social Media Manager > Accounts to connect.",
+        "timestamp": "2026-11-01T01:06:01.584Z"
+      }
+    },
+    "caption": "Test post",
+    "imageUrl": "",
+    "createdAt": "2026-11-01T01:06:01.584Z"
+  }
+]

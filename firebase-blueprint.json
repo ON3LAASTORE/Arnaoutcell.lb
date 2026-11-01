@@ -283,6 +283,123 @@
         }
       },
       "required": ["email", "subscribedAt", "source"]
+    },
+    "SocialMarketingPost": {
+      "title": "SocialMarketingPost",
+      "description": "Product marketing campaign post for social media channels including captions, hashtags, and generated graphics",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique post ID",
+          "maxLength": 128
+        },
+        "productId": {
+          "type": "string",
+          "description": "Referenced product SKU or identifier",
+          "maxLength": 128
+        },
+        "productName": {
+          "type": "string",
+          "description": "Product title in post",
+          "maxLength": 255
+        },
+        "productBrand": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "productCategory": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "productPrice": {
+          "type": "number",
+          "description": "Cash price in USD"
+        },
+        "originalPrice": {
+          "type": "number"
+        },
+        "discountPercentage": {
+          "type": "number"
+        },
+        "productImage": {
+          "type": "string",
+          "maxLength": 1024
+        },
+        "aspectRatio": {
+          "type": "string",
+          "enum": ["1:1", "9:16", "16:9"]
+        },
+        "templateStyle": {
+          "type": "string",
+          "enum": ["modern_dark", "minimal_white", "hot_deal", "coloros_purple"]
+        },
+        "captionEn": {
+          "type": "string",
+          "maxLength": 5000
+        },
+        "captionAr": {
+          "type": "string",
+          "maxLength": 5000
+        },
+        "hashtags": {
+          "type": "array"
+        },
+        "selectedPlatforms": {
+          "type": "array"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["draft", "published", "scheduled"]
+        },
+        "createdAt": {
+          "type": "string"
+        },
+        "publishedAt": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "productId", "productName", "productPrice", "status", "createdAt"]
+    },
+    "SocialAccountConfig": {
+      "title": "SocialAccountConfig",
+      "description": "Social media channel connection status and publishing settings for store administration",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "platform": {
+          "type": "string",
+          "enum": ["facebook", "instagram", "whatsapp", "whatsapp_status", "tiktok", "telegram", "x"]
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "accountHandle": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "isConnected": {
+          "type": "boolean"
+        },
+        "directPublishSupported": {
+          "type": "boolean"
+        },
+        "directPublishEnabled": {
+          "type": "boolean"
+        },
+        "channelId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "lastSyncedAt": {
+          "type": "string"
+        }
+      },
+      "required": ["id", "platform", "displayName", "isConnected"]
     }
   },
   "firestore": {
@@ -315,6 +432,19 @@
         "$ref": "NewsletterSubscriber"
       },
       "description": "Customer emails captured for marketing updates and tech deals"
+    },
+    "/social_posts/{postId}": {
+      "schema": {
+        "$ref": "SocialMarketingPost"
+      },
+      "description": "Saved social marketing campaign drafts and publishing log"
+    },
+    "/social_accounts/{accountId}": {
+      "schema": {
+        "$ref": "SocialAccountConfig"
+      },
+      "description": "Connected social media channels configuration and account handles"
     }
   }
 }
+

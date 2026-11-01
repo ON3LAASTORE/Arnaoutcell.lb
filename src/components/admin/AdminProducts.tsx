@@ -10,9 +10,14 @@ import {
   Trash2,
   Upload,
   X,
+  Share2,
 } from 'lucide-react';
 
-export const AdminProducts: React.FC = () => {
+interface AdminProductsProps {
+  onShareProduct?: (productId: string) => void;
+}
+
+export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) => {
   const { lang, products, categories, brands, refreshData } = useShop();
   const { selectableBrands } = useAdmin();
 
@@ -381,6 +386,14 @@ export const AdminProducts: React.FC = () => {
                   </td>
                   <td className="py-3 px-4 text-right rtl:text-left">
                     <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => onShareProduct && onShareProduct(p.id)}
+                        className="p-1.5 rounded-lg bg-[#EAF3FF] hover:bg-[#007AFF] hover:text-white border border-[#BAE6FD] text-[#007AFF] transition-colors cursor-pointer"
+                        title={lang === 'ar' ? 'تسويق ونشر عبر السوشال ميديا' : 'Share & Market on Social Media'}
+                        aria-label={`Share ${p.name} on social media`}
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                      </button>
                       <button
                         onClick={() => openEditModal(p)}
                         className="p-1.5 rounded-lg bg-[#F5F8FC] hover:bg-[#EAF3FF] border border-[#DCE5F0] text-[#007AFF] transition-colors"

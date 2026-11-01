@@ -14,6 +14,7 @@ import {
   AlertTriangle,
   Play,
   Sparkles,
+  Scale,
 } from 'lucide-react';
 import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon } from '../components/icons/ThreeDIcons';
 
@@ -28,6 +29,10 @@ export const ProductDetailPage: React.FC = () => {
     isInWishlist,
     setCurrentView,
     storeSettings,
+    isInCompare,
+    addToCompare,
+    removeFromCompare,
+    setIsCompareModalOpen,
   } = useShop();
 
   const product = products.find((p) => p.id === selectedProductId) || products[0];
@@ -452,6 +457,39 @@ export const ProductDetailPage: React.FC = () => {
               >
                 <WhatsApp3DIcon size={22} />
                 <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (81900916)' : 'Inquire / Order on WhatsApp (81900916)'}</span>
+              </button>
+
+              {/* Compare Specs Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  if (isInCompare(product.id)) {
+                    removeFromCompare(product.id);
+                  } else {
+                    const res = addToCompare(product);
+                    if (!res.success && res.message) {
+                      alert(res.message);
+                    } else {
+                      setIsCompareModalOpen(true);
+                    }
+                  }
+                }}
+                className={`w-full py-2.5 px-4 rounded-xl border font-bold text-xs flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  isInCompare(product.id)
+                    ? 'bg-[#007AFF] text-white border-[#007AFF] shadow-sm'
+                    : 'bg-[#F5F8FC] hover:bg-[#EAF3FF] text-[#172033] border-[#DCE5F0] hover:border-[#007AFF]'
+                }`}
+              >
+                <Scale className="w-4 h-4" />
+                <span>
+                  {isInCompare(product.id)
+                    ? lang === 'ar'
+                      ? 'مضاف للمقارنة (عرض المواصفات)'
+                      : 'Added to Compare (View Specs)'
+                    : lang === 'ar'
+                    ? 'مقارنة هذا الجهاز مع هواتف ولابتوبات أخرى'
+                    : 'Compare with Other Devices'}
+                </span>
               </button>
             </div>
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Product } from '../types';
 import { useShop } from '../context/ShopContext';
-import { Heart, Shield, Star, CheckCircle, AlertTriangle, Sparkles } from 'lucide-react';
+import { Heart, Shield, Star, CheckCircle, AlertTriangle, Sparkles, Scale, Share2 } from 'lucide-react';
 import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon, Orbit3DIcon } from './icons/ThreeDIcons';
 
 interface ProductCardProps {
@@ -22,12 +22,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     setQuickViewProduct,
     toggleWishlist,
     isInWishlist,
+    isInCompare,
+    addToCompare,
+    removeFromCompare,
     setCurrentView,
     viewProductDetail,
     storeSettings,
   } = useShop();
 
   const isFavorited = isInWishlist(product.id);
+  const isCompared = isInCompare(product.id);
   const discountAmount = product.originalPrice > product.price ? product.originalPrice - product.price : 0;
   const isOutOfStock = product.stock <= 0;
   const isLowStock = product.stock > 0 && product.stock <= (product.lowStockThreshold || 3);
@@ -124,6 +128,63 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           title="Add to Wishlist"
         >
           <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current text-white' : ''}`} />
+        </button>
+
+        {/* Compare Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (isCompared) {
+              removeFromCompare(product.id);
+            } else {
+              const res = addToCompare(product);
+              if (!res.success && res.message) {
+                alert(res.message);
+              }
+            }
+          }}
+          className={`absolute top-12 right-2.5 rtl:left-2.5 rtl:right-auto p-2 rounded-xl backdrop-blur-md transition-all z-10 cursor-pointer ${
+            isCompared
+              ? 'bg-[#007AFF] text-white shadow-md'
+              : 'bg-white/90 dark:bg-[#111A2E]/90 text-[#64748B] dark:text-slate-400 hover:text-[#007AFF] hover:bg-white dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B]'
+          }`}
+          title={
+            isCompared
+              ? lang === 'ar'
+                ? 'إزالة من المقارنة'
+                : 'Remove from Compare'
+              : lang === 'ar'
+              ? 'إضافة إلى المقارنة (3 كحد أقصى)'
+              : 'Add to Compare (max 3)'
+          }
+          aria-label="Compare Product"
+        >
+          <Scale className="w-4 h-4" />
+        </button>
+
+        {/* Quick Share Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (navigator.share) {
+              navigator.share({
+                title: product.name,
+                text: `${product.name} at ARNAOUT STORE - $${product.price} USD Cash!`,
+                url: window.location.origin + '?product=' + product.id,
+              }).catch(() => {});
+            } else {
+              const shareText = `Check out ${product.name} ($${product.price} USD) at ARNAOUT STORE (Saida, Lebanon): ${window.location.origin}?product=${product.id}`;
+              const waUrl = `https://wa.me/?text=${encodeURIComponent(shareText)}`;
+              window.open(waUrl, '_blank', 'noopener,noreferrer');
+            }
+          }}
+          className="absolute top-[5.25rem] right-2.5 rtl:left-2.5 rtl:right-auto p-2 rounded-xl backdrop-blur-md transition-all z-10 cursor-pointer bg-white/90 dark:bg-[#111A2E]/90 text-[#64748B] dark:text-slate-400 hover:text-[#007AFF] hover:bg-white dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B]"
+          title={lang === 'ar' ? 'مشاركة المنتج' : 'Share Product'}
+          aria-label="Share Product"
+        >
+          <Share2 className="w-4 h-4" />
         </button>
 
         {/* 3D Interactive View Button Pill */}

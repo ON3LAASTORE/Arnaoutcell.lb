@@ -4,6 +4,7 @@ import { AdminLogin } from '../components/admin/AdminLogin';
 import { AdminLayout } from '../components/admin/AdminLayout';
 import { AdminOverview } from '../components/admin/AdminOverview';
 import { AdminProducts } from '../components/admin/AdminProducts';
+import { AdminSocialMarketing } from '../components/admin/AdminSocialMarketing';
 import { AdminOffers } from '../components/admin/AdminOffers';
 import { AdminOrders } from '../components/admin/AdminOrders';
 import { AdminInventory } from '../components/admin/AdminInventory';
@@ -15,6 +16,12 @@ import { AdminSettings } from '../components/admin/AdminSettings';
 export const AdminPage: React.FC = () => {
   const { isAuthenticated } = useAdmin();
   const [activeTab, setActiveTab] = useState('overview');
+  const [targetProductId, setTargetProductId] = useState<string | undefined>(undefined);
+
+  const handleShareProduct = (productId: string) => {
+    setTargetProductId(productId);
+    setActiveTab('social_marketing');
+  };
 
   if (!isAuthenticated) {
     return <AdminLogin />;
@@ -23,8 +30,11 @@ export const AdminPage: React.FC = () => {
   return (
     <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
       {activeTab === 'overview' && <AdminOverview onNavigateTab={setActiveTab} />}
-      {activeTab === 'products' && <AdminProducts />}
-      {activeTab === 'offers' && <AdminOffers />}
+      {activeTab === 'products' && <AdminProducts onShareProduct={handleShareProduct} />}
+      {activeTab === 'social_marketing' && (
+        <AdminSocialMarketing initialProductId={targetProductId} />
+      )}
+      {activeTab === 'offers' && <AdminOffers onShareProduct={handleShareProduct} />}
       {activeTab === 'orders' && <AdminOrders />}
       {activeTab === 'inventory' && <AdminInventory />}
       {activeTab === 'categories' && <AdminCategoriesBrands />}

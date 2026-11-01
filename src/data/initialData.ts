@@ -913,33 +913,33 @@ export const LEBANON_DELIVERY_ZONES: DeliveryZone[] = [
 ];
 
 export const INITIAL_STORE_SETTINGS: StoreSettings = {
-  storeName: 'ARNAOUT STORE',
-  storeNameAr: 'أرناؤوط ستور',
+  storeName: 'SQUARE ARNAOUT CELL STORE',
+  storeNameAr: 'سكوير أرناؤوط سيل ستور',
   tagline: 'Your Home in Electronics 🏠',
   taglineAr: 'بيتك في عالم الإلكترونيات 🏠',
   phone: '81 900 916',
   whatsapp: '96181900916', // formatted for wa.me link
-  locationEn: 'Saida, Nijme Square, Main Road, Lebanon',
-  locationAr: 'صيدا، ساحة النجمة، الشارع الرئيسي، لبنان',
-  openingHoursEn: 'Monday – Sunday: 8:00 AM – 1:00 AM',
-  openingHoursAr: 'الإثنين – الأحد: 8:00 ص – 1:00 ص',
+  locationEn: 'SQUARE ARNAOUT CELL STORE, SAIDA - NEJMEH, Sidon (Plus Code: H97G+W2P, Sidon)',
+  locationAr: 'سكوير أرناؤوط سيل ستور، صيدا - ساحة النجمة، صيدا (رمز بلس: H97G+W2P, Sidon)',
+  openingHoursEn: 'Open 17 hours: 8:00 AM – 1:00 AM (Monday – Sunday)',
+  openingHoursAr: 'مفتوح 17 ساعة: 8:00 ص – 1:00 ص (الإثنين – الأحد)',
   openingSchedule: {
     openTime: '08:00',
     closeTime: '01:00',
     daysOpenEn: 'Monday – Sunday',
     daysOpenAr: 'الإثنين – الأحد',
     displayHours: true,
-    customMessageEn: 'OPEN EVERY DAY — 17 HOURS DAILY',
-    customMessageAr: 'مفتوح يومياً — 17 ساعة يومياً',
+    customMessageEn: 'OPEN 17 HOURS DAILY (8:00 AM – 1:00 AM)',
+    customMessageAr: 'مفتوح 17 ساعة يومياً (8:00 ص – 1:00 ص)',
     timezone: 'Asia/Beirut',
   },
   announcementBar: {
     enabled: true,
-    textEn: '🔥 OPEN EVERY DAY — 17 HOURS DAILY (8:00 AM – 1:00 AM) | ARNAOUT STORE Saida & Fast Lebanon Delivery | Call 81 900 916',
-    textAr: '🔥 مفتوح يومياً — 17 ساعة يومياً (8:00 ص – 1:00 ص) | أرناؤوط ستور صيدا وتوصيل سريع لكافة لبنان | اتصل: 81 900 916',
+    textEn: '🔥 OPEN 17 HOURS DAILY (8:00 AM – 1:00 AM) | SQUARE ARNAOUT CELL STORE, SAIDA - NEJMEH | Plus Code: H97G+W2P | Call 81 900 916',
+    textAr: '🔥 مفتوح 17 ساعة يومياً (8:00 ص – 1:00 ص) | سكوير أرناؤوط سيل ستور، صيدا - ساحة النجمة | رمز بلس: H97G+W2P | اتصل: 81 900 916',
     bgColor: '#007AFF',
     textColor: '#FFFFFF',
-    linkUrl: '#special-offers',
+    linkUrl: '#store-locator-section',
   },
   heroSlides: [
     {

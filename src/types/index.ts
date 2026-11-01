@@ -224,3 +224,5 @@ export interface StoreSettings {
   }[];
   deliveryZones: DeliveryZone[];
 }
+
+export * from './socialMarketing';

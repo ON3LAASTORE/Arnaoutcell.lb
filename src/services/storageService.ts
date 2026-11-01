@@ -418,10 +418,19 @@ export function getStoreSettings(): StoreSettings {
     };
     // Centralized automatic migration if old default name was retained
     if (!merged.storeName || merged.storeName.trim().toLowerCase() === 'arnaout cell') {
-      merged.storeName = 'ARNAOUT STORE';
+      merged.storeName = 'SQUARE ARNAOUT CELL STORE';
     }
     if (!merged.storeNameAr || merged.storeNameAr.trim() === 'أرناؤوط سيل') {
-      merged.storeNameAr = 'أرناؤوط ستور';
+      merged.storeNameAr = 'سكوير أرناؤوط سيل ستور';
+    }
+    if (!merged.locationEn || !merged.locationEn.includes('H97G+W2P')) {
+      merged.locationEn = INITIAL_STORE_SETTINGS.locationEn;
+    }
+    if (!merged.locationAr || !merged.locationAr.includes('H97G+W2P')) {
+      merged.locationAr = INITIAL_STORE_SETTINGS.locationAr;
+    }
+    if (!merged.phone) {
+      merged.phone = '81 900 916';
     }
     if (!merged.tagline) {
       merged.tagline = 'Your Home in Electronics 🏠';

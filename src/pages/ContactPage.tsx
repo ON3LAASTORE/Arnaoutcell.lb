@@ -9,19 +9,66 @@ import {
   CheckCircle,
   Building2,
   Sparkles,
+  Navigation,
+  Share2,
+  Copy,
+  Check,
+  Compass,
+  ExternalLink,
 } from 'lucide-react';
 import { WhatsApp3DIcon } from '../components/icons/ThreeDIcons';
-import { checkStoreOpenStatus } from '../utils/storeSchedule';
+import { StoreStatusBadge } from '../components/StoreStatusBadge';
+import {
+  SAIDA_STORE_DATA,
+  buildLiveRouteUrl,
+  buildSendToPhoneUrl,
+  buildLocationShareData,
+} from '../utils/storeLocatorHelpers';
 
 export const ContactPage: React.FC = () => {
   const { lang, storeSettings } = useShop();
+  const isArabic = lang === 'ar';
 
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [message, setMessage] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [copiedPlusCode, setCopiedPlusCode] = useState(false);
+  const [copiedShare, setCopiedShare] = useState(false);
 
-  const scheduleInfo = checkStoreOpenStatus(storeSettings.openingSchedule);
+  const handleCopyPlusCode = async () => {
+    try {
+      await navigator.clipboard.writeText(SAIDA_STORE_DATA.plusCode);
+      setCopiedPlusCode(true);
+      setTimeout(() => setCopiedPlusCode(false), 2200);
+    } catch {
+      // fallback
+    }
+  };
+
+  const handleShare = async () => {
+    const shareData = buildLocationShareData(isArabic);
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: shareData.title,
+          text: shareData.text,
+          url: shareData.url,
+        });
+        return;
+      } catch {
+        // fallback
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareData.fullMessage);
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 2500);
+    } catch {
+      // fallback
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,37 +82,89 @@ export const ContactPage: React.FC = () => {
   return (
     <div className="py-12 md:py-20 bg-white dark:bg-[#0A0F1D] min-h-[100dvh] w-full transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto mb-14 space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF3FF] border border-[#BAE6FD] text-[#007AFF] text-xs font-bold tracking-wider mb-2">
+        {/* Header */}
+        <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF3FF] dark:bg-[#132238] border border-[#BAE6FD] dark:border-[#1E3A5F] text-[#007AFF] text-xs font-bold tracking-wider">
             <Building2 className="w-3.5 h-3.5" />
-            <span>{lang === 'ar' ? 'صيدا — ساحة النجمة' : 'SAIDA FLAGSHIP STORE'}</span>
+            <span>{isArabic ? 'صيدا — ساحة النجمة' : 'SAIDA - NEJMEH FLAGSHIP STORE'}</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black text-[#172033]">
-            {lang === 'ar' ? `تواصل مع ${storeSettings.storeNameAr || 'أرناؤوط ستور'}` : `Contact ${storeSettings.storeName}`}
+
+          <h1 className="text-3xl sm:text-5xl font-black text-[#172033] dark:text-white">
+            {isArabic ? SAIDA_STORE_DATA.nameAr : SAIDA_STORE_DATA.name}
           </h1>
-          <p className="text-[#64748B] text-xs sm:text-sm">
-            {lang === 'ar'
-              ? 'نحن هنا لخدمتكم ومساعدتكم في اختيار أفضل الأجهزة والخدمات.'
-              : 'Our technical team is ready to answer your inquiries and coordinate your orders.'}
+
+          <p className="text-[#64748B] dark:text-slate-400 text-xs sm:text-sm">
+            {isArabic
+              ? 'موقعنا الاستراتيجي في ساحة النجمة بصيدا. تفضل بزيارتنا أو تواصل معنا للاستفسار عن الأجهزة، الصيانة، وخدمات التحويل المالي.'
+              : 'Our central location at Nejmeh Square in Sidon. Visit our showroom or get in touch for device inquiries, warranty, and orders.'}
           </p>
+
+          {/* Dynamic Live Status Indicator */}
+          <div className="pt-2 flex justify-center">
+            <StoreStatusBadge
+              schedule={storeSettings.openingSchedule}
+              isArabic={isArabic}
+              variant="pill"
+            />
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          {/* Contact Information & Map */}
+          {/* Contact Information & GPS Section */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="p-6 rounded-3xl bg-white border border-[#DCE5F0] space-y-5 shadow-xs">
-              <h3 className="text-base font-bold text-[#172033] border-b border-[#DCE5F0] pb-3">
-                {lang === 'ar' ? 'معلومات الاتصال المباشر' : 'Store Information'}
-              </h3>
+            <div className="p-6 sm:p-7 rounded-3xl bg-white dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] space-y-5 shadow-xs">
+              <div className="flex items-center justify-between border-b border-[#DCE5F0] dark:border-[#1E293B] pb-3">
+                <h3 className="text-base font-bold text-[#172033] dark:text-white">
+                  {isArabic ? 'معلومات الموقع والاتصال' : 'Location & Store Info'}
+                </h3>
+                <span className="text-xs font-black px-2.5 py-1 rounded-full bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
+                  {isArabic ? 'مفتوح 17 ساعة' : 'Open 17 hours'}
+                </span>
+              </div>
+
+              {/* Dynamic Status Card */}
+              <StoreStatusBadge
+                schedule={storeSettings.openingSchedule}
+                isArabic={isArabic}
+                variant="detailed"
+              />
+
+              {/* Plus Code & GPS Box */}
+              <div className="p-4 rounded-2xl bg-[#EAF3FF] dark:bg-[#132238] border border-[#BAE6FD] dark:border-[#1E3A5F] flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <span className="text-[10px] font-bold text-[#007AFF] dark:text-[#38BDF8] uppercase tracking-wider block">
+                    {isArabic ? 'رمز بلس (Google Plus Code):' : 'Google Plus Code:'}
+                  </span>
+                  <span className="text-base font-black font-mono text-[#172033] dark:text-white">
+                    {SAIDA_STORE_DATA.plusCode}
+                  </span>
+                  <span className="text-[11px] text-[#64748B] dark:text-slate-400 block">
+                    GPS: 33.5623° N, 35.3722° E
+                  </span>
+                </div>
+
+                <button
+                  onClick={handleCopyPlusCode}
+                  className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#0E1726] text-[#007AFF] text-xs font-bold border border-[#BAE6FD] flex items-center gap-1 cursor-pointer"
+                >
+                  {copiedPlusCode ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  <span>{copiedPlusCode ? (isArabic ? 'تم!' : 'Copied!') : (isArabic ? 'نسخ' : 'Copy')}</span>
+                </button>
+              </div>
 
               {/* Phone */}
               <div className="flex items-start gap-3.5 text-xs">
-                <div className="w-9 h-9 rounded-xl bg-[#EAF3FF] text-[#007AFF] flex items-center justify-center flex-shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-[#EAF3FF] dark:bg-[#1E293B] text-[#007AFF] flex items-center justify-center flex-shrink-0">
                   <Phone className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="text-[#64748B] block font-semibold">{lang === 'ar' ? 'الهاتف المباشر:' : 'Direct Call:'}</span>
-                  <a href="tel:81900916" className="text-base font-black text-[#172033] hover:text-[#007AFF] transition-colors">
+                  <span className="text-[#64748B] dark:text-slate-400 block font-semibold">
+                    {isArabic ? 'الهاتف المباشر:' : 'Direct Call:'}
+                  </span>
+                  <a
+                    href="tel:81900916"
+                    className="text-base font-black text-[#172033] dark:text-white hover:text-[#007AFF] transition-colors"
+                  >
                     81 900 916
                   </a>
                 </div>
@@ -77,7 +176,9 @@ export const ContactPage: React.FC = () => {
                   <WhatsApp3DIcon size={24} />
                 </div>
                 <div>
-                  <span className="text-[#64748B] block font-semibold">{lang === 'ar' ? 'خدمة واتساب الرسمية:' : 'Official WhatsApp:'}</span>
+                  <span className="text-[#64748B] dark:text-slate-400 block font-semibold">
+                    {isArabic ? 'خدمة واتساب الرسمية:' : 'Official WhatsApp:'}
+                  </span>
                   <a
                     href="https://wa.me/96181900916"
                     target="_blank"
@@ -91,73 +192,99 @@ export const ContactPage: React.FC = () => {
 
               {/* Location */}
               <div className="flex items-start gap-3.5 text-xs">
-                <div className="w-9 h-9 rounded-xl bg-[#EAF3FF] text-[#007AFF] flex items-center justify-center flex-shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-[#EAF3FF] dark:bg-[#1E293B] text-[#007AFF] flex items-center justify-center flex-shrink-0">
                   <MapPin className="w-4 h-4" />
                 </div>
                 <div>
-                  <span className="text-[#64748B] block font-semibold">{lang === 'ar' ? 'العنوان الجغرافي:' : 'Physical Address:'}</span>
-                  <p className="text-[#172033] font-semibold leading-relaxed">
-                    {lang === 'ar' ? storeSettings.locationAr : storeSettings.locationEn}
+                  <span className="text-[#64748B] dark:text-slate-400 block font-semibold">
+                    {isArabic ? 'العنوان الجغرافي:' : 'Physical Address:'}
+                  </span>
+                  <p className="text-[#172033] dark:text-white font-semibold leading-relaxed">
+                    {isArabic ? SAIDA_STORE_DATA.addressAr : SAIDA_STORE_DATA.addressEn}
+                  </p>
+                  <p className="text-[11px] text-[#007AFF] font-bold">
+                    {isArabic ? SAIDA_STORE_DATA.landmarkAr : SAIDA_STORE_DATA.landmarkEn}
                   </p>
                 </div>
               </div>
 
-              {/* Hours */}
+              {/* Hours ("Open 17 hours") */}
               <div className="flex items-start gap-3.5 text-xs">
-                <div className="w-9 h-9 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0] text-[#007AFF] flex items-center justify-center flex-shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 flex items-center justify-center flex-shrink-0">
                   <Clock className="w-4 h-4" />
                 </div>
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[#64748B] block font-semibold">
-                      {lang === 'ar' ? 'ساعات العمل الرسمية:' : 'Store Opening Schedule:'}
-                    </span>
-                    <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                        scheduleInfo.isOpen
-                          ? 'bg-emerald-50 text-[#16A34A] border-emerald-200'
-                          : 'bg-amber-50 text-amber-700 border-amber-200'
-                      }`}
-                    >
-                      {lang === 'ar' ? scheduleInfo.statusBadgeAr : scheduleInfo.statusBadgeEn}
-                    </span>
-                  </div>
-                  <p className="text-xs font-bold text-[#007AFF]">
-                    {lang === 'ar'
-                      ? (storeSettings.openingSchedule?.customMessageAr || 'مفتوح يومياً — 17 ساعة يومياً')
-                      : (storeSettings.openingSchedule?.customMessageEn || 'OPEN EVERY DAY — 17 HOURS DAILY')}
+                  <span className="text-[#64748B] dark:text-slate-400 block font-semibold">
+                    {isArabic ? 'ساعات العمل الرسمية:' : 'Store Opening Schedule:'}
+                  </span>
+                  <p className="text-xs font-black text-purple-600 dark:text-purple-400">
+                    {isArabic ? 'مفتوح 17 ساعة يومياً (8:00 ص – 1:00 ص)' : 'Open 17 hours daily (8:00 AM – 1:00 AM)'}
                   </p>
-                  <p className="text-xs font-semibold text-[#172033]">
-                    {lang === 'ar' ? storeSettings.openingHoursAr : storeSettings.openingHoursEn}
-                  </p>
-                  <p className="text-[11px] text-[#64748B]">
-                    {lang === 'ar'
-                      ? 'يفتح المتجر الساعة 8:00 صباحاً ويغلق الساعة 1:00 بعد منتصف الليل (17 ساعة متواصلة).'
-                      : 'Opens at 8:00 AM and closes at 1:00 AM the following calendar day (17 continuous hours).'}
+                  <p className="text-xs font-semibold text-[#172033] dark:text-white">
+                    {isArabic ? SAIDA_STORE_DATA.openingHoursAr : SAIDA_STORE_DATA.openingHoursEn}
                   </p>
                 </div>
+              </div>
+
+              {/* Action Buttons: Live Route & Send to phone 81900916 & Share */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B]">
+                <a
+                  href={SAIDA_STORE_DATA.googleDirectionsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2.5 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  <Navigation className="w-3.5 h-3.5" />
+                  <span>{isArabic ? 'الطريق الحي' : 'Live Route'}</span>
+                </a>
+
+                <a
+                  href={buildSendToPhoneUrl('81900916', 'whatsapp', isArabic)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  <WhatsApp3DIcon size={16} />
+                  <span>{isArabic ? 'إرسال 81900916' : 'Send 81900916'}</span>
+                </a>
+
+                <button
+                  onClick={handleShare}
+                  className="px-3 py-2.5 rounded-xl bg-[#F1F5F9] dark:bg-[#1E293B] hover:bg-slate-200 text-[#172033] dark:text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {copiedShare ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5 text-[#007AFF]" />}
+                  <span>{copiedShare ? (isArabic ? 'تم!' : 'Copied!') : (isArabic ? 'مشاركة' : 'Share')}</span>
+                </button>
               </div>
             </div>
 
             {/* Interactive Saida Map Visual Card */}
-            <div className="rounded-3xl overflow-hidden border border-[#DCE5F0] bg-[#F5F8FC] relative h-60">
-              <div className="relative h-full flex flex-col items-center justify-center text-center p-6 space-y-2">
-                <div className="w-12 h-12 rounded-full bg-[#EAF3FF] text-[#007AFF] border border-[#BAE6FD] flex items-center justify-center shadow-xs">
-                  <MapPin className="w-6 h-6" />
+            <div className="rounded-3xl overflow-hidden border border-[#DCE5F0] dark:border-[#1E293B] bg-[#F5F8FC] dark:bg-[#0E1726] relative h-64 shadow-xs">
+              <iframe
+                title="SQUARE ARNAOUT CELL STORE Map"
+                src="https://www.openstreetmap.org/export/embed.html?bbox=35.3610%2C33.5550%2C35.3830%2C33.5690&layer=mapnik&marker=33.5623%2C35.3722"
+                className="w-full h-full border-0 absolute inset-0 filter saturate-125 dark:invert dark:hue-rotate-180"
+                loading="lazy"
+              />
+
+              <div className="absolute bottom-3 left-3 right-3 z-10 bg-white/95 dark:bg-[#0E1726]/95 backdrop-blur-md p-3 rounded-2xl border border-[#DCE5F0] dark:border-[#1E293B] flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-black text-[#172033] dark:text-white block">
+                    {isArabic ? 'صيدا — ساحة النجمة' : 'Saida — Nejmeh Square'}
+                  </span>
+                  <span className="text-[10px] text-[#64748B] font-mono">
+                    H97G+W2P, Sidon
+                  </span>
                 </div>
-                <h4 className="font-bold text-[#172033] text-sm">
-                  {lang === 'ar' ? 'صيدا — ساحة النجمة، الشارع الرئيسي' : 'Saida — Nijme Square, Main Road'}
-                </h4>
-                <p className="text-[11px] text-[#64748B] max-w-xs">
-                  {lang === 'ar' ? 'موقع استراتيجي وسط مدينة صيدا بالقرب من كافة المرافق العامة' : 'Central landmark in Saida city center with easy parking and street access.'}
-                </p>
+
                 <a
-                  href="https://maps.google.com/?q=Saida+Nijme+Square"
+                  href={SAIDA_STORE_DATA.googleMapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-2 px-4 py-2 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white font-bold text-xs transition-colors shadow-xs"
+                  className="px-3 py-1.5 rounded-xl bg-[#007AFF] text-white text-[11px] font-bold flex items-center gap-1"
                 >
-                  {lang === 'ar' ? 'فتح في خرائط جوجل' : 'Open in Google Maps'}
+                  <span>{isArabic ? 'خرائط Google' : 'Google Maps'}</span>
+                  <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
             </div>
@@ -165,41 +292,41 @@ export const ContactPage: React.FC = () => {
 
           {/* Contact & Inquiry Form */}
           <div className="lg:col-span-7">
-            <div className="p-6 sm:p-8 rounded-3xl bg-white border border-[#DCE5F0] shadow-xs space-y-6">
+            <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] shadow-xs space-y-6">
               <div>
-                <h3 className="text-lg font-bold text-[#172033] mb-1">
-                  {lang === 'ar' ? 'أرسل استفسارك أو طلبك' : 'Send an Inquiry or Feedback'}
+                <h3 className="text-lg font-bold text-[#172033] dark:text-white mb-1">
+                  {isArabic ? 'أرسل استفسارك أو طلبك' : 'Send an Inquiry or Feedback'}
                 </h3>
-                <p className="text-xs text-[#64748B]">
-                  {lang === 'ar'
+                <p className="text-xs text-[#64748B] dark:text-slate-400">
+                  {isArabic
                     ? 'سيقوم فريق الدعم الفني بالرد عليكم ومساعدتكم فوراً.'
                     : 'Fill in your details and our team will get in touch promptly.'}
                 </p>
               </div>
 
               {submitted ? (
-                <div className="p-6 rounded-2xl bg-emerald-50 border border-emerald-200 text-center space-y-2">
+                <div className="p-6 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-center space-y-2">
                   <CheckCircle className="w-8 h-8 text-[#16A34A] mx-auto" />
-                  <h4 className="text-sm font-bold text-[#172033]">
-                    {lang === 'ar' ? 'تم إرسال رسالتكم بنجاح!' : 'Message Received!'}
+                  <h4 className="text-sm font-bold text-[#172033] dark:text-white">
+                    {isArabic ? 'تم إرسال رسالتكم بنجاح!' : 'Message Received!'}
                   </h4>
-                  <p className="text-xs text-[#64748B]">
-                    {lang === 'ar'
-                      ? `شكراً لتواصلكم مع ${storeSettings.storeNameAr || 'أرناؤوط ستور'}. سنتصل بكم على الرقم المسجل في أقرب وقت.`
-                      : `Thank you for contacting ${storeSettings.storeName}. We will get back to you shortly.`}
+                  <p className="text-xs text-[#64748B] dark:text-slate-400">
+                    {isArabic
+                      ? 'شكراً لتواصلكم مع سكوير أرناؤوط سيل ستور صيدا. سنتصل بكم على الرقم المسجل في أقرب وقت.'
+                      : 'Thank you for contacting SQUARE ARNAOUT CELL STORE. We will get back to you shortly.'}
                   </p>
                   <button
                     onClick={() => setSubmitted(false)}
-                    className="mt-3 px-4 py-2 rounded-xl bg-white border border-[#DCE5F0] text-xs font-semibold text-[#172033] hover:bg-[#F5F8FC]"
+                    className="mt-3 px-4 py-2 rounded-xl bg-white dark:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#334155] text-xs font-semibold text-[#172033] dark:text-white hover:bg-[#F5F8FC]"
                   >
-                    {lang === 'ar' ? 'إرسال رسالة أخرى' : 'Send another message'}
+                    {isArabic ? 'إرسال رسالة أخرى' : 'Send another message'}
                   </button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div>
-                    <label className="text-xs text-[#172033] font-semibold block mb-1.5">
-                      {lang === 'ar' ? 'الاسم الكريم' : 'Full Name'} <span className="text-[#DC2626]">*</span>
+                    <label className="text-xs text-[#172033] dark:text-slate-300 font-semibold block mb-1.5">
+                      {isArabic ? 'الاسم الكريم' : 'Full Name'} <span className="text-[#DC2626]">*</span>
                     </label>
                     <input
                       type="text"
@@ -207,13 +334,13 @@ export const ContactPage: React.FC = () => {
                       placeholder="e.g. Walid S."
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
+                      className="w-full bg-[#FFFFFF] dark:bg-[#162038] border border-[#DCE5F0] dark:border-[#1E293B] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] dark:text-white focus:outline-none focus:border-[#007AFF]"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs text-[#172033] font-semibold block mb-1.5">
-                      {lang === 'ar' ? 'رقم الهاتف اللبناني' : 'Phone Number'} <span className="text-[#DC2626]">*</span>
+                    <label className="text-xs text-[#172033] dark:text-slate-300 font-semibold block mb-1.5">
+                      {isArabic ? 'رقم الهاتف اللبناني' : 'Phone Number'} <span className="text-[#DC2626]">*</span>
                     </label>
                     <input
                       type="tel"
@@ -221,30 +348,30 @@ export const ContactPage: React.FC = () => {
                       placeholder="81 900 916 / 70 xxx xxx"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
-                      className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono"
+                      className="w-full bg-[#FFFFFF] dark:bg-[#162038] border border-[#DCE5F0] dark:border-[#1E293B] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] dark:text-white focus:outline-none focus:border-[#007AFF] font-mono"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs text-[#172033] font-semibold block mb-1.5">
-                      {lang === 'ar' ? 'تفاصيل الاستفسار أو الجهاز المطلوب' : 'Message / Requested Gadget'} <span className="text-[#DC2626]">*</span>
+                    <label className="text-xs text-[#172033] dark:text-slate-300 font-semibold block mb-1.5">
+                      {isArabic ? 'تفاصيل الاستفسار أو الجهاز المطلوب' : 'Message / Requested Gadget'} <span className="text-[#DC2626]">*</span>
                     </label>
                     <textarea
                       required
                       rows={4}
-                      placeholder={lang === 'ar' ? 'اكتب استفسارك عن الأسعار، الصيانة، أو خدمات OMT...' : 'Enter your question about products, warranty, or OMT services...'}
+                      placeholder={isArabic ? 'اكتب استفسارك عن الأسعار، الصيانة، أو خدمات OMT...' : 'Enter your question about products, warranty, or OMT services...'}
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
+                      className="w-full bg-[#FFFFFF] dark:bg-[#162038] border border-[#DCE5F0] dark:border-[#1E293B] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] dark:text-white focus:outline-none focus:border-[#007AFF]"
                     />
                   </div>
 
                   <button
                     type="submit"
-                    className="w-full py-3.5 px-4 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white font-bold text-xs shadow-md shadow-[#007AFF]/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    className="w-full py-3.5 px-4 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white font-bold text-xs shadow-md shadow-[#007AFF]/20 transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-95"
                   >
                     <Send className="w-4 h-4" />
-                    <span>{lang === 'ar' ? 'إرسال الرسالة الآن' : 'Send Message Now'}</span>
+                    <span>{isArabic ? 'إرسال الرسالة الآن' : 'Send Message Now'}</span>
                   </button>
                 </form>
               )}

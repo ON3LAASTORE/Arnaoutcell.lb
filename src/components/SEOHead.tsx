@@ -103,7 +103,7 @@ export const SEOHead: React.FC = () => {
 
       case 'contact':
         pageTitle = `Visit & Contact Saida Store | ${storeName} (81 900 916)`;
-        metaDescription = `Contact ${storeName} located at Saida Nijme Square Main Road. Open 17 hours daily (8:00 AM - 1:00 AM). Call 81 900 916 or service line 03 099 899.`;
+        metaDescription = `Contact ${storeName} located at Saida Nijme Square Main Road. Open 17 hours daily (8:00 AM - 1:00 AM). Call 81 900 916 or service line 03 099 889.`;
         canonicalUrl = `${window.location.origin}/#/contact`;
         break;
 
