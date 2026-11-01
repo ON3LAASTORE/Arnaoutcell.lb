@@ -1,4 +1,5 @@
 import React from 'react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { ShopProvider, useShop } from './context/ShopContext';
 import { AdminProvider } from './context/AdminContext';
 import { AnnouncementBar } from './components/AnnouncementBar';
@@ -85,6 +86,7 @@ export default function App() {
     <ShopProvider>
       <AdminProvider>
         <AppContent />
+        <SpeedInsights />
       </AdminProvider>
     </ShopProvider>
   );
