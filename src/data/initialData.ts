@@ -917,6 +917,7 @@ export const INITIAL_STORE_SETTINGS: StoreSettings = {
   storeNameAr: 'سكوير أرناؤوط سيل ستور',
   tagline: 'Your Home in Electronics 🏠',
   taglineAr: 'بيتك في عالم الإلكترونيات 🏠',
+  logoUrl: '/m-arnaout-cell-logo.jpg',
   phone: '81 900 916',
   whatsapp: '96181900916', // formatted for wa.me link
   locationEn: 'SQUARE ARNAOUT CELL STORE, SAIDA - NEJMEH, Sidon (Plus Code: H97G+W2P, Sidon)',

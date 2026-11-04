@@ -1,4 +1,5 @@
 import express, { Request, Response } from 'express';
+import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -990,13 +991,33 @@ async function startServer() {
     });
   });
 
+  // Health and System Status Endpoint
+  app.get('/api/health', (_req: Request, res: Response) => {
+    res.json({
+      status: 'healthy',
+      store: 'SQUARE ARNAOUT CELL STORE',
+      version: '2027.1.0',
+      uptime: process.uptime(),
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      database: 'ai-studio-marnaoutcellprem-6629f884-c968-499b-93cd-3c6b634467cb',
+      instagramHandle: '@m.arnaoutcell',
+    });
+  });
+
+  const httpServer = http.createServer(app);
+
   // =========================================================================
   // 4. VITE DEV MIDDLEWARES OR PRODUCTION STATIC SERVING
   // =========================================================================
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
+    const isHmrDisabled = process.env.DISABLE_HMR === 'true';
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: isHmrDisabled ? false : { server: httpServer },
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
@@ -1007,7 +1028,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 SQUARE ARNAOUT CELL STORE Server running on http://0.0.0.0:${PORT}`);
   });
 }

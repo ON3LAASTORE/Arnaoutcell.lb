@@ -171,11 +171,16 @@ export function subscribeToLiveProducts(
       onUpdate(mergedList);
     },
     (error) => {
-      console.warn('Real-time products subscription notice (using local fallback):', error);
-      try {
-        handleFirestoreError(error, OperationType.LIST, PRODUCTS_COLLECTION);
-      } catch {
-        // Fallback gracefully to offline cache if network interrupted
+      const errMsg = error instanceof Error ? error.message : String(error);
+      const isNetworkIssue = errMsg.includes('offline') || errMsg.includes('unavailable') || errMsg.includes('transport');
+      if (isNetworkIssue) {
+        console.warn('Real-time products subscription offline/reconnecting (using local fallback cache).');
+      } else {
+        try {
+          handleFirestoreError(error, OperationType.LIST, PRODUCTS_COLLECTION);
+        } catch {
+          // Graceful fallback to local cache
+        }
       }
     }
   );

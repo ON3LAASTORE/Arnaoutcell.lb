@@ -1039,9 +1039,9 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
 
             {/* Target Product Summary */}
             <div className="p-3.5 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] flex items-center gap-3">
-              {selectedProduct.image && (
+              {selectedProduct.images?.[0] && (
                 <img
-                  src={selectedProduct.image}
+                  src={selectedProduct.images[0]}
                   alt={selectedProduct.name}
                   className="w-12 h-12 object-contain rounded-xl bg-white border border-[#DCE5F0] p-1 flex-shrink-0"
                 />

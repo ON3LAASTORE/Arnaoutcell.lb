@@ -28,6 +28,7 @@ import {
   Sparkles,
   Save,
   Globe,
+  Download,
 } from 'lucide-react';
 
 /**
@@ -610,6 +611,16 @@ export const AdminSettings: React.FC = () => {
                   <span>{lang === 'ar' ? 'حذف الشعار' : 'Remove Logo'}</span>
                 </button>
               )}
+
+              <a
+                href="/m-arnaout-cell-logo-4k.png"
+                download="m-arnaout-cell-logo-4k.png"
+                className="px-5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-xs transition-colors flex items-center gap-2 cursor-pointer"
+                title="Download 4K Ultra HD Master Emblem (3840x3840)"
+              >
+                <Download className="w-4 h-4" />
+                <span>{lang === 'ar' ? 'تحميل الشعار بدقة 4K فائقة' : 'Download 4K Master (3840×3840)'}</span>
+              </a>
 
               <span className="text-[11px] text-[#64748B] ml-auto">
                 PNG, JPG, WebP, SVG • Max 5MB

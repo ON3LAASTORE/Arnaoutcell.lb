@@ -18,8 +18,8 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
 }) => {
   const { storeSettings, lang } = useShop();
 
-  const logoUrl = storeSettings.logoUrl;
-  const storeName = storeSettings.storeName || 'ARNAOUT STORE';
+  const logoUrl = storeSettings.logoUrl || '/m-arnaout-cell-logo.jpg';
+  const storeName = storeSettings.storeName || 'SQUARE ARNAOUT CELL STORE';
   const tagline = lang === 'ar' ? storeSettings.taglineAr : storeSettings.tagline;
 
   // Dynamically synchronize favicon with custom store logo if available
@@ -37,36 +37,25 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
 
   const sizeClasses = {
     sm: {
-      image: 'max-h-7 max-w-[130px]',
-      badge: 'w-7 h-7 text-xs rounded-lg',
+      image: 'w-8 h-8',
       title: 'text-sm',
       tagline: 'text-[9px]',
     },
     md: {
-      image: 'max-h-10 max-w-[180px]',
-      badge: 'w-10 h-10 text-sm font-black rounded-xl',
+      image: 'w-10 h-10',
       title: 'text-base sm:text-lg',
       tagline: 'text-[11px]',
     },
     lg: {
-      image: 'max-h-14 max-w-[240px]',
-      badge: 'w-12 h-12 text-base font-black rounded-2xl',
+      image: 'w-12 h-12 sm:w-14 sm:h-14',
       title: 'text-xl sm:text-2xl',
       tagline: 'text-xs',
     },
   }[size];
 
-  // Derive initial abbreviation from store name (e.g. "ARNAOUT STORE" -> "AS")
-  const initials = storeName
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((w) => w[0]?.toUpperCase())
-    .join('') || 'AS';
-
   const parts = storeName.split(' ');
-  const firstWord = parts[0] || 'ARNAOUT';
-  const restWords = parts.slice(1).join(' ') || 'STORE';
+  const firstWord = parts[0] || 'SQUARE';
+  const restWords = parts.slice(1).join(' ') || 'ARNAOUT CELL STORE';
 
   return (
     <div
@@ -75,29 +64,21 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
         onClick ? 'cursor-pointer group' : ''
       } ${className}`}
     >
-      {logoUrl ? (
-        <div className="flex items-center">
+      <div className="flex items-center gap-2.5">
+        {/* 4K Official Circular Profile Emblem */}
+        <div className="shrink-0 overflow-hidden rounded-full border border-slate-200/90 dark:border-slate-700 shadow-xs bg-white p-0.5 flex items-center justify-center transition-transform group-hover:scale-105">
           <img
             src={logoUrl}
             alt={storeName}
-            className={`${sizeClasses.image} object-contain transition-transform group-hover:scale-102`}
-            style={{ imageRendering: 'auto' }}
+            className={`${sizeClasses.image} rounded-full object-cover`}
           />
         </div>
-      ) : (
-        <div className="flex items-center gap-2.5">
-          {/* Default Apple-style Blue Gradient Badge */}
-          <div
-            className={`${sizeClasses.badge} bg-gradient-to-tr from-[#0066D6] to-[#007AFF] text-white flex items-center justify-center font-black tracking-tight shadow-sm shadow-[#007AFF]/25 shrink-0 transition-transform group-hover:scale-105`}
-          >
-            <span>{initials}</span>
-          </div>
 
-          <div className="leading-tight">
-            <span
-              className={`font-black tracking-tight text-[#172033] dark:text-[#F8FAFC] uppercase block group-hover:text-[#007AFF] transition-colors ${sizeClasses.title}`}
-            >
-              {firstWord} <span className="text-[#007AFF]">{restWords}</span>
+        <div className="leading-tight">
+          <span
+            className={`font-black tracking-tight text-[#172033] dark:text-[#F8FAFC] uppercase block group-hover:text-[#007AFF] transition-colors ${sizeClasses.title}`}
+          >
+            {firstWord} <span className="text-[#007AFF]">{restWords}</span>
               {adminMode && (
                 <span className="ml-1.5 px-1.5 py-0.5 text-[10px] font-bold bg-[#EAF3FF] dark:bg-[#1E293B] text-[#007AFF] dark:text-[#38BDF8] border border-[#BAE6FD] dark:border-slate-700 rounded-md tracking-normal">
                   ADMIN
@@ -113,7 +94,6 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
             )}
           </div>
         </div>
-      )}
     </div>
   );
 };
