@@ -1,6 +1,7 @@
 import { MarketingPost, SocialAccountConfig, SocialPlatform, SocialPublishResult } from '../types/socialMarketing';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, doc, setDoc, deleteDoc, getDocs, onSnapshot } from 'firebase/firestore';
+import { openExternalUrl } from '../utils/navigation';
 
 const STORAGE_KEYS = {
   POSTS: 'arnaout_social_posts_v2',
@@ -374,7 +375,7 @@ export async function executeSocialShare(
       if (navigator.clipboard) {
         await navigator.clipboard.writeText(text).catch(() => {});
       }
-      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      openExternalUrl(targetUrl);
     }
 
     return {

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import { StoreStatusBadge } from './StoreStatusBadge';
+import { openExternalUrl } from '../utils/navigation';
 import {
   SAIDA_STORE_DATA,
   buildLiveRouteUrl,
@@ -84,7 +85,7 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({ isOpen, 
     e.preventDefault();
     if (!customPhone.trim()) return;
     const url = buildSendToPhoneUrl(customPhone, 'whatsapp', isArabic);
-    window.open(url, '_blank');
+    openExternalUrl(url);
     setSendSuccessMessage(
       isArabic
         ? `تم فتح واتساب لإرسال الإحداثيات إلى ${customPhone}`

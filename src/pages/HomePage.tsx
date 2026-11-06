@@ -9,10 +9,11 @@ import { StoreLocatorSection } from '../components/StoreLocatorSection';
 import { ServiceSection } from '../components/ServiceSection';
 import { CustomerTrust } from '../components/CustomerTrust';
 import { TimedNewsletterModal } from '../components/TimedNewsletterModal';
+import { ReactBitsBackground } from '../components/animations/ReactBitsBackground';
 
 export const HomePage: React.FC = () => {
   return (
-    <div className="min-h-[100dvh] w-full">
+    <ReactBitsBackground variant="combined" className="min-h-[100dvh]">
       <HeroSection />
       <SpecialOffersColumn />
       <CategoryGrid />
@@ -23,6 +24,6 @@ export const HomePage: React.FC = () => {
       <ServiceSection />
       <CustomerTrust />
       <TimedNewsletterModal />
-    </div>
+    </ReactBitsBackground>
   );
 };

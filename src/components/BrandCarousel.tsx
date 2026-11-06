@@ -1,6 +1,7 @@
 import React from 'react';
 import { useShop } from '../context/ShopContext';
 import { ShieldCheck, ArrowRight } from 'lucide-react';
+import { LazyImage } from './LazyImage';
 
 export const BrandCarousel: React.FC = () => {
   const { lang, brands, selectBrand, setCurrentView } = useShop();
@@ -45,14 +46,13 @@ export const BrandCarousel: React.FC = () => {
               className="group p-3 sm:p-4 rounded-xl bg-white dark:bg-[#111A2E] hover:bg-[#F5F8FC] dark:hover:bg-[#162038] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] dark:hover:border-[#38BDF8] flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:scale-105 shadow-xs hover:shadow-[0_4px_16px_-2px_rgba(0,122,255,0.12)]"
             >
               <div className="w-12 h-12 rounded-full overflow-hidden bg-[#F5F8FC] dark:bg-[#0A0F1D] border border-[#DCE5F0] dark:border-[#1E293B] mb-2 p-1 flex items-center justify-center group-hover:border-[#007AFF] transition-colors">
-                <img
+                <LazyImage
                   src={brand.logo}
                   alt={`${brand.name} official electronics brand at ARNAOUT STORE Lebanon`}
                   width={48}
                   height={48}
+                  wrapperClassName="w-full h-full rounded-full"
                   className="w-full h-full object-cover rounded-full"
-                  loading="lazy"
-                  decoding="async"
                 />
               </div>
               <span className="font-bold text-xs text-[#172033] dark:text-[#F8FAFC] group-hover:text-[#007AFF] dark:group-hover:text-[#38BDF8] transition-colors truncate max-w-full">

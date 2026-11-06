@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useShop } from '../context/ShopContext';
 import { MarketingVideo } from '../types';
 import { Video, Play, ShoppingCart, X, Eye } from 'lucide-react';
+import { LazyImage } from '../components/LazyImage';
 
 export const VideosPage: React.FC = () => {
   const { lang, marketingVideos, products, viewProductDetail, storeSettings } = useShop();
@@ -40,9 +41,11 @@ export const VideosPage: React.FC = () => {
                   onClick={() => setActiveVideo(video)}
                   className="relative h-60 bg-[#F5F8FC] cursor-pointer overflow-hidden group"
                 >
-                  <img
+                  <LazyImage
                     src={video.thumbnail}
                     alt={video.title}
+                    priority={false}
+                    wrapperClassName="w-full h-full"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-center justify-center">
@@ -73,10 +76,14 @@ export const VideosPage: React.FC = () => {
                     {linkedProduct ? (
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 min-w-0">
-                          <img
+                          <LazyImage
                             src={linkedProduct.images[0]}
                             alt={linkedProduct.name}
-                            className="w-10 h-10 object-cover rounded-lg bg-[#F5F8FC] border border-[#DCE5F0] flex-shrink-0"
+                            width={40}
+                            height={40}
+                            priority={false}
+                            wrapperClassName="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-[#F5F8FC] border border-[#DCE5F0]"
+                            className="w-full h-full object-cover"
                           />
                           <div className="truncate">
                             <span className="text-[10px] text-[#64748B] block font-semibold">{linkedProduct.brand}</span>

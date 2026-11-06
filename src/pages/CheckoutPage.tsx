@@ -13,6 +13,8 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { WhatsApp3DIcon } from '../components/icons/ThreeDIcons';
+import { LazyImage } from '../components/LazyImage';
+import { openExternalUrl } from '../utils/navigation';
 
 export const CheckoutPage: React.FC = () => {
   const {
@@ -146,7 +148,7 @@ export const CheckoutPage: React.FC = () => {
     };
 
     const url = generateWhatsAppOrderUrl(previewOrder);
-    window.open(url, '_blank');
+    openExternalUrl(url);
   };
 
   return (
@@ -409,10 +411,14 @@ export const CheckoutPage: React.FC = () => {
                     return (
                       <div key={idx} className="pt-2 first:pt-0 flex items-center justify-between gap-3 text-xs">
                         <div className="flex items-center gap-2.5 min-w-0">
-                          <img
+                          <LazyImage
                             src={item.product.images[0]}
                             alt={item.product.name}
-                            className="w-10 h-10 object-cover rounded-lg bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] flex-shrink-0"
+                            width={40}
+                            height={40}
+                            priority={idx < 3}
+                            wrapperClassName="w-10 h-10 rounded-lg overflow-hidden bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] flex-shrink-0"
+                            className="w-full h-full object-cover"
                           />
                           <div className="truncate">
                             <span className="font-semibold text-[#172033] dark:text-[#F8FAFC] block truncate">

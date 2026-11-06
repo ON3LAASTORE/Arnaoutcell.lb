@@ -7,6 +7,7 @@ import {
   MessageSquare,
 } from 'lucide-react';
 import { StoreLogo } from '../components/StoreLogo';
+import { openExternalUrl } from '../utils/navigation';
 
 export const OrderConfirmationPage: React.FC = () => {
   const { lang, t, lastCompletedOrder, setCurrentView, generateWhatsAppOrderUrl, storeSettings } = useShop();
@@ -35,7 +36,7 @@ export const OrderConfirmationPage: React.FC = () => {
 
   const handleWhatsApp = () => {
     const url = generateWhatsAppOrderUrl(order);
-    window.open(url, '_blank');
+    openExternalUrl(url);
   };
 
   return (

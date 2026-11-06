@@ -3,6 +3,7 @@ import { useShop } from '../../context/ShopContext';
 import { saveCategories, saveBrands, readFileAsDataUrl } from '../../services/storageService';
 import { Category, Brand } from '../../types';
 import { Plus, Trash2, Upload } from 'lucide-react';
+import { LazyImage } from '../LazyImage';
 
 export const AdminCategoriesBrands: React.FC = () => {
   const { lang, categories, brands, refreshData } = useShop();
@@ -308,10 +309,14 @@ export const AdminCategoriesBrands: React.FC = () => {
                   className="p-3.5 rounded-xl bg-white border border-[#DCE5F0] flex items-center justify-between text-xs hover:border-[#007AFF] shadow-xs transition-colors"
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
-                    <img
+                    <LazyImage
                       src={b.logo}
                       alt={b.name}
-                      className="w-8 h-8 rounded-full object-cover bg-[#F5F8FC] border border-[#DCE5F0] flex-shrink-0"
+                      width={32}
+                      height={32}
+                      priority={false}
+                      wrapperClassName="w-8 h-8 rounded-full overflow-hidden bg-[#F5F8FC] border border-[#DCE5F0] flex-shrink-0"
+                      className="w-full h-full object-cover"
                     />
                     <span className="font-bold text-[#172033] truncate">{b.name}</span>
                   </div>

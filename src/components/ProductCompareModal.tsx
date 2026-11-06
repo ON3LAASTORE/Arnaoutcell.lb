@@ -19,6 +19,8 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
+import { LazyImage } from './LazyImage';
+import { openExternalUrl } from '../utils/navigation';
 import {
   extractComparisonSpecLabels,
   getProductSpecValue,
@@ -88,7 +90,7 @@ export const ProductCompareModal: React.FC = () => {
         ? `مرحباً أرناؤوط ستور! أود طلب هذا الجهاز بعد مقارنة المواصفات:\n- الجهاز: ${product.nameAr || product.name}\n- السعر: $${product.price} USD\n- الكود: ${product.id}\nالرجاء تأكيد التوفر في صيدا.`
         : `Hello ARNAOUT STORE! I want to order this product after comparing specs:\n- Device: ${product.name}\n- Price: $${product.price} USD\n- SKU: ${product.id}\nPlease confirm availability in Saida.`
     );
-    window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+    openExternalUrl(`https://wa.me/${phone}?text=${text}`);
   };
 
   const handleShareComparison = () => {
@@ -99,7 +101,7 @@ export const ProductCompareModal: React.FC = () => {
         ? `مرحباً أرناؤوط ستور! أود استشارتكم في مقارنة الأجهزة التالية:\n${names}\nما هو خياركم الأنسب لميزانيتي؟`
         : `Hello ARNAOUT STORE! I am comparing these models:\n${names}\nWhich one do you recommend for my needs?`
     );
-    window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+    openExternalUrl(`https://wa.me/${phone}?text=${text}`);
   };
 
   const handlePrint = () => {
@@ -265,9 +267,13 @@ export const ProductCompareModal: React.FC = () => {
                     <div>
                       {/* Product Thumbnail */}
                       <div className="w-full h-32 rounded-2xl bg-white dark:bg-[#070C16] border border-[#DCE5F0]/80 dark:border-[#1E293B] p-2 flex items-center justify-center mb-2">
-                        <img
+                        <LazyImage
                           src={product.images[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=300'}
                           alt={product.name}
+                          width={200}
+                          height={120}
+                          priority={true}
+                          wrapperClassName="w-full h-full flex items-center justify-center"
                           className="w-full h-full object-contain"
                         />
                       </div>
@@ -383,10 +389,14 @@ export const ProductCompareModal: React.FC = () => {
                             }}
                             className="w-full p-2 rounded-xl hover:bg-[#F5F8FC] dark:hover:bg-[#1A253C] flex items-center gap-2 text-left rtl:text-right transition-colors cursor-pointer"
                           >
-                            <img
+                            <LazyImage
                               src={cand.images[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=80'}
                               alt={cand.name}
-                              className="w-8 h-8 rounded-lg object-contain bg-white flex-shrink-0"
+                              width={32}
+                              height={32}
+                              priority={false}
+                              wrapperClassName="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-white"
+                              className="w-full h-full object-contain"
                             />
                             <div className="flex-1 min-w-0">
                               <span className="text-xs font-bold truncate block text-[#172033] dark:text-white">

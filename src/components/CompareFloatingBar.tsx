@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useShop } from '../context/ShopContext';
 import { Scale, X, ArrowRight, Trash2, Smartphone } from 'lucide-react';
 import { MAX_COMPARE_LIMIT } from '../utils/compareHelpers';
+import { LazyImage } from './LazyImage';
 
 export const CompareFloatingBar: React.FC = () => {
   const {
@@ -52,9 +53,13 @@ export const CompareFloatingBar: React.FC = () => {
                 className="relative group w-10 h-10 rounded-xl bg-white/10 border border-white/20 p-1 flex items-center justify-center"
                 title={isArabic ? product.nameAr || product.name : product.name}
               >
-                <img
+                <LazyImage
                   src={product.images[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=100'}
                   alt={product.name}
+                  width={36}
+                  height={36}
+                  priority={true}
+                  wrapperClassName="w-full h-full flex items-center justify-center"
                   className="w-full h-full object-contain"
                 />
                 <button

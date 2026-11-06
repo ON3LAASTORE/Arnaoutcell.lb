@@ -17,6 +17,8 @@ import {
   Scale,
 } from 'lucide-react';
 import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon } from '../components/icons/ThreeDIcons';
+import { LazyImage } from '../components/LazyImage';
+import { openExternalUrl } from '../utils/navigation';
 
 export const ProductDetailPage: React.FC = () => {
   const {
@@ -93,7 +95,7 @@ export const ProductDetailPage: React.FC = () => {
 
   const handleWhatsAppInquiry = () => {
     const msg = `Hello ${storeSettings.storeName} (${storeSettings.phone})! I'm inquiring about: ${product.name} (SKU: ${product.sku}, Price: $${activePrice}). Is it available at your Saida store for immediate pickup or delivery?`;
-    window.open(`https://wa.me/${storeSettings.whatsapp || '96181900916'}?text=${encodeURIComponent(msg)}`, '_blank');
+    openExternalUrl(`https://wa.me/${storeSettings.whatsapp || '96181900916'}?text=${encodeURIComponent(msg)}`);
   };
 
   const handleShare = () => {
@@ -159,13 +161,13 @@ export const ProductDetailPage: React.FC = () => {
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
             >
-              <img
+              <LazyImage
                 src={product.images[activeImageIndex] || product.images[0]}
                 alt={`${product.name} - ${product.brand} authentic tech at ARNAOUT STORE Saida Lebanon`}
                 width={500}
                 height={500}
-                loading="eager"
-                decoding="async"
+                priority={true}
+                wrapperClassName="max-h-full max-w-full flex items-center justify-center"
                 className="max-h-full max-w-full object-contain select-none"
               />
 
@@ -229,13 +231,13 @@ export const ProductDetailPage: React.FC = () => {
                       activeImageIndex === idx ? 'border-[#007AFF] shadow-sm' : 'border-[#DCE5F0] opacity-70 hover:opacity-100'
                     }`}
                   >
-                    <img
+                    <LazyImage
                       src={img}
                       alt={`${product.name} gallery image ${idx + 1}`}
                       width={80}
                       height={80}
-                      loading="lazy"
-                      decoding="async"
+                      priority={false}
+                      wrapperClassName="w-full h-full flex items-center justify-center rounded-xl overflow-hidden"
                       className="w-full h-full object-contain"
                     />
                   </button>
@@ -467,9 +469,7 @@ export const ProductDetailPage: React.FC = () => {
                     removeFromCompare(product.id);
                   } else {
                     const res = addToCompare(product);
-                    if (!res.success && res.message) {
-                      alert(res.message);
-                    } else {
+                    if (res.success) {
                       setIsCompareModalOpen(true);
                     }
                   }

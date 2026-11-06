@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useShop } from '../context/ShopContext';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import { MessageSquare, Sparkles, X, Send } from 'lucide-react';
+import { openExternalUrl } from '../utils/navigation';
 
 export const FloatingWhatsAppButton: React.FC = () => {
   const { lang, storeSettings } = useShop();
@@ -55,17 +56,16 @@ export const FloatingWhatsAppButton: React.FC = () => {
         ? `مرحباً أرناؤوط ستور! أنا أتواصل معكم من المتجر الإلكتروني بخصوص استفسار / طلب أجهزة وعروض.`
         : `Hello ARNAOUT STORE! I am reaching out from your website regarding products and special offers.`
     );
-    window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+    openExternalUrl(`https://wa.me/${phone}?text=${text}`);
   };
 
   return (
     <div
       style={{
-        bottom: 'max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1rem))',
-        right: lang === 'ar' ? 'auto' : 'max(1.5rem, calc(env(safe-area-inset-right, 0px) + 1rem))',
-        left: lang === 'ar' ? 'max(1.5rem, calc(env(safe-area-inset-left, 0px) + 1rem))' : 'auto',
+        right: lang === 'ar' ? 'auto' : 'max(1rem, calc(env(safe-area-inset-right, 0px) + 0.75rem))',
+        left: lang === 'ar' ? 'max(1rem, calc(env(safe-area-inset-left, 0px) + 0.75rem))' : 'auto',
       }}
-      className={`fixed z-50 flex items-end gap-3 select-none pointer-events-auto transition-transform ${
+      className={`fixed z-50 flex items-end gap-3 select-none pointer-events-auto transition-transform bottom-[calc(4.75rem+env(safe-area-inset-bottom,0px))] md:bottom-[max(1.5rem,calc(env(safe-area-inset-bottom,0px)+1rem))] ${
         lang === 'ar' ? 'flex-row-reverse' : 'flex-row'
       }`}
     >

@@ -28,6 +28,8 @@ import {
   Scale,
 } from 'lucide-react';
 import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon, Orbit3DIcon } from './icons/ThreeDIcons';
+import { LazyImage } from './LazyImage';
+import { openExternalUrl } from '../utils/navigation';
 
 export const ProductQuickViewModal: React.FC = () => {
   const {
@@ -207,7 +209,7 @@ export const ProductQuickViewModal: React.FC = () => {
       `SKU: ${product.sku}\n` +
       (selectedColor ? `Color: ${selectedColor}\n` : '') +
       `\nHello ${storeName}! Is this item available for immediate pickup at your Saida store or fast dispatch?`;
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
+    openExternalUrl(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`);
   };
 
   const handleShare = () => {
@@ -255,10 +257,7 @@ export const ProductQuickViewModal: React.FC = () => {
                 if (isInCompare(product.id)) {
                   removeFromCompare(product.id);
                 } else {
-                  const res = addToCompare(product);
-                  if (!res.success && res.message) {
-                    alert(res.message);
-                  }
+                  addToCompare(product);
                 }
               }}
               className={`p-2.5 rounded-full border shadow-sm backdrop-blur-md transition-all cursor-pointer ${
@@ -353,12 +352,12 @@ export const ProductQuickViewModal: React.FC = () => {
                 </div>
 
                 {/* Main Product Image with 3D Depth */}
-                <img
+                <LazyImage
                   src={images[selectedImageIndex] || images[0]}
                   alt={`${product.name} - ${product.brand} interactive 3D view at ARNAOUT STORE Lebanon`}
                   width={500}
                   height={500}
-                  decoding="async"
+                  priority={true}
                   style={{
                     transform: 'translateZ(40px)',
                     filter: 'drop-shadow(0 20px 25px rgba(0,0,0,0.22))',
@@ -441,7 +440,13 @@ export const ProductQuickViewModal: React.FC = () => {
                           : 'border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF]/50 opacity-70 hover:opacity-100'
                       }`}
                     >
-                      <img src={imgUrl} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-contain p-1" />
+                      <LazyImage
+                        src={imgUrl}
+                        alt={`Thumbnail ${idx + 1}`}
+                        priority={false}
+                        wrapperClassName="w-full h-full flex items-center justify-center p-1"
+                        className="w-full h-full object-contain"
+                      />
                     </button>
                   ))}
                 </div>
@@ -453,7 +458,7 @@ export const ProductQuickViewModal: React.FC = () => {
           <div className="lg:w-1/2 flex flex-col justify-between p-5 sm:p-7 bg-white dark:bg-[#0B1120] overflow-y-auto">
             <div className="space-y-4">
               {/* Product Header */}
-              <div>
+              <div className="pr-28 sm:pr-32 rtl:pr-0 rtl:pl-28 rtl:sm:pl-32">
                 <h2 className="text-xl sm:text-2xl font-black text-[#172033] dark:text-[#F8FAFC] leading-snug tracking-tight mb-2">
                   {lang === 'ar' ? product.nameAr || product.name : product.name}
                 </h2>

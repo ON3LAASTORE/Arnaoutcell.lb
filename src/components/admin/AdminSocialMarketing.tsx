@@ -53,6 +53,7 @@ import {
   X,
   Zap,
 } from 'lucide-react';
+import { LazyImage } from '../LazyImage';
 import { WhatsApp3DIcon } from '../icons/ThreeDIcons';
 
 interface AdminSocialMarketingProps {
@@ -499,10 +500,14 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
               {/* Product Quick Snapshot Card */}
               {selectedProduct && selectedProduct.id && (
                 <div className="p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#DCE5F0] flex items-center gap-3">
-                  <img
+                  <LazyImage
                     src={selectedProduct.images?.[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=800'}
                     alt={selectedProduct.name}
-                    className="w-14 h-14 object-cover rounded-xl border border-[#DCE5F0] bg-white flex-shrink-0"
+                    width={56}
+                    height={56}
+                    priority={true}
+                    wrapperClassName="w-14 h-14 rounded-xl overflow-hidden border border-[#DCE5F0] bg-white flex-shrink-0"
+                    className="w-full h-full object-cover"
                   />
                   <div className="min-w-0 flex-1">
                     <h4 className="font-bold text-xs text-[#172033] line-clamp-1">{selectedProduct.name}</h4>
@@ -1040,10 +1045,14 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
             {/* Target Product Summary */}
             <div className="p-3.5 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] flex items-center gap-3">
               {selectedProduct.images?.[0] && (
-                <img
+                <LazyImage
                   src={selectedProduct.images[0]}
                   alt={selectedProduct.name}
-                  className="w-12 h-12 object-contain rounded-xl bg-white border border-[#DCE5F0] p-1 flex-shrink-0"
+                  width={48}
+                  height={48}
+                  priority={true}
+                  wrapperClassName="w-12 h-12 rounded-xl overflow-hidden bg-white border border-[#DCE5F0] p-1 flex-shrink-0"
+                  className="w-full h-full object-contain"
                 />
               )}
               <div className="min-w-0 flex-1">

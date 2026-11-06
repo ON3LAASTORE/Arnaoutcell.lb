@@ -23,6 +23,7 @@ import {
   X,
   Send,
 } from 'lucide-react';
+import { LazyImage } from '../../LazyImage';
 
 interface SocialPostHistoryProps {
   onEditPost: (post: MarketingPost) => void;
@@ -172,10 +173,14 @@ export const SocialPostHistory: React.FC<SocialPostHistoryProps> = ({ onEditPost
 
                 {/* Product Info & Thumbnail */}
                 <div className="flex items-start gap-3">
-                  <img
+                  <LazyImage
                     src={post.productImage || 'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=800'}
                     alt={post.productName}
-                    className="w-14 h-14 object-cover rounded-xl border border-[#DCE5F0] bg-[#F5F8FC] flex-shrink-0"
+                    width={56}
+                    height={56}
+                    priority={false}
+                    wrapperClassName="w-14 h-14 rounded-xl overflow-hidden border border-[#DCE5F0] bg-[#F5F8FC] flex-shrink-0"
+                    className="w-full h-full object-cover"
                   />
                   <div className="min-w-0">
                     <h4 className="font-bold text-xs text-[#172033] line-clamp-1">{post.productName}</h4>

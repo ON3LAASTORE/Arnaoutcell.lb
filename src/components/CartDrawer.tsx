@@ -2,6 +2,8 @@ import React from 'react';
 import { useShop } from '../context/ShopContext';
 import { X, Trash2, ShoppingBag, ArrowRight, MessageSquare, ShieldCheck } from 'lucide-react';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
+import { LazyImage } from './LazyImage';
+import { openExternalUrl } from '../utils/navigation';
 
 export const CartDrawer: React.FC = () => {
   const {
@@ -27,7 +29,7 @@ export const CartDrawer: React.FC = () => {
 
   const handleWhatsAppQuickOrder = () => {
     const url = generateWhatsAppOrderUrl({ items: cart, total: cartSubtotal });
-    window.open(url, '_blank');
+    openExternalUrl(url);
   };
 
   return (
@@ -38,7 +40,7 @@ export const CartDrawer: React.FC = () => {
         className="absolute inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
       />
 
-      <div className="fixed inset-y-0 right-0 rtl:right-auto rtl:left-0 max-w-full flex pl-10 rtl:pl-0 rtl:pr-10">
+      <div className="fixed inset-y-0 right-0 rtl:right-auto rtl:left-0 max-w-full flex pl-0 sm:pl-10 rtl:pl-0 rtl:pr-0 sm:rtl:pr-10">
         <div className="w-screen max-w-md bg-white dark:bg-[#0E1726] border-l rtl:border-l-0 rtl:border-r border-[#DCE5F0] dark:border-[#1E293B] shadow-2xl flex flex-col justify-between">
           {/* Header */}
           <div className="p-5 border-b border-[#DCE5F0] dark:border-[#1E293B] flex items-center justify-between bg-[#F5F8FC] dark:bg-[#111A2E]">
@@ -69,10 +71,13 @@ export const CartDrawer: React.FC = () => {
 
                 return (
                   <div key={idx} className="pt-4 first:pt-0 flex gap-4 items-center">
-                    <img
+                    <LazyImage
                       src={item.product.images[0]}
                       alt={item.product.name}
-                      className="w-16 h-16 object-cover rounded-xl bg-[#F5F8FC] dark:bg-[#0A0F1D] border border-[#DCE5F0] dark:border-[#1E293B] flex-shrink-0"
+                      width={64}
+                      height={64}
+                      wrapperClassName="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-[#F5F8FC] dark:bg-[#0A0F1D] border border-[#DCE5F0] dark:border-[#1E293B]"
+                      className="w-full h-full object-cover"
                     />
 
                     <div className="flex-1 min-w-0">

@@ -49,6 +49,7 @@ import {
   CheckCircle2,
   Tag,
 } from 'lucide-react';
+import { LazyImage } from './LazyImage';
 
 const ICON_MAP: Record<string, React.ComponentType<{ className?: string }>> = {
   Smartphone,
@@ -348,7 +349,14 @@ export const SearchSuggestionsDropdown: React.FC<SearchSuggestionsDropdownProps>
                       <div className="flex items-center gap-2.5 min-w-0">
                         <div className="w-8 h-8 rounded-lg bg-[#F5F8FC] dark:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] overflow-hidden flex-shrink-0 flex items-center justify-center p-1">
                           {b.logo ? (
-                            <img src={b.logo} alt={b.name} className="w-full h-full object-contain" />
+                            <LazyImage
+                              src={b.logo}
+                              alt={b.name}
+                              width={28}
+                              height={28}
+                              wrapperClassName="w-full h-full flex items-center justify-center"
+                              className="w-full h-full object-contain"
+                            />
                           ) : (
                             <Tag className="w-4 h-4 text-[#00D26A]" />
                           )}
@@ -470,11 +478,13 @@ export const SearchSuggestionsDropdown: React.FC<SearchSuggestionsDropdownProps>
                       {/* Product Thumbnail */}
                       <div className="w-12 h-12 rounded-lg bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] overflow-hidden flex-shrink-0 flex items-center justify-center relative">
                         {p.images && p.images[0] ? (
-                          <img
+                          <LazyImage
                             src={p.images[0]}
                             alt={p.name}
+                            width={48}
+                            height={48}
+                            wrapperClassName="w-full h-full flex items-center justify-center"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
-                            loading="lazy"
                           />
                         ) : (
                           <Smartphone className="w-5 h-5 text-[#64748B]" />

@@ -3,6 +3,7 @@ import { useShop } from '../../context/ShopContext';
 import { saveProduct } from '../../services/storageService';
 import { Product } from '../../types';
 import { Flame, Search, Share2 } from 'lucide-react';
+import { LazyImage } from '../LazyImage';
 
 interface AdminOffersProps {
   onShareProduct?: (productId: string) => void;
@@ -100,10 +101,14 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
                 <tr key={p.id} className="hover:bg-[#F5F8FC] transition-colors">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
-                      <img
+                      <LazyImage
                         src={p.images[0]}
                         alt={p.name}
-                        className="w-10 h-10 object-cover rounded-lg bg-[#F5F8FC] border border-[#DCE5F0]"
+                        width={40}
+                        height={40}
+                        priority={false}
+                        wrapperClassName="w-10 h-10 rounded-lg overflow-hidden bg-[#F5F8FC] border border-[#DCE5F0] flex-shrink-0"
+                        className="w-full h-full object-cover"
                       />
                       <div>
                         <div className="font-bold text-[#172033] line-clamp-1">{p.name}</div>

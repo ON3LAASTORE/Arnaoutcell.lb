@@ -298,7 +298,7 @@ export async function trackSearchQuery(params: {
     categoryMatchesCount: catCount,
     productMatchesCount: prodCount,
     hasResults,
-    selectedEntityTitle: params.selectedEntityTitle,
+    ...(params.selectedEntityTitle ? { selectedEntityTitle: params.selectedEntityTitle } : {}),
   };
 
   // Structured console log for analyzing user intent patterns
@@ -326,9 +326,23 @@ export async function trackSearchQuery(params: {
   const updated = [event, ...existing];
   saveSearchEvents(updated);
 
-  // Sync to Firestore in background
+  // Sync to Firestore in background without undefined values
   if (typeof window !== 'undefined') {
-    setDoc(doc(db, 'search_analytics', event.id), event).catch(() => {});
+    const firestorePayload: Record<string, unknown> = {
+      id: event.id,
+      term: event.term,
+      normalizedTerm: event.normalizedTerm,
+      timestamp: event.timestamp,
+      source: event.source,
+      intentPattern: event.intentPattern,
+      categoryMatchesCount: event.categoryMatchesCount,
+      productMatchesCount: event.productMatchesCount,
+      hasResults: event.hasResults,
+    };
+    if (event.selectedEntityTitle) {
+      firestorePayload.selectedEntityTitle = event.selectedEntityTitle;
+    }
+    setDoc(doc(db, 'search_analytics', event.id), firestorePayload).catch(() => {});
   }
 
   // Simulate mock API resolution

@@ -3,6 +3,7 @@ import { useShop } from '../context/ShopContext';
 import { ProductCard } from './ProductCard';
 import { Flame, Sparkles, ArrowRight, Tag, Smartphone, Headphones, BatteryCharging, Gamepad2 } from 'lucide-react';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
+import { ReactBitsColumns } from './animations/ReactBitsColumns';
 
 export const SpecialOffersColumn: React.FC = () => {
   const { lang, products, setCurrentView, storeSettings } = useShop();
@@ -136,16 +137,17 @@ export const SpecialOffersColumn: React.FC = () => {
 
         {/* Dynamic Offer Products Grid */}
         {filteredOffers.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredOffers.map((product) => (
+          <ReactBitsColumns columns={4} showDividers={false}>
+            {filteredOffers.map((product, idx) => (
               <ProductCard
                 key={product.id}
                 product={product}
                 layout="grid"
                 showOfferDetails={true}
+                priority={idx < 2}
               />
             ))}
-          </div>
+          </ReactBitsColumns>
         ) : (
           <div className="text-center py-16 bg-white dark:bg-[#0E1726] rounded-3xl border border-dashed border-[#DCE5F0] dark:border-[#1E293B]">
             <Sparkles className="w-10 h-10 text-[#007AFF] mx-auto mb-3 opacity-60" />

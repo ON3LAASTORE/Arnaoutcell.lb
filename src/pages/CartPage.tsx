@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { useShop } from '../context/ShopContext';
 import { Trash2, ShoppingBag, ArrowRight, ShieldCheck, Tag } from 'lucide-react';
 import { WhatsApp3DIcon, Cart3DIcon } from '../components/icons/ThreeDIcons';
+import { LazyImage } from '../components/LazyImage';
+import { openExternalUrl } from '../utils/navigation';
 
 export const CartPage: React.FC = () => {
   const {
@@ -93,10 +95,14 @@ export const CartPage: React.FC = () => {
                   return (
                     <div key={idx} className="p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 justify-between">
                       <div className="flex items-center gap-4 w-full sm:w-auto">
-                        <img
+                        <LazyImage
                           src={item.product.images[0]}
                           alt={item.product.name}
-                          className="w-20 h-20 object-cover rounded-2xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] flex-shrink-0"
+                          width={80}
+                          height={80}
+                          priority={idx < 2}
+                          wrapperClassName="w-20 h-20 rounded-2xl overflow-hidden bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] flex-shrink-0"
+                          className="w-full h-full object-cover"
                         />
                         <div className="min-w-0">
                           <span className="text-[10px] font-bold text-[#007AFF] uppercase tracking-wider block">
@@ -240,7 +246,7 @@ export const CartPage: React.FC = () => {
                 <button
                   onClick={() => {
                     const url = generateWhatsAppOrderUrl({ items: cart, total: finalTotal });
-                    window.open(url, '_blank');
+                    openExternalUrl(url);
                   }}
                   className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100 hover:from-emerald-100 hover:to-green-100 dark:from-emerald-950/40 dark:via-emerald-900/40 dark:to-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 font-extrabold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-sm hover:shadow-md hover:shadow-emerald-500/20 group active:scale-98"
                 >

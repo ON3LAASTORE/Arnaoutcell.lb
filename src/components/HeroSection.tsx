@@ -20,7 +20,9 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { WhatsApp3DIcon, Orbit3DIcon } from './icons/ThreeDIcons';
+import { openExternalUrl } from '../utils/navigation';
 import { Product } from '../types';
+import { ReactBitsPicture } from './animations/ReactBitsPicture';
 
 export const HeroSection: React.FC = () => {
   const {
@@ -95,7 +97,7 @@ export const HeroSection: React.FC = () => {
         ? `مرحباً أرناؤوط ستور! أود طلب وشراء هاتف OPPO Reno 16 Series 5G الجديد (إصدار 3D Pop Planet):\n- السعر: $${renoProduct?.price || 629} USD\n- الكفالة: كفالة رسمية معتمدة 12 شهراً\nالرجاء تأكيد التوفر والتوصيل في صيدا / لبنان.`
         : `Hello ARNAOUT STORE! I want to buy the all-new OPPO Reno 16 Series 5G (3D Pop Planet Edition):\n- Price: $${renoProduct?.price || 629} USD\n- Warranty: 1-Year Official Lebanon Warranty\nPlease confirm availability and express delivery across Lebanon.`
     );
-    window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+    openExternalUrl(`https://wa.me/${phone}?text=${text}`);
   };
 
   return (
@@ -301,81 +303,88 @@ export const HeroSection: React.FC = () => {
               {/* ===================================================================
                   THE GLASSMORPHISM SMARTPHONE DEVICE FRAME (9:16 RATIO)
               ==================================================================== */}
-              <div
-                className="relative aspect-[9/16] w-[270px] sm:w-[320px] md:w-[350px] lg:w-[370px] rounded-[44px] sm:rounded-[52px] p-[6px] sm:p-[8px] bg-gradient-to-b from-purple-300/40 via-purple-900/30 to-violet-500/40 border-2 border-purple-300/50 shadow-[0_20px_70px_-15px_rgba(168,85,247,0.55)] backdrop-blur-2xl group transition-transform duration-500 hover:scale-[1.01]"
+              <ReactBitsPicture
+                maxTilt={6}
+                scaleOnHover={1.02}
+                showSpotlight={true}
+                showSheen={true}
               >
-                {/* Sleek Inner Metallic Frame Rim */}
-                <div className="relative w-full h-full rounded-[38px] sm:rounded-[46px] overflow-hidden bg-black shadow-inner border border-white/20 flex items-center justify-center">
-                  {/* Dynamic Island / Front Camera Punch Hole */}
-                  <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 w-24 h-4 bg-black/80 rounded-full border border-white/15 flex items-center justify-center gap-2 px-2 pointer-events-none">
-                    <span className="w-2 h-2 rounded-full bg-emerald-400/90" />
-                    <span className="text-[8px] font-mono tracking-wider text-purple-200">OPPO AI</span>
+                <div
+                  className="relative aspect-[9/16] w-[270px] sm:w-[320px] md:w-[350px] lg:w-[370px] rounded-[44px] sm:rounded-[52px] p-[6px] sm:p-[8px] bg-gradient-to-b from-purple-300/40 via-purple-900/30 to-violet-500/40 border-2 border-purple-300/50 shadow-[0_20px_70px_-15px_rgba(168,85,247,0.55)] backdrop-blur-2xl group transition-transform duration-500 hover:scale-[1.01]"
+                >
+                  {/* Sleek Inner Metallic Frame Rim */}
+                  <div className="relative w-full h-full rounded-[38px] sm:rounded-[46px] overflow-hidden bg-black shadow-inner border border-white/20 flex items-center justify-center">
+                    {/* Dynamic Island / Front Camera Punch Hole */}
+                    <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 w-24 h-4 bg-black/80 rounded-full border border-white/15 flex items-center justify-center gap-2 px-2 pointer-events-none">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400/90" />
+                      <span className="text-[8px] font-mono tracking-wider text-purple-200">OPPO AI</span>
+                    </div>
+
+                    {/* High Quality 9:16 Video Player */}
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      loop
+                      muted={isMuted}
+                      playsInline
+                      preload="auto"
+                      onLoadedData={() => setVideoLoaded(true)}
+                      className="w-full h-full object-cover object-center cursor-pointer"
+                      onClick={togglePlay}
+                    >
+                      <source src="/videos/oppo-reno16-series-5g.mp4" type="video/mp4" />
+                      <source
+                        src="/assets/aistudio/____..._________________________________________________OPPO_Reno16_F_5G__OPPOReno16Series__1__4ef3f86a.mp4"
+                        type="video/mp4"
+                      />
+                    </video>
+
+                    {/* Gradient Overlay for Edge Depth */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none z-10" />
+
+                    {/* Custom Sleek Sound Toggle Overlay (Prominent button with state feedback) */}
+                    <button
+                      type="button"
+                      onClick={toggleMute}
+                      aria-label={isMuted ? 'Unmute video sound' : 'Mute video sound'}
+                      className={`absolute bottom-4 right-4 rtl:right-auto rtl:left-4 z-30 p-2.5 sm:p-3 rounded-full backdrop-blur-xl border transition-all cursor-pointer shadow-lg active:scale-95 flex items-center gap-2 group ${
+                        isMuted
+                          ? 'bg-black/75 hover:bg-black/90 text-slate-200 border-white/25 hover:border-purple-400/60'
+                          : 'bg-gradient-to-r from-purple-600 to-violet-600 text-white border-purple-300 shadow-purple-600/50'
+                      }`}
+                    >
+                      {isMuted ? (
+                        <>
+                          <VolumeX className="w-4 h-4 text-purple-300 group-hover:scale-110 transition-transform" />
+                          <span className="text-[10px] font-bold tracking-tight pr-1 rtl:pr-0 rtl:pl-1">
+                            {lang === 'ar' ? 'تشغيل الصوت' : 'Unmute'}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <Volume2 className="w-4 h-4 text-white animate-pulse" />
+                          <span className="text-[10px] font-bold tracking-tight pr-1 rtl:pr-0 rtl:pl-1">
+                            {lang === 'ar' ? 'الصوت يعمل' : 'Sound On'}
+                          </span>
+                        </>
+                      )}
+                    </button>
+
+                    {/* Play/Pause Minimal Indicator Overlay */}
+                    <button
+                      type="button"
+                      onClick={togglePlay}
+                      aria-label={isPlaying ? 'Pause video' : 'Play video'}
+                      className="absolute bottom-4 left-4 rtl:left-auto rtl:right-4 z-30 p-2.5 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-md transition-all cursor-pointer opacity-70 hover:opacity-100"
+                    >
+                      {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+                    </button>
+
+                    {/* Glass Reflection Highlight */}
+                    <div className="absolute top-0 right-0 w-2/3 h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none z-20" />
                   </div>
-
-                  {/* High Quality 9:16 Video Player */}
-                  <video
-                    ref={videoRef}
-                    autoPlay
-                    loop
-                    muted={isMuted}
-                    playsInline
-                    preload="auto"
-                    onLoadedData={() => setVideoLoaded(true)}
-                    className="w-full h-full object-cover object-center cursor-pointer"
-                    onClick={togglePlay}
-                  >
-                    <source src="/videos/oppo-reno16-series-5g.mp4" type="video/mp4" />
-                    <source
-                      src="/assets/aistudio/____..._________________________________________________OPPO_Reno16_F_5G__OPPOReno16Series__1__4ef3f86a.mp4"
-                      type="video/mp4"
-                    />
-                  </video>
-
-                  {/* Gradient Overlay for Edge Depth */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none z-10" />
-
-                  {/* Custom Sleek Sound Toggle Overlay (Prominent button with state feedback) */}
-                  <button
-                    type="button"
-                    onClick={toggleMute}
-                    aria-label={isMuted ? 'Unmute video sound' : 'Mute video sound'}
-                    className={`absolute bottom-4 right-4 rtl:right-auto rtl:left-4 z-30 p-2.5 sm:p-3 rounded-full backdrop-blur-xl border transition-all cursor-pointer shadow-lg active:scale-95 flex items-center gap-2 group ${
-                      isMuted
-                        ? 'bg-black/75 hover:bg-black/90 text-slate-200 border-white/25 hover:border-purple-400/60'
-                        : 'bg-gradient-to-r from-purple-600 to-violet-600 text-white border-purple-300 shadow-purple-600/50'
-                    }`}
-                  >
-                    {isMuted ? (
-                      <>
-                        <VolumeX className="w-4 h-4 text-purple-300 group-hover:scale-110 transition-transform" />
-                        <span className="text-[10px] font-bold tracking-tight pr-1 rtl:pr-0 rtl:pl-1">
-                          {lang === 'ar' ? 'تشغيل الصوت' : 'Unmute'}
-                        </span>
-                      </>
-                    ) : (
-                      <>
-                        <Volume2 className="w-4 h-4 text-white animate-pulse" />
-                        <span className="text-[10px] font-bold tracking-tight pr-1 rtl:pr-0 rtl:pl-1">
-                          {lang === 'ar' ? 'الصوت يعمل' : 'Sound On'}
-                        </span>
-                      </>
-                    )}
-                  </button>
-
-                  {/* Play/Pause Minimal Indicator Overlay */}
-                  <button
-                    type="button"
-                    onClick={togglePlay}
-                    aria-label={isPlaying ? 'Pause video' : 'Play video'}
-                    className="absolute bottom-4 left-4 rtl:left-auto rtl:right-4 z-30 p-2.5 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-md transition-all cursor-pointer opacity-70 hover:opacity-100"
-                  >
-                    {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                  </button>
-
-                  {/* Glass Reflection Highlight */}
-                  <div className="absolute top-0 right-0 w-2/3 h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none z-20" />
                 </div>
-              </div>
+              </ReactBitsPicture>
 
               {/* Under-Frame Quick Caption */}
               <div className="mt-3 text-center text-xs text-purple-200/90 font-medium flex items-center gap-2">

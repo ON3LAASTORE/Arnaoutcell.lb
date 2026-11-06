@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useShop } from '../context/ShopContext';
 import { ShieldCheck, Search } from 'lucide-react';
+import { LazyImage } from '../components/LazyImage';
 
 export const BrandsPage: React.FC = () => {
   const { lang, brands, selectBrand, products } = useShop();
@@ -42,7 +43,7 @@ export const BrandsPage: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {filtered.map((b) => {
+          {filtered.map((b, idx) => {
             const count = products.filter(
               (p) => p.brand.toLowerCase() === b.name.toLowerCase()
             ).length;
@@ -54,11 +55,14 @@ export const BrandsPage: React.FC = () => {
                 className="group p-5 rounded-2xl bg-white border border-[#DCE5F0] hover:border-[#007AFF] transition-all cursor-pointer flex flex-col items-center text-center shadow-xs hover:shadow-[0_4px_20px_-4px_rgba(0,122,255,0.12)] hover:-translate-y-0.5 duration-200"
               >
                 <div className="w-16 h-16 rounded-full overflow-hidden bg-[#F5F8FC] border border-[#DCE5F0] mb-3 p-1 flex items-center justify-center group-hover:border-[#007AFF] transition-colors">
-                  <img
+                  <LazyImage
                     src={b.logo}
                     alt={b.name}
+                    width={64}
+                    height={64}
+                    priority={idx < 4}
+                    wrapperClassName="w-full h-full rounded-full"
                     className="w-full h-full object-cover rounded-full"
-                    loading="lazy"
                   />
                 </div>
                 <h3 className="font-bold text-[#172033] text-sm group-hover:text-[#007AFF] transition-colors">

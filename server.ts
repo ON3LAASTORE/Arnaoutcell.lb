@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import fs from 'fs';
+import compression from 'compression';
 
 // Load environment variables
 dotenv.config();
@@ -164,6 +165,9 @@ let publishLogs: SocialPublishLog[] = loadPublishLogs();
 async function startServer() {
   const app = express();
   const PORT = parseInt(process.env.PORT || '3000', 10);
+
+  // Enable gzip/deflate compression for all API and static responses (> 1KB)
+  app.use(compression({ level: 6, threshold: 1024 }));
 
   // Body parsers with large limit for canvas image uploads
   app.use(express.json({ limit: '50mb' }));
@@ -1022,8 +1026,29 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.resolve(__dirname, 'dist')));
+    // Serve hashed assets with aggressive 1-year immutable caching
+    app.use(
+      '/assets',
+      express.static(path.resolve(__dirname, 'dist', 'assets'), {
+        maxAge: '1y',
+        immutable: true,
+      })
+    );
+
+    // Serve public static files (logo, favicon, images) with 1-day cache
+    app.use(
+      express.static(path.resolve(__dirname, 'dist'), {
+        maxAge: '1d',
+        setHeaders: (res, filePath) => {
+          if (filePath.endsWith('index.html')) {
+            res.setHeader('Cache-Control', 'no-cache');
+          }
+        },
+      })
+    );
+
     app.get('*', (_req: Request, res: Response) => {
+      res.setHeader('Cache-Control', 'no-cache');
       res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
     });
   }

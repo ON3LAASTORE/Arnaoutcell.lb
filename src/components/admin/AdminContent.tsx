@@ -3,6 +3,7 @@ import { useShop } from '../../context/ShopContext';
 import { saveAnnouncementBar, saveMarketingVideos } from '../../services/storageService';
 import { MarketingVideo } from '../../types';
 import { Bell, Video, Plus, Trash2 } from 'lucide-react';
+import { LazyImage } from '../LazyImage';
 
 export const AdminContent: React.FC = () => {
   const { lang, storeSettings, marketingVideos, products, refreshData } = useShop();
@@ -321,10 +322,14 @@ export const AdminContent: React.FC = () => {
                   className="p-3.5 rounded-2xl bg-white border border-[#DCE5F0] flex items-center justify-between gap-4 text-xs shadow-xs"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <img
+                    <LazyImage
                       src={v.thumbnail}
                       alt={v.title}
-                      className="w-16 h-12 object-cover rounded-xl bg-[#F5F8FC] border border-[#DCE5F0]"
+                      width={64}
+                      height={48}
+                      priority={false}
+                      wrapperClassName="w-16 h-12 rounded-xl overflow-hidden bg-[#F5F8FC] border border-[#DCE5F0] flex-shrink-0"
+                      className="w-full h-full object-cover"
                     />
                     <div className="min-w-0">
                       <h4 className="font-bold text-[#172033] truncate">{v.title}</h4>

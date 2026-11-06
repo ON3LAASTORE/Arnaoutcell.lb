@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useShop } from '../context/ShopContext';
+import { LazyImage } from './LazyImage';
 
 interface StoreLogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -37,18 +38,18 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
 
   const sizeClasses = {
     sm: {
-      image: 'w-8 h-8',
-      title: 'text-sm',
+      image: 'w-7 h-7 sm:w-8 sm:h-8',
+      title: 'text-xs',
       tagline: 'text-[9px]',
     },
     md: {
-      image: 'w-10 h-10',
-      title: 'text-base sm:text-lg',
-      tagline: 'text-[11px]',
+      image: 'w-8 h-8 sm:w-10 sm:h-10',
+      title: 'text-xs sm:text-base lg:text-lg',
+      tagline: 'text-[10px] sm:text-[11px]',
     },
     lg: {
-      image: 'w-12 h-12 sm:w-14 sm:h-14',
-      title: 'text-xl sm:text-2xl',
+      image: 'w-10 h-10 sm:w-14 sm:h-14',
+      title: 'text-lg sm:text-2xl',
       tagline: 'text-xs',
     },
   }[size];
@@ -67,9 +68,13 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
       <div className="flex items-center gap-2.5">
         {/* 4K Official Circular Profile Emblem */}
         <div className="shrink-0 overflow-hidden rounded-full border border-slate-200/90 dark:border-slate-700 shadow-xs bg-white p-0.5 flex items-center justify-center transition-transform group-hover:scale-105">
-          <img
+          <LazyImage
             src={logoUrl}
             alt={storeName}
+            width={size === 'sm' ? 32 : size === 'lg' ? 48 : 40}
+            height={size === 'sm' ? 32 : size === 'lg' ? 48 : 40}
+            priority={true}
+            wrapperClassName="rounded-full overflow-hidden"
             className={`${sizeClasses.image} rounded-full object-cover`}
           />
         </div>
