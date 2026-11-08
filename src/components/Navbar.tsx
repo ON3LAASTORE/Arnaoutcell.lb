@@ -1,7 +1,6 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useShop } from '../context/ShopContext';
 import {
-  Search,
   ShoppingCart,
   Heart,
   Menu,
@@ -17,11 +16,9 @@ import {
   Moon,
 } from 'lucide-react';
 import { StoreLogo } from './StoreLogo';
-import { querySearchSuggestions } from '../utils/searchSuggestions';
-import { SearchSuggestionsDropdown } from './SearchSuggestionsDropdown';
-import { trackSearchQuery } from '../services/searchAnalyticsService';
-import { Product, Category, Brand } from '../types';
+import { GlobalSearch } from './GlobalSearch';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
+import { ConnectivityIndicator } from './ConnectivityIndicator';
 
 export const Navbar: React.FC = () => {
   const {
@@ -36,196 +33,12 @@ export const Navbar: React.FC = () => {
     setCurrentView,
     selectCategory,
     categories,
-    brands,
-    selectBrand,
-    products,
-    viewProductDetail,
-    setSearchQuery: setGlobalSearch,
     isDarkMode,
     toggleDarkMode,
   } = useShop();
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [searchInput, setSearchInput] = useState('');
-  const [searchFocused, setSearchFocused] = useState(false);
-  const [mobileSearchFocused, setMobileSearchFocused] = useState(false);
-  const [selectedIndex, setSelectedIndex] = useState<number>(-1);
   const [categoriesDropdownOpen, setCategoriesDropdownOpen] = useState(false);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
-  const mobileSearchContainerRef = useRef<HTMLDivElement>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
-
-  // Real-time search query matching current products, categories, and brands
-  const searchResult = querySearchSuggestions(searchInput, products, categories, brands, {
-    maxProducts: 6,
-    maxCategories: 4,
-    maxBrands: 4,
-  });
-
-  const totalInteractiveItems =
-    searchResult.brands.length + searchResult.categories.length + searchResult.products.length;
-
-  // Reset selected keyboard index when query changes
-  useEffect(() => {
-    setSelectedIndex(-1);
-  }, [searchInput]);
-
-  // Close search suggestions on outside click
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      const target = event.target as Node;
-      if (searchContainerRef.current && !searchContainerRef.current.contains(target)) {
-        setSearchFocused(false);
-      }
-      if (mobileSearchContainerRef.current && !mobileSearchContainerRef.current.contains(target)) {
-        setMobileSearchFocused(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleSelectProduct = (product: Product) => {
-    trackSearchQuery({
-      term: searchInput.trim() || product.name,
-      source: 'product_suggestion_click',
-      selectedEntityTitle: product.name,
-      categoryMatchesCount: searchResult.categories.length,
-      productMatchesCount: searchResult.products.length,
-    });
-    viewProductDetail(product.id);
-    setSearchFocused(false);
-    setMobileSearchFocused(false);
-    setMobileMenuOpen(false);
-    setSearchInput('');
-  };
-
-  const handleSelectCategory = (category: Category) => {
-    trackSearchQuery({
-      term: searchInput.trim() || category.name,
-      source: 'category_suggestion_click',
-      selectedEntityTitle: category.name,
-      categoryMatchesCount: searchResult.categories.length,
-      productMatchesCount: searchResult.products.length,
-    });
-    selectCategory(category.slug);
-    setSearchFocused(false);
-    setMobileSearchFocused(false);
-    setMobileMenuOpen(false);
-    setSearchInput('');
-  };
-
-  const handleSelectBrand = (brand: Brand) => {
-    trackSearchQuery({
-      term: searchInput.trim() || brand.name,
-      // @ts-expect-error brand click tracking
-      source: 'brand_suggestion_click',
-      selectedEntityTitle: brand.name,
-      categoryMatchesCount: searchResult.categories.length,
-      productMatchesCount: searchResult.products.length,
-    });
-    selectBrand(brand.name);
-    setCurrentView('products');
-    setSearchFocused(false);
-    setMobileSearchFocused(false);
-    setMobileMenuOpen(false);
-    setSearchInput('');
-  };
-
-  const handleSelectPopularTerm = (term: string) => {
-    trackSearchQuery({
-      term,
-      source: 'trending_term_click',
-      categoryMatchesCount: 0,
-      productMatchesCount: 0,
-    });
-    setSearchInput(term);
-    setSearchFocused(true);
-    setMobileSearchFocused(true);
-  };
-
-  const handleViewAllResults = () => {
-    if (searchInput.trim()) {
-      trackSearchQuery({
-        term: searchInput.trim(),
-        source: 'desktop_input_submit',
-        categoryMatchesCount: searchResult.categories.length,
-        productMatchesCount: searchResult.products.length,
-      });
-      setGlobalSearch(searchInput.trim());
-      setCurrentView('products');
-      setSearchFocused(false);
-      setMobileSearchFocused(false);
-      setMobileMenuOpen(false);
-    } else {
-      setCurrentView('products');
-      setSearchFocused(false);
-      setMobileSearchFocused(false);
-      setMobileMenuOpen(false);
-    }
-  };
-
-  const handleClearSearch = (isMobile = false) => {
-    setSearchInput('');
-    setSelectedIndex(-1);
-    if (isMobile) {
-      mobileSearchInputRef.current?.focus();
-    } else {
-      searchInputRef.current?.focus();
-    }
-  };
-
-  const handleSearchSubmit = (e?: React.FormEvent, isMobile = false) => {
-    if (e) e.preventDefault();
-    if (selectedIndex >= 0 && selectedIndex < totalInteractiveItems) {
-      if (selectedIndex < searchResult.brands.length) {
-        handleSelectBrand(searchResult.brands[selectedIndex]);
-        return;
-      } else if (selectedIndex < searchResult.brands.length + searchResult.categories.length) {
-        const catIdx = selectedIndex - searchResult.brands.length;
-        handleSelectCategory(searchResult.categories[catIdx]);
-        return;
-      } else {
-        const prodIdx = selectedIndex - searchResult.brands.length - searchResult.categories.length;
-        const prod = searchResult.products[prodIdx];
-        handleSelectProduct(prod);
-        return;
-      }
-    }
-
-    if (searchInput.trim()) {
-      trackSearchQuery({
-        term: searchInput.trim(),
-        source: isMobile ? 'mobile_input_submit' : 'desktop_input_submit',
-        categoryMatchesCount: searchResult.categories.length,
-        productMatchesCount: searchResult.products.length,
-      });
-      setGlobalSearch(searchInput.trim());
-      setCurrentView('products');
-      setSearchFocused(false);
-      setMobileSearchFocused(false);
-      setMobileMenuOpen(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      if (totalInteractiveItems > 0) {
-        setSelectedIndex((prev) => (prev + 1) % totalInteractiveItems);
-      }
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      if (totalInteractiveItems > 0) {
-        setSelectedIndex((prev) => (prev <= 0 ? totalInteractiveItems - 1 : prev - 1));
-      }
-    } else if (e.key === 'Escape') {
-      setSearchFocused(false);
-      setMobileSearchFocused(false);
-      setSelectedIndex(-1);
-    }
-  };
 
   const navLinks = [
     { label: t.specialOffers, view: 'offers', icon: Flame, highlight: true },
@@ -258,71 +71,23 @@ export const Navbar: React.FC = () => {
             }}
           />
 
-          {/* Search Bar - Real-Time Search Suggestions */}
-          <div ref={searchContainerRef} className="hidden md:flex flex-1 max-w-lg relative mx-2">
-            <form onSubmit={(e) => handleSearchSubmit(e, false)} className="w-full">
-              <div className="relative">
-                <input
-                  ref={searchInputRef}
-                  type="text"
-                  placeholder={t.searchPlaceholder}
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onFocus={() => setSearchFocused(true)}
-                  onKeyDown={handleKeyDown}
-                  aria-label={t.searchPlaceholder}
-                  aria-expanded={searchFocused}
-                  role="combobox"
-                  className="w-full bg-[#F5F8FC] dark:bg-[#111A2E] text-[#172033] dark:text-[#F8FAFC] placeholder-[#64748B] dark:placeholder-slate-400 text-sm rounded-full pl-11 pr-24 rtl:pl-24 rtl:pr-11 py-2.5 border border-[#DCE5F0] dark:border-[#1E293B] focus:bg-white dark:focus:bg-[#162038] focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/15 transition-all"
-                />
-                <Search className="w-4 h-4 text-[#64748B] dark:text-slate-400 absolute left-4 rtl:left-auto rtl:right-4 top-1/2 -translate-y-1/2 pointer-events-none" />
-
-                {searchInput && (
-                  <button
-                    type="button"
-                    onClick={() => handleClearSearch(false)}
-                    className="absolute right-20 rtl:right-auto rtl:left-20 top-1/2 -translate-y-1/2 p-1 text-[#64748B] hover:text-[#172033] dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-                    aria-label="Clear search"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-
-                <button
-                  type="submit"
-                  className="absolute right-1.5 rtl:right-auto rtl:left-1.5 top-1/2 -translate-y-1/2 bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold px-3 py-1.5 rounded-full transition-colors cursor-pointer shadow-xs"
-                >
-                  {lang === 'ar' ? 'بحث' : 'Search'}
-                </button>
-              </div>
-            </form>
-
-            {/* Real-time Search Suggestion Dropdown */}
-            {searchFocused && (
-              <SearchSuggestionsDropdown
-                query={searchInput}
-                brands={searchResult.brands}
-                categories={searchResult.categories}
-                products={searchResult.products}
-                allCategories={categories}
-                allBrands={brands}
-                totalBrandMatches={searchResult.totalBrandMatches}
-                totalCategoryMatches={searchResult.totalCategoryMatches}
-                totalProductMatches={searchResult.totalProductMatches}
-                lang={lang}
-                selectedIndex={selectedIndex}
-                onSelectProduct={handleSelectProduct}
-                onSelectCategory={handleSelectCategory}
-                onSelectBrand={handleSelectBrand}
-                onSelectPopularTerm={handleSelectPopularTerm}
-                onViewAllResults={handleViewAllResults}
-                onClose={() => setSearchFocused(false)}
-              />
-            )}
-          </div>
+          {/* Global Search Component - Quick filter by Name or Brand */}
+          <GlobalSearch isMobile={false} className="hidden md:flex flex-1 max-w-lg relative mx-2" />
 
           {/* Quick Actions & Cart */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3">
+            {/* Real-time Firebase Firestore Sync & Connectivity Indicator */}
+            <ConnectivityIndicator
+              lang={lang}
+              isCompact={false}
+              className="hidden md:inline-flex"
+            />
+            <ConnectivityIndicator
+              lang={lang}
+              isCompact={true}
+              className="md:hidden inline-flex"
+            />
+
             {/* WhatsApp 3D direct link */}
             <a
               href="https://wa.me/96181900916"
@@ -425,66 +190,12 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Dedicated Global Search Bar (Directly accessible on mobile/tablet) */}
-        <div ref={mobileSearchContainerRef} className="md:hidden pb-3 relative">
-          <form onSubmit={(e) => handleSearchSubmit(e, true)}>
-            <div className="relative">
-              <input
-                ref={mobileSearchInputRef}
-                type="text"
-                placeholder={t.searchPlaceholder}
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onFocus={() => setMobileSearchFocused(true)}
-                onKeyDown={handleKeyDown}
-                aria-label={t.searchPlaceholder}
-                className="w-full bg-[#F5F8FC] dark:bg-[#111A2E] text-[#172033] dark:text-[#F8FAFC] placeholder-[#64748B] dark:placeholder-slate-400 text-xs sm:text-sm rounded-full pl-10 pr-22 rtl:pl-22 rtl:pr-10 py-2.5 border border-[#DCE5F0] dark:border-[#1E293B] focus:outline-none focus:border-[#007AFF] shadow-xs"
-              />
-              <Search className="w-4 h-4 text-[#64748B] dark:text-slate-400 absolute left-3.5 rtl:left-auto rtl:right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-
-              {searchInput && (
-                <button
-                  type="button"
-                  onClick={() => handleClearSearch(true)}
-                  className="absolute right-18 rtl:right-auto rtl:left-18 top-1/2 -translate-y-1/2 p-1 text-[#64748B] hover:text-[#172033] dark:hover:text-white rounded-full cursor-pointer z-10"
-                  aria-label="Clear mobile search"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-
-              <button
-                type="submit"
-                className="absolute right-1.5 rtl:right-auto rtl:left-1.5 top-1/2 -translate-y-1/2 bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer shadow-xs z-10"
-              >
-                {lang === 'ar' ? 'بحث' : 'Search'}
-              </button>
-            </div>
-          </form>
-
-          {/* Mobile Real-time Search Suggestions Dropdown */}
-          {mobileSearchFocused && (
-            <SearchSuggestionsDropdown
-              query={searchInput}
-              brands={searchResult.brands}
-              categories={searchResult.categories}
-              products={searchResult.products}
-              allCategories={categories}
-              allBrands={brands}
-              totalBrandMatches={searchResult.totalBrandMatches}
-              totalCategoryMatches={searchResult.totalCategoryMatches}
-              totalProductMatches={searchResult.totalProductMatches}
-              lang={lang}
-              selectedIndex={selectedIndex}
-              onSelectProduct={handleSelectProduct}
-              onSelectCategory={handleSelectCategory}
-              onSelectBrand={handleSelectBrand}
-              onSelectPopularTerm={handleSelectPopularTerm}
-              onViewAllResults={handleViewAllResults}
-              onClose={() => setMobileSearchFocused(false)}
-            />
-          )}
-        </div>
+        {/* Mobile Dedicated Global Search Component */}
+        <GlobalSearch
+          isMobile={true}
+          className="md:hidden pb-3 relative"
+          onCloseMobileMenu={() => setMobileMenuOpen(false)}
+        />
 
         {/* Desktop Secondary Navigation Bar */}
         <div className="hidden md:flex items-center justify-between py-2.5 border-t border-[#DCE5F0] dark:border-[#1E293B] text-xs font-semibold">
@@ -611,6 +322,14 @@ export const Navbar: React.FC = () => {
                 ? (lang === 'ar' ? 'تفعيل الفاتح' : 'Light Mode')
                 : (lang === 'ar' ? 'تفعيل الداكن' : 'Dark Mode')}
             </button>
+          </div>
+
+          {/* Mobile Cloud Synchronization Status */}
+          <div className="flex items-center justify-between p-3 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B]">
+            <div className="text-xs font-bold text-[#172033] dark:text-[#F8FAFC]">
+              {lang === 'ar' ? 'حالة المزامنة السحابية' : 'Cloud Sync Status'}
+            </div>
+            <ConnectivityIndicator lang={lang} isCompact={false} />
           </div>
 
           {/* Mobile Links */}

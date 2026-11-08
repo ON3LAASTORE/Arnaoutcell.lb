@@ -1017,10 +1017,19 @@ async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
     const isHmrDisabled = process.env.DISABLE_HMR === 'true';
+    const isCloudRun = Boolean(process.env.K_SERVICE);
     const vite = await createViteServer({
       server: {
         middlewareMode: true,
-        hmr: isHmrDisabled ? false : { server: httpServer },
+        hmr: isHmrDisabled
+          ? false
+          : {
+              server: httpServer,
+              protocol: (process.env.HMR_PROTOCOL as 'wss' | 'ws') || (isCloudRun ? 'wss' : undefined),
+              clientPort: process.env.HMR_CLIENT_PORT
+                ? Number(process.env.HMR_CLIENT_PORT)
+                : (isCloudRun ? 443 : undefined),
+            },
       },
       appType: 'spa',
     });

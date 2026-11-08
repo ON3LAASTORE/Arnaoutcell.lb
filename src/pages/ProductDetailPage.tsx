@@ -15,10 +15,12 @@ import {
   Play,
   Sparkles,
   Scale,
+  Flame,
 } from 'lucide-react';
 import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon } from '../components/icons/ThreeDIcons';
 import { LazyImage } from '../components/LazyImage';
 import { openExternalUrl } from '../utils/navigation';
+import { getProductBadges } from '../utils/productBadgeHelpers';
 
 export const ProductDetailPage: React.FC = () => {
   const {
@@ -183,18 +185,49 @@ export const ProductDetailPage: React.FC = () => {
                 />
               )}
 
-              {/* Badges */}
-              <div className="absolute top-4 left-4 flex flex-col gap-1.5 z-10">
-                {product.discountPercentage && product.discountPercentage > 0 ? (
-                  <span className="px-3 py-1 rounded-lg bg-[#DC2626] text-white font-black text-xs shadow-xs">
-                    -{product.discountPercentage}% OFF
-                  </span>
-                ) : null}
-                {product.isSpecialOffer && (
-                  <span className="px-3 py-1 rounded-lg bg-[#007AFF] text-white font-bold text-xs shadow-xs">
-                    {lang === 'ar' ? 'عرض خاص' : 'SPECIAL OFFER'}
-                  </span>
-                )}
+              {/* Badges (New, Bestseller, Low Stock, Discount) */}
+              <div className="absolute top-4 left-4 flex flex-col gap-1.5 z-10 pointer-events-none">
+                {getProductBadges(product, lang).map((badge) => {
+                  if (badge.id === 'discount') {
+                    return (
+                      <span key={badge.id} className="px-3 py-1 rounded-lg bg-[#DC2626] text-white font-black text-xs shadow-xs">
+                        {badge.label}
+                      </span>
+                    );
+                  }
+                  if (badge.id === 'new') {
+                    return (
+                      <span key={badge.id} className="px-3 py-1 rounded-lg bg-[#007AFF] text-white font-bold text-xs shadow-xs flex items-center gap-1">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        {badge.label}
+                      </span>
+                    );
+                  }
+                  if (badge.id === 'bestseller') {
+                    return (
+                      <span key={badge.id} className="px-3 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs shadow-xs flex items-center gap-1">
+                        <Flame className="w-3.5 h-3.5 fill-current" />
+                        {badge.label}
+                      </span>
+                    );
+                  }
+                  if (badge.id === 'low_stock') {
+                    return (
+                      <span key={badge.id} className="px-3 py-1 rounded-lg bg-amber-500 text-white font-bold text-xs shadow-xs flex items-center gap-1 animate-pulse">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        {badge.label}
+                      </span>
+                    );
+                  }
+                  if (badge.id === 'out_of_stock') {
+                    return (
+                      <span key={badge.id} className="px-3 py-1 rounded-lg bg-slate-800 text-white font-bold text-xs shadow-xs flex items-center gap-1">
+                        {badge.label}
+                      </span>
+                    );
+                  }
+                  return null;
+                })}
               </div>
 
               {/* Share & Wishlist quick actions */}

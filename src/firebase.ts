@@ -7,28 +7,75 @@ import {
   getDocFromServer,
   enableNetwork,
   disableNetwork,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  memoryLocalCache,
+  setLogLevel,
   Firestore,
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 const app = initializeApp(firebaseConfig);
 
+// Suppress internal transport reconnection log notices while keeping actionable errors
+if (typeof window !== 'undefined') {
+  try {
+    setLogLevel('error');
+  } catch {
+    // Ignore if not supported in the current environment
+  }
+}
+
 /**
- * Configure Firestore with experimentalForceLongPolling to eliminate WebChannel streaming errors
- * ('WebChannelConnection RPC Listen stream transport errored') in proxy, Cloud Run, and iframe environments.
+ * Configure Firestore with persistent local cache and WebChannel long polling
+ * to eliminate 'WebChannelConnection RPC Listen stream transport errored' in Cloud Run,
+ * proxy, and containerized preview environments.
  */
 function createFirestoreInstance(): Firestore {
+  const databaseId = firebaseConfig.firestoreDatabaseId;
+  const isBrowser = typeof window !== 'undefined';
+
+  if (!isBrowser) {
+    try {
+      return initializeFirestore(app, {}, databaseId);
+    } catch {
+      return getFirestore(app, databaseId);
+    }
+  }
+
+  // 1. In browser/proxy environments, use persistent IndexedDB cache with multi-tab support
+  // 2. Force WebChannel long polling with a 25s timeout (prevents reverse-proxies from prematurely killing hanging GET streams)
   try {
     return initializeFirestore(
       app,
       {
+        localCache: persistentLocalCache({
+          tabManager: persistentMultipleTabManager(),
+        }),
         experimentalForceLongPolling: true,
+        experimentalLongPollingOptions: {
+          timeoutSeconds: 25,
+        },
       },
-      firebaseConfig.firestoreDatabaseId
+      databaseId
     );
   } catch {
-    // If instance was already created or fallback is required
-    return getFirestore(app, firebaseConfig.firestoreDatabaseId);
+    // Fallback for environments where IndexedDB is blocked (e.g. private browsing, restricted iframes)
+    try {
+      return initializeFirestore(
+        app,
+        {
+          localCache: memoryLocalCache(),
+          experimentalForceLongPolling: true,
+          experimentalLongPollingOptions: {
+            timeoutSeconds: 25,
+          },
+        },
+        databaseId
+      );
+    } catch {
+      return getFirestore(app, databaseId);
+    }
   }
 }
 

@@ -2,11 +2,12 @@ import React from 'react';
 import { motion } from 'motion/react';
 import { Product } from '../types';
 import { useShop } from '../context/ShopContext';
-import { Heart, Shield, Star, CheckCircle, AlertTriangle, Sparkles, Scale, Share2 } from 'lucide-react';
+import { Heart, Shield, Star, CheckCircle, AlertTriangle, Sparkles, Scale, Share2, Flame } from 'lucide-react';
 import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon, Orbit3DIcon } from './icons/ThreeDIcons';
 import { LazyImage } from './LazyImage';
 import { openExternalUrl } from '../utils/navigation';
 import { ReactBitsPicture } from './animations/ReactBitsPicture';
+import { getProductBadges } from '../utils/productBadgeHelpers';
 
 interface ProductCardProps {
   product: Product;
@@ -40,6 +41,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const discountAmount = product.originalPrice > product.price ? product.originalPrice - product.price : 0;
   const isOutOfStock = product.stock <= 0;
   const isLowStock = product.stock > 0 && product.stock <= (product.lowStockThreshold || 3);
+  const badges = getProductBadges(product, lang);
 
   const handleOpen3DModal = () => {
     setQuickViewProduct(product);
@@ -113,20 +115,64 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           />
         </ReactBitsPicture>
 
-        {/* Badges Overlay */}
-        <div className="absolute top-2 left-2 rtl:right-2 rtl:left-auto sm:top-2.5 sm:left-2.5 flex flex-col gap-1 z-10">
-          {product.discountPercentage && product.discountPercentage > 0 ? (
-            <span className="px-2 py-0.5 rounded-md sm:rounded-lg bg-[#DC2626] text-white font-black text-[10px] sm:text-[11px] shadow-sm shadow-[#DC2626]/20">
-              -{product.discountPercentage}% OFF
-            </span>
-          ) : null}
-
-          {product.isNewArrival && (
-            <span className="px-2 py-0.5 rounded-md sm:rounded-lg bg-[#007AFF] text-white font-bold text-[9px] sm:text-[10px] shadow-sm shadow-[#007AFF]/20 flex items-center gap-1">
-              <Sparkles className="w-2.5 h-2.5" />
-              {lang === 'ar' ? 'جديد صيدا' : 'NEW'}
-            </span>
-          )}
+        {/* Badges Overlay (New, Bestseller, Low Stock, Discount) */}
+        <div className="absolute top-2 left-2 rtl:right-2 rtl:left-auto sm:top-2.5 sm:left-2.5 flex flex-col gap-1 z-10 pointer-events-none">
+          {badges.map((badge) => {
+            if (badge.id === 'discount') {
+              return (
+                <span
+                  key={badge.id}
+                  className="px-2 py-0.5 rounded-md sm:rounded-lg bg-[#DC2626] text-white font-black text-[10px] sm:text-[11px] shadow-sm shadow-[#DC2626]/20"
+                >
+                  {badge.label}
+                </span>
+              );
+            }
+            if (badge.id === 'new') {
+              return (
+                <span
+                  key={badge.id}
+                  className="px-2 py-0.5 rounded-md sm:rounded-lg bg-[#007AFF] text-white font-bold text-[9px] sm:text-[10px] shadow-sm shadow-[#007AFF]/25 flex items-center gap-1"
+                >
+                  <Sparkles className="w-2.5 h-2.5" />
+                  {badge.label}
+                </span>
+              );
+            }
+            if (badge.id === 'bestseller') {
+              return (
+                <span
+                  key={badge.id}
+                  className="px-2 py-0.5 rounded-md sm:rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-[9px] sm:text-[10px] shadow-sm shadow-amber-500/25 flex items-center gap-1"
+                >
+                  <Flame className="w-2.5 h-2.5 fill-current" />
+                  {badge.label}
+                </span>
+              );
+            }
+            if (badge.id === 'low_stock') {
+              return (
+                <span
+                  key={badge.id}
+                  className="px-2 py-0.5 rounded-md sm:rounded-lg bg-amber-500 text-white font-bold text-[9px] sm:text-[10px] shadow-sm shadow-amber-500/25 flex items-center gap-1 animate-pulse"
+                >
+                  <AlertTriangle className="w-2.5 h-2.5" />
+                  {badge.label}
+                </span>
+              );
+            }
+            if (badge.id === 'out_of_stock') {
+              return (
+                <span
+                  key={badge.id}
+                  className="px-2 py-0.5 rounded-md sm:rounded-lg bg-slate-800 text-white font-bold text-[9px] sm:text-[10px] shadow-sm flex items-center gap-1"
+                >
+                  {badge.label}
+                </span>
+              );
+            }
+            return null;
+          })}
         </div>
 
         {/* Wishlist Button */}

@@ -6,6 +6,9 @@ import { defineConfig } from 'vite';
 
 const rootDir = import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.url));
 
+const isCloudRun = Boolean(process.env.K_SERVICE);
+const isHmrDisabled = process.env.DISABLE_HMR === 'true';
+
 export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
@@ -15,11 +18,27 @@ export default defineConfig(() => {
       },
     },
     server: {
-      // HMR is disabled in AI Studio via DISABLE_HMR env var.
-      // Do not modify—file watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
-      // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
-      watch: process.env.DISABLE_HMR === 'true' ? null : {},
+      host: '0.0.0.0',
+      port: 3000,
+      strictPort: true,
+      // HMR configuration for Cloud Run & reverse proxies:
+      // When DISABLE_HMR is 'true', disable HMR to prevent WebSocket connection failures.
+      // Behind Cloud Run or an HTTPS reverse proxy, connect via secure WebSocket (wss) on port 443.
+      hmr: isHmrDisabled
+        ? false
+        : {
+            protocol: (process.env.HMR_PROTOCOL as 'wss' | 'ws') || (isCloudRun ? 'wss' : undefined),
+            clientPort: process.env.HMR_CLIENT_PORT
+              ? Number(process.env.HMR_CLIENT_PORT)
+              : (isCloudRun ? 443 : undefined),
+          },
+      // File watching polling fallback for containerized file systems
+      watch: isHmrDisabled
+        ? null
+        : {
+            usePolling: true,
+            interval: 1000,
+          },
     },
     build: {
       rollupOptions: {

@@ -26,10 +26,12 @@ import {
   Share2,
   Check,
   Scale,
+  Flame,
 } from 'lucide-react';
 import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon, Orbit3DIcon } from './icons/ThreeDIcons';
 import { LazyImage } from './LazyImage';
 import { openExternalUrl } from '../utils/navigation';
+import { getProductBadges } from '../utils/productBadgeHelpers';
 
 export const ProductQuickViewModal: React.FC = () => {
   const {
@@ -334,21 +336,52 @@ export const ProductQuickViewModal: React.FC = () => {
                   className="absolute bottom-6 w-3/4 h-8 bg-black/25 dark:bg-black/60 rounded-full blur-xl pointer-events-none"
                 />
 
-                {/* Floating Authenticity Badge (3D Layer) */}
+                {/* Floating Badges Overlay (3D Layer: Discount, New, Bestseller, Low Stock) */}
                 <div
                   style={{ transform: 'translateZ(55px)' }}
-                  className="absolute top-4 left-4 z-20 pointer-events-none"
+                  className="absolute top-4 left-4 z-20 pointer-events-none flex flex-col gap-1.5"
                 >
-                  {product.discountPercentage && product.discountPercentage > 0 ? (
-                    <span className="px-3 py-1 rounded-xl bg-[#DC2626] text-white font-black text-xs shadow-lg shadow-[#DC2626]/30">
-                      -{product.discountPercentage}% OFF
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 rounded-xl bg-[#007AFF] text-white font-bold text-xs shadow-lg shadow-[#007AFF]/30 flex items-center gap-1">
-                      <Award className="w-3.5 h-3.5" />
-                      {lang === 'ar' ? 'وكيل رسمي' : 'Official Agent'}
-                    </span>
-                  )}
+                  {getProductBadges(product, lang).map((badge) => {
+                    if (badge.id === 'discount') {
+                      return (
+                        <span key={badge.id} className="px-3 py-1 rounded-xl bg-[#DC2626] text-white font-black text-xs shadow-lg shadow-[#DC2626]/30">
+                          {badge.label}
+                        </span>
+                      );
+                    }
+                    if (badge.id === 'new') {
+                      return (
+                        <span key={badge.id} className="px-3 py-1 rounded-xl bg-[#007AFF] text-white font-bold text-xs shadow-lg shadow-[#007AFF]/30 flex items-center gap-1">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          {badge.label}
+                        </span>
+                      );
+                    }
+                    if (badge.id === 'bestseller') {
+                      return (
+                        <span key={badge.id} className="px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs shadow-lg shadow-amber-500/30 flex items-center gap-1">
+                          <Flame className="w-3.5 h-3.5 fill-current" />
+                          {badge.label}
+                        </span>
+                      );
+                    }
+                    if (badge.id === 'low_stock') {
+                      return (
+                        <span key={badge.id} className="px-3 py-1 rounded-xl bg-amber-500 text-white font-bold text-xs shadow-lg shadow-amber-500/30 flex items-center gap-1 animate-pulse">
+                          <AlertTriangle className="w-3.5 h-3.5" />
+                          {badge.label}
+                        </span>
+                      );
+                    }
+                    if (badge.id === 'out_of_stock') {
+                      return (
+                        <span key={badge.id} className="px-3 py-1 rounded-xl bg-slate-800 text-white font-bold text-xs shadow-lg flex items-center gap-1">
+                          {badge.label}
+                        </span>
+                      );
+                    }
+                    return null;
+                  })}
                 </div>
 
                 {/* Main Product Image with 3D Depth */}

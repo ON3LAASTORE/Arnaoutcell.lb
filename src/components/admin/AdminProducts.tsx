@@ -63,6 +63,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
   const [formIsOffer, setFormIsOffer] = useState(false);
   const [formIsFeatured, setFormIsFeatured] = useState(false);
   const [formIsNewArrival, setFormIsNewArrival] = useState(true);
+  const [formIsBestSeller, setFormIsBestSeller] = useState(false);
   const [formIsPublished, setFormIsPublished] = useState(true);
 
   const openAddModal = () => {
@@ -92,6 +93,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormIsOffer(false);
     setFormIsFeatured(true);
     setFormIsNewArrival(true);
+    setFormIsBestSeller(false);
     setFormIsPublished(true);
     setIsModalOpen(true);
   };
@@ -119,6 +121,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormIsOffer(Boolean(p.isSpecialOffer));
     setFormIsFeatured(Boolean(p.isFeatured));
     setFormIsNewArrival(Boolean(p.isNewArrival));
+    setFormIsBestSeller(Boolean(p.isBestSeller));
     setFormIsPublished(p.isPublished);
     setIsModalOpen(true);
   };
@@ -210,6 +213,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
       isSpecialOffer: formIsOffer,
       isFeatured: formIsFeatured,
       isNewArrival: formIsNewArrival,
+      isBestSeller: formIsBestSeller,
       isPublished: formIsPublished,
       warrantyMonths: formWarrantyMonths,
       createdAt: editingProduct ? editingProduct.createdAt : new Date().toISOString(),
@@ -662,7 +666,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
               </div>
 
               {/* Toggles */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-2">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 text-xs pt-2">
                 <label className="flex items-center gap-2 cursor-pointer text-[#172033]">
                   <input
                     type="checkbox"
@@ -691,6 +695,16 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                     className="rounded accent-[#007AFF] w-4 h-4"
                   />
                   <span>New Arrival 🚀</span>
+                </label>
+
+                <label className="flex items-center gap-2 cursor-pointer text-[#172033]">
+                  <input
+                    type="checkbox"
+                    checked={formIsBestSeller}
+                    onChange={(e) => setFormIsBestSeller(e.target.checked)}
+                    className="rounded accent-[#007AFF] w-4 h-4"
+                  />
+                  <span>Bestseller 👑</span>
                 </label>
 
                 <label className="flex items-center gap-2 cursor-pointer text-[#172033]">

@@ -239,6 +239,10 @@
           "type": "boolean",
           "description": "Whether product is marked as newest arrival"
         },
+        "isBestSeller": {
+          "type": "boolean",
+          "description": "Whether product is marked as a top bestseller"
+        },
         "isPublished": {
           "type": "boolean",
           "description": "Whether product is visible on public storefront"

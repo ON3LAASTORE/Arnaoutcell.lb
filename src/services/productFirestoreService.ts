@@ -112,6 +112,7 @@ export function subscribeToLiveProducts(
 
   const unsubscribe = onSnapshot(
     colRef,
+    { includeMetadataChanges: true },
     (snapshot) => {
       if (snapshot.empty) {
         if (onSeedNeeded) {

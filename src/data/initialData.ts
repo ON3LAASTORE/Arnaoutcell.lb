@@ -968,5 +968,5 @@ export const INITIAL_STORE_SETTINGS: StoreSettings = {
       ctaTextAr: 'تفاصيل الخدمات المتاحة',
     },
   ],
-};  deliveryZones: LEBANON_DELIVERY_ZONES,
+  deliveryZones: LEBANON_DELIVERY_ZONES,
 };
