@@ -502,7 +502,7 @@ export const ProductQuickViewModal: React.FC = () => {
                     <Star className="w-4 h-4 fill-current" />
                     <span className="text-[#172033] dark:text-slate-200">{product.rating}</span>
                     <span className="text-[#64748B] dark:text-slate-400 font-normal">
-                      ({product.reviewCount || 12} {lang === 'ar' ? 'تقييم موثق' : 'verified reviews'})
+                      ({product.reviewCount || 0} {lang === 'ar' ? 'تقييم' : 'reviews'})
                     </span>
                   </div>
 

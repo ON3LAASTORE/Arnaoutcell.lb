@@ -113,12 +113,9 @@ export const INITIAL_PRODUCTS: Product[] = [
     isNewArrival: true,
     isBestSeller: true,
     isPublished: true,
-    rating: 4.9,
-    reviewCount: 42,
-    reviews: [
-      { id: 'rev-1', userName: 'Hassan K.', rating: 5, comment: 'Purchased directly from ON 3LAA STORE online. Genuine device, pristine condition, and great customer care!', date: '2026-10-02', verifiedPurchase: true },
-      { id: 'rev-2', userName: 'Ahmad M.', rating: 5, comment: 'Super fast delivery to Beirut within 24 hours. The Desert Titanium color looks amazing.', date: '2026-09-28', verifiedPurchase: true },
-    ],
+    rating: 5.0,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-09-15',
   },
   {
@@ -159,7 +156,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isPublished: true,
     rating: 4.9,
-    reviewCount: 31,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-09-20',
   },
   {
@@ -198,7 +196,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isPublished: true,
     rating: 5.0,
-    reviewCount: 18,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-10-01',
   },
   {
@@ -237,7 +236,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isPublished: true,
     rating: 4.8,
-    reviewCount: 64,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-08-10',
   },
   {
@@ -279,7 +279,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isPublished: true,
     rating: 4.9,
-    reviewCount: 38,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-10-15',
   },
   {
@@ -319,7 +320,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isPublished: true,
     rating: 4.8,
-    reviewCount: 29,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-10-10',
   },
   {
@@ -361,7 +363,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isPublished: true,
     rating: 5.0,
-    reviewCount: 46,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-10-25',
   },
   {
@@ -400,7 +403,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isPublished: true,
     rating: 4.9,
-    reviewCount: 53,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-07-12',
   },
   {
@@ -438,7 +442,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isPublished: true,
     rating: 4.8,
-    reviewCount: 19,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-09-05',
   },
   {
@@ -477,7 +482,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isPublished: true,
     rating: 4.9,
-    reviewCount: 22,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-08-25',
   },
   {
@@ -516,7 +522,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isPublished: true,
     rating: 4.7,
-    reviewCount: 38,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-09-18',
   },
   {
@@ -555,7 +562,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isPublished: true,
     rating: 4.8,
-    reviewCount: 29,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-08-30',
   },
   {
@@ -593,7 +601,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isPublished: true,
     rating: 4.9,
-    reviewCount: 46,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-07-20',
   },
   {
@@ -631,7 +640,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isPublished: true,
     rating: 4.7,
-    reviewCount: 15,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-09-22',
   },
   {
@@ -668,7 +678,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isPublished: true,
     rating: 4.9,
-    reviewCount: 12,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-10-05',
   },
   {
@@ -706,7 +717,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isPublished: true,
     rating: 4.8,
-    reviewCount: 38,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-10-12',
   },
   {
@@ -744,7 +756,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isPublished: true,
     rating: 4.9,
-    reviewCount: 29,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-10-11',
   },
   {
@@ -781,7 +794,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isPublished: true,
     rating: 4.7,
-    reviewCount: 52,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-10-08',
   },
   {
@@ -820,7 +834,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: false,
     isPublished: true,
     rating: 4.8,
-    reviewCount: 19,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-10-14',
   },
   {
@@ -858,7 +873,8 @@ export const INITIAL_PRODUCTS: Product[] = [
     isBestSeller: true,
     isPublished: true,
     rating: 4.9,
-    reviewCount: 44,
+    reviewCount: 0,
+    reviews: [],
     createdAt: '2026-10-15',
   },
 ];

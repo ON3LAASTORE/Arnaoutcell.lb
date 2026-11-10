@@ -21,6 +21,7 @@ import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon } from '../components/icons/Three
 import { LazyImage } from '../components/LazyImage';
 import { openExternalUrl } from '../utils/navigation';
 import { getProductBadges } from '../utils/productBadgeHelpers';
+import { addProductReview } from '../services/storageService';
 
 export const ProductDetailPage: React.FC = () => {
   const {
@@ -116,16 +117,28 @@ export const ProductDetailPage: React.FC = () => {
     e.preventDefault();
     if (!newReviewName.trim() || !newReviewComment.trim()) return;
 
-    if (!product.reviews) product.reviews = [];
-    product.reviews.unshift({
-      id: `rev-${Date.now()}`,
+    const res = addProductReview(product.id, {
       userName: newReviewName.trim(),
       rating: newReviewRating,
       comment: newReviewComment.trim(),
-      date: new Date().toISOString().split('T')[0],
-      verifiedPurchase: true,
     });
-    product.reviewCount = (product.reviewCount || 0) + 1;
+
+    if (res) {
+      product.reviews = res.updatedProduct.reviews;
+      product.reviewCount = res.updatedProduct.reviewCount;
+      product.rating = res.updatedProduct.rating;
+    } else {
+      if (!product.reviews) product.reviews = [];
+      product.reviews.unshift({
+        id: `rev-${Date.now()}`,
+        userName: newReviewName.trim(),
+        rating: newReviewRating,
+        comment: newReviewComment.trim(),
+        date: new Date().toISOString().split('T')[0],
+        verifiedPurchase: true,
+      });
+      product.reviewCount = (product.reviewCount || 0) + 1;
+    }
 
     setReviewSubmitted(true);
     setNewReviewName('');
@@ -622,8 +635,13 @@ export const ProductDetailPage: React.FC = () => {
                   </div>
                 ))
               ) : (
-                <div className="col-span-2 text-center py-8 text-xs text-[#64748B]">
-                  {lang === 'ar' ? 'كن أول من يكتب تقييماً لهذا المنتج' : 'Be the first to review this product'}
+                <div className="col-span-2 text-center py-8 text-xs text-[#64748B] dark:text-slate-400 bg-[#F5F8FC] dark:bg-[#111A2E] rounded-2xl border border-dashed border-[#DCE5F0] dark:border-[#1E293B] p-6 space-y-1">
+                  <p className="font-bold text-sm text-[#172033] dark:text-white">
+                    {lang === 'ar' ? 'لا توجد تقييمات سابقة لهذا المنتج' : 'No customer reviews yet'}
+                  </p>
+                  <p>
+                    {lang === 'ar' ? 'كن أول من يشاركنا تقييمه وتجربته مع هذا الجهاز الأصلي!' : 'Be the first to review and share your feedback on this genuine product!'}
+                  </p>
                 </div>
               )}
             </div>

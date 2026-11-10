@@ -1,4 +1,5 @@
-import { Product, Category, Brand, MarketingVideo, Order, StoreSettings, OrderStatus } from '../types';
+import { Product, Category, Brand, MarketingVideo, Order, StoreSettings, OrderStatus, Review } from '../types';
+import { Testimonial } from '../utils/testimonialHelpers';
 import {
   INITIAL_CATEGORIES,
   INITIAL_BRANDS,
@@ -22,6 +23,7 @@ const KEYS = {
   SETTINGS: 'arnaout_cell_settings_v2',
   WISHLIST: 'arnaout_cell_wishlist_v2',
   CART: 'arnaout_cell_cart_v2',
+  TESTIMONIALS: 'arnaout_cell_testimonials_v2',
 };
 
 // Initialize if empty
@@ -30,6 +32,33 @@ export function initStorage(): void {
 
   if (!localStorage.getItem(KEYS.PRODUCTS)) {
     localStorage.setItem(KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+  } else {
+    // Clean any legacy mock reviews from cached products
+    try {
+      const raw = localStorage.getItem(KEYS.PRODUCTS);
+      if (raw) {
+        const stored = JSON.parse(raw);
+        if (Array.isArray(stored)) {
+          let hasOldReviews = false;
+          const cleaned = stored.map((p: any) => {
+            if ((p.reviews && p.reviews.length > 0) || (p.reviewCount && p.reviewCount > 0)) {
+              hasOldReviews = true;
+              return { ...p, reviews: [], reviewCount: 0 };
+            }
+            return p;
+          });
+          if (hasOldReviews) {
+            localStorage.setItem(KEYS.PRODUCTS, JSON.stringify(cleaned));
+          }
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+
+  if (!localStorage.getItem(KEYS.TESTIMONIALS)) {
+    localStorage.setItem(KEYS.TESTIMONIALS, JSON.stringify([]));
   }
   if (!localStorage.getItem(KEYS.CATEGORIES)) {
     localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
@@ -478,3 +507,83 @@ export function readFileAsDataUrl(file: File): Promise<string> {
     reader.readAsDataURL(file);
   });
 }
+
+// ============================================================================
+// CUSTOMER TESTIMONIALS & STORE FEEDBACK STORAGE
+// ============================================================================
+
+export function getTestimonials(): Testimonial[] {
+  if (typeof window === 'undefined') return [];
+  const raw = localStorage.getItem(KEYS.TESTIMONIALS);
+  if (!raw) return [];
+  try {
+    return JSON.parse(raw);
+  } catch (e) {
+    return [];
+  }
+}
+
+export function saveTestimonials(testimonials: Testimonial[]): void {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem(KEYS.TESTIMONIALS, JSON.stringify(testimonials));
+}
+
+export function addTestimonial(testimonialData: Omit<Testimonial, 'id' | 'date'>): Testimonial {
+  const testimonials = getTestimonials();
+  const now = new Date();
+  const dateFormatted = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  const newTestimonial: Testimonial = {
+    ...testimonialData,
+    id: `test-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    date: dateFormatted,
+  };
+  testimonials.unshift(newTestimonial);
+  saveTestimonials(testimonials);
+  return newTestimonial;
+}
+
+// ============================================================================
+// PRODUCT REVIEW STORAGE & RATING RECALCULATION
+// ============================================================================
+
+export function addProductReview(
+  productId: string,
+  reviewData: { userName: string; rating: number; comment: string }
+): { review: Review; updatedProduct: Product } | null {
+  const products = getProducts();
+  const productIndex = products.findIndex((p) => p.id === productId);
+  if (productIndex === -1) return null;
+
+  const product = products[productIndex];
+  const reviews = Array.isArray(product.reviews) ? [...product.reviews] : [];
+  const newReview: Review = {
+    id: `rev-${Date.now()}`,
+    userName: reviewData.userName.trim(),
+    rating: reviewData.rating,
+    comment: reviewData.comment.trim(),
+    date: new Date().toISOString().split('T')[0],
+    verifiedPurchase: true,
+  };
+
+  reviews.unshift(newReview);
+  const newCount = reviews.length;
+  const newRating = Number((reviews.reduce((sum, r) => sum + r.rating, 0) / newCount).toFixed(1));
+
+  const updatedProduct: Product = {
+    ...product,
+    reviews,
+    reviewCount: newCount,
+    rating: newRating,
+  };
+
+  products[productIndex] = updatedProduct;
+  saveProducts(products);
+
+  // Sync updated rating and reviewCount to Firestore
+  persistProductToCloud(updatedProduct).catch((err) =>
+    console.warn('Firestore product review sync notice:', err)
+  );
+
+  return { review: newReview, updatedProduct };
+}
+

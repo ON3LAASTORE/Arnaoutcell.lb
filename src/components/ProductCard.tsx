@@ -299,7 +299,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <div className="flex items-center gap-1 text-amber-500">
               <Star className="w-3.5 h-3.5 fill-current" />
               <span className="font-bold text-[#172033] dark:text-slate-200">{product.rating}</span>
-              <span className="text-[11px] text-[#64748B] dark:text-slate-400">({product.reviewCount || 12})</span>
+              <span className="text-[11px] text-[#64748B] dark:text-slate-400">({product.reviewCount || 0})</span>
             </div>
             {product.warrantyMonths > 0 && (
               <div className="flex items-center gap-1 text-[#64748B] dark:text-slate-400 text-[11px]">
