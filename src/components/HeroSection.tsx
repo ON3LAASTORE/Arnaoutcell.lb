@@ -94,8 +94,8 @@ export const HeroSection: React.FC = () => {
     const phone = storeSettings.whatsapp || '96181900916';
     const text = encodeURIComponent(
       lang === 'ar'
-        ? `مرحباً أرناؤوط ستور! أود طلب وشراء هاتف OPPO Reno 16 Series 5G الجديد (إصدار 3D Pop Planet):\n- السعر: $${renoProduct?.price || 629} USD\n- الكفالة: كفالة رسمية معتمدة 12 شهراً\nالرجاء تأكيد التوفر والتوصيل في صيدا / لبنان.`
-        : `Hello ARNAOUT STORE! I want to buy the all-new OPPO Reno 16 Series 5G (3D Pop Planet Edition):\n- Price: $${renoProduct?.price || 629} USD\n- Warranty: 1-Year Official Lebanon Warranty\nPlease confirm availability and express delivery across Lebanon.`
+        ? `مرحباً أرناؤوط ستور! أود طلب وشراء هاتف OPPO Reno 16 Series 5G الجديد (إصدار 3D Pop Planet):\n- السعر: $${renoProduct?.price || 629} USD\n- الكفالة: كفالة رسمية معتمدة 12 شهراً\nالرجاء تأكيد التوفر في المعرض أو التوصيل في صيدا.`
+        : `Hello ARNAOUT STORE! I want to buy the all-new OPPO Reno 16 Series 5G (3D Pop Planet Edition):\n- Price: $${renoProduct?.price || 629} USD\n- Warranty: 1-Year Official Lebanon Warranty\nPlease confirm showroom availability or express delivery in Saida.`
     );
     openExternalUrl(`https://wa.me/${phone}?text=${text}`);
   };
@@ -269,7 +269,7 @@ export const HeroSection: React.FC = () => {
               <div className="grid grid-cols-3 gap-2 pt-3 border-t border-purple-900/30 text-[11px] text-purple-200/80">
                 <div className="flex items-center justify-center lg:justify-start gap-1.5">
                   <Truck className="w-3.5 h-3.5 text-[#38BDF8] flex-shrink-0" />
-                  <span className="truncate">{lang === 'ar' ? 'توصيل لكافة لبنان' : 'Lebanon Express'}</span>
+                  <span className="truncate">{lang === 'ar' ? 'توصيل داخل صيدا' : 'Saida Delivery'}</span>
                 </div>
                 <div className="flex items-center justify-center lg:justify-start gap-1.5">
                   <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />

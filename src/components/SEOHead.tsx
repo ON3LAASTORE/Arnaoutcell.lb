@@ -25,9 +25,9 @@ export const SEOHead: React.FC = () => {
       ? categories.find((c) => c.slug === selectedCategorySlug)
       : undefined;
 
-    let pageTitle = `${storeName} | Your Home in Electronics 🏠`;
+    let pageTitle = `${storeName} | Showroom Services & Fast Delivery in Saida 📍🚚`;
     let metaDescription =
-      "Lebanon's premier tech and electronics destination in Saida. Shop authentic smartphones, laptops, GaN fast chargers, audio gear, and certified store services with fast nationwide delivery.";
+      "Premier tech showroom and electronics destination in Saida. Shop authentic smartphones, laptops, GaN fast chargers, audio gear, and certified showroom services with fast local delivery in Saida.";
     let canonicalUrl = window.location.origin + window.location.pathname;
     let ogType = 'website';
     let ogImage =
@@ -38,10 +38,10 @@ export const SEOHead: React.FC = () => {
       case 'product-detail':
         if (activeProduct) {
           const prodTitle = lang === 'ar' ? (activeProduct.nameAr || activeProduct.name) : activeProduct.name;
-          pageTitle = `${prodTitle} | ${activeProduct.brand} – ${storeName} Lebanon`;
+          pageTitle = `${prodTitle} | ${activeProduct.brand} – ${storeName} Saida`;
           metaDescription = lang === 'ar'
-            ? `اشتري ${prodTitle} من ${storeName} صيدا. جهاز أصلي مع كفالة رسمية وسعر $${activeProduct.price} مع خدمة التوصيل السريع لكافة المناطق اللبنانية.`
-            : `Buy ${activeProduct.name} by ${activeProduct.brand} at ${storeName} in Saida. Genuine stock with official store warranty, starting at $${activeProduct.price} fresh USD. Delivery across Lebanon.`;
+            ? `اشتري ${prodTitle} من ${storeName} صيدا. جهاز أصلي مع كفالة رسمية وسعر $${activeProduct.price} مع خدمات المعرض والتوصيل السريع داخل صيدا وضواحيها.`
+            : `Buy ${activeProduct.name} by ${activeProduct.brand} at ${storeName} in Saida. Genuine stock with official store warranty, starting at $${activeProduct.price} fresh USD. Showroom pickup and fast delivery in Saida.`;
           canonicalUrl = `${window.location.origin}/#/product/${activeProduct.id}`;
           ogType = 'product';
           if (activeProduct.images && activeProduct.images.length > 0) {
@@ -52,14 +52,14 @@ export const SEOHead: React.FC = () => {
 
       case 'products':
         if (activeCategory) {
-          pageTitle = `${lang === 'ar' ? activeCategory.nameAr : activeCategory.name} in Lebanon | ${storeName}`;
-          metaDescription = `Browse the latest ${activeCategory.name} in Lebanon at ${storeName}. Official warranty, competitive fresh cash prices, and fast dispatch across all governorates.`;
+          pageTitle = `${lang === 'ar' ? activeCategory.nameAr : activeCategory.name} in Saida | ${storeName}`;
+          metaDescription = `Browse the latest ${activeCategory.name} in Saida at ${storeName}. Official warranty, competitive fresh cash prices, showroom services, and fast dispatch in Saida.`;
         } else if (selectedBrandName) {
-          pageTitle = `${selectedBrandName} Tech & Devices | ${storeName} Saida Lebanon`;
-          metaDescription = `Explore official ${selectedBrandName} devices, accessories, and gear in Lebanon. 100% genuine with local warranty and express delivery.`;
+          pageTitle = `${selectedBrandName} Tech & Devices | ${storeName} Saida`;
+          metaDescription = `Explore official ${selectedBrandName} devices, accessories, and gear at our Saida showroom. 100% genuine with local warranty and express delivery in Saida.`;
         } else {
-          pageTitle = `All Electronics & Tech Catalog | ${storeName} Saida Lebanon`;
-          metaDescription = `Explore our comprehensive catalog of 2027 smartphones, chargers, laptops, gaming gear, and tech accessories with nationwide Lebanon delivery.`;
+          pageTitle = `All Electronics & Tech Catalog | ${storeName} Saida`;
+          metaDescription = `Explore our comprehensive catalog of 2027 smartphones, chargers, laptops, gaming gear, and tech accessories with showroom pickup and fast delivery in Saida.`;
         }
         canonicalUrl = `${window.location.origin}/#/products`;
         break;
@@ -77,8 +77,8 @@ export const SEOHead: React.FC = () => {
         break;
 
       case 'offers':
-        pageTitle = `Exclusive Tech Offers & Flash Deals | ${storeName} Lebanon`;
-        metaDescription = `Curated daily discounts and special offers on flagship smartphones, power banks, and accessories. Save big with express delivery across Lebanon.`;
+        pageTitle = `Exclusive Tech Offers & Flash Deals | ${storeName} Saida`;
+        metaDescription = `Curated daily discounts and special offers on flagship smartphones, power banks, and accessories. Save big with showroom pickup and fast delivery in Saida.`;
         canonicalUrl = `${window.location.origin}/#/offers`;
         break;
 
@@ -89,15 +89,15 @@ export const SEOHead: React.FC = () => {
         break;
 
       case 'track-order':
-        pageTitle = `Track Your Order | Lebanon Express Delivery | ${storeName}`;
-        metaDescription = `Track your order in real-time. Enter your order ID (e.g., ARN-2027-1001) for instant fulfillment status and Lebanese courier tracking updates.`;
+        pageTitle = `Track Your Order | Fast Saida Delivery | ${storeName}`;
+        metaDescription = `Track your order in real-time. Enter your order ID (e.g., ARN-2027-1001) for instant fulfillment status and Saida local courier tracking updates.`;
         canonicalUrl = `${window.location.origin}/#/track-order`;
         break;
 
       case 'cart':
       case 'checkout':
-        pageTitle = `Secure Fresh Cash Checkout | ${storeName} Lebanon`;
-        metaDescription = `Complete your electronics purchase with Cash on Delivery (COD), Whish Money, or OMT. Fast express dispatch across all Lebanese governorates.`;
+        pageTitle = `Secure Fresh Cash Checkout | ${storeName} Saida`;
+        metaDescription = `Complete your electronics purchase with Cash on Delivery (COD), Whish Money, or OMT. Showroom pickup at Nijme Square and fast delivery in Saida.`;
         canonicalUrl = `${window.location.origin}/#/checkout`;
         break;
 
@@ -108,8 +108,8 @@ export const SEOHead: React.FC = () => {
         break;
 
       default:
-        pageTitle = `${storeName} | Your Home in Electronics 🏠 – Saida, Lebanon`;
-        metaDescription = `Lebanon premier 2027 tech & electronics destination in Saida. Flagship smartphones, GaN fast chargers, audio gear, certified OMT services, and fast Lebanon-wide delivery.`;
+        pageTitle = `${storeName} | Showroom Services & Delivery in Saida 📍🚚`;
+        metaDescription = `Premier 2027 tech & electronics showroom in Saida Nijme Square. Flagship smartphones, GaN fast chargers, audio gear, certified OMT services, and fast delivery in Saida.`;
         canonicalUrl = `${window.location.origin}/`;
         break;
     }

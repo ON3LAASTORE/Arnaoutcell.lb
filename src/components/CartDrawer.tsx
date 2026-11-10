@@ -203,7 +203,7 @@ export const CartDrawer: React.FC = () => {
 
               <div className="flex items-center justify-center gap-1.5 text-[10px] text-[#64748B] dark:text-slate-400">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#007AFF]" />
-                <span>{lang === 'ar' ? 'توصيل معتمد لكافة مناطق لبنان' : 'Fast delivery across all Lebanon'}</span>
+                <span>{lang === 'ar' ? 'خدمات المعرض وتوصيل مضمون داخل صيدا' : 'Showroom services & verified delivery in Saida'}</span>
               </div>
             </div>
           )}

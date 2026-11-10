@@ -19,12 +19,12 @@ export const CustomerTrust: React.FC = () => {
     {
       icon: Truck,
       color: 'text-[#007AFF] bg-[#EAF3FF] border-[#BAE6FD]',
-      titleEn: 'Lebanon-Wide Fast Delivery',
-      titleAr: 'توصيل سريع لكافة الأراضي اللبنانية',
+      titleEn: 'Showroom Services & Fast Saida Delivery',
+      titleAr: 'خدمات المعرض وتوصيل سريع داخل صيدا',
       descEn:
-        'Express dispatch across Saida, Beirut, South, Mount Lebanon, North, and Bekaa. Free in-store pickup at Nijme Square.',
+        'Complete showroom services and pickup at Saida Nijme Square, plus fast local delivery across Saida and surrounding suburbs.',
       descAr:
-        'شحن سريع لكافة المحافظات والقرى اللبنانية مع إمكانية المعاينة والدفع عند الاستلام أو الاستلام المجاني من المحل.',
+        'خدمات المعرض المتكاملة والاستلام المباشر من ساحة النجمة بصيدا، مع خدمة توصيل سريعة وموثوقة داخل صيدا وضواحيها.',
     },
     {
       icon: RefreshCw,
@@ -87,7 +87,7 @@ export const CustomerTrust: React.FC = () => {
             </div>
             <div>
               <span className="text-[11px] font-bold text-[#007AFF] tracking-wider uppercase">
-                {lang === 'ar' ? 'الفرع الرئيسي والمستودع' : 'PHYSICAL STORE & WAREHOUSE'}
+                {lang === 'ar' ? 'معرض ومركز خدمات صيدا' : 'SAIDA SHOWROOM & SERVICE HUB'}
               </span>
               <h4 className="text-lg sm:text-xl font-bold text-[#172033]">
                 {lang === 'ar' ? 'صيدا — ساحة النجمة، الشارع الرئيسي' : 'Saida — Nijme Square, Main Road'}

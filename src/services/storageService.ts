@@ -461,11 +461,27 @@ export function getStoreSettings(): StoreSettings {
     if (!merged.phone) {
       merged.phone = '81 900 916';
     }
-    if (!merged.tagline) {
-      merged.tagline = 'Your Home in Electronics 🏠';
+    if (!merged.tagline || merged.tagline.includes('Across Lebanon')) {
+      merged.tagline = INITIAL_STORE_SETTINGS.tagline;
     }
-    if (!merged.taglineAr) {
-      merged.taglineAr = 'بيتك في عالم الإلكترونيات 🏠';
+    if (!merged.taglineAr || merged.taglineAr.includes('كافة المناطق')) {
+      merged.taglineAr = INITIAL_STORE_SETTINGS.taglineAr;
+    }
+    // Ensure delivery zones reflect Saida showroom and local Saida zones
+    if (
+      !merged.deliveryZones ||
+      merged.deliveryZones.length === 0 ||
+      merged.deliveryZones.some((z) => z.id === 'zone-beirut' || z.id === 'zone-north-tripoli')
+    ) {
+      merged.deliveryZones = INITIAL_STORE_SETTINGS.deliveryZones;
+    }
+    // Ensure announcement bar reflects showroom & Saida delivery
+    if (merged.announcementBar && merged.announcementBar.textEn && merged.announcementBar.textEn.includes('ACROSS LEBANON')) {
+      merged.announcementBar = INITIAL_STORE_SETTINGS.announcementBar;
+    }
+    // Ensure hero slides reflect showroom & Saida delivery
+    if (merged.heroSlides && merged.heroSlides.some((s) => s.titleEn && (s.titleEn.includes('LEBANON-WIDE') || s.titleEn.includes('ONLINE-ONLY')))) {
+      merged.heroSlides = INITIAL_STORE_SETTINGS.heroSlides;
     }
     // Ensure schedule is properly structured
     if (!merged.openingSchedule) {

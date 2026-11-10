@@ -95,7 +95,7 @@ ${product.stock > 0 ? `🟢 In Stock (${product.stock} units in Saida)` : '🟡 
 ${specsTextEn}
 
 🛡️ WARRANTY: ${product.warrantyMonths} Months Store & Agent Warranty
-🚚 DELIVERY: Express delivery to all Lebanese areas & free pickup at ${locationEn}
+🚚 DELIVERY: Showroom services & free pickup at ${locationEn}, with fast local delivery in Saida & suburbs
 
 📲 Direct WhatsApp Order:
 ${whatsappOrderUrl}
@@ -116,7 +116,7 @@ ${product.stock > 0 ? `🟢 متوفر حالياً في متجرنا بصيدا
 ${specsTextAr}
 
 🛡️ الكفالة: كفالة رسمية ${product.warrantyMonths} شهراً
-🚚 التوصيل: خدمة توصيل سريع لكافة الأراضي اللبنانية أو استلام فوري من معرضنا في ${locationAr}
+🚚 التوصيل: خدمات المعرض والاستلام المباشر من ${locationAr} مع خدمة توصيل سريع داخل صيدا وضواحيها
 
 📲 للطلب الفوري عبر واتساب:
 ${whatsappOrderUrl}
@@ -132,7 +132,7 @@ ${generateProductHashtags(product).join(' ')}`;
 ${product.originalPrice && product.originalPrice > product.price ? `💥 Discount: -${product.discountPercentage}% OFF` : ''}
 
 🛡️ ${product.warrantyMonths} Months Official Warranty | كفالة رسمية ${product.warrantyMonths} شهر
-🚚 Lebanon-Wide Express Delivery | توصيل سريع لكافة المناطق اللبنانية
+🚚 Showroom Services & Saida Delivery | خدمات المعرض والتوصيل داخل صيدا
 📍 ${storeName} — ${locationEn}
 
 📲 WhatsApp Order / للطلب عبر الواتساب:
@@ -168,7 +168,7 @@ export function generatePlatformSpecificText(
 
 💰 *Price:* ${price} (Cash USD)
 ${post.originalPrice && post.originalPrice > (post.productPrice || 0) ? `🔥 *Special Discount:* -${post.discountPercentage}% OFF (Was $${post.originalPrice})\n` : ''}🛡️ *Warranty:* Official Store Warranty
-🚚 *Delivery:* Fast Delivery Across All Lebanon
+🚚 *Delivery:* Showroom Services & Fast Delivery in Saida
 📍 *Store:* Saida — Nijme Square
 
 📲 *Tap to order on WhatsApp:*
@@ -180,7 +180,7 @@ ${whatsappUrl}
       return `🔥 *${name}*
 💰 *${price}* Cash USD
 🛡️ Official Saida Store Warranty
-🚚 Fast Delivery All Lebanon
+🚚 Showroom Services & Saida Delivery
 📲 Reply to order or WhatsApp ${STORE_PHONE_DISPLAY}!`;
 
     case 'instagram':
@@ -189,7 +189,7 @@ Now available at ARNAOUT STORE!
 
 💰 Price: ${price} Cash USD
 🛡️ Official Store & Agent Warranty
-🚚 Express delivery across Lebanon | Free pickup at Nijme Square, Saida
+🚚 Showroom services & fast delivery in Saida | Free pickup at Nijme Square
 
 📲 Tap the link in bio or DM us on WhatsApp at ${STORE_PHONE_DISPLAY} to place your order!
 
@@ -204,7 +204,7 @@ Looking for authentic tech with verified warranty? Get it today at the best cash
 💰 Price: ${price} Cash USD
 ${post.originalPrice && post.originalPrice > (post.productPrice || 0) ? `💥 Save ${post.discountPercentage}% off retail price!\n` : ''}
 ✅ 100% Genuine with Store Warranty
-🚚 Lebanon-wide fast door-to-door delivery
+🚚 Showroom services & fast delivery across Saida and suburbs
 📍 In-store pickup: Saida, Nijme Square
 
 👉 Order directly on WhatsApp: ${whatsappUrl}
@@ -217,7 +217,7 @@ ${tags}`;
       const baseTweet = `🔥 ${name}
 💰 ${price} Cash USD
 🛡️ Official Warranty
-🚚 Lebanon Fast Delivery
+🚚 Showroom & Saida Delivery
 
 Order via WhatsApp: ${STORE_PHONE_DISPLAY}
 ${productUrl}
@@ -231,7 +231,7 @@ ${productUrl}
 
 💵 **Price:** ${price} Cash USD
 ${post.originalPrice && post.originalPrice > (post.productPrice || 0) ? `🏷 **Discount:** -${post.discountPercentage}%\n` : ''}🛡 **Warranty:** Full Store & Agent Coverage
-🚚 **Dispatch:** All Lebanon express courier or Saida Nijme Square pickup
+🚚 **Dispatch:** Showroom pickup at Saida Nijme Square or fast Saida courier
 
 💬 **Order via WhatsApp:** [Chat Now](${whatsappUrl})
 🌐 **Website Catalog:** [View Product](${productUrl})
@@ -606,7 +606,7 @@ export async function renderSocialMarketingGraphic(
 
   ctx.font = `normal ${Math.round(width * 0.02)}px sans-serif`;
   ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-  ctx.fillText('Express Delivery All Lebanon • Saida Nijme Square', pad + width * 0.04, barY + barHeight * 0.78);
+  ctx.fillText('Showroom Services & Fast Delivery in Saida • Nijme Square', pad + width * 0.04, barY + barHeight * 0.78);
 
   ctx.restore();
 

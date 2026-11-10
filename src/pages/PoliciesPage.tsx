@@ -86,29 +86,26 @@ export const PoliciesPage: React.FC<PoliciesPageProps> = ({ initialTab = 'delive
             <div className="space-y-4">
               <h2 className="text-lg font-bold text-[#172033] flex items-center gap-2">
                 <Truck className="w-5 h-5 text-[#007AFF]" />
-                <span>{lang === 'ar' ? 'سياسة الشحن والتوصيل في لبنان' : 'Lebanon Shipping & Delivery Policy'}</span>
+                <span>{lang === 'ar' ? 'خدمات المعرض وسياسة التوصيل في صيدا' : 'Showroom Services & Saida Delivery Policy'}</span>
               </h2>
               <p>
                 {lang === 'ar'
-                  ? `يقدم متجر ${storeSettings.storeNameAr || 'أرناؤوط ستور'} خدمة التوصيل السريع إلى كافة الأراضي اللبنانية مع خيار الاستلام المجاني المباشر من فرعنا في صيدا — ساحة النجمة.`
-                  : `${storeSettings.storeName} provides fast delivery across all governorates in Lebanon, in addition to free in-store pickup at our Saida store located at Nijme Square.`}
+                  ? `يقدم متجر ${storeSettings.storeNameAr || 'أرناؤوط ستور'} كافة خدمات المعرض والاستلام المباشر من فرعنا في صيدا — ساحة النجمة، بالإضافة إلى خدمة التوصيل السريع الحصرية داخل صيدا وضواحيها.`
+                  : `${storeSettings.storeName} provides complete showroom services and direct pickup at our showroom in Saida — Nijme Square, along with fast local delivery exclusively across Saida and surrounding suburbs.`}
               </p>
 
               <h3 className="font-bold text-[#172033] text-xs uppercase tracking-wider pt-2">
-                {lang === 'ar' ? 'المناطق ومواعيد التوصيل التقديرية:' : 'Zones & Delivery Timelines:'}
+                {lang === 'ar' ? 'الخدمات ومناطق التوصيل في صيدا:' : 'Showroom Services & Saida Delivery Zones:'}
               </h3>
               <ul className="list-disc list-inside space-y-1.5 text-[#64748B]">
                 <li>
-                  <strong className="text-[#172033]">صيدا وضواحيها (Saida):</strong> توصيل في نفس اليوم (خلال ساعتين إلى 4 ساعات) أو استلام فوري مجاني.
+                  <strong className="text-[#172033]">خدمات المعرض واستلام مباشر (Showroom Pickup - Saida Nijme Square):</strong> استلام فوري مجاني من المعرض مع تجربة وتشغيل وفحص الأجهزة وكافة خدمات الصيانة والتحويلات المالية.
                 </li>
                 <li>
-                  <strong className="text-[#172033]">بيروت وجبل لبنان (Beirut & Mount Lebanon):</strong> توصيل خلال 24 إلى 48 ساعة كحد أقصى.
+                  <strong className="text-[#172033]">وسط صيدا وساحة النجمة (Saida City Center & Nijme Square):</strong> توصيل سريع في نفس اليوم (خلال 30 إلى 90 دقيقة).
                 </li>
                 <li>
-                  <strong className="text-[#172033]">الجنوب والنبطية (South & Nabatieh):</strong> توصيل خلال 24 إلى 48 ساعة.
-                </li>
-                <li>
-                  <strong className="text-[#172033]">الشمال والبقاع (North & Bekaa):</strong> توصيل خلال يومين إلى 3 أيام عمل.
+                  <strong className="text-[#172033]">ضواحي صيدا الكبرى (Saida Suburbs & Greater Saida):</strong> الهلالية، البرامية، مية ومية، حارة صيدا، الغازية — توصيل في نفس اليوم.
                 </li>
               </ul>
 

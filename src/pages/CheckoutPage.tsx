@@ -162,8 +162,8 @@ export const CheckoutPage: React.FC = () => {
           <h1 className="text-2xl sm:text-4xl font-black text-[#172033] dark:text-[#F8FAFC]">{t.checkout}</h1>
           <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 mt-1">
             {lang === 'ar'
-              ? 'توصيل لكافة الأراضي اللبنانية أو استلام مجاني من فرعنا في صيدا ساحة النجمة.'
-              : 'Direct delivery across Lebanon or free pickup at our Saida Nijme Square branch.'}
+              ? 'خدمات المعرض واستلام مباشر من فرعنا في صيدا ساحة النجمة، أو توصيل سريع داخل صيدا وضواحيها.'
+              : 'Showroom services & pickup at our Saida Nijme Square showroom, or fast local delivery in Saida & suburbs.'}
           </p>
         </div>
 

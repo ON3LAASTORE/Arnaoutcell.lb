@@ -292,8 +292,8 @@ export const TestimonialsSlider: React.FC = () => {
               </h3>
               <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
                 {isArabic
-                  ? 'تم تحديث قسم التقييمات ليكون جاهزاً بالكامل لاستقبال تجاربكم الجديدة. شاركنا رأيك حول أجهزتك الأصلية وتعاملك مع أرناؤوط ستور في صيدا أو التوصيل لكافة لبنان.'
-                  : 'All reviews have been refreshed and prepared to receive your new feedback. Share your experience with our devices and delivery across Lebanon!'}
+                  ? 'تم تحديث قسم التقييمات ليكون جاهزاً بالكامل لاستقبال تجاربكم الجديدة. شاركنا رأيك حول أجهزتك الأصلية وخدمات المعرض بصيدا أو التوصيل داخل صيدا.'
+                  : 'All reviews have been refreshed and prepared to receive your new feedback. Share your experience with our genuine devices, showroom services, and fast delivery in Saida!'}
               </p>
             </div>
 
@@ -506,7 +506,7 @@ export const TestimonialsSlider: React.FC = () => {
                       {isArabic ? 'كتابة تقييم ومشاركة رأيك' : 'Submit Customer Review & Feedback'}
                     </h3>
                     <p className="text-[11px] text-[#64748B] dark:text-slate-400">
-                      {isArabic ? 'أرناؤوط ستور — صيدا وكافة لبنان' : 'ON 3LAA STORE — Saida & All Lebanon'}
+                      {isArabic ? 'أرناؤوط ستور — صيدا (خدمات المعرض والتوصيل)' : 'ON 3LAA STORE — Saida Showroom & Delivery'}
                     </p>
                   </div>
                 </div>

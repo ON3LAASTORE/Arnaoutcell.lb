@@ -112,7 +112,7 @@ export const FloatingWhatsAppButton: React.FC = () => {
             <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1.5 border-t border-slate-100 dark:border-slate-800">
               <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
                 <Sparkles className="w-3 h-3" />
-                {lang === 'ar' ? 'رد سريع وتوصيل لكافة لبنان' : 'Fast Reply • All Lebanon Delivery'}
+                {lang === 'ar' ? 'خدمات المعرض وتوصيل صيدا' : 'Showroom Services • Saida Delivery'}
               </span>
               <span className="font-mono font-bold text-slate-700 dark:text-slate-300">81 900 916</span>
             </div>

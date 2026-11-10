@@ -203,9 +203,9 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
           ? formImages
           : ['https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=800'],
       videoUrl: formVideoUrl.trim() || undefined,
-      description: formDesc.trim() || 'Genuine device with full Lebanese store warranty.',
+      description: formDesc.trim() || 'Genuine device with full Lebanese store warranty, showroom services and Saida delivery.',
       descriptionAr:
-        formDescAr.trim() || 'جهاز أصلي مع كفالة المتجر الرسمية في صيدا وتوصيل لكافة الأراضي اللبنانية.',
+        formDescAr.trim() || 'جهاز أصلي مع كفالة المتجر الرسمية وخدمات المعرض والتوصيل داخل صيدا.',
       specifications: formSpecs,
       colors: formColors,
       rating: editingProduct ? editingProduct.rating : 5.0,

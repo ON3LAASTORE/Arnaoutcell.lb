@@ -756,12 +756,12 @@ export const ProductQuickViewModal: React.FC = () => {
                       <Truck className="w-5 h-5 text-[#16A34A] flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-bold text-[#172033] dark:text-[#F8FAFC] block text-sm">
-                          {lang === 'ar' ? 'توصيل سريع لكافة الأراضي اللبنانية' : 'Express Delivery Across All Lebanon'}
+                          {lang === 'ar' ? 'خدمات المعرض والتوصيل داخل صيدا' : 'Showroom Services & Fast Delivery in Saida'}
                         </span>
                         <p className="text-[#64748B] dark:text-slate-400 text-xs mt-0.5">
                           {lang === 'ar'
-                            ? 'توصيل خلال نفس اليوم في صيدا والجنوب، وخلال 24-48 ساعة لبيروت والشمال والبقاع مع الدفع عند الاستلام.'
-                            : 'Same-day delivery for Saida and South; 24-48 hours for Greater Beirut, North, and Bekaa with Cash on Delivery.'}
+                            ? 'خدمات المعرض الكاملة واستلام فوري بساحة النجمة، أو توصيل سريع في نفس اليوم داخل صيدا وضواحيها مع الدفع عند الاستلام.'
+                            : 'Full showroom services & instant pickup at Nijme Square, or rapid same-day local delivery across Saida and suburbs with Cash on Delivery.'}
                         </p>
                       </div>
                     </div>
