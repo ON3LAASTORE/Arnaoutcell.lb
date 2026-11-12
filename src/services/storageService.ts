@@ -73,16 +73,16 @@ export function initStorage(): void {
     localStorage.setItem(KEYS.SETTINGS, JSON.stringify(INITIAL_STORE_SETTINGS));
   }
   if (!localStorage.getItem(KEYS.ORDERS)) {
-    // Seed sample initial orders for demonstration in Saida
+    // Seed sample initial orders for demonstration
     const sampleOrders: Order[] = [
       {
-        id: 'ARN-2027-1001',
+        id: 'OAA-2027-1001',
         customer: {
           fullName: 'Sami Khoury',
           phone: '03 123 456',
-          cityArea: 'Saida - Store Pickup (Nijme Square)',
-          addressLine: 'Nijme Square, Main Road',
-          notes: 'Customer will pick up at 5 PM',
+          cityArea: 'Chouf & Mount Lebanon (Baakline)',
+          addressLine: 'Chouf Main Road, Near Square',
+          notes: 'Customer requested afternoon delivery',
         },
         items: [
           {
@@ -97,18 +97,18 @@ export function initStorage(): void {
         ],
         subtotal: 1249,
         discount: 0,
-        deliveryFee: 0,
-        total: 1249,
+        deliveryFee: 2,
+        total: 1251,
         currency: 'USD',
         status: 'delivered',
-        paymentMethod: 'store_pickup',
+        paymentMethod: 'cash_on_delivery',
         paymentStatus: 'paid',
         orderDate: '2026-10-10T14:20:00Z',
         statusHistory: [
           { status: 'new', timestamp: '2026-10-10T14:20:00Z' },
           { status: 'confirmed', timestamp: '2026-10-10T14:25:00Z' },
           { status: 'ready_for_delivery', timestamp: '2026-10-10T15:00:00Z' },
-          { status: 'delivered', timestamp: '2026-10-10T17:10:00Z', note: 'Picked up in Saida store' },
+          { status: 'delivered', timestamp: '2026-10-10T17:10:00Z', note: 'Delivered in Chouf' },
         ],
       },
       {
@@ -445,46 +445,49 @@ export function getStoreSettings(): StoreSettings {
       ...INITIAL_STORE_SETTINGS,
       ...parsed,
     };
-    // Centralized automatic migration if old default name was retained
-    if (!merged.storeName || merged.storeName.trim().toLowerCase() === 'arnaout cell') {
-      merged.storeName = 'SQUARE ARNAOUT CELL STORE';
+    // Centralized automatic migration if old branding, phones, or Saida location was retained
+    if (!merged.storeName || merged.storeName.includes('ARNAOUT') || merged.storeName.includes('ON 3LAA') || merged.storeName.includes('SQUARE')) {
+      merged.storeName = 'ON AlAA STORE';
     }
-    if (!merged.storeNameAr || merged.storeNameAr.trim() === 'أرناؤوط سيل') {
-      merged.storeNameAr = 'سكوير أرناؤوط سيل ستور';
+    if (!merged.storeNameAr || merged.storeNameAr.includes('أرناؤوط') || merged.storeNameAr.includes('ON 3LAA')) {
+      merged.storeNameAr = 'متجر ON AlAA';
     }
-    if (!merged.locationEn || !merged.locationEn.includes('H97G+W2P')) {
+    if (!merged.locationEn || merged.locationEn.includes('Saida') || merged.locationEn.includes('H97G+W2P')) {
       merged.locationEn = INITIAL_STORE_SETTINGS.locationEn;
     }
-    if (!merged.locationAr || !merged.locationAr.includes('H97G+W2P')) {
+    if (!merged.locationAr || merged.locationAr.includes('صيدا') || merged.locationAr.includes('H97G+W2P')) {
       merged.locationAr = INITIAL_STORE_SETTINGS.locationAr;
     }
-    if (!merged.phone) {
-      merged.phone = '81 900 916';
+    if (!merged.phone || merged.phone.includes('81900916') || merged.phone.includes('03099889') || merged.phone.includes('70773067') || merged.phone.includes('70 773') || merged.phone.includes('81 900')) {
+      merged.phone = '03986718';
     }
-    if (!merged.tagline || merged.tagline.includes('Across Lebanon')) {
+    if (!merged.whatsapp || merged.whatsapp.includes('81900916') || merged.whatsapp.includes('03099889') || merged.whatsapp.includes('70773067')) {
+      merged.whatsapp = '9613986718';
+    }
+    if (!merged.tagline || merged.tagline.includes('Saida') || merged.tagline.includes('صيدا')) {
       merged.tagline = INITIAL_STORE_SETTINGS.tagline;
     }
-    if (!merged.taglineAr || merged.taglineAr.includes('كافة المناطق')) {
+    if (!merged.taglineAr || merged.taglineAr.includes('صيدا')) {
       merged.taglineAr = INITIAL_STORE_SETTINGS.taglineAr;
     }
-    // Ensure delivery zones reflect Saida showroom and local Saida zones
+    // Ensure delivery zones reflect Chouf online store and all-Lebanon delivery
     if (
       !merged.deliveryZones ||
       merged.deliveryZones.length === 0 ||
-      merged.deliveryZones.some((z) => z.id === 'zone-beirut' || z.id === 'zone-north-tripoli')
+      merged.deliveryZones.some((z) => z.id.includes('saida'))
     ) {
       merged.deliveryZones = INITIAL_STORE_SETTINGS.deliveryZones;
     }
-    // Ensure announcement bar reflects showroom & Saida delivery
-    if (merged.announcementBar && merged.announcementBar.textEn && merged.announcementBar.textEn.includes('ACROSS LEBANON')) {
+    // Ensure announcement bar reflects ON AlAA STORE and all-Lebanon delivery
+    if (merged.announcementBar && (!merged.announcementBar.textEn || merged.announcementBar.textEn.includes('SAIDA') || merged.announcementBar.textEn.includes('ON 3LAA'))) {
       merged.announcementBar = INITIAL_STORE_SETTINGS.announcementBar;
     }
-    // Ensure hero slides reflect showroom & Saida delivery
-    if (merged.heroSlides && merged.heroSlides.some((s) => s.titleEn && (s.titleEn.includes('LEBANON-WIDE') || s.titleEn.includes('ONLINE-ONLY')))) {
+    // Ensure hero slides reflect ON AlAA STORE and all-Lebanon delivery
+    if (merged.heroSlides && merged.heroSlides.some((s) => s.titleEn && (s.titleEn.includes('SAIDA') || s.titleEn.includes('ON 3LAA')))) {
       merged.heroSlides = INITIAL_STORE_SETTINGS.heroSlides;
     }
     // Ensure schedule is properly structured
-    if (!merged.openingSchedule) {
+    if (!merged.openingSchedule || (merged.openingSchedule.customMessageEn && merged.openingSchedule.customMessageEn.includes('Saida'))) {
       merged.openingSchedule = INITIAL_STORE_SETTINGS.openingSchedule;
     }
     return merged;

@@ -51,6 +51,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   const [currentSrc, setCurrentSrc] = useState<string>(priority ? src : '');
   const [hasError, setHasError] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
 
   // Synchronize src if it changes
   useEffect(() => {
@@ -59,6 +60,16 @@ export const LazyImage: React.FC<LazyImageProps> = ({
       setCurrentSrc(src);
     }
   }, [src, priority, isInView]);
+
+  // Handle instantaneously cached images
+  useEffect(() => {
+    if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0 && !isLoaded) {
+      setIsLoaded(true);
+      if (onLoaded) {
+        onLoaded();
+      }
+    }
+  }, [currentSrc, onLoaded, isLoaded]);
 
   // Set up IntersectionObserver for non-priority images
   useEffect(() => {
@@ -117,37 +128,44 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     }
   };
 
-  return (
-    <div
-      ref={containerRef}
-      className={`relative overflow-hidden inline-flex items-center justify-center ${wrapperClassName}`}
-      style={{
-        width: width ? (typeof width === 'number' ? `${width}px` : width) : undefined,
-        height: height ? (typeof height === 'number' ? `${height}px` : height) : undefined,
-      }}
-    >
+    const hasResponsiveWidth = wrapperClassName.includes('w-');
+    const hasResponsiveHeight = wrapperClassName.includes('h-');
+
+    const wrapperStyle: React.CSSProperties = {
+      ...style,
+      width: style?.width ?? (hasResponsiveWidth ? undefined : width ? (typeof width === 'number' ? `${width}px` : width) : undefined),
+      height: style?.height ?? (hasResponsiveHeight ? undefined : height ? (typeof height === 'number' ? `${height}px` : height) : undefined),
+    };
+
+    return (
+      <div
+        ref={containerRef}
+        className={`relative overflow-hidden inline-flex items-center justify-center ${wrapperClassName}`}
+        style={wrapperStyle}
+      >
       {/* Smooth Shimmer Skeleton Placeholder while element is outside viewport or loading */}
-      {!isLoaded && (
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 bg-slate-200/60 dark:bg-slate-800/60 animate-pulse pointer-events-none rounded-inherit z-0"
-        />
-      )}
+      <div
+        aria-hidden="true"
+        className={`product-card-skeleton absolute inset-0 pointer-events-none rounded-2xl transition-opacity duration-500 ease-out z-0 ${
+          isLoaded ? 'opacity-0' : 'opacity-100'
+        }`}
+      />
 
       {/* Actual Image rendered only after IntersectionObserver triggers or immediately if priority */}
       {isInView && currentSrc ? (
         <img
+          ref={imgRef}
           src={currentSrc}
           alt={alt}
           width={width}
           height={height}
-          loading={priority ? 'eager' : 'lazy'}
+          loading={rest.loading || (priority ? 'eager' : 'lazy')}
           decoding="async"
           {...(priority ? { fetchPriority: 'high' } : { fetchPriority: 'auto' })}
           onLoad={handleImageLoad}
           onError={handleImageError}
           style={style}
-          className={`${className} transition-opacity duration-300 ${
+          className={`${className} transition-opacity duration-500 ease-out ${
             isLoaded ? 'opacity-100' : 'opacity-0'
           }`}
           {...rest}

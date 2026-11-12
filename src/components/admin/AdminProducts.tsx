@@ -13,6 +13,7 @@ import {
   Share2,
 } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
+import ProductImageUploader from './ProductImageUploader';
 
 interface AdminProductsProps {
   onShareProduct?: (productId: string) => void;
@@ -571,35 +572,42 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
               </div>
 
               {/* Multi-Image Manager */}
-              <div className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] space-y-3">
-                <span className="text-xs font-bold text-[#172033] block">
-                  Product Images (Persistent Base64 & External URLs)
-                </span>
-
-                <div className="flex flex-wrap gap-3">
-                  {formImages.map((img, idx) => (
-                    <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-[#DCE5F0] group bg-white">
-                      <img src={img} alt={`Product ${idx}`} className="w-full h-full object-cover" />
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveImage(idx)}
-                        className="absolute inset-0 bg-red-900/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  ))}
-
-                  {/* Upload button from PC */}
-                  <label className="w-16 h-16 rounded-xl border border-dashed border-[#BAE6FD] hover:border-[#007AFF] flex flex-col items-center justify-center text-[#007AFF] cursor-pointer bg-[#EAF3FF] transition-colors">
-                    <Upload className="w-5 h-5 mb-0.5" />
-                    <span className="text-[9px] font-bold">Upload</span>
-                    <input type="file" accept="image/*" onChange={handleFileUpload} className="hidden" />
-                  </label>
+              <div className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-[#172033] block">
+                    Product Images ({formImages.length} attached)
+                  </span>
+                  <span className="text-[10px] text-[#64748B] font-medium">Persistent Base64 & Cloud URLs</span>
                 </div>
 
+                {formImages.length > 0 && (
+                  <div className="flex flex-wrap gap-3 p-2.5 rounded-xl bg-white border border-[#DCE5F0]">
+                    {formImages.map((img, idx) => (
+                      <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-[#DCE5F0] group bg-gray-50 flex-shrink-0">
+                        <img src={img} alt={`Product ${idx}`} className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute inset-0 bg-red-900/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                          title="Remove image"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Product Image Uploader Component */}
+                <ProductImageUploader
+                  title="Upload Product Image (Base64)"
+                  onImageConverted={(base64) => {
+                    setFormImages((prev) => [...prev, base64]);
+                  }}
+                />
+
                 {/* Add by URL input */}
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-1">
                   <input
                     type="url"
                     placeholder="Or enter image URL (https://...)"
@@ -610,7 +618,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                   <button
                     type="button"
                     onClick={handleAddImageUrl}
-                    className="px-3 py-1.5 bg-[#F5F8FC] border border-[#DCE5F0] hover:bg-[#EAF3FF] text-[#172033] hover:text-[#007AFF] text-xs font-semibold rounded-xl"
+                    className="px-3 py-1.5 bg-white border border-[#DCE5F0] hover:bg-[#EAF3FF] text-[#172033] hover:text-[#007AFF] text-xs font-semibold rounded-xl cursor-pointer transition-colors"
                   >
                     Add URL
                   </button>

@@ -19,32 +19,32 @@ export const CustomerTrust: React.FC = () => {
     {
       icon: Truck,
       color: 'text-[#007AFF] bg-[#EAF3FF] border-[#BAE6FD]',
-      titleEn: 'Showroom Services & Fast Saida Delivery',
-      titleAr: 'خدمات المعرض وتوصيل سريع داخل صيدا',
+      titleEn: 'Delivery Available to All Lebanon',
+      titleAr: 'التوصيل متاح لجميع مناطق لبنان',
       descEn:
-        'Complete showroom services and pickup at Saida Nijme Square, plus fast local delivery across Saida and surrounding suburbs.',
+        'Fast and reliable door-to-door delivery across all Lebanese cities and towns, dispatched carefully from our Chouf hub.',
       descAr:
-        'خدمات المعرض المتكاملة والاستلام المباشر من ساحة النجمة بصيدا، مع خدمة توصيل سريعة وموثوقة داخل صيدا وضواحيها.',
+        'خدمة توصيل سريعة وموثوقة حتى باب بيتك في كافة المحافظات والمناطق اللبنانية، مع تجهيز فوري من مركزنا في الشوف.',
     },
     {
       icon: RefreshCw,
       color: 'text-[#16A34A] bg-emerald-50 border-emerald-200',
       titleEn: 'Store & Agent Warranty',
-      titleAr: 'كفالة الوكيل والمحل',
+      titleAr: 'كفالة الوكيل والمتجر',
       descEn:
-        'Hardware defect coverage up to 12-24 months. Dedicated in-store tech team in Saida to assist with repairs and warranty claims.',
+        'Hardware defect coverage up to 12-24 months. Dedicated tech specialists to assist with inquiries, repairs, and official warranty claims.',
       descAr:
-        'كفالة رسمية من 12 إلى 24 شهراً ضد عيوب المصنع مع فريق صيانة متخصص في فرعنا بصيدا لمتابعة أي استفسار.',
+        'كفالة رسمية من 12 إلى 24 شهراً ضد عيوب المصنع مع فريق تقني متخصص لمتابعة كافة الاستفسارات والكفالات المعتمدة.',
     },
     {
       icon: Headphones,
       color: 'text-purple-600 bg-purple-50 border-purple-200',
       titleEn: 'Friendly Lebanese Support',
-      titleAr: 'خدمة عملاء مباشرة 81 900 916',
+      titleAr: 'خدمة عملاء مباشرة 03 986 718',
       descEn:
-        'Need advice before purchasing? Reach our experienced technicians directly via call or WhatsApp at 81 900 916.',
+        'Need advice before purchasing? Reach our experienced technicians directly via call or WhatsApp at 03 986 718.',
       descAr:
-        'استشارة تقنية صادقة وسريعة لاختيار الجهاز والملحقات المناسبة لميزانيتك واحتياجاتك عبر الهاتف أو واتساب على 81 900 916.',
+        'استشارة تقنية صادقة وسريعة لاختيار الجهاز والملحقات المناسبة لميزانيتك واحتياجاتك عبر الهاتف أو واتساب على 03 986 718.',
     },
   ];
 
@@ -79,18 +79,18 @@ export const CustomerTrust: React.FC = () => {
           ))}
         </div>
 
-        {/* Saida Store Highlight Box */}
+        {/* Chouf Online Store & Nationwide Delivery Hub */}
         <div className="mt-12 p-6 sm:p-8 rounded-3xl bg-[#F5F8FC] border border-[#DCE5F0] flex flex-col lg:flex-row items-center justify-between gap-6 shadow-xs">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-2xl bg-[#EAF3FF] border border-[#BAE6FD] flex items-center justify-center text-[#007AFF] flex-shrink-0">
-              <MapPin className="w-7 h-7" />
+              <Truck className="w-7 h-7" />
             </div>
             <div>
               <span className="text-[11px] font-bold text-[#007AFF] tracking-wider uppercase">
-                {lang === 'ar' ? 'معرض ومركز خدمات صيدا' : 'SAIDA SHOWROOM & SERVICE HUB'}
+                {lang === 'ar' ? 'متجر إلكتروني — مقره الشوف' : 'ONLINE TECH STORE — BASED IN CHOUF'}
               </span>
               <h4 className="text-lg sm:text-xl font-bold text-[#172033]">
-                {lang === 'ar' ? 'صيدا — ساحة النجمة، الشارع الرئيسي' : 'Saida — Nijme Square, Main Road'}
+                {lang === 'ar' ? 'التوصيل متاح لجميع مناطق لبنان 🚚' : 'Delivery Available to All Lebanon 🚚'}
               </h4>
               <p className="text-xs text-[#64748B] mt-0.5">
                 {lang === 'ar' ? storeSettings.openingHoursAr : storeSettings.openingHoursEn}
@@ -99,17 +99,19 @@ export const CustomerTrust: React.FC = () => {
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={() => setCurrentView('contact')}
-              className="px-5 py-2.5 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white font-bold text-xs shadow-sm transition-colors cursor-pointer"
-            >
-              {lang === 'ar' ? 'معاينة الخريطة والتفاصيل' : 'Get Directions & Map'}
-            </button>
             <a
-              href="tel:81900916"
+              href="https://wa.me/9613986718"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-colors cursor-pointer flex items-center gap-2"
+            >
+              <span>{lang === 'ar' ? 'طلب فوري عبر واتساب' : 'Order via WhatsApp'}</span>
+            </a>
+            <a
+              href="tel:03986718"
               className="px-5 py-2.5 rounded-xl bg-white hover:bg-[#EAF3FF] text-[#172033] font-bold text-xs border border-[#DCE5F0] transition-colors"
             >
-              81 900 916
+              03 986 718
             </a>
           </div>
         </div>

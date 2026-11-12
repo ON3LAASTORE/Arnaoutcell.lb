@@ -20,7 +20,7 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
   const { storeSettings, lang } = useShop();
 
   const logoUrl = storeSettings.logoUrl || '/m-arnaout-cell-logo.jpg';
-  const storeName = storeSettings.storeName || 'SQUARE ARNAOUT CELL STORE';
+  const storeName = storeSettings.storeName || 'ON AlAA STORE';
   const tagline = lang === 'ar' ? storeSettings.taglineAr : storeSettings.tagline;
 
   // Dynamically synchronize favicon with custom store logo if available
@@ -55,8 +55,8 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
   }[size];
 
   const parts = storeName.split(' ');
-  const firstWord = parts[0] || 'SQUARE';
-  const restWords = parts.slice(1).join(' ') || 'ARNAOUT CELL STORE';
+  const firstWord = parts[0] || 'ON';
+  const restWords = parts.slice(1).join(' ') || 'AlAA STORE';
 
   return (
     <div

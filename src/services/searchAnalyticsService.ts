@@ -4,8 +4,7 @@
  * Logs to console with structured intent analysis and persists records to local mock storage.
  */
 
-import { db } from '../firebase';
-import { doc, setDoc } from 'firebase/firestore';
+
 
 export type SearchSource =
   | 'desktop_input_submit'
@@ -342,7 +341,11 @@ export async function trackSearchQuery(params: {
     if (event.selectedEntityTitle) {
       firestorePayload.selectedEntityTitle = event.selectedEntityTitle;
     }
-    setDoc(doc(db, 'search_analytics', event.id), firestorePayload).catch(() => {});
+    Promise.all([import('../firebase'), import('firebase/firestore')])
+      .then(([{ db }, { doc, setDoc }]) => {
+        setDoc(doc(db, 'search_analytics', event.id), firestorePayload).catch(() => {});
+      })
+      .catch(() => {});
   }
 
   // Simulate mock API resolution

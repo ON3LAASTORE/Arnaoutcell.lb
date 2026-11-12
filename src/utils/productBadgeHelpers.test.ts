@@ -7,6 +7,7 @@ import {
   isProductOutOfStock,
   getLowStockLabel,
   getProductBadges,
+  hasProductDiscount,
 } from './productBadgeHelpers';
 
 test('shouldShowNewBadge detects new arrivals correctly', () => {
@@ -79,3 +80,13 @@ test('getProductBadges includes out of stock badge when stock is 0', () => {
   assert.equal(badges.some((b) => b.id === 'out_of_stock'), true);
   assert.equal(badges.some((b) => b.id === 'low_stock'), false);
 });
+
+test('hasProductDiscount correctly identifies discounted products', () => {
+  assert.equal(hasProductDiscount({ discountPercentage: 10, price: 100 }), true);
+  assert.equal(hasProductDiscount({ price: 80, originalPrice: 100 }), true);
+  assert.equal(hasProductDiscount({ price: 100, originalPrice: 100 }), false);
+  assert.equal(hasProductDiscount({ price: 100, originalPrice: 90 }), false);
+  assert.equal(hasProductDiscount({ discountPercentage: 0, price: 100 }), false);
+  assert.equal(hasProductDiscount({}), false);
+});
+

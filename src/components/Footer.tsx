@@ -76,8 +76,8 @@ export const Footer: React.FC = () => {
 
             <p className="text-[#64748B] dark:text-slate-300 text-xs leading-relaxed max-w-sm">
               {lang === 'ar'
-                ? 'وجهتكم الرائدة في صيدا وكافة مناطق لبنان لأحدث الهواتف الذكية، أجهزة اللابتوب، الملحقات والحلول المالية المتكاملة OMT، ويسترن يونيون و ويش موني.'
-                : "Lebanon's premier technology and electronics destination in Saida. Flagship smartphones, high-performance laptops, accessories, and certified financial services."}
+                ? 'متجر إلكتروني مقره الشوف، وجهتكم الرائدة في كافة مناطق لبنان لأحدث الهواتف الذكية، أجهزة اللابتوب، الملحقات والحلول التقنية المعتمدة بكفالة رسمية.'
+                : "Online Tech Store based in Chouf with fast delivery available to all Lebanon. Flagship smartphones, high-performance laptops, accessories, and certified warranty."}
             </p>
 
             {/* Dynamic Real-time Open/Closed Status Indicator */}
@@ -92,13 +92,13 @@ export const Footer: React.FC = () => {
             {/* Contact & Location details */}
             <div className="space-y-2 pt-1 text-xs">
               <a
-                href="tel:81900916"
+                href="tel:03986718"
                 className="flex items-center gap-2.5 text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors font-bold"
               >
                 <div className="w-7 h-7 rounded-lg bg-[#EAF3FF] dark:bg-[#1E293B] flex items-center justify-center text-[#007AFF] flex-shrink-0">
                   <Phone className="w-3.5 h-3.5" />
                 </div>
-                <span>81 900 916</span>
+                <span>03 986 718</span>
               </a>
 
               <div className="flex items-start gap-2.5 text-[#172033] dark:text-[#F8FAFC]">
@@ -113,7 +113,7 @@ export const Footer: React.FC = () => {
                     <span className="font-mono font-bold bg-[#EAF3FF] dark:bg-[#1E293B] px-1.5 py-0.5 rounded">
                       {SAIDA_STORE_DATA.plusCode}
                     </span>
-                    <span>• {lang === 'ar' ? 'ساحة النجمة صيدا' : 'Nejmeh Square'}</span>
+                    <span>• {lang === 'ar' ? 'الشوف • التوصيل متاح لجميع مناطق لبنان' : 'Chouf • Delivery Available to All Lebanon'}</span>
                   </div>
                 </div>
               </div>
@@ -124,7 +124,7 @@ export const Footer: React.FC = () => {
                 </div>
                 <div className="space-y-0.5">
                   <span className="font-bold text-[#172033] dark:text-[#F8FAFC] block">
-                    {lang === 'ar' ? 'مفتوح 17 ساعة يومياً (8:00 ص – 1:00 ص)' : 'OPEN 17 HOURS DAILY (8:00 AM – 1:00 AM)'}
+                    {lang === 'ar' ? 'طلبات أونلاين 24/7 (الدعم: 8:00 ص – 1:00 ص)' : 'ONLINE ORDERS 24/7 (SUPPORT: 8:00 AM – 1:00 AM)'}
                   </span>
                   <span className="text-[11px] text-[#64748B] dark:text-slate-400 block">
                     {lang === 'ar' ? SAIDA_STORE_DATA.openingHoursAr : SAIDA_STORE_DATA.openingHoursEn}
@@ -133,26 +133,16 @@ export const Footer: React.FC = () => {
               </div>
             </div>
 
-            {/* Quick Actions Bar: Live Route & Send to Phone 81900916 & Share */}
+            {/* Quick Actions Bar: WhatsApp & Share */}
             <div className="flex flex-wrap items-center gap-2 pt-2">
               <a
-                href={SAIDA_STORE_DATA.googleDirectionsUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#007AFF] hover:bg-[#0066D6] text-white text-[11px] font-bold shadow-xs transition-colors cursor-pointer"
-              >
-                <Navigation className="w-3 h-3" />
-                <span>{lang === 'ar' ? 'الطريق المباشر' : 'Live Route'}</span>
-              </a>
-
-              <a
-                href={buildSendToPhoneUrl('81900916', 'whatsapp', lang === 'ar')}
+                href={buildSendToPhoneUrl('03986718', 'whatsapp', lang === 'ar')}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-xs transition-colors cursor-pointer"
               >
                 <WhatsApp3DIcon size={14} />
-                <span>{lang === 'ar' ? 'إرسال للهاتف 81900916' : 'Send to Phone 81900916'}</span>
+                <span>{lang === 'ar' ? 'طلب فوري عبر واتساب' : 'WhatsApp Order (03986718)'}</span>
               </a>
 
               <button
@@ -261,7 +251,7 @@ export const Footer: React.FC = () => {
                   className="text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] hover:underline font-semibold flex items-center gap-1"
                 >
                   <Smartphone className="w-3.5 h-3.5 text-[#007AFF]" />
-                  <span>{lang === 'ar' ? 'توتش ستور وخطوط الاتصال' : 'Touch Store Saida'}</span>
+                  <span>{lang === 'ar' ? 'خدمات الاتصالات والدعم' : 'Touch & Tech Support'}</span>
                 </button>
               </li>
               <li className="pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B]">
@@ -304,8 +294,8 @@ export const Footer: React.FC = () => {
         <div className="pt-8 border-t border-[#DCE5F0] dark:border-[#1E293B] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#64748B] dark:text-slate-400">
           <p>
             {lang === 'ar'
-              ? `© 2027 ${storeSettings.storeNameAr || 'أرناؤوط ستور'} (${storeSettings.storeName}). صيدا، ساحة النجمة، لبنان. هاتف: ${storeSettings.phone}.`
-              : `© 2027 ${storeSettings.storeName}. Saida, Nijme Square, Lebanon. Phone: ${storeSettings.phone}. All rights reserved.`}
+              ? `© 2027 ${storeSettings.storeNameAr || 'أون علاء ستور'} (${storeSettings.storeName || 'ON AlAA STORE'}). متجر إلكتروني مقره الشوف، لبنان. التوصيل متاح لجميع مناطق لبنان. هاتف: ${storeSettings.phone || '03986718'}.`
+              : `© 2027 ${storeSettings.storeName || 'ON AlAA STORE'}. Online Store based in Chouf, Lebanon. Delivery Available to All Lebanon. Phone: ${storeSettings.phone || '03986718'}. All rights reserved.`}
           </p>
 
           <div className="flex items-center gap-4">

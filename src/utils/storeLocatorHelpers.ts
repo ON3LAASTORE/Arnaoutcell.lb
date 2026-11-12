@@ -38,34 +38,37 @@ export interface StoreLocationData {
   appleMapsUrl: string;
 }
 
-export const SAIDA_STORE_DATA: StoreLocationData = {
-  name: 'SQUARE ARNAOUT CELL STORE, SAIDA - NEJMEH, Sidon',
-  nameAr: 'سكوير أرناؤوط سيل ستور، صيدا - ساحة النجمة، صيدا',
-  shortName: 'SQUARE ARNAOUT CELL STORE',
-  shortNameAr: 'سكوير أرناؤوط سيل ستور',
-  addressEn: 'Nejmeh Square (Saha), Main Commercial Boulevard, Sidon (Saida), Lebanon',
-  addressAr: 'ساحة النجمة، البولفار التجاري الرئيسي، صيدا، لبنان',
-  cityEn: 'Sidon (Saida), South Lebanon',
-  cityAr: 'صيدا، جنوب لبنان',
-  landmarkEn: 'Nejmeh Square (Saha), Central Sidon Commercial Hub, 2 minutes from Sea Castle & Serail',
-  landmarkAr: 'ساحة النجمة (الساحة)، مركز صيدا التجاري الرئيسي، على بعد دقيقتين من القلعة البحرية والسراي',
-  phone: '81900916',
-  phoneFormatted: '81 900 916',
-  internationalPhone: '+961 81 900 916',
-  whatsapp: '96181900916',
-  plusCode: 'H97G+W2P, Sidon',
-  plusCodeUrl: 'https://plus.codes/8G7PH97G+W2P',
-  operatingDuration: 'Open 17 hours',
-  operatingDurationEn: 'Open 17 hours (8:00 AM – 1:00 AM Daily)',
-  operatingDurationAr: 'مفتوح 17 ساعة (8:00 صباحاً – 1:00 بعد منتصف الليل يومياً)',
-  openingHoursEn: '8:00 AM – 1:00 AM (17 Hours Daily, 7 Days a Week)',
-  openingHoursAr: '8:00 صباحاً – 1:00 بعد منتصف الليل (17 ساعة يومياً، 7 أيام في الأسبوع)',
-  latitude: 33.5623,
-  longitude: 35.3722,
-  googleMapsUrl: 'https://maps.google.com/?q=H97G%2BW2P,+Sidon',
-  googleDirectionsUrl: 'https://www.google.com/maps/dir/?api=1&destination=H97G%2BW2P,+Sidon',
-  appleMapsUrl: 'http://maps.apple.com/?daddr=33.5623,35.3722&q=SQUARE+ARNAOUT+CELL+STORE+SAIDA+-+NEJMEH',
+export const CHOUF_STORE_DATA: StoreLocationData = {
+  name: 'ON AlAA STORE — Online Store based in Chouf, Lebanon',
+  nameAr: 'متجر ON AlAA — متجر إلكتروني - مقرنا في الشوف، لبنان',
+  shortName: 'ON AlAA STORE',
+  shortNameAr: 'متجر ON AlAA',
+  addressEn: 'Online Store based in Chouf, Mount Lebanon • Delivery Available to All Lebanon',
+  addressAr: 'متجر إلكتروني - مقرنا في قضاء الشوف، جبل لبنان • التوصيل متاح لجميع المناطق اللبنانية',
+  cityEn: 'Chouf, Mount Lebanon',
+  cityAr: 'قضاء الشوف، جبل لبنان',
+  landmarkEn: 'Online Hub based in Chouf • Express Delivery to All Lebanon',
+  landmarkAr: 'مركز المبيعات الإلكترونية بالشوف • توصيل سريع لكافة الأراضي اللبنانية',
+  phone: '03986718',
+  phoneFormatted: '03 986 718',
+  internationalPhone: '+961 3 986718',
+  whatsapp: '9613986718',
+  plusCode: 'Chouf, Lebanon',
+  plusCodeUrl: 'https://wa.me/9613986718',
+  operatingDuration: 'Open Daily (8:00 AM – 1:00 AM)',
+  operatingDurationEn: 'Online Orders & Support: 8:00 AM – 1:00 AM Daily',
+  operatingDurationAr: 'الطلبات أونلاين والدعم: 8:00 صباحاً – 1:00 بعد منتصف الليل يومياً',
+  openingHoursEn: '8:00 AM – 1:00 AM Daily (Online Orders & Lebanon-Wide Delivery)',
+  openingHoursAr: '8:00 صباحاً – 1:00 بعد منتصف الليل (طلبات أونلاين وتوصيل لجميع مناطق لبنان)',
+  latitude: 33.6967,
+  longitude: 35.5817,
+  googleMapsUrl: 'https://wa.me/9613986718',
+  googleDirectionsUrl: 'https://wa.me/9613986718',
+  appleMapsUrl: 'https://wa.me/9613986718',
 };
+
+// Aliased for seamless compatibility across existing components
+export const SAIDA_STORE_DATA: StoreLocationData = CHOUF_STORE_DATA;
 
 /**
  * Generates Google Maps search URL with encoded query
@@ -77,35 +80,35 @@ export function buildGoogleMapsUrl(query: string): string {
 /**
  * Generates direct Live Route navigation URL using Plus Code or coordinates
  */
-export function buildLiveRouteUrl(destination = 'H97G+W2P, Sidon'): string {
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}`;
+export function buildLiveRouteUrl(destination = 'Chouf, Lebanon'): string {
+  return `https://wa.me/9613986718`;
 }
 
 /**
  * Generates pre-filled WhatsApp location request / pin URL
  */
-export function buildWhatsAppLocationUrl(phone = '96181900916', isArabic = false): string {
+export function buildWhatsAppLocationUrl(phone = '9613986718', isArabic = false): string {
   const cleanPhone = phone.replace(/\D/g, '');
   const text = isArabic
-    ? 'مرحباً سكوير أرناؤوط سيل ستور صيدا! أود الحصول على موقع المحل الجغرافي (Live Location) على واتساب للوصول إليكم في ساحة النجمة صيدا (رمز بلس: H97G+W2P, Sidon).'
-    : 'Hello SQUARE ARNAOUT CELL STORE! Please send your exact live GPS location pin on WhatsApp for directions to your Saida Nejmeh Square showroom (Plus Code: H97G+W2P, Sidon).';
+    ? 'مرحباً متجر ON AlAA! أود الاستفسار عن خدمة التوصيل لموقعي في لبنان (متجركم الإلكتروني بالشوف).'
+    : 'Hello ON AlAA STORE! I would like to inquire about express delivery to my location in Lebanon.';
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
 }
 
 /**
- * Builds "Send to phone 81900916" intent URLs for WhatsApp or SMS
+ * Builds "Send to phone 03986718" intent URLs for WhatsApp or SMS
  */
 export function buildSendToPhoneUrl(
-  phoneNumber = '81900916',
+  phoneNumber = '03986718',
   type: 'whatsapp' | 'sms' = 'whatsapp',
   isArabic = false
 ): string {
   const cleanNumber = phoneNumber.replace(/\D/g, '');
-  const targetNumber = cleanNumber.startsWith('961') ? cleanNumber : `961${cleanNumber}`;
+  const targetNumber = cleanNumber.startsWith('961') ? cleanNumber : `961${cleanNumber.startsWith('0') ? cleanNumber.slice(1) : cleanNumber}`;
   
   const bodyText = isArabic
-    ? `📍 موقع سكوير أرناؤوط سيل ستور:\n• صيدا - ساحة النجمة، صيدا\n• رمز بلس: H97G+W2P, Sidon\n• الإحداثيات: 33.5623°N, 35.3722°E\n• دوام العمل: مفتوح 17 ساعة (8:00 ص – 1:00 ص)\n• هاتف: 81900916\n• رابط الطريق المباشر: ${SAIDA_STORE_DATA.googleDirectionsUrl}`
-    : `📍 SQUARE ARNAOUT CELL STORE Location:\n• Saida - Nejmeh Square, Sidon\n• Plus Code: H97G+W2P, Sidon\n• GPS: 33.5623°N, 35.3722°E\n• Hours: Open 17 hours (8:00 AM – 1:00 AM)\n• Phone: 81900916\n• Live Route: ${SAIDA_STORE_DATA.googleDirectionsUrl}`;
+    ? `📍 متجر ON AlAA الإلكتروني:\n• مقرنا: الشوف، جبل لبنان\n• التوصيل: متاح لجميع المناطق اللبنانية\n• دوام الطلبات والدعم: 8:00 ص – 1:00 ص يومياً\n• هاتف / واتساب: 03986718 (9613986718+)\n• رابط التواصل والطلب: https://wa.me/9613986718`
+    : `📍 ON AlAA STORE — Online Store:\n• Based in: Chouf, Mount Lebanon\n• Delivery: Available to All Lebanon\n• Orders & Support: 8:00 AM – 1:00 AM Daily\n• Phone / WhatsApp: 03986718 (+961 3 986718)\n• Chat & Order: https://wa.me/9613986718`;
 
   if (type === 'sms') {
     return `sms:+${targetNumber}?body=${encodeURIComponent(bodyText)}`;
@@ -124,30 +127,28 @@ export function buildLocationShareData(isArabic = false): {
   fullMessage: string;
 } {
   const title = isArabic
-    ? 'سكوير أرناؤوط سيل ستور، صيدا - ساحة النجمة، صيدا'
-    : 'SQUARE ARNAOUT CELL STORE, SAIDA - NEJMEH, Sidon';
+    ? 'متجر ON AlAA — متجر إلكتروني - مقرنا في الشوف، لبنان'
+    : 'ON AlAA STORE — Online Store based in Chouf, Lebanon';
 
   const text = isArabic
-    ? `سكوير أرناؤوط سيل ستور - صيدا ساحة النجمة (رمز بلس: H97G+W2P, Sidon) • مفتوح 17 ساعة يومياً • هاتف: 81900916`
-    : `SQUARE ARNAOUT CELL STORE, SAIDA - NEJMEH, Sidon (Plus Code: H97G+W2P, Sidon) • Open 17 hours daily • Phone: 81900916`;
+    ? `متجر ON AlAA الإلكتروني - مقرنا في الشوف • التوصيل متاح لجميع مناطق لبنان • هاتف وواتساب: 03986718`
+    : `ON AlAA STORE — Online Store based in Chouf, Lebanon • Delivery Available to All Lebanon • Phone & WhatsApp: 03986718`;
 
-  const url = SAIDA_STORE_DATA.googleMapsUrl;
+  const url = 'https://wa.me/9613986718';
 
   const fullMessage = isArabic
     ? `📍 ${title}\n` +
-      `📌 العنوان: ساحة النجمة، صيدا، لبنان\n` +
-      `🌐 رمز بلس: H97G+W2P, Sidon\n` +
-      `🧭 الإحداثيات: 33.5623° N, 35.3722° E\n` +
-      `⏰ الدوام: مفتوح 17 ساعة (8:00 صباحاً – 1:00 بعد منتصف الليل يومياً)\n` +
-      `📞 هاتف: 81900916 (+961 81 900 916)\n` +
-      `🚗 خريطة وتوجيه حي: ${SAIDA_STORE_DATA.googleDirectionsUrl}`
+      `📌 المقر: الشوف، جبل لبنان\n` +
+      `🚚 التوصيل: متاح لجميع المناطق اللبنانية\n` +
+      `⏰ الدوام: خدمة العملاء والطلبات من 8:00 ص إلى 1:00 ص يومياً\n` +
+      `📞 هاتف: 03986718 (+961 3 986718)\n` +
+      `📲 واتساب مباشر: https://wa.me/9613986718`
     : `📍 ${title}\n` +
-      `📌 Address: Nejmeh Square, Sidon (Saida), Lebanon\n` +
-      `🌐 Plus Code: H97G+W2P, Sidon\n` +
-      `🧭 GPS: 33.5623° N, 35.3722° E\n` +
-      `⏰ Hours: Open 17 hours (8:00 AM – 1:00 AM Daily)\n` +
-      `📞 Phone: 81900916 (+961 81 900 916)\n` +
-      `🚗 Live Route: ${SAIDA_STORE_DATA.googleDirectionsUrl}`;
+      `📌 Hub: Chouf, Mount Lebanon\n` +
+      `🚚 Delivery: Available to All Lebanon\n` +
+      `⏰ Hours: Customer Support & Orders: 8:00 AM – 1:00 AM Daily\n` +
+      `📞 Phone: 03986718 (+961 3 986718)\n` +
+      `📲 WhatsApp Direct: https://wa.me/9613986718`;
 
   return { title, text, url, fullMessage };
 }

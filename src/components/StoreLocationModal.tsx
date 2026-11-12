@@ -1,18 +1,12 @@
 import React, { useState } from 'react';
 import {
   X,
-  MapPin,
-  Navigation,
   Share2,
   Phone,
-  Copy,
   Check,
-  ExternalLink,
-  MessageSquare,
   Clock,
-  Compass,
-  Car,
-  QrCode,
+  Globe,
+  Truck,
   ShieldCheck,
   Send,
 } from 'lucide-react';
@@ -20,8 +14,7 @@ import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import { StoreStatusBadge } from './StoreStatusBadge';
 import { openExternalUrl } from '../utils/navigation';
 import {
-  SAIDA_STORE_DATA,
-  buildLiveRouteUrl,
+  CHOUF_STORE_DATA,
   buildSendToPhoneUrl,
   buildLocationShareData,
 } from '../utils/storeLocatorHelpers';
@@ -36,22 +29,11 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({ isOpen, 
   const { lang, storeSettings } = useShop();
   const isArabic = lang === 'ar';
 
-  const [copiedPlusCode, setCopiedPlusCode] = useState(false);
   const [copiedAll, setCopiedAll] = useState(false);
   const [customPhone, setCustomPhone] = useState('');
   const [sendSuccessMessage, setSendSuccessMessage] = useState<string | null>(null);
 
   if (!isOpen) return null;
-
-  const handleCopyPlusCode = async () => {
-    try {
-      await navigator.clipboard.writeText(SAIDA_STORE_DATA.plusCode);
-      setCopiedPlusCode(true);
-      setTimeout(() => setCopiedPlusCode(false), 2500);
-    } catch {
-      // fallback
-    }
-  };
 
   const handleCopyAll = async () => {
     try {
@@ -88,8 +70,8 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({ isOpen, 
     openExternalUrl(url);
     setSendSuccessMessage(
       isArabic
-        ? `تم فتح واتساب لإرسال الإحداثيات إلى ${customPhone}`
-        : `Opening WhatsApp to send location coordinates to ${customPhone}`
+        ? `تم فتح واتساب للتواصل مع الرقم ${customPhone}`
+        : `Opening WhatsApp to contact ${customPhone}`
     );
     setTimeout(() => setSendSuccessMessage(null), 4000);
   };
@@ -118,17 +100,17 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({ isOpen, 
 
           <div className="space-y-2 pr-10 rtl:pr-0 rtl:pl-10">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-black tracking-wider uppercase">
-              <Compass className="w-3.5 h-3.5" />
-              <span>{isArabic ? 'الموقع الجغرافي ونظام الملاحة' : 'GPS NAVIGATION & LIVE ROUTE'}</span>
+              <Globe className="w-3.5 h-3.5" />
+              <span>{isArabic ? 'متجر إلكتروني — مقره الشوف' : 'ONLINE STORE — BASED IN CHOUF'}</span>
             </div>
 
             <h3 id="store-location-title" className="text-xl sm:text-2xl font-black leading-tight">
-              {isArabic ? SAIDA_STORE_DATA.nameAr : SAIDA_STORE_DATA.name}
+              {isArabic ? (storeSettings.storeNameAr || 'متجر ON AlAA') : (storeSettings.storeName || 'ON AlAA STORE')}
             </h3>
 
             <p className="text-xs sm:text-sm text-blue-100 font-medium flex items-center gap-2">
-              <MapPin className="w-4 h-4 flex-shrink-0" />
-              <span>{isArabic ? SAIDA_STORE_DATA.addressAr : SAIDA_STORE_DATA.addressEn}</span>
+              <Truck className="w-4 h-4 flex-shrink-0" />
+              <span>{isArabic ? 'التوصيل متاح لجميع مناطق لبنان' : 'Delivery Available to All Lebanon'}</span>
             </p>
           </div>
         </div>
@@ -144,68 +126,51 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({ isOpen, 
 
         {/* Body Content */}
         <div className="p-6 sm:p-8 space-y-6 max-h-[60vh] overflow-y-auto">
-          {/* Plus Code & Coordinates Highlight Box */}
+          {/* Operations Hub Card */}
           <div className="p-5 rounded-2xl bg-[#EAF3FF] dark:bg-[#132238] border border-[#BAE6FD] dark:border-[#1E3A5F] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <span className="text-[11px] font-bold text-[#007AFF] dark:text-[#38BDF8] uppercase tracking-wider block">
-                {isArabic ? 'رمز بلس المعتمد في خرائط Google:' : 'Official Google Plus Code:'}
+                {isArabic ? 'مقر العمليات والتجهيز:' : 'Operations & Dispatch Hub:'}
               </span>
               <div className="flex items-center gap-2">
-                <span className="text-xl sm:text-2xl font-black font-mono text-[#172033] dark:text-white tracking-wide">
-                  {SAIDA_STORE_DATA.plusCode}
-                </span>
-                <span className="px-2 py-0.5 rounded-md bg-[#007AFF] text-white text-[10px] font-black uppercase">
-                  Sidon
+                <span className="text-base sm:text-lg font-black text-[#172033] dark:text-white">
+                  {isArabic ? CHOUF_STORE_DATA.landmarkAr : CHOUF_STORE_DATA.landmarkEn}
                 </span>
               </div>
-              <p className="text-xs text-[#64748B] dark:text-slate-400">
-                GPS: {SAIDA_STORE_DATA.latitude}° N, {SAIDA_STORE_DATA.longitude}° E
+              <p className="text-xs text-[#64748B] dark:text-slate-300">
+                {isArabic ? 'شحن فوري لباب البيت في كافة المحافظات' : 'Door-to-door express delivery nationwide'}
               </p>
             </div>
 
-            <button
-              onClick={handleCopyPlusCode}
-              className="px-4 py-2.5 rounded-xl bg-white dark:bg-[#0E1726] hover:bg-slate-50 dark:hover:bg-[#1A253C] text-[#007AFF] dark:text-[#38BDF8] border border-[#BAE6FD] dark:border-[#1E3A5F] text-xs font-black flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-all active:scale-95"
+            <a
+              href="https://wa.me/9613986718"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-all active:scale-95"
             >
-              {copiedPlusCode ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
-              <span>{copiedPlusCode ? (isArabic ? 'تم النسخ!' : 'Copied!') : (isArabic ? 'نسخ رمز Plus' : 'Copy Plus Code')}</span>
-            </button>
+              <WhatsApp3DIcon size={18} />
+              <span>{isArabic ? 'واتساب 03986718' : 'WhatsApp 03986718'}</span>
+            </a>
           </div>
 
-          {/* Primary Quick Navigation Actions */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            {/* Live Route Navigation */}
+          {/* Primary Quick Actions */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <a
-              href={SAIDA_STORE_DATA.googleDirectionsUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              href="tel:03986718"
               className="p-3.5 rounded-2xl bg-[#007AFF] hover:bg-[#0066D6] text-white flex flex-col items-center text-center gap-1.5 shadow-md shadow-[#007AFF]/25 transition-all group active:scale-95 cursor-pointer"
             >
-              <Navigation className="w-5 h-5 group-hover:rotate-12 transition-transform" />
-              <span className="text-xs font-black">{isArabic ? 'بدء الملاحة الحية' : 'Live Route'}</span>
-              <span className="text-[10px] text-blue-100">{isArabic ? 'توجيه خطوة بخطوة' : 'Turn-by-turn'}</span>
+              <Phone className="w-5 h-5 group-hover:scale-110 transition-transform" />
+              <span className="text-xs font-black">{isArabic ? 'اتصال مباشر: 03986718' : 'Direct Call: 03986718'}</span>
+              <span className="text-[10px] text-blue-100">{isArabic ? 'خدمة العملاء والطلبات' : 'Orders & Support'}</span>
             </a>
 
-            {/* Send to Phone 81900916 */}
-            <a
-              href={buildSendToPhoneUrl('81900916', 'whatsapp', isArabic)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-3.5 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white flex flex-col items-center text-center gap-1.5 shadow-md shadow-emerald-600/25 transition-all group active:scale-95 cursor-pointer"
-            >
-              <WhatsApp3DIcon size={20} />
-              <span className="text-xs font-black">{isArabic ? 'إرسال للهاتف 81900916' : 'Send to Phone 81900916'}</span>
-              <span className="text-[10px] text-emerald-100">{isArabic ? 'عبر واتساب فورياً' : 'Via WhatsApp Pin'}</span>
-            </a>
-
-            {/* Share Location */}
             <button
               onClick={handleNativeShare}
               className="p-3.5 rounded-2xl bg-[#F1F5F9] dark:bg-[#1E293B] hover:bg-slate-200 dark:hover:bg-[#2A374F] text-[#172033] dark:text-white flex flex-col items-center text-center gap-1.5 border border-[#DCE5F0] dark:border-[#334155] transition-all active:scale-95 cursor-pointer"
             >
               {copiedAll ? <Check className="w-5 h-5 text-emerald-500" /> : <Share2 className="w-5 h-5 text-[#007AFF]" />}
-              <span className="text-xs font-black">{copiedAll ? (isArabic ? 'تم نسخ الرابط!' : 'Copied!') : (isArabic ? 'مشاركة الموقع' : 'Share Location')}</span>
-              <span className="text-[10px] text-[#64748B] dark:text-slate-400">{isArabic ? 'مشاركة أو نسخ' : 'Share or Copy'}</span>
+              <span className="text-xs font-black">{copiedAll ? (isArabic ? 'تم نسخ الرابط!' : 'Copied!') : (isArabic ? 'مشاركة المتجر' : 'Share Store')}</span>
+              <span className="text-[10px] text-[#64748B] dark:text-slate-400">{isArabic ? 'مشاركة رابط المتجر' : 'Share Store Link'}</span>
             </button>
           </div>
 
@@ -216,30 +181,30 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({ isOpen, 
             </div>
             <div className="space-y-0.5 text-xs">
               <span className="font-black text-purple-900 dark:text-purple-200 block">
-                {isArabic ? 'دوام العمل الرسمي: مفتوح 17 ساعة يومياً' : 'Official Operating Hours: Open 17 hours'}
+                {isArabic ? 'الطلبات أونلاين متاحة 24/7' : 'Online Orders Available 24/7'}
               </span>
               <p className="text-[#172033] dark:text-slate-200 font-bold">
-                {isArabic ? SAIDA_STORE_DATA.openingHoursAr : SAIDA_STORE_DATA.openingHoursEn}
+                {isArabic ? CHOUF_STORE_DATA.openingHoursAr : CHOUF_STORE_DATA.openingHoursEn}
               </p>
               <p className="text-[11px] text-[#64748B] dark:text-slate-400">
                 {isArabic
-                  ? 'خدمة الاستلام، الاستشارات التقنية، ومعاينة الهواتف متواصلة طيلة 17 ساعة حتى 1:00 بعد منتصف الليل.'
-                  : 'Order pickups, phone demos, and customer support are active continuously for 17 hours until 1:00 AM.'}
+                  ? 'خدمة العملاء، الاستشارات التقنية، ومتابعة شحنات التوصيل طيلة 17 ساعة حتى 1:00 بعد منتصف الليل.'
+                  : 'Customer support, tech inquiries, and courier tracking are active continuously until 1:00 AM.'}
               </p>
             </div>
           </div>
 
-          {/* Send Location to Any Phone Form */}
+          {/* Send to Any Phone Form */}
           <div className="p-4 rounded-2xl bg-[#F8FAFC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] space-y-3">
             <h4 className="text-xs font-black text-[#172033] dark:text-white uppercase tracking-wider flex items-center gap-1.5">
               <Send className="w-3.5 h-3.5 text-[#007AFF]" />
-              <span>{isArabic ? 'إرسال الموقع والإحداثيات إلى رقم هاتفك' : 'Send Location & Route to Any Phone'}</span>
+              <span>{isArabic ? 'إرسال تفاصيل المتجر والتوصيل إلى رقم هاتف' : 'Send Store Details to Any Phone'}</span>
             </h4>
 
             <form onSubmit={handleSendToCustomPhone} className="flex gap-2">
               <input
                 type="tel"
-                placeholder={isArabic ? 'أدخل رقم الهاتف (مثال: 81900916)' : 'Enter phone number (e.g. 81900916)'}
+                placeholder={isArabic ? 'أدخل رقم الهاتف (مثال: 03986718)' : 'Enter phone number (e.g. 03986718)'}
                 value={customPhone}
                 onChange={(e) => setCustomPhone(e.target.value)}
                 className="flex-1 px-3.5 py-2 text-xs rounded-xl bg-white dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-white focus:outline-none focus:border-[#007AFF]"
@@ -263,15 +228,10 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({ isOpen, 
 
         {/* Footer */}
         <div className="p-4 sm:px-8 bg-[#F8FAFC] dark:bg-[#0A0F1D] border-t border-[#DCE5F0] dark:border-[#1E293B] flex items-center justify-between gap-3">
-          <a
-            href={SAIDA_STORE_DATA.googleMapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs font-bold text-[#007AFF] hover:underline flex items-center gap-1"
-          >
-            <span>{isArabic ? 'عرض في خرائط Google' : 'View on Google Maps'}</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
+          <div className="flex items-center gap-1.5 text-xs text-emerald-600 font-bold">
+            <ShieldCheck className="w-4 h-4" />
+            <span>{isArabic ? 'كفالة رسمية معتمدة' : 'Official Warranty Guaranteed'}</span>
+          </div>
 
           <button
             onClick={onClose}

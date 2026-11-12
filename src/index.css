@@ -185,3 +185,236 @@
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* Product Card Image Explicit Styling with Smooth Hover Scale and Fade-in Animation */
+@keyframes productCardImageFadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.product-card-image {
+  object-fit: contain !important;
+  object-position: center !important;
+  background-color: #FFFFFF;
+  border-radius: 1rem; /* rounded-2xl to match app design system */
+  animation: productCardImageFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1), filter 0.35s ease, opacity 0.25s ease;
+  will-change: transform, opacity;
+}
+
+.dark .product-card-image {
+  background-color: transparent;
+}
+
+/* Product Card Image Container Hover Depth and Drop Shadow */
+.product-card-image-container {
+  transition: box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.35s ease;
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.04);
+}
+
+.product-card-image-container:hover,
+.group:hover .product-card-image-container {
+  box-shadow: 0 12px 28px -6px rgba(0, 122, 255, 0.14), 0 4px 12px -2px rgba(15, 23, 42, 0.05);
+}
+
+.dark .product-card-image-container {
+  box-shadow: 0 2px 8px -2px rgba(0, 0, 0, 0.3);
+}
+
+.dark .product-card-image-container:hover,
+.dark .group:hover .product-card-image-container {
+  box-shadow: 0 12px 30px -6px rgba(0, 0, 0, 0.6), 0 0 18px rgba(56, 189, 248, 0.12);
+}
+
+.product-card-image:hover,
+.group:hover .product-card-image {
+  transform: scale(1.05);
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.08));
+}
+
+.dark .product-card-image:hover,
+.dark .group:hover .product-card-image {
+  filter: drop-shadow(0 6px 14px rgba(0, 0, 0, 0.35));
+}
+
+
+/* Subtle Quick View Eye Icon Overlay */
+.quick-view-eye-overlay {
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  will-change: transform, opacity;
+}
+
+/* Quick Add to Cart button in .product-card-image-container */
+.quick-add-cart-btn {
+  transition: opacity 0.25s ease, transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+  will-change: transform, opacity;
+}
+
+
+/* Product Card Image Skeleton Loader Animation */
+@keyframes skeletonShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.product-card-skeleton {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: 1rem; /* rounded-2xl */
+  background-color: #F1F5F9;
+  z-index: 1;
+}
+
+.dark .product-card-skeleton {
+  background-color: #1E293B;
+}
+
+.product-card-skeleton::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(241, 245, 249, 0) 0%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(241, 245, 249, 0) 100%
+  );
+  animation: skeletonShimmer 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.dark .product-card-skeleton::after {
+  background: linear-gradient(
+    90deg,
+    rgba(30, 41, 59, 0) 0%,
+    rgba(51, 65, 85, 0.6) 50%,
+    rgba(30, 41, 59, 0) 100%
+  );
+}
+
+/* Tactile 3D Product Status Badges System (Reduced 50% Size with Layered Depth) */
+.badge-3d-base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1;
+  color: #FFFFFF;
+  border-radius: 5px;
+  border-top: 1px solid rgba(255, 255, 255, 0.55);
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.35);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+  transform: translateZ(0);
+}
+
+/* 50% Compact Size for Product Cards */
+.badge-3d-compact {
+  padding: 2px 4.5px;
+  font-size: 8px;
+}
+
+/* 50% Size for Product Detail Page and Modals */
+.badge-3d-detail {
+  padding: 2.5px 6px;
+  font-size: 8.5px;
+}
+
+/* 3D New Arrival Badge */
+.badge-3d-new {
+  background: linear-gradient(180deg, #1E88E5 0%, #007AFF 45%, #0056B3 100%);
+  box-shadow: 
+    0 1px 2px rgba(0, 86, 179, 0.25),
+    0 3px 6px -1px rgba(0, 122, 255, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  border-bottom-color: #003D80;
+}
+
+/* 3D Bestseller Badge */
+.badge-3d-bestseller {
+  background: linear-gradient(180deg, #F59E0B 0%, #D97706 45%, #B45309 100%);
+  box-shadow: 
+    0 1px 2px rgba(180, 83, 9, 0.25),
+    0 3px 6px -1px rgba(217, 119, 6, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  border-bottom-color: #78350F;
+}
+
+/* 3D Price Drop Badge (Semi-transparent Brand Secondary Blue) */
+.price-drop-badge,
+.badge-3d-pricedrop {
+  background: linear-gradient(180deg, rgba(2, 132, 199, 0.9) 0%, rgba(0, 102, 214, 0.9) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border-top: 1px solid rgba(255, 255, 255, 0.6);
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: 2px solid rgba(0, 50, 130, 0.6);
+  box-shadow: 
+    0 1px 2px rgba(0, 50, 130, 0.3),
+    0 3px 6px -1px rgba(0, 102, 214, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.2s ease, opacity 0.2s ease;
+  will-change: transform, opacity;
+}
+
+.dark .price-drop-badge,
+.dark .badge-3d-pricedrop {
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.85) 0%, rgba(2, 132, 199, 0.9) 100%);
+  border-top-color: rgba(255, 255, 255, 0.5);
+  border-bottom-color: rgba(3, 105, 161, 0.85);
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.35),
+    0 3px 8px -1px rgba(2, 132, 199, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+/* 3D Discount Badge */
+.badge-3d-discount {
+  background: linear-gradient(180deg, #EF4444 0%, #DC2626 45%, #991B1B 100%);
+  box-shadow: 
+    0 1px 2px rgba(153, 27, 27, 0.25),
+    0 3px 6px -1px rgba(220, 38, 38, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  border-bottom-color: #7F1D1D;
+}
+
+/* 3D Low Stock Badge */
+.badge-3d-lowstock {
+  background: linear-gradient(180deg, #F59E0B 0%, #D97706 100%);
+  box-shadow: 
+    0 1px 2px rgba(180, 83, 9, 0.25),
+    0 3px 6px -1px rgba(217, 119, 6, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  border-bottom-color: #92400E;
+}
+
+/* 3D Out of Stock Badge */
+.badge-3d-outofstock {
+  background: linear-gradient(180deg, #475569 0%, #1E293B 100%);
+  box-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.25),
+    0 3px 6px -1px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  border-bottom-color: #0F172A;
+}
+

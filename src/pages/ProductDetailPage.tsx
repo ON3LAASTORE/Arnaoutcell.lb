@@ -16,11 +16,12 @@ import {
   Sparkles,
   Scale,
   Flame,
+  TrendingDown,
 } from 'lucide-react';
 import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon } from '../components/icons/ThreeDIcons';
 import { LazyImage } from '../components/LazyImage';
 import { openExternalUrl } from '../utils/navigation';
-import { getProductBadges } from '../utils/productBadgeHelpers';
+import { getProductBadges, hasProductDiscount } from '../utils/productBadgeHelpers';
 import { addProductReview } from '../services/storageService';
 
 export const ProductDetailPage: React.FC = () => {
@@ -198,49 +199,55 @@ export const ProductDetailPage: React.FC = () => {
                 />
               )}
 
-              {/* Badges (New, Bestseller, Low Stock, Discount) */}
-              <div className="absolute top-4 left-4 flex flex-col gap-1.5 z-10 pointer-events-none">
+              {/* Badges (New, Bestseller, Price Drop, Low Stock, Discount) */}
+              <div className="absolute top-3.5 left-3.5 rtl:right-3.5 rtl:left-auto flex flex-col gap-1 z-10 pointer-events-none">
                 {getProductBadges(product, lang).map((badge) => {
                   if (badge.id === 'discount') {
                     return (
-                      <span key={badge.id} className="px-3 py-1 rounded-lg bg-[#DC2626] text-white font-black text-xs shadow-xs">
+                      <span key={badge.id} className="badge-3d-base badge-3d-detail badge-3d-discount">
                         {badge.label}
                       </span>
                     );
                   }
                   if (badge.id === 'new') {
                     return (
-                      <span key={badge.id} className="px-3 py-1 rounded-lg bg-[#007AFF] text-white font-bold text-xs shadow-xs flex items-center gap-1">
-                        <Sparkles className="w-3.5 h-3.5" />
+                      <span key={badge.id} className="badge-3d-base badge-3d-detail badge-3d-new">
+                        <Sparkles className="w-2.5 h-2.5" />
                         {badge.label}
                       </span>
                     );
                   }
                   if (badge.id === 'bestseller') {
                     return (
-                      <span key={badge.id} className="px-3 py-1 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs shadow-xs flex items-center gap-1">
-                        <Flame className="w-3.5 h-3.5 fill-current" />
+                      <span key={badge.id} className="badge-3d-base badge-3d-detail badge-3d-bestseller">
+                        <Flame className="w-2.5 h-2.5 fill-current" />
                         {badge.label}
                       </span>
                     );
                   }
                   if (badge.id === 'low_stock') {
                     return (
-                      <span key={badge.id} className="px-3 py-1 rounded-lg bg-amber-500 text-white font-bold text-xs shadow-xs flex items-center gap-1 animate-pulse">
-                        <AlertTriangle className="w-3.5 h-3.5" />
+                      <span key={badge.id} className="badge-3d-base badge-3d-detail badge-3d-lowstock animate-pulse">
+                        <AlertTriangle className="w-2.5 h-2.5" />
                         {badge.label}
                       </span>
                     );
                   }
                   if (badge.id === 'out_of_stock') {
                     return (
-                      <span key={badge.id} className="px-3 py-1 rounded-lg bg-slate-800 text-white font-bold text-xs shadow-xs flex items-center gap-1">
+                      <span key={badge.id} className="badge-3d-base badge-3d-detail badge-3d-outofstock">
                         {badge.label}
                       </span>
                     );
                   }
                   return null;
                 })}
+                {hasProductDiscount(product) && (
+                  <span className="badge-3d-base badge-3d-detail badge-3d-pricedrop">
+                    <TrendingDown className="w-2.5 h-2.5 stroke-[2.5]" />
+                    {lang === 'ar' ? 'تخفيض السعر' : 'Price Drop'}
+                  </span>
+                )}
               </div>
 
               {/* Share & Wishlist quick actions */}

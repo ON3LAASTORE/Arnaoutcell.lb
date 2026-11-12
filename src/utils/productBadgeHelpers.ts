@@ -8,6 +8,27 @@ export interface ProductBadge {
 }
 
 /**
+ * Determines whether the product has an active discount or price drop.
+ */
+export function hasProductDiscount(product: {
+  price?: number;
+  originalPrice?: number;
+  discountPercentage?: number;
+}): boolean {
+  if (typeof product.discountPercentage === 'number' && product.discountPercentage > 0) {
+    return true;
+  }
+  if (
+    typeof product.originalPrice === 'number' &&
+    typeof product.price === 'number' &&
+    product.originalPrice > product.price
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * Determines whether the "NEW" badge should be displayed based on Firestore status.
  */
 export function shouldShowNewBadge(product: Pick<Product, 'isNewArrival'>): boolean {

@@ -27,11 +27,12 @@ import {
   Check,
   Scale,
   Flame,
+  TrendingDown,
 } from 'lucide-react';
 import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon, Orbit3DIcon } from './icons/ThreeDIcons';
 import { LazyImage } from './LazyImage';
 import { openExternalUrl } from '../utils/navigation';
-import { getProductBadges } from '../utils/productBadgeHelpers';
+import { getProductBadges, hasProductDiscount } from '../utils/productBadgeHelpers';
 
 export const ProductQuickViewModal: React.FC = () => {
   const {
@@ -204,13 +205,13 @@ export const ProductQuickViewModal: React.FC = () => {
   };
 
   const handleWhatsAppInquiry = () => {
-    const phone = storeSettings.whatsapp || '96181900916';
-    const storeName = storeSettings.storeName || 'ARNAOUT STORE';
+    const phone = storeSettings.whatsapp || '9613986718';
+    const storeName = storeSettings.storeName || 'ON AlAA STORE';
     const text = `*Inquiry: ${product.name}*\n` +
       `Price: $${activePrice} USD\n` +
       `SKU: ${product.sku}\n` +
       (selectedColor ? `Color: ${selectedColor}\n` : '') +
-      `\nHello ${storeName}! Is this item available for immediate pickup at your Saida store or fast dispatch?`;
+      `\nHello ${storeName}! Is this item available for fast dispatch to my area in Lebanon?`;
     openExternalUrl(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`);
   };
 
@@ -339,55 +340,61 @@ export const ProductQuickViewModal: React.FC = () => {
                 {/* Floating Badges Overlay (3D Layer: Discount, New, Bestseller, Low Stock) */}
                 <div
                   style={{ transform: 'translateZ(55px)' }}
-                  className="absolute top-4 left-4 z-20 pointer-events-none flex flex-col gap-1.5"
+                  className="absolute top-3.5 left-3.5 rtl:right-3.5 rtl:left-auto z-20 pointer-events-none flex flex-col gap-1"
                 >
                   {getProductBadges(product, lang).map((badge) => {
                     if (badge.id === 'discount') {
                       return (
-                        <span key={badge.id} className="px-3 py-1 rounded-xl bg-[#DC2626] text-white font-black text-xs shadow-lg shadow-[#DC2626]/30">
+                        <span key={badge.id} className="badge-3d-base badge-3d-detail badge-3d-discount">
                           {badge.label}
                         </span>
                       );
                     }
                     if (badge.id === 'new') {
                       return (
-                        <span key={badge.id} className="px-3 py-1 rounded-xl bg-[#007AFF] text-white font-bold text-xs shadow-lg shadow-[#007AFF]/30 flex items-center gap-1">
-                          <Sparkles className="w-3.5 h-3.5" />
+                        <span key={badge.id} className="badge-3d-base badge-3d-detail badge-3d-new">
+                          <Sparkles className="w-2.5 h-2.5" />
                           {badge.label}
                         </span>
                       );
                     }
                     if (badge.id === 'bestseller') {
                       return (
-                        <span key={badge.id} className="px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black text-xs shadow-lg shadow-amber-500/30 flex items-center gap-1">
-                          <Flame className="w-3.5 h-3.5 fill-current" />
+                        <span key={badge.id} className="badge-3d-base badge-3d-detail badge-3d-bestseller">
+                          <Flame className="w-2.5 h-2.5 fill-current" />
                           {badge.label}
                         </span>
                       );
                     }
                     if (badge.id === 'low_stock') {
                       return (
-                        <span key={badge.id} className="px-3 py-1 rounded-xl bg-amber-500 text-white font-bold text-xs shadow-lg shadow-amber-500/30 flex items-center gap-1 animate-pulse">
-                          <AlertTriangle className="w-3.5 h-3.5" />
+                        <span key={badge.id} className="badge-3d-base badge-3d-detail badge-3d-lowstock animate-pulse">
+                          <AlertTriangle className="w-2.5 h-2.5" />
                           {badge.label}
                         </span>
                       );
                     }
                     if (badge.id === 'out_of_stock') {
                       return (
-                        <span key={badge.id} className="px-3 py-1 rounded-xl bg-slate-800 text-white font-bold text-xs shadow-lg flex items-center gap-1">
+                        <span key={badge.id} className="badge-3d-base badge-3d-detail badge-3d-outofstock">
                           {badge.label}
                         </span>
                       );
                     }
                     return null;
                   })}
+                  {hasProductDiscount(product) && (
+                    <span className="badge-3d-base badge-3d-detail badge-3d-pricedrop">
+                      <TrendingDown className="w-2.5 h-2.5 stroke-[2.5]" />
+                      {lang === 'ar' ? 'تخفيض السعر' : 'Price Drop'}
+                    </span>
+                  )}
                 </div>
 
                 {/* Main Product Image with 3D Depth */}
                 <LazyImage
                   src={images[selectedImageIndex] || images[0]}
-                  alt={`${product.name} - ${product.brand} interactive 3D view at ARNAOUT STORE Lebanon`}
+                  alt={`${product.name} - ${product.brand} interactive 3D view at ON AlAA STORE Lebanon`}
                   width={500}
                   height={500}
                   priority={true}
@@ -525,12 +532,12 @@ export const ProductQuickViewModal: React.FC = () => {
                     ) : isLowStock ? (
                       <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1">
                         <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                        {lang === 'ar' ? `باقي ${product.stock} قطع في صيدا!` : `Only ${product.stock} left in Saida!`}
+                        {lang === 'ar' ? `باقي ${product.stock} قطع فقط!` : `Only ${product.stock} left in stock!`}
                       </span>
                     ) : (
                       <span className="text-[#16A34A] dark:text-emerald-400 flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        {lang === 'ar' ? `متوفر في صيدا (${product.stock} قطع)` : `In Stock in Saida (${product.stock} units)`}
+                        {lang === 'ar' ? `متوفر جاهز للشحن (${product.stock} قطع)` : `In Stock — Ready to Dispatch (${product.stock} units)`}
                       </span>
                     )}
                   </div>
