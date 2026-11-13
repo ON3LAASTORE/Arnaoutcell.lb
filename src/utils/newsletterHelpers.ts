@@ -16,12 +16,12 @@ export function formatNewsletterWelcome(
 ): { title: string; subtitle: string } {
   if (lang === 'ar') {
     return {
-      title: '🎉 شكراً لاشتراكك في نادي أرناؤوط ستور VIP!',
+      title: '🎉 شكراً لاشتراكك في نادي ON AlAA STORE VIP!',
       subtitle: `تم تسجيل بريدك الإلكتروني (${email}) بنجاح. ستصلك عروضنا وأحدث الأجهزة فور توفرها.`,
     };
   }
   return {
-    title: '🎉 Welcome to ARNAOUT STORE VIP Club!',
+    title: '🎉 Welcome to ON AlAA STORE VIP Club!',
     subtitle: `Your email (${email}) is registered. Watch your inbox for exclusive deals, flash discounts, and 2027 tech drops.`,
   };
 }

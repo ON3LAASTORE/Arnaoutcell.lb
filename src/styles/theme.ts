@@ -1,5 +1,5 @@
 /**
- * Arnaout Store Design Tokens - Premium Apple-Inspired White & Blue Technology Theme
+ * ON AlAA STORE Design Tokens - Premium Apple-Inspired White & Blue Technology Theme
  * 
  * Centralized theme tokens ensuring consistent color application across storefront & admin.
  */

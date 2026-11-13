@@ -67,8 +67,8 @@ export const NewsletterFooterSection: React.FC = () => {
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>
               {lang === 'ar'
-                ? 'نادي أرناؤوط ستور VIP الإخباري'
-                : 'ARNAOUT STORE VIP CLUB'}
+                ? 'نادي ON AlAA STORE VIP الإخباري'
+                : 'ON AlAA STORE VIP CLUB'}
             </span>
           </div>
 
@@ -80,8 +80,8 @@ export const NewsletterFooterSection: React.FC = () => {
 
           <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-xl">
             {lang === 'ar'
-              ? `انضم لأكثر من 2,400+ من عشاق الإلكترونيات في صيدا ولبنان. احصل على عروض فورية بأسعار الدولار النقدي، تنبيهات الأجهزة الجديدة، وهدايا التسوق الحصرية من ${storeSettings.storeNameAr || 'أرناؤوط ستور'}.`
-              : `Join 2,400+ tech lovers across Saida and Lebanon. Get early alerts on fresh USD price drops, flash discounts, and flagship device arrivals straight to your inbox.`}
+              ? `انضم لأكثر من 2,400+ من عشاق الإلكترونيات في الشوف وكافة مناطق لبنان. احصل على عروض فورية بأسعار الدولار النقدي، تنبيهات الأجهزة الجديدة، وهدايا التسوق الحصرية من ${storeSettings.storeNameAr || 'ON AlAA STORE'}.`
+              : `Join 2,400+ tech lovers across Chouf and all Lebanon. Get early alerts on fresh USD price drops, flash discounts, and flagship device arrivals straight to your inbox.`}
           </p>
 
           <div className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-slate-300">

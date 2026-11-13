@@ -6,9 +6,7 @@ import {
   Clock,
   MessageSquare,
   ShieldCheck,
-  Send,
   CreditCard,
-  Banknote,
   Smartphone,
   Navigation,
   Share2,
@@ -98,7 +96,7 @@ export const Footer: React.FC = () => {
                 <div className="w-7 h-7 rounded-lg bg-[#EAF3FF] dark:bg-[#1E293B] flex items-center justify-center text-[#007AFF] flex-shrink-0">
                   <Phone className="w-3.5 h-3.5" />
                 </div>
-                <span>03 986 718</span>
+                <span dir="ltr">03 986 718</span>
               </a>
 
               <div className="flex items-start gap-2.5 text-[#172033] dark:text-[#F8FAFC]">
@@ -218,24 +216,6 @@ export const Footer: React.FC = () => {
               <span>{lang === 'ar' ? 'الخدمات والسياسات' : 'Services & Policies'}</span>
             </h4>
             <ul className="space-y-2">
-              <li>
-                <button
-                  onClick={() => setCurrentView('services')}
-                  className="text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] hover:underline font-semibold flex items-center gap-1"
-                >
-                  <Banknote className="w-3.5 h-3.5 text-[#007AFF]" />
-                  <span>{lang === 'ar' ? 'خدمات OMT المالية' : 'OMT Services'}</span>
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => setCurrentView('services')}
-                  className="text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] hover:underline font-semibold flex items-center gap-1"
-                >
-                  <Send className="w-3.5 h-3.5 text-[#007AFF]" />
-                  <span>{lang === 'ar' ? 'ويسترن يونيون' : 'Western Union'}</span>
-                </button>
-              </li>
               <li>
                 <button
                   onClick={() => setCurrentView('services')}

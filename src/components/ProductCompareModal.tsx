@@ -84,22 +84,22 @@ export const ProductCompareModal: React.FC = () => {
   };
 
   const handleWhatsAppOrder = (product: Product) => {
-    const phone = storeSettings.whatsapp || '96181900916';
+    const phone = storeSettings.whatsapp || '9613986718';
     const text = encodeURIComponent(
       isArabic
-        ? `مرحباً أرناؤوط ستور! أود طلب هذا الجهاز بعد مقارنة المواصفات:\n- الجهاز: ${product.nameAr || product.name}\n- السعر: $${product.price} USD\n- الكود: ${product.id}\nالرجاء تأكيد التوفر في صيدا.`
-        : `Hello ARNAOUT STORE! I want to order this product after comparing specs:\n- Device: ${product.name}\n- Price: $${product.price} USD\n- SKU: ${product.id}\nPlease confirm availability in Saida.`
+        ? `مرحباً متجر ON AlAA! أود طلب هذا الجهاز بعد مقارنة المواصفات:\n- الجهاز: ${product.nameAr || product.name}\n- السعر: $${product.price} USD\n- الكود: ${product.id}\nالرجاء تأكيد التوفر والتوصيل في لبنان.`
+        : `Hello ON AlAA STORE! I want to order this product after comparing specs:\n- Device: ${product.name}\n- Price: $${product.price} USD\n- SKU: ${product.id}\nPlease confirm availability and delivery in Lebanon.`
     );
     openExternalUrl(`https://wa.me/${phone}?text=${text}`);
   };
 
   const handleShareComparison = () => {
-    const phone = storeSettings.whatsapp || '96181900916';
+    const phone = storeSettings.whatsapp || '9613986718';
     const names = compareList.map((p) => p.name).join(' vs ');
     const text = encodeURIComponent(
       isArabic
-        ? `مرحباً أرناؤوط ستور! أود استشارتكم في مقارنة الأجهزة التالية:\n${names}\nما هو خياركم الأنسب لميزانيتي؟`
-        : `Hello ARNAOUT STORE! I am comparing these models:\n${names}\nWhich one do you recommend for my needs?`
+        ? `مرحباً متجر ON AlAA! أود استشارتكم في مقارنة الأجهزة التالية:\n${names}\nما هو خياركم الأنسب لميزانيتي؟`
+        : `Hello ON AlAA STORE! I am comparing these models:\n${names}\nWhich one do you recommend for my needs?`
     );
     openExternalUrl(`https://wa.me/${phone}?text=${text}`);
   };
@@ -172,7 +172,7 @@ export const ProductCompareModal: React.FC = () => {
                 type="button"
                 onClick={handleShareComparison}
                 className="hidden sm:flex p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 transition-colors cursor-pointer"
-                title="Ask ARNAOUT STORE on WhatsApp"
+                title="Ask ON AlAA STORE on WhatsApp"
               >
                 <WhatsApp3DIcon size={18} />
               </button>
@@ -439,7 +439,7 @@ export const ProductCompareModal: React.FC = () => {
                   </span>
                   {compareList.map((p) => (
                     <span key={p.id} className="font-semibold text-emerald-600 dark:text-emerald-400">
-                      {p.warrantyMonths || 12} {isArabic ? 'شهراً في صيدا' : 'Months (Saida Showroom)'}
+                      {p.warrantyMonths || 12} {isArabic ? 'شهراً كفالة رسمية' : 'Months (Official Warranty)'}
                     </span>
                   ))}
                 </div>
@@ -505,8 +505,8 @@ export const ProductCompareModal: React.FC = () => {
             <CheckCircle className="w-4 h-4 text-emerald-500" />
             <span>
               {isArabic
-                ? 'كافة الأسعار بالدولار النقدي مع كفالة رسمية من فرعنا بصيدا'
-                : 'All prices are in Cash USD with official warranty coverage at ARNAOUT STORE'}
+                ? 'كافة الأسعار بالدولار النقدي مع كفالة رسمية وتوصيل لجميع مناطق لبنان'
+                : 'All prices are in Cash USD with official warranty coverage at ON AlAA STORE'}
             </span>
           </div>
 

@@ -227,10 +227,10 @@ export const SearchSuggestionsDropdown: React.FC<SearchSuggestionsDropdownProps>
           </div>
         </div>
 
-        {/* Saida Store Assurance Footnote */}
+        {/* Chouf Online Store Assurance Footnote */}
         <div className="px-3 py-2 bg-[#F5F8FC]/80 dark:bg-[#111A2E]/80 border-t border-[#DCE5F0] dark:border-[#1E293B] text-[11px] text-[#64748B] dark:text-slate-400 flex items-center justify-between">
-          <span>{isArabic ? 'صيدا — ساحة النجمة • خدمات المعرض وتوصيل صيدا' : 'Saida Nijme Square • Showroom & Saida Delivery'}</span>
-          <span className="font-mono text-[#007AFF]">ARNAOUT 2027</span>
+          <span>{isArabic ? 'الشوف — متجر إلكتروني • توصيل متاح لجميع مناطق لبنان' : 'Chouf Online Store • Delivery Available to All Lebanon'}</span>
+          <span className="font-mono text-[#007AFF]">ON AlAA STORE</span>
         </div>
       </div>
     );

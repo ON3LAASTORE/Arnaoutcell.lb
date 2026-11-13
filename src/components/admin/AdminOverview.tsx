@@ -88,14 +88,14 @@ export const AdminOverview: React.FC<{ onNavigateTab?: (tab: string) => void }> 
           </h1>
           <p className="text-xs text-[#64748B] mt-1">
             {lang === 'ar'
-              ? `مؤشرات أداء المتجر والمبيعات المسجلة لفرع ${storeSettings.storeNameAr || 'أرناؤوط ستور'} صيدا والتوصيل في لبنان.`
-              : `Live business KPIs and actual order statistics for ${storeSettings.storeName} Saida.`}
+              ? `مؤشرات أداء المتجر والمبيعات المسجلة لـ ${storeSettings.storeNameAr || 'ON AlAA STORE'} — متجر إلكتروني بالشوف والتوصيل لجميع لبنان.`
+              : `Live business KPIs and actual order statistics for ${storeSettings.storeName || 'ON AlAA STORE'} (Chouf Online Store • All Lebanon).`}
           </p>
         </div>
 
         <div className="flex items-center gap-2 text-xs font-semibold text-[#007AFF] bg-[#EAF3FF] px-3 py-1.5 rounded-xl border border-[#BAE6FD] self-start sm:self-auto">
           <span className="w-2 h-2 rounded-full bg-[#007AFF] animate-pulse"></span>
-          <span>Saida Live Sync</span>
+          <span>Chouf Hub Live Sync</span>
         </div>
       </div>
 

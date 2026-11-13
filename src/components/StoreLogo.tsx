@@ -19,7 +19,7 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
 }) => {
   const { storeSettings, lang } = useShop();
 
-  const logoUrl = storeSettings.logoUrl || '/m-arnaout-cell-logo.jpg';
+  const logoUrl = storeSettings.logoUrl || '/on-alaa-logo.svg';
   const storeName = storeSettings.storeName || 'ON AlAA STORE';
   const tagline = lang === 'ar' ? storeSettings.taglineAr : storeSettings.tagline;
 
@@ -61,12 +61,12 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`inline-flex items-center gap-2.5 select-none transition-all ${
+      className={`inline-flex items-center gap-2.5 select-none transition-all shrink-0 ${
         onClick ? 'cursor-pointer group' : ''
       } ${className}`}
     >
       <div className="flex items-center gap-2.5">
-        {/* 4K Official Circular Profile Emblem */}
+        {/* Official Circular Profile Emblem */}
         <div className="shrink-0 overflow-hidden rounded-full border border-slate-200/90 dark:border-slate-700 shadow-xs bg-white p-0.5 flex items-center justify-center transition-transform group-hover:scale-105">
           <LazyImage
             src={logoUrl}
@@ -81,7 +81,7 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
 
         <div className="leading-tight">
           <span
-            className={`font-black tracking-tight text-[#172033] dark:text-[#F8FAFC] uppercase block group-hover:text-[#007AFF] transition-colors ${sizeClasses.title}`}
+            className={`font-black tracking-tight text-[#172033] dark:text-[#F8FAFC] block whitespace-nowrap group-hover:text-[#007AFF] transition-colors ${sizeClasses.title}`}
           >
             {firstWord} <span className="text-[#007AFF]">{restWords}</span>
               {adminMode && (
@@ -92,7 +92,7 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
             </span>
             {showTagline && tagline && (
               <span
-                className={`text-[#64748B] dark:text-slate-400 font-medium block truncate max-w-[220px] sm:max-w-xs ${sizeClasses.tagline}`}
+                className={`text-[#64748B] dark:text-slate-400 font-medium block truncate max-w-[140px] sm:max-w-[290px] lg:max-w-[340px] ${sizeClasses.tagline}`}
               >
                 {tagline}
               </span>

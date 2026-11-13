@@ -100,7 +100,7 @@ export const StoreStatusBadge: React.FC<StoreStatusBadgeProps> = ({
           <>
             <span className="text-gray-300 dark:text-gray-600 font-normal">•</span>
             <span className="text-[11px] font-medium opacity-90">
-              {isArabic ? `بتوقيت صيدا: ${currentLebanonTime}` : `Saida: ${currentLebanonTime}`}
+              {isArabic ? `بتوقيت لبنان: ${currentLebanonTime}` : `Lebanon: ${currentLebanonTime}`}
             </span>
           </>
         )}
@@ -135,7 +135,7 @@ export const StoreStatusBadge: React.FC<StoreStatusBadgeProps> = ({
               isOpen ? 'text-emerald-700 dark:text-emerald-400' : 'text-amber-700 dark:text-amber-400'
             }`}
           >
-            {isArabic ? (isOpen ? 'مفتوح الآن للاستلام والمعاينة' : 'مغلق حالياً') : (isOpen ? 'LIVE • STORE OPEN NOW' : 'STORE CURRENTLY CLOSED')}
+            {isArabic ? (isOpen ? 'متاح الآن للطلبات والتوصيل' : 'مغلق حالياً') : (isOpen ? 'ONLINE • OPEN FOR ORDERS' : 'STORE CURRENTLY CLOSED')}
           </span>
         </div>
 
@@ -158,7 +158,7 @@ export const StoreStatusBadge: React.FC<StoreStatusBadgeProps> = ({
           <div className="flex items-center gap-1.5 text-[11px] font-semibold text-[#007AFF] dark:text-[#38BDF8] bg-[#007AFF]/5 dark:bg-[#007AFF]/10 px-2.5 py-1 rounded-xl self-start sm:self-center">
             <Clock className="w-3.5 h-3.5" />
             <span>
-              {isArabic ? `توقيت صيدا: ${currentLebanonTime}` : `Saida Time: ${currentLebanonTime}`}
+              {isArabic ? `توقيت لبنان: ${currentLebanonTime}` : `Lebanon Time: ${currentLebanonTime}`}
             </span>
           </div>
         )}

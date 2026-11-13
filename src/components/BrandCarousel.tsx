@@ -16,7 +16,7 @@ export const BrandCarousel: React.FC = () => {
               <span>{lang === 'ar' ? 'شركاء النجاح المعتمدون' : 'OFFICIAL BRANDS & PARTNERS'}</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-[#172033] dark:text-[#F8FAFC] tracking-tight">
-              {lang === 'ar' ? 'أشهر الماركات العالمية في أرناؤوط ستور' : 'Shop by Leading Tech Brands'}
+              {lang === 'ar' ? 'أشهر الماركات العالمية في متجر ON AlAA' : 'Shop by Leading Tech Brands'}
             </h2>
             <p className="text-[#64748B] dark:text-slate-300 text-xs sm:text-sm mt-1">
               {lang === 'ar'
@@ -48,7 +48,7 @@ export const BrandCarousel: React.FC = () => {
               <div className="w-12 h-12 rounded-full overflow-hidden bg-[#F5F8FC] dark:bg-[#0A0F1D] border border-[#DCE5F0] dark:border-[#1E293B] mb-2 p-1 flex items-center justify-center group-hover:border-[#007AFF] transition-colors">
                 <LazyImage
                   src={brand.logo}
-                  alt={`${brand.name} official electronics brand at ARNAOUT STORE Lebanon`}
+                  alt={`${brand.name} official electronics brand at ON AlAA STORE Lebanon`}
                   width={48}
                   height={48}
                   wrapperClassName="w-full h-full rounded-full"

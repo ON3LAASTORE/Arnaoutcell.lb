@@ -50,11 +50,11 @@ export const FloatingWhatsAppButton: React.FC = () => {
   };
 
   const handleWhatsAppClick = () => {
-    const phone = storeSettings.whatsapp || '96181900916';
+    const phone = storeSettings.whatsapp || '9613986718';
     const text = encodeURIComponent(
       lang === 'ar'
-        ? `مرحباً أرناؤوط ستور! أنا أتواصل معكم من المتجر الإلكتروني بخصوص استفسار / طلب أجهزة وعروض.`
-        : `Hello ARNAOUT STORE! I am reaching out from your website regarding products and special offers.`
+        ? `مرحباً متجر ON AlAA! أنا أتواصل معكم من المتجر الإلكتروني بخصوص استفسار / طلب أجهزة وعروض.`
+        : `Hello ON AlAA STORE! I am reaching out from your website regarding products and special offers.`
     );
     openExternalUrl(`https://wa.me/${phone}?text=${text}`);
   };
@@ -87,7 +87,7 @@ export const FloatingWhatsAppButton: React.FC = () => {
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
                 </span>
                 <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                  {lang === 'ar' ? 'خدمة صيدا المباشرة' : 'Saida Direct Chat'}
+                  {lang === 'ar' ? 'تواصل مباشر — متجر ON AlAA' : 'ON AlAA STORE Direct Chat'}
                 </span>
               </div>
 
@@ -105,16 +105,16 @@ export const FloatingWhatsAppButton: React.FC = () => {
 
             <p className="text-xs font-bold text-[#172033] dark:text-[#F8FAFC] leading-snug">
               {lang === 'ar'
-                ? 'استفسار أو طلب فوري عبر واتساب 81900916'
-                : 'Inquire or Order on WhatsApp (81900916)'}
+                ? 'استفسار أو طلب فوري عبر واتساب 03986718'
+                : 'Inquire or Order on WhatsApp (03986718)'}
             </p>
 
-            <div className="mt-2 flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 pt-1.5 border-t border-slate-100 dark:border-slate-800">
+            <div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-slate-500 dark:text-slate-400 pt-1.5 border-t border-slate-100 dark:border-slate-800">
               <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold">
-                <Sparkles className="w-3 h-3" />
-                {lang === 'ar' ? 'خدمات المعرض وتوصيل صيدا' : 'Showroom Services • Saida Delivery'}
+                <Sparkles className="w-3 h-3 shrink-0" />
+                <span>{lang === 'ar' ? 'الشوف • التوصيل لجميع مناطق لبنان' : 'Chouf Hub • All Lebanon Delivery'}</span>
               </span>
-              <span className="font-mono font-bold text-slate-700 dark:text-slate-300">81 900 916</span>
+              <span dir="ltr" className="font-mono font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">03 986 718</span>
             </div>
           </motion.div>
         )}

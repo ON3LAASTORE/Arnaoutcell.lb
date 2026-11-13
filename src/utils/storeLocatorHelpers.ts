@@ -1,11 +1,10 @@
 /**
- * Helper utilities for Store Locator & GPS Navigation
+ * Helper utilities for Store Locator & Delivery Coverage
  * 
- * Target Location:
- * SQUARE ARNAOUT CELL STORE, SAIDA - NEJMEH, Sidon
- * Plus Code: H97G+W2P, Sidon
- * Coordinates: 33.5623° N, 35.3722° E (Nejmeh Square, Saida, Lebanon)
- * Phone: 81900916 (+961 81 900 916)
+ * Target Store:
+ * ON AlAA STORE — Online Store based in Chouf, Lebanon
+ * Delivery Coverage: Available to All Lebanon
+ * Phone / WhatsApp: 03986718 (+961 3 986 718)
  * Schedule: Open 17 hours (8:00 AM – 1:00 AM Daily)
  */
 

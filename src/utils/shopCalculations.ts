@@ -1,5 +1,5 @@
 /**
- * Pure calculation and validation logic for ARNAOUT STORE e-commerce
+ * Pure calculation and validation logic for ON AlAA STORE e-commerce
  */
 
 export interface CartCalculationItem {

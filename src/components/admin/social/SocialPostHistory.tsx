@@ -55,7 +55,7 @@ export const SocialPostHistory: React.FC<SocialPostHistoryProps> = ({ onEditPost
         platforms: [platform],
         caption: post.captionEn || post.captionAr,
         fallbackImageUrl: post.productImage,
-        productUrl: `https://arnaoutstore.com/?product=${encodeURIComponent(post.productId)}`,
+        productUrl: `https://onalaastore.com/?product=${encodeURIComponent(post.productId)}`,
       });
 
       const updatedResults = { ...(post.platformResults || {}), ...res.results };

@@ -191,8 +191,8 @@ export const ProductsPage: React.FC = () => {
             </h1>
             <p className="text-[#64748B] dark:text-slate-400 text-xs sm:text-sm mt-1">
               {lang === 'ar'
-                ? `عرض ${filteredProducts.length} منتج متوفر للتوصيل في لبنان أو الاستلام من صيدا.`
-                : `Showing ${filteredProducts.length} products available for Lebanon delivery or Saida pickup.`}
+                ? `عرض ${filteredProducts.length} منتج متوفر للتوصيل لجميع مناطق لبنان من متجرنا في الشوف.`
+                : `Showing ${filteredProducts.length} products from our Chouf online store — Delivery available to all Lebanon.`}
             </p>
           </div>
 
@@ -513,8 +513,8 @@ export const ProductsPage: React.FC = () => {
                 </h3>
                 <p className="text-xs text-[#64748B] max-w-sm mx-auto mb-6">
                   {lang === 'ar'
-                    ? 'جرب تقليل شروط التصفية أو البحث عن مسمى آخر أو تواصل معنا عبر واتساب للمساعدة.'
-                    : 'Try broadening your filters or contact our Saida shop directly at 81 900 916.'}
+                    ? 'جرب تقليل شروط التصفية أو البحث عن مسمى آخر أو تواصل معنا عبر واتساب على الرقم 03 986 718 للمساعدة.'
+                    : 'Try broadening your filters or contact ON AlAA STORE directly at 03 986 718.'}
                 </p>
                 <button
                   onClick={clearAllFilters}

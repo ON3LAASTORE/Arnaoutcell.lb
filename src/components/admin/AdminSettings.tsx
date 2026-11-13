@@ -71,8 +71,8 @@ export const AdminSettings: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<'branding' | 'security' | 'delivery'>('branding');
 
   // ==================== STORE INFORMATION & BRANDING STATE ====================
-  const [storeName, setStoreName] = useState(storeSettings.storeName || 'ARNAOUT STORE');
-  const [storeNameAr, setStoreNameAr] = useState(storeSettings.storeNameAr || 'أرناؤوط ستور');
+  const [storeName, setStoreName] = useState(storeSettings.storeName || 'ON AlAA STORE');
+  const [storeNameAr, setStoreNameAr] = useState(storeSettings.storeNameAr || 'ON AlAA STORE');
   const [tagline, setTagline] = useState(storeSettings.tagline || 'Your Home in Electronics 🏠');
   const [taglineAr, setTaglineAr] = useState(storeSettings.taglineAr || 'بيتك في عالم الإلكترونيات 🏠');
 
@@ -106,8 +106,8 @@ export const AdminSettings: React.FC = () => {
   const [timezone, setTimezone] = useState(initialSchedule.timezone || 'Asia/Beirut');
 
   // General Store Info State
-  const [phone, setPhone] = useState(storeSettings.phone || '81 900 916');
-  const [whatsapp, setWhatsapp] = useState(storeSettings.whatsapp || '96181900916');
+  const [phone, setPhone] = useState(storeSettings.phone || '03 986 718');
+  const [whatsapp, setWhatsapp] = useState(storeSettings.whatsapp || '9613986718');
   const [locationEn, setLocationEn] = useState(storeSettings.locationEn || '');
   const [locationAr, setLocationAr] = useState(storeSettings.locationAr || '');
   const [zones, setZones] = useState(storeSettings.deliveryZones || []);
@@ -252,8 +252,8 @@ export const AdminSettings: React.FC = () => {
 
     const updated: StoreSettings = {
       ...storeSettings,
-      storeName: storeName.trim() || 'ARNAOUT STORE',
-      storeNameAr: storeNameAr.trim() || 'أرناؤوط ستور',
+      storeName: storeName.trim() || 'ON AlAA STORE',
+      storeNameAr: storeNameAr.trim() || 'ON AlAA STORE',
       tagline: tagline.trim() || 'Your Home in Electronics 🏠',
       taglineAr: taglineAr.trim() || 'بيتك في عالم الإلكترونيات 🏠',
       logoUrl: logoUrl.trim() || undefined,
@@ -613,13 +613,13 @@ export const AdminSettings: React.FC = () => {
               )}
 
               <a
-                href="/m-arnaout-cell-logo-4k.png"
-                download="m-arnaout-cell-logo-4k.png"
+                href="/on-alaa-logo.svg"
+                download="on-alaa-store-logo.svg"
                 className="px-5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-xs transition-colors flex items-center gap-2 cursor-pointer"
-                title="Download 4K Ultra HD Master Emblem (3840x3840)"
+                title="Download Official Vector Brand Emblem (SVG)"
               >
                 <Download className="w-4 h-4" />
-                <span>{lang === 'ar' ? 'تحميل الشعار بدقة 4K فائقة' : 'Download 4K Master (3840×3840)'}</span>
+                <span>{lang === 'ar' ? 'تحميل شعار المتجر (SVG)' : 'Download Official Emblem (SVG)'}</span>
               </a>
 
               <span className="text-[11px] text-[#64748B] ml-auto">
@@ -637,8 +637,8 @@ export const AdminSettings: React.FC = () => {
               </h3>
               <p className="text-xs text-[#64748B] mt-0.5">
                 {lang === 'ar'
-                  ? 'الاسم الرسمي المعتمد: ARNAOUT STORE | Your Home in Electronics 🏠'
-                  : 'Official Display Name: ARNAOUT STORE | Your Home in Electronics 🏠'}
+                  ? 'الاسم الرسمي المعتمد: ON AlAA STORE | متجر إلكتروني - الشوف، التوصيل لجميع لبنان'
+                  : 'Official Display Name: ON AlAA STORE | Online Store — Chouf, Delivery to All Lebanon'}
               </p>
             </div>
 
@@ -654,10 +654,10 @@ export const AdminSettings: React.FC = () => {
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2.5 text-xs text-[#172033] font-bold focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/15 transition-all"
-                  placeholder="ARNAOUT STORE"
+                  placeholder="ON AlAA STORE"
                 />
                 <span className="text-[10px] text-[#64748B] mt-1 block">
-                  Default: ARNAOUT STORE
+                  Default: ON AlAA STORE
                 </span>
               </div>
 
@@ -672,10 +672,10 @@ export const AdminSettings: React.FC = () => {
                   value={storeNameAr}
                   onChange={(e) => setStoreNameAr(e.target.value)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2.5 text-xs text-[#172033] font-bold focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/15 transition-all"
-                  placeholder="أرناؤوط ستور"
+                  placeholder="ON AlAA STORE"
                 />
                 <span className="text-[10px] text-[#64748B] mt-1 block">
-                  الافتراضي: أرناؤوط ستور
+                  الافتراضي: ON AlAA STORE
                 </span>
               </div>
 
@@ -897,7 +897,7 @@ export const AdminSettings: React.FC = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono font-bold"
-                  placeholder="81 900 916"
+                  placeholder="03 986 718"
                 />
               </div>
 
@@ -910,7 +910,7 @@ export const AdminSettings: React.FC = () => {
                   value={whatsapp}
                   onChange={(e) => setWhatsapp(e.target.value)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono font-bold"
-                  placeholder="96181900916"
+                  placeholder="9613986718"
                 />
               </div>
 
@@ -923,20 +923,20 @@ export const AdminSettings: React.FC = () => {
                   value={locationEn}
                   onChange={(e) => setLocationEn(e.target.value)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
-                  placeholder="Saida, Nijme Square, Main Road, Lebanon"
+                  placeholder="Online Store — Chouf, Delivery Available to All Lebanon"
                 />
               </div>
 
               <div>
                 <label className="text-xs text-[#172033] font-semibold block mb-1">
-                  موقع المحل (بالعربية)
+                  مقر المتجر (بالعربية)
                 </label>
                 <input
                   type="text"
                   value={locationAr}
                   onChange={(e) => setLocationAr(e.target.value)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
-                  placeholder="صيدا، ساحة النجمة، الشارع الرئيسي، لبنان"
+                  placeholder="متجر إلكتروني — الشوف، التوصيل متاح لجميع مناطق لبنان"
                 />
               </div>
             </div>

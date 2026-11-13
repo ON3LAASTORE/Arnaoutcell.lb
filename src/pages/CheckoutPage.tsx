@@ -32,7 +32,7 @@ export const CheckoutPage: React.FC = () => {
   const [phone, setPhone] = useState('');
   const [alternatePhone, setAlternatePhone] = useState('');
   const [selectedZoneId, setSelectedZoneId] = useState(
-    storeSettings.deliveryZones[0]?.id || 'zone-saida-pickup'
+    storeSettings.deliveryZones[0]?.id || 'zone-chouf'
   );
   const [addressLine, setAddressLine] = useState('');
   const [notes, setNotes] = useState('');
@@ -73,8 +73,8 @@ export const CheckoutPage: React.FC = () => {
     if (!phone.trim() || phone.replace(/\D/g, '').length < 7) {
       setErrorMessage(
         lang === 'ar'
-          ? 'يرجى إدخال رقم هاتف لبناني صالح (مثال: 81 900 916 أو 70 xxx xxx)'
-          : 'Please provide a valid Lebanese phone number (e.g. 81 900 916)'
+          ? 'يرجى إدخال رقم هاتف لبناني صالح (مثال: 03 986 718 أو 70 xxx xxx)'
+          : 'Please provide a valid Lebanese phone number (e.g. 03 986 718)'
       );
       return;
     }
@@ -140,7 +140,7 @@ export const CheckoutPage: React.FC = () => {
         fullName,
         phone,
         cityArea: lang === 'ar' ? selectedZone.nameAr : selectedZone.nameEn,
-        addressLine: addressLine || 'Saida Pickup',
+        addressLine: addressLine || 'Delivery Across Lebanon',
       },
       items: cart,
       total: grandTotal,
@@ -162,8 +162,8 @@ export const CheckoutPage: React.FC = () => {
           <h1 className="text-2xl sm:text-4xl font-black text-[#172033] dark:text-[#F8FAFC]">{t.checkout}</h1>
           <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 mt-1">
             {lang === 'ar'
-              ? 'خدمات المعرض واستلام مباشر من فرعنا في صيدا ساحة النجمة، أو توصيل سريع داخل صيدا وضواحيها.'
-              : 'Showroom services & pickup at our Saida Nijme Square showroom, or fast local delivery in Saida & suburbs.'}
+              ? 'متجر إلكتروني في الشوف — توصيل متاح لجميع المناطق اللبنانية مع خيار الدفع عند الاستلام.'
+              : 'Online Store based in Chouf — Delivery available to all Lebanon with secure Cash on Delivery.'}
           </p>
         </div>
 
@@ -207,7 +207,7 @@ export const CheckoutPage: React.FC = () => {
                     <input
                       type="tel"
                       required
-                      placeholder="81 900 916 / 70 xxx xxx"
+                      placeholder="03 986 718 / 70 xxx xxx"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="w-full bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] dark:text-[#F8FAFC] focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/15 font-mono transition-all"
@@ -261,7 +261,7 @@ export const CheckoutPage: React.FC = () => {
                   <input
                     type="text"
                     required
-                    placeholder={lang === 'ar' ? 'مثال: صيدا، شارع المصارف، بناية النور، الطابق الثالث' : 'Street name, Building, Floor, Landmark'}
+                    placeholder={lang === 'ar' ? 'مثال: الشوف، بيروت، المتن — الشارع، البناية، الطابق' : 'Area, Street name, Building, Floor, Landmark'}
                     value={addressLine}
                     onChange={(e) => setAddressLine(e.target.value)}
                     className="w-full bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] dark:text-[#F8FAFC] focus:outline-none focus:border-[#007AFF]"
@@ -316,7 +316,7 @@ export const CheckoutPage: React.FC = () => {
                     </div>
                   </label>
 
-                  {/* Saida Store Pickup */}
+                  {/* Chouf Courier Coordination */}
                   <label
                     className={`flex items-start gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer ${
                       paymentMethod === 'store_pickup'
@@ -336,8 +336,8 @@ export const CheckoutPage: React.FC = () => {
                       <span className="text-xs font-bold block">{t.storePickup}</span>
                       <span className="text-[11px] text-[#64748B] dark:text-slate-400 block mt-0.5">
                         {lang === 'ar'
-                          ? `استلم طلبك مجاناً مباشرة من فرعنا في صيدا، ساحة النجمة، الشارع الرئيسي.`
-                          : `Free pickup at ${storeSettings.storeName} Saida store (Nijme Square, Main Road).`}
+                          ? `تنسيق توصيل مباشر وسريع داخل منطقة الشوف أو لأقرب نقطة استلام عبر ${storeSettings.storeNameAr || 'ON AlAA STORE'}.`
+                          : `Direct fast dispatch across Chouf or arranged courier handoff via ${storeSettings.storeName || 'ON AlAA STORE'}.`}
                       </span>
                     </div>
                   </label>
@@ -362,7 +362,7 @@ export const CheckoutPage: React.FC = () => {
                       <span className="text-xs font-bold block">{t.whishTransfer}</span>
                       <span className="text-[11px] text-[#64748B] dark:text-slate-400 block mt-0.5">
                         {lang === 'ar'
-                          ? `تحويل عبر تطبيق ويش موني إلى حساب ${storeSettings.storeNameAr || 'أرناؤوط ستور'} وتأكيد الإشعار.`
+                          ? `تحويل عبر تطبيق ويش موني إلى حساب ${storeSettings.storeNameAr || 'ON AlAA STORE'} وتأكيد الإشعار.`
                           : 'Transfer via Whish Money app to our verified store account before dispatch.'}
                       </span>
                     </div>
@@ -475,14 +475,14 @@ export const CheckoutPage: React.FC = () => {
                     className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100 hover:from-emerald-100 hover:to-green-100 dark:from-emerald-950/40 dark:via-emerald-900/40 dark:to-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 font-extrabold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-sm hover:shadow-md hover:shadow-emerald-500/20 group active:scale-98"
                   >
                     <WhatsApp3DIcon size={22} />
-                    <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (81900916)' : 'Inquire / Order on WhatsApp (81900916)'}</span>
+                    <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (03986718)' : 'Inquire / Order on WhatsApp (03986718)'}</span>
                   </button>
                 </div>
 
                 <div className="pt-2 text-[10px] text-[#64748B] dark:text-slate-400 text-center">
                   {lang === 'ar'
-                    ? 'سيصلكم إشعار وتواصل هاتفي لتأكيد موعد استلام أو وصول الطلب.'
-                    : 'Our Saida dispatch team will call to confirm delivery schedule.'}
+                    ? 'سيتواصل معكم فريق الشحن في الشوف لتأكيد موعد التوصيل إلى منطقتكم في لبنان.'
+                    : 'Our Chouf dispatch team will call to confirm your Lebanon-wide delivery schedule.'}
                 </div>
               </div>
             </div>

@@ -104,7 +104,7 @@ export const CategoryGrid: React.FC = () => {
             </h2>
             <p className="text-[#64748B] dark:text-slate-300 text-sm sm:text-base mt-1">
               {lang === 'ar'
-                ? 'استكشف كافة فئات الإلكترونيات، الملحقات والقطع التقنية من أرناؤوط ستور.'
+                ? 'استكشف كافة فئات الإلكترونيات، الملحقات والقطع التقنية من ON AlAA STORE.'
                 : 'Browse through all electronics categories, mobile accessories, and tech essentials.'}
             </p>
           </div>

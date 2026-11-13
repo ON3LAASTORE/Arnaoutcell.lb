@@ -355,7 +355,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                     ? 'اكتب اسم الهاتف أو الماركة للبحث الفوري'
                     : 'Type product name or brand to filter instantly'}
                 </span>
-                <span className="font-semibold text-[#007AFF]">ARNAOUT CELL</span>
+                <span className="font-semibold text-[#007AFF]">ON AlAA STORE</span>
               </div>
             </div>
           ) : hasResults ? (

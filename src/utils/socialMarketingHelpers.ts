@@ -6,10 +6,12 @@ import {
   MarketingPost,
 } from '../types/socialMarketing';
 
-export const STORE_PHONE_DISPLAY = '81 900 916';
-export const STORE_PHONE_INTL = '96181900916';
-export const STORE_LOCATION_SAIDA_EN = 'Saida — Nijme Square, Main Road';
-export const STORE_LOCATION_SAIDA_AR = 'صيدا — ساحة النجمة، الشارع الرئيسي';
+export const STORE_PHONE_DISPLAY = '03 986 718';
+export const STORE_PHONE_INTL = '9613986718';
+export const STORE_LOCATION_CHOUF_EN = 'Online Store — Based in Chouf, Delivery to All Lebanon';
+export const STORE_LOCATION_CHOUF_AR = 'متجر إلكتروني — الشوف، توصيل متاح لجميع مناطق لبنان';
+export const STORE_LOCATION_SAIDA_EN = STORE_LOCATION_CHOUF_EN;
+export const STORE_LOCATION_SAIDA_AR = STORE_LOCATION_CHOUF_AR;
 
 /**
  * Generates relevant hashtags for a product based on brand, category, and regional tags.
@@ -19,13 +21,13 @@ export function generateProductHashtags(product: Product): string[] {
   const categoryTag = product.category ? `#${product.category.replace(/[^a-zA-Z0-9]/g, '')}` : '#Tech';
   
   const tags: string[] = [
-    '#ArnaoutStore',
-    '#ArnaoutSaida',
+    '#ONAlAASTORE',
+    '#ChoufTech',
     brandTag,
     categoryTag,
     '#LebanonTech',
-    '#Saida',
-    '#Beirut',
+    '#Chouf',
+    '#AllLebanonDelivery',
     '#LebanonShopping',
     '#CashUSD',
     '#OfficialWarranty',
@@ -56,12 +58,12 @@ export function generateSocialCaptions(
   settings?: StoreSettings
 ): { captionEn: string; captionAr: string; bilingual: string } {
   const storePhone = settings?.whatsapp || STORE_PHONE_INTL;
-  const storeName = settings?.storeName || 'ARNAOUT STORE';
-  const locationEn = settings?.locationEn || STORE_LOCATION_SAIDA_EN;
-  const locationAr = settings?.locationAr || STORE_LOCATION_SAIDA_AR;
-  const productUrl = `https://arnaoutstore.com/?product=${encodeURIComponent(product.id)}`;
+  const storeName = settings?.storeName || 'ON AlAA STORE';
+  const locationEn = settings?.locationEn || STORE_LOCATION_CHOUF_EN;
+  const locationAr = settings?.locationAr || STORE_LOCATION_CHOUF_AR;
+  const productUrl = `https://onalaastore.com/?product=${encodeURIComponent(product.id)}`;
   const whatsappOrderUrl = `https://wa.me/${storePhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
-    `Hello ARNAOUT STORE! I am interested in ordering: ${product.name} ($${product.price} USD)`
+    `Hello ON AlAA STORE! I am interested in ordering: ${product.name} ($${product.price} USD)`
   )}`;
 
   // Spec highlights
@@ -89,13 +91,13 @@ export function generateSocialCaptions(
 ${discountNoteEn}
 
 💰 CASH PRICE: $${product.price} USD
-${product.stock > 0 ? `🟢 In Stock (${product.stock} units in Saida)` : '🟡 Limited Stock Available'}
+${product.stock > 0 ? `🟢 In Stock (${product.stock} units ready to ship)` : '🟡 Limited Stock Available'}
 
 📋 KEY SPECIFICATIONS:
 ${specsTextEn}
 
 🛡️ WARRANTY: ${product.warrantyMonths} Months Store & Agent Warranty
-🚚 DELIVERY: Showroom services & free pickup at ${locationEn}, with fast local delivery in Saida & suburbs
+🚚 DELIVERY: ${locationEn} — Delivery Available to All Lebanon
 
 📲 Direct WhatsApp Order:
 ${whatsappOrderUrl}
@@ -110,13 +112,13 @@ ${generateProductHashtags(product).join(' ')}`;
 ${discountNoteAr}
 
 💰 السعر كاش: $${product.price} دولار
-${product.stock > 0 ? `🟢 متوفر حالياً في متجرنا بصيدا (${product.stock} قطع)` : '🟡 كمية محدودة متوفرة'}
+${product.stock > 0 ? `🟢 متوفر حالياً وجاهز للشحن (${product.stock} قطع)` : '🟡 كمية محدودة متوفرة'}
 
 📋 أبرز المواصفات:
 ${specsTextAr}
 
 🛡️ الكفالة: كفالة رسمية ${product.warrantyMonths} شهراً
-🚚 التوصيل: خدمات المعرض والاستلام المباشر من ${locationAr} مع خدمة توصيل سريع داخل صيدا وضواحيها
+🚚 التوصيل: ${locationAr} — توصيل متاح لجميع مناطق لبنان
 
 📲 للطلب الفوري عبر واتساب:
 ${whatsappOrderUrl}
@@ -132,7 +134,7 @@ ${generateProductHashtags(product).join(' ')}`;
 ${product.originalPrice && product.originalPrice > product.price ? `💥 Discount: -${product.discountPercentage}% OFF` : ''}
 
 🛡️ ${product.warrantyMonths} Months Official Warranty | كفالة رسمية ${product.warrantyMonths} شهر
-🚚 Showroom Services & Saida Delivery | خدمات المعرض والتوصيل داخل صيدا
+🚚 Online Store in Chouf • Delivery Available to All Lebanon | توصيل لجميع مناطق لبنان
 📍 ${storeName} — ${locationEn}
 
 📲 WhatsApp Order / للطلب عبر الواتساب:
@@ -155,7 +157,7 @@ export function generatePlatformSpecificText(
   const storePhone = settings?.whatsapp || STORE_PHONE_INTL;
   const name = language === 'ar' && post.productNameAr ? post.productNameAr : (post.productName || 'Tech Product');
   const price = post.productPrice ? `$${post.productPrice} USD` : '';
-  const productUrl = `https://arnaoutstore.com/?product=${encodeURIComponent(post.productId || 'item')}`;
+  const productUrl = `https://onalaastore.com/?product=${encodeURIComponent(post.productId || 'item')}`;
   const whatsappUrl = `https://wa.me/${storePhone.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(
     `Hello! I want to order ${name} (${price})`
   )}`;
@@ -163,13 +165,13 @@ export function generatePlatformSpecificText(
 
   switch (platform) {
     case 'whatsapp':
-      return `*ARNAOUT STORE 🏠 — New Arrival*
+      return `*ON AlAA STORE 🛒 — New Arrival*
 *${name}*
 
 💰 *Price:* ${price} (Cash USD)
 ${post.originalPrice && post.originalPrice > (post.productPrice || 0) ? `🔥 *Special Discount:* -${post.discountPercentage}% OFF (Was $${post.originalPrice})\n` : ''}🛡️ *Warranty:* Official Store Warranty
-🚚 *Delivery:* Showroom Services & Fast Delivery in Saida
-📍 *Store:* Saida — Nijme Square
+🚚 *Delivery:* Available to All Lebanon
+📍 *Online Store:* Based in Chouf, Lebanon
 
 📲 *Tap to order on WhatsApp:*
 ${whatsappUrl}
@@ -179,17 +181,17 @@ ${whatsappUrl}
     case 'whatsapp_status':
       return `🔥 *${name}*
 💰 *${price}* Cash USD
-🛡️ Official Saida Store Warranty
-🚚 Showroom Services & Saida Delivery
+🛡️ Official ON AlAA STORE Warranty
+🚚 Online Store in Chouf • All Lebanon Delivery
 📲 Reply to order or WhatsApp ${STORE_PHONE_DISPLAY}!`;
 
     case 'instagram':
       return `✨ ${name}
-Now available at ARNAOUT STORE!
+Now available at ON AlAA STORE!
 
 💰 Price: ${price} Cash USD
 🛡️ Official Store & Agent Warranty
-🚚 Showroom services & fast delivery in Saida | Free pickup at Nijme Square
+🚚 Online Store Based in Chouf | Delivery Available to All Lebanon
 
 📲 Tap the link in bio or DM us on WhatsApp at ${STORE_PHONE_DISPLAY} to place your order!
 
@@ -198,14 +200,14 @@ Now available at ARNAOUT STORE!
 ${(post.hashtags || []).join(' ')}`;
 
     case 'facebook':
-      return `🔥 Meet the ${name} at ARNAOUT STORE!
+      return `🔥 Meet the ${name} at ON AlAA STORE!
 
 Looking for authentic tech with verified warranty? Get it today at the best cash price in Lebanon:
 💰 Price: ${price} Cash USD
 ${post.originalPrice && post.originalPrice > (post.productPrice || 0) ? `💥 Save ${post.discountPercentage}% off retail price!\n` : ''}
 ✅ 100% Genuine with Store Warranty
-🚚 Showroom services & fast delivery across Saida and suburbs
-📍 In-store pickup: Saida, Nijme Square
+🚚 Delivery available to all Lebanon
+📍 Online Store Based in Chouf
 
 👉 Order directly on WhatsApp: ${whatsappUrl}
 👉 Browse more specs on our website: ${productUrl}
@@ -217,21 +219,21 @@ ${tags}`;
       const baseTweet = `🔥 ${name}
 💰 ${price} Cash USD
 🛡️ Official Warranty
-🚚 Showroom & Saida Delivery
+🚚 Chouf Online Store • All Lebanon Delivery
 
 Order via WhatsApp: ${STORE_PHONE_DISPLAY}
 ${productUrl}
-#ArnaoutStore #Saida #LebanonTech`;
+#ONAlAASTORE #Chouf #LebanonTech`;
       return baseTweet.slice(0, 280);
     }
 
     case 'telegram':
-      return `💎 **ARNAOUT STORE • Tech Drop**
+      return `💎 **ON AlAA STORE • Tech Drop**
 **${name}**
 
 💵 **Price:** ${price} Cash USD
 ${post.originalPrice && post.originalPrice > (post.productPrice || 0) ? `🏷 **Discount:** -${post.discountPercentage}%\n` : ''}🛡 **Warranty:** Full Store & Agent Coverage
-🚚 **Dispatch:** Showroom pickup at Saida Nijme Square or fast Saida courier
+🚚 **Dispatch:** Online Store in Chouf — Delivery available to all Lebanon
 
 💬 **Order via WhatsApp:** [Chat Now](${whatsappUrl})
 🌐 **Website Catalog:** [View Product](${productUrl})
@@ -239,7 +241,7 @@ ${post.originalPrice && post.originalPrice > (post.productPrice || 0) ? `🏷 **
 ${tags}`;
 
     case 'tiktok':
-      return `✨ ${name} is here! Best cash price in Lebanon: ${price}! 🚀 100% original with store warranty in Saida. Order on WhatsApp: ${STORE_PHONE_DISPLAY}! 📱📦 ${tags} #fyp #viral #tech #lebanon`;
+      return `✨ ${name} is here! Best cash price in Lebanon: ${price}! 🚀 100% original with official warranty — Online Store in Chouf delivering to all Lebanon. Order on WhatsApp: ${STORE_PHONE_DISPLAY}! 📱📦 ${tags} #fyp #viral #tech #lebanon`;
 
     default:
       return post.captionEn || '';
@@ -401,7 +403,7 @@ export async function renderSocialMarketingGraphic(
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, width, height);
   } else {
-    // modern_dark (Arnaout Luxury Tech)
+    // modern_dark (ON AlAA STORE Luxury Tech)
     const bgGrad = ctx.createRadialGradient(width / 2, height * 0.35, 100, width / 2, height / 2, width);
     bgGrad.addColorStop(0, '#0B1E3B');
     bgGrad.addColorStop(0.5, '#071124');
@@ -420,11 +422,11 @@ export async function renderSocialMarketingGraphic(
   ctx.save();
   ctx.font = `bold ${Math.round(width * 0.032)}px sans-serif`;
   ctx.fillStyle = textPrimary;
-  ctx.fillText(settings.storeName || 'ARNAOUT STORE', pad, pad * 1.5);
+  ctx.fillText(settings.storeName || 'ON AlAA STORE', pad, pad * 1.5);
 
   ctx.font = `normal ${Math.round(width * 0.02)}px sans-serif`;
   ctx.fillStyle = textSecondary;
-  ctx.fillText('Your Home in Electronics 🏠 • Saida, Lebanon', pad, pad * 1.5 + width * 0.03);
+  ctx.fillText('Online Store • Chouf • Delivery to All Lebanon', pad, pad * 1.5 + width * 0.03);
 
   // Top Right Badge: 100% Genuine
   const badgeText = '100% GENUINE • OFFICIAL WARRANTY';
@@ -602,11 +604,11 @@ export async function renderSocialMarketingGraphic(
 
   ctx.font = `bold ${Math.round(width * 0.03)}px sans-serif`;
   ctx.fillStyle = '#FFFFFF';
-  ctx.fillText('Order via WhatsApp: 81 900 916', pad + width * 0.04, barY + barHeight * 0.45);
+  ctx.fillText('Order via WhatsApp: 03 986 718', pad + width * 0.04, barY + barHeight * 0.45);
 
   ctx.font = `normal ${Math.round(width * 0.02)}px sans-serif`;
   ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-  ctx.fillText('Showroom Services & Fast Delivery in Saida • Nijme Square', pad + width * 0.04, barY + barHeight * 0.78);
+  ctx.fillText('Online Store Based in Chouf • Delivery Available to All Lebanon', pad + width * 0.04, barY + barHeight * 0.78);
 
   ctx.restore();
 

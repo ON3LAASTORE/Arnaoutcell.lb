@@ -2,7 +2,7 @@
  * Store Opening Hours & Real-time Schedule Utilities
  * 
  * Target Schedule:
- * SQUARE ARNAOUT CELL STORE, SAIDA - NEJMEH, Sidon
+ * ON AlAA STORE — Online Store based in Chouf, Lebanon
  * Open 17 hours (08:00 AM to 01:00 AM next day continuous, 7 days a week)
  * Timezone: Asia/Beirut (Lebanon Standard Time / Daylight Time)
  */

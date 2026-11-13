@@ -17,7 +17,7 @@ export const SEOHead: React.FC = () => {
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
-    const storeName = storeSettings.storeName || 'ARNAOUT STORE';
+    const storeName = storeSettings.storeName || 'ON AlAA STORE';
     const activeProduct = selectedProductId
       ? products.find((p) => p.id === selectedProductId)
       : undefined;
@@ -25,9 +25,9 @@ export const SEOHead: React.FC = () => {
       ? categories.find((c) => c.slug === selectedCategorySlug)
       : undefined;
 
-    let pageTitle = `${storeName} | Showroom Services & Fast Delivery in Saida 📍🚚`;
+    let pageTitle = `${storeName} | Online Tech Store Based in Chouf • Delivery to All Lebanon`;
     let metaDescription =
-      "Premier tech showroom and electronics destination in Saida. Shop authentic smartphones, laptops, GaN fast chargers, audio gear, and certified showroom services with fast local delivery in Saida.";
+      'Official ON AlAA STORE online electronics store based in Chouf. Shop authentic smartphones, laptops, GaN fast chargers, and audio gear with delivery available to all Lebanon.';
     let canonicalUrl = window.location.origin + window.location.pathname;
     let ogType = 'website';
     let ogImage =
@@ -38,10 +38,10 @@ export const SEOHead: React.FC = () => {
       case 'product-detail':
         if (activeProduct) {
           const prodTitle = lang === 'ar' ? (activeProduct.nameAr || activeProduct.name) : activeProduct.name;
-          pageTitle = `${prodTitle} | ${activeProduct.brand} – ${storeName} Saida`;
+          pageTitle = `${prodTitle} | ${activeProduct.brand} – ${storeName}`;
           metaDescription = lang === 'ar'
-            ? `اشتري ${prodTitle} من ${storeName} صيدا. جهاز أصلي مع كفالة رسمية وسعر $${activeProduct.price} مع خدمات المعرض والتوصيل السريع داخل صيدا وضواحيها.`
-            : `Buy ${activeProduct.name} by ${activeProduct.brand} at ${storeName} in Saida. Genuine stock with official store warranty, starting at $${activeProduct.price} fresh USD. Showroom pickup and fast delivery in Saida.`;
+            ? `اشتري ${prodTitle} أونلاين من ${storeName} في الشوف. جهاز أصلي مع كفالة رسمية وسعر $${activeProduct.price} مع خدمة توصيل متاحة لجميع مناطق لبنان.`
+            : `Buy ${activeProduct.name} by ${activeProduct.brand} online from ${storeName} based in Chouf. Genuine stock with official warranty, starting at $${activeProduct.price} fresh USD with delivery available to all Lebanon.`;
           canonicalUrl = `${window.location.origin}/#/product/${activeProduct.id}`;
           ogType = 'product';
           if (activeProduct.images && activeProduct.images.length > 0) {
@@ -52,64 +52,64 @@ export const SEOHead: React.FC = () => {
 
       case 'products':
         if (activeCategory) {
-          pageTitle = `${lang === 'ar' ? activeCategory.nameAr : activeCategory.name} in Saida | ${storeName}`;
-          metaDescription = `Browse the latest ${activeCategory.name} in Saida at ${storeName}. Official warranty, competitive fresh cash prices, showroom services, and fast dispatch in Saida.`;
+          pageTitle = `${lang === 'ar' ? activeCategory.nameAr : activeCategory.name} in Lebanon | ${storeName}`;
+          metaDescription = `Browse the latest ${activeCategory.name} online at ${storeName} (based in Chouf). Official warranty, competitive fresh cash prices, and delivery available to all Lebanon.`;
         } else if (selectedBrandName) {
-          pageTitle = `${selectedBrandName} Tech & Devices | ${storeName} Saida`;
-          metaDescription = `Explore official ${selectedBrandName} devices, accessories, and gear at our Saida showroom. 100% genuine with local warranty and express delivery in Saida.`;
+          pageTitle = `${selectedBrandName} Tech & Devices | ${storeName}`;
+          metaDescription = `Explore official ${selectedBrandName} devices, accessories, and gear online at ${storeName}. 100% genuine with warranty and fast delivery across all Lebanon.`;
         } else {
-          pageTitle = `All Electronics & Tech Catalog | ${storeName} Saida`;
-          metaDescription = `Explore our comprehensive catalog of 2027 smartphones, chargers, laptops, gaming gear, and tech accessories with showroom pickup and fast delivery in Saida.`;
+          pageTitle = `All Electronics & Tech Catalog | ${storeName}`;
+          metaDescription = `Explore our comprehensive online catalog of smartphones, chargers, laptops, gaming gear, and tech accessories based in Chouf with delivery available to all Lebanon.`;
         }
         canonicalUrl = `${window.location.origin}/#/products`;
         break;
 
       case 'categories':
-        pageTitle = `All 35 Electronic Departments | ${storeName} Saida`;
-        metaDescription = `Discover all 35 specialized electronic and tech categories at ${storeName}. Smartphones, GaN chargers, gaming gear, audio, and certified OMT services in Saida.`;
+        pageTitle = `All 35 Electronic Departments | ${storeName}`;
+        metaDescription = `Discover all 35 specialized electronic and tech categories at ${storeName}. Online store based in Chouf delivering smartphones, GaN chargers, gaming gear, and audio to all Lebanon.`;
         canonicalUrl = `${window.location.origin}/#/categories`;
         break;
 
       case 'brands':
         pageTitle = `Authorized Tech Brands | Apple, Samsung, Xiaomi, Anker | ${storeName}`;
-        metaDescription = `Shop top global electronics brands in Lebanon: Apple, Samsung, Xiaomi, Anker, JBL, Baseus, and more. 100% genuine products with manufacturer warranty.`;
+        metaDescription = `Shop top global electronics brands in Lebanon: Apple, Samsung, Xiaomi, Anker, JBL, Baseus, and more. 100% genuine products delivered to all Lebanon.`;
         canonicalUrl = `${window.location.origin}/#/brands`;
         break;
 
       case 'offers':
-        pageTitle = `Exclusive Tech Offers & Flash Deals | ${storeName} Saida`;
-        metaDescription = `Curated daily discounts and special offers on flagship smartphones, power banks, and accessories. Save big with showroom pickup and fast delivery in Saida.`;
+        pageTitle = `Exclusive Tech Offers & Flash Deals | ${storeName}`;
+        metaDescription = `Curated daily discounts and special offers on flagship smartphones, power banks, and accessories. Order online from our Chouf store with delivery across all Lebanon.`;
         canonicalUrl = `${window.location.origin}/#/offers`;
         break;
 
       case 'services':
-        pageTitle = `Touch Telecom, OMT & Whish Money Hub | ${storeName} Saida`;
-        metaDescription = `Official financial and telecom services in Saida: Touch line renewal, cash deposits, Western Union, OMT, and Whish Money services open 8:00 AM – 1:00 AM daily.`;
+        pageTitle = `Touch Telecom & Whish Money Hub | ${storeName}`;
+        metaDescription = `Official digital wallet and telecom support at ${storeName} (Chouf): Touch & Alfa line renewal and Whish Money assistance open 8:00 AM – 1:00 AM daily.`;
         canonicalUrl = `${window.location.origin}/#/services`;
         break;
 
       case 'track-order':
-        pageTitle = `Track Your Order | Fast Saida Delivery | ${storeName}`;
-        metaDescription = `Track your order in real-time. Enter your order ID (e.g., ARN-2027-1001) for instant fulfillment status and Saida local courier tracking updates.`;
+        pageTitle = `Track Your Order | All Lebanon Delivery | ${storeName}`;
+        metaDescription = `Track your order in real-time. Enter your order ID (e.g., OAA-2027-1001) for instant fulfillment status and courier updates across all Lebanon.`;
         canonicalUrl = `${window.location.origin}/#/track-order`;
         break;
 
       case 'cart':
       case 'checkout':
-        pageTitle = `Secure Fresh Cash Checkout | ${storeName} Saida`;
-        metaDescription = `Complete your electronics purchase with Cash on Delivery (COD), Whish Money, or OMT. Showroom pickup at Nijme Square and fast delivery in Saida.`;
+        pageTitle = `Secure Fresh Cash Checkout | ${storeName}`;
+        metaDescription = `Complete your electronics purchase with Cash on Delivery (COD), Whish Money, or OMT. Dispatched from Chouf with delivery available to all Lebanon.`;
         canonicalUrl = `${window.location.origin}/#/checkout`;
         break;
 
       case 'contact':
-        pageTitle = `Visit & Contact Saida Store | ${storeName} (81 900 916)`;
-        metaDescription = `Contact ${storeName} located at Saida Nijme Square Main Road. Open 17 hours daily (8:00 AM - 1:00 AM). Call 81 900 916 or service line 03 099 889.`;
+        pageTitle = `Contact Online Store (Chouf) | ${storeName} (03 986 718)`;
+        metaDescription = `Contact ${storeName} — Online Store based in Chouf with delivery available to all Lebanon. Open 8:00 AM - 1:00 AM daily. Call or WhatsApp 03 986 718.`;
         canonicalUrl = `${window.location.origin}/#/contact`;
         break;
 
       default:
-        pageTitle = `${storeName} | Showroom Services & Delivery in Saida 📍🚚`;
-        metaDescription = `Premier 2027 tech & electronics showroom in Saida Nijme Square. Flagship smartphones, GaN fast chargers, audio gear, certified OMT services, and fast delivery in Saida.`;
+        pageTitle = `${storeName} | Online Tech Store Based in Chouf • All Lebanon Delivery`;
+        metaDescription = `Premier online electronics store based in Chouf, Lebanon. Flagship smartphones, GaN fast chargers, audio gear, and delivery available to all Lebanon. Call or WhatsApp 03 986 718.`;
         canonicalUrl = `${window.location.origin}/`;
         break;
     }
@@ -188,28 +188,26 @@ export const SEOHead: React.FC = () => {
         },
       };
     } else {
-      // Local Business / Electronics Store Schema
+      // Online Electronics Store Schema
       schemaJson = {
         '@context': 'https://schema.org',
         '@type': 'ElectronicsStore',
         name: storeName,
-        alternateName: 'أرناؤوط ستور',
+        alternateName: 'ON AlAA STORE',
         description: metaDescription,
         url: window.location.origin,
-        telephone: '+96181900916',
+        telephone: '+9613986718',
         priceRange: '$$',
         image: ogImage,
         address: {
           '@type': 'PostalAddress',
-          streetAddress: 'Nijme Square, Main Commercial Road',
-          addressLocality: 'Saida',
-          addressRegion: 'South Governorate',
+          addressLocality: 'Chouf',
+          addressRegion: 'Mount Lebanon',
           addressCountry: 'LB',
         },
-        geo: {
-          '@type': 'GeoCoordinates',
-          latitude: 33.5631,
-          longitude: 35.3725,
+        areaServed: {
+          '@type': 'Country',
+          name: 'Lebanon',
         },
         openingHoursSpecification: [
           {

@@ -1,5 +1,5 @@
 /**
- * Arnaout Store Security & Authentication Service
+ * ON AlAA STORE Security & Authentication Service
  * 
  * Implements cryptographically secure password hashing using Web Crypto API (SHA-256 + Salt).
  * Never stores or exposes plaintext passwords in browser storage, logs, or source code.

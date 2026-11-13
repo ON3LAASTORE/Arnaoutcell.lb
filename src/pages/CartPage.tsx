@@ -30,7 +30,7 @@ export const CartPage: React.FC = () => {
     setCouponSuccess('');
     const code = couponCode.trim().toUpperCase();
 
-    if (code === 'ARNAOUT10' || code === 'SAIDA10' || code === 'WELCOME10') {
+    if (code === 'ONALAA10' || code === 'CHOUF10' || code === 'WELCOME10') {
       const discount = Math.round(cartSubtotal * 0.1); // 10% discount
       setCouponDiscount(discount);
       setCouponSuccess(lang === 'ar' ? 'تم تطبيق خصم 10% بنجاح!' : '10% Discount applied successfully!');
@@ -182,7 +182,7 @@ export const CartPage: React.FC = () => {
                   <Tag className="w-4 h-4 text-[#64748B] dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 rtl:left-auto rtl:right-3" />
                   <input
                     type="text"
-                    placeholder={lang === 'ar' ? 'أدخل كود الخصم (مثال: ARNAOUT10 أو SAIDA10)' : 'Promo code (try ARNAOUT10)'}
+                    placeholder={lang === 'ar' ? 'أدخل كود الخصم (مثال: ONALAA10 أو WELCOME10)' : 'Promo code (try ONALAA10)'}
                     value={couponCode}
                     onChange={(e) => setCouponCode(e.target.value)}
                     className="w-full bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] rounded-xl pl-10 pr-3 rtl:pl-3 rtl:pr-10 py-2.5 text-xs text-[#172033] dark:text-[#F8FAFC] uppercase tracking-wider focus:outline-none focus:border-[#007AFF]"
@@ -251,13 +251,13 @@ export const CartPage: React.FC = () => {
                   className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100 hover:from-emerald-100 hover:to-green-100 dark:from-emerald-950/40 dark:via-emerald-900/40 dark:to-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 font-extrabold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-sm hover:shadow-md hover:shadow-emerald-500/20 group active:scale-98"
                 >
                   <WhatsApp3DIcon size={22} />
-                  <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (81900916)' : 'Inquire / Order on WhatsApp (81900916)'}</span>
+                  <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (03986718)' : 'Inquire / Order on WhatsApp (03986718)'}</span>
                 </button>
               </div>
 
               <div className="pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B] flex items-center gap-2 text-[11px] text-[#64748B] dark:text-slate-400">
                 <ShieldCheck className="w-4 h-4 text-[#16A34A] flex-shrink-0" />
-                <span>{lang === 'ar' ? 'توصيل معتمد مع إمكانية الدفع عند الاستلام' : 'Cash on Delivery or Saida pickup'}</span>
+                <span>{lang === 'ar' ? 'توصيل لجميع مناطق لبنان مع الدفع عند الاستلام' : 'Cash on Delivery across all Lebanon'}</span>
               </div>
             </div>
           </div>

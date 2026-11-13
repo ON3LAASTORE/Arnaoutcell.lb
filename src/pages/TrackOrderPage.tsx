@@ -85,7 +85,7 @@ export const TrackOrderPage: React.FC = () => {
               <Search className="w-4 h-4 text-[#64748B] absolute left-4 top-1/2 -translate-y-1/2 rtl:left-auto rtl:right-4" />
               <input
                 type="text"
-                placeholder={lang === 'ar' ? 'أدخل رقم الطلب (مثلاً: ARN-2027-1001 أو رقم الهاتف)' : 'Enter Order ID (e.g. ARN-2027-1001 or Phone)'}
+                placeholder={lang === 'ar' ? 'أدخل رقم الطلب (مثلاً: OAA-2027-1001 أو رقم الهاتف)' : 'Enter Order ID (e.g. OAA-2027-1001 or Phone)'}
                 value={orderQuery}
                 onChange={(e) => setOrderQuery(e.target.value)}
                 className="w-full bg-white border border-[#DCE5F0] rounded-2xl pl-11 pr-4 rtl:pl-4 rtl:pr-11 py-3 text-xs sm:text-sm text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono"
@@ -105,20 +105,20 @@ export const TrackOrderPage: React.FC = () => {
             <button
               type="button"
               onClick={() => {
-                setOrderQuery('ARN-2027-1001');
+                setOrderQuery('OAA-2027-1001');
               }}
               className="font-mono text-[#007AFF] hover:underline bg-white px-2 py-0.5 rounded border border-[#DCE5F0]"
             >
-              ARN-2027-1001 (Saida)
+              OAA-2027-1001 (Chouf)
             </button>
             <button
               type="button"
               onClick={() => {
-                setOrderQuery('ARN-2027-1002');
+                setOrderQuery('OAA-2027-1002');
               }}
               className="font-mono text-[#007AFF] hover:underline bg-white px-2 py-0.5 rounded border border-[#DCE5F0]"
             >
-              ARN-2027-1002 (Beirut)
+              OAA-2027-1002 (All Lebanon)
             </button>
           </div>
         </div>
@@ -252,11 +252,11 @@ export const TrackOrderPage: React.FC = () => {
                 {/* Help button */}
                 <div className="text-center pt-2">
                   <a
-                    href="tel:81900916"
+                    href="tel:03986718"
                     className="inline-flex items-center gap-2 text-xs text-[#007AFF] hover:underline font-semibold"
                   >
                     <Phone className="w-3.5 h-3.5" />
-                    <span>{lang === 'ar' ? 'هل تحتاج لمساعدة بخصوص طلبك؟ اتصل بنا: 81 900 916' : 'Need help with this order? Call us: 81 900 916'}</span>
+                    <span>{lang === 'ar' ? 'هل تحتاج لمساعدة بخصوص طلبك؟ اتصل بنا: 03 986 718' : 'Need help with this order? Call us: 03 986 718'}</span>
                   </a>
                 </div>
               </div>
@@ -268,8 +268,8 @@ export const TrackOrderPage: React.FC = () => {
                 </h3>
                 <p className="text-xs text-[#64748B] max-w-sm mx-auto">
                   {lang === 'ar'
-                    ? `يرجى التحقق من رقم الطلب (مثال: ARN-2027-1001) أو التواصل مع خدمة عملاء ${storeSettings.storeNameAr || 'أرناؤوط ستور'}.`
-                    : `Please verify your Order ID or contact ${storeSettings.storeName} Saida support on ${storeSettings.phone}.`}
+                    ? `يرجى التحقق من رقم الطلب (مثال: OAA-2027-1001) أو التواصل مع خدمة عملاء ${storeSettings.storeNameAr || 'ON AlAA STORE'}.`
+                    : `Please verify your Order ID or contact ${storeSettings.storeName || 'ON AlAA STORE'} support on ${storeSettings.phone || '03 986 718'}.`}
                 </p>
               </div>
             )}

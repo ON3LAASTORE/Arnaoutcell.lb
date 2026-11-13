@@ -10,7 +10,7 @@ test('validateReviewSubmission accepts valid payloads in English and Arabic', ()
   const validEnglish = validateReviewSubmission({
     name: 'Ahmad Khalil',
     rating: 5,
-    comment: 'Great smartphone, arrived sealed and genuine with Saida warranty.',
+    comment: 'Great smartphone, arrived sealed and genuine with official Lebanon warranty.',
   }, 'en');
   assert.equal(validEnglish.isValid, true);
   assert.equal(Object.keys(validEnglish.errors).length, 0);
@@ -18,7 +18,7 @@ test('validateReviewSubmission accepts valid payloads in English and Arabic', ()
   const validArabic = validateReviewSubmission({
     name: 'فادي سعد',
     rating: 4,
-    comment: 'جهاز ممتاز وسرعة توصيل خيالية بصيدا.',
+    comment: 'جهاز ممتاز وسرعة توصيل خيالية إلى الشوف وكل لبنان.',
   }, 'ar');
   assert.equal(validArabic.isValid, true);
 });

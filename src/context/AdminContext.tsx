@@ -85,7 +85,7 @@ const DEMO_USERS: Record<string, AdminUser> = {
   inventory: {
     id: 'u-4',
     username: 'inventory',
-    name: 'Tarek Saida Warehouse',
+    name: 'Tarek Chouf Fulfillment Hub',
     role: 'inventory_manager',
     email: 'inventory@arnaoutcell.com',
   },

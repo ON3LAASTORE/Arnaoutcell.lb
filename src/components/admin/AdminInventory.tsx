@@ -45,7 +45,7 @@ export const AdminInventory: React.FC = () => {
         <div>
           <h1 className="text-2xl font-black text-[#172033] flex items-center gap-2">
             <Warehouse className="w-6 h-6 text-[#007AFF]" />
-            <span>{lang === 'ar' ? 'المستودع ومراقبة المخزون' : 'Saida Warehouse & Stock Management'}</span>
+            <span>{lang === 'ar' ? 'المستودع (الشوف) ومراقبة المخزون' : 'Chouf Hub Warehouse & Stock Management'}</span>
           </h1>
           <p className="text-xs text-[#64748B] mt-1">
             {lang === 'ar'

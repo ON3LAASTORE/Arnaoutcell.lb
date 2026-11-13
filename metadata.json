@@ -1,6 +1,6 @@
 {
   "name": "ON AlAA STORE | Online Tech Store Lebanon",
   "description": "ON AlAA STORE — Online Tech Store based in Chouf with fast delivery available to all Lebanon. Authentic smartphones, laptops, gaming gear, and tech accessories.",
-  "requestFramePermissions": [],
+  "requestFramePermissions": ["camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

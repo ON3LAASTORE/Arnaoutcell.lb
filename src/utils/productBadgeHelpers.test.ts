@@ -64,7 +64,7 @@ test('getProductBadges aggregates multiple badges in correct priority order', ()
   assert.equal(badgesEn[3].id, 'low_stock');
 
   const badgesAr = getProductBadges(product, 'ar');
-  assert.equal(badgesAr[1].label, 'جديد صيدا');
+  assert.equal(badgesAr[1].label, 'وصل حديثاً');
   assert.equal(badgesAr[2].label, 'الأكثر مبيعاً 🔥');
   assert.equal(badgesAr[3].label, 'بقي 2 فقط');
 });

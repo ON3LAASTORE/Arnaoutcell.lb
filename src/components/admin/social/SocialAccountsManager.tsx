@@ -279,12 +279,12 @@ export const SocialAccountsManager: React.FC<SocialAccountsManagerProps> = ({ la
                   <div className="flex items-center justify-between text-[#64748B]">
                     <span>Account:</span>
                     <a
-                      href="https://www.instagram.com/m.arnaoutcell/"
+                      href="https://www.instagram.com/onalaastore.lb/"
                       target="_blank"
                       rel="noopener noreferrer"
                       className="font-bold text-purple-700 hover:underline flex items-center gap-1"
                     >
-                      <span>@m.arnaoutcell</span>
+                      <span>@onalaastore.lb</span>
                       <ExternalLink className="w-2.5 h-2.5" />
                     </a>
                   </div>
@@ -356,7 +356,7 @@ export const SocialAccountsManager: React.FC<SocialAccountsManagerProps> = ({ la
                 </label>
                 <input
                   type="text"
-                  placeholder="@arnaoutstore or ARNAOUT STORE Saida"
+                  placeholder="@onalaastore.lb or ON AlAA STORE"
                   value={formHandle}
                   onChange={(e) => setFormHandle(e.target.value)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
@@ -418,19 +418,19 @@ export const SocialAccountsManager: React.FC<SocialAccountsManagerProps> = ({ la
                     <div className="font-bold text-purple-900 flex items-center justify-between">
                       <span>{isArabic ? 'الحساب المستهدف المعتمد:' : 'Official Connected Target Account:'}</span>
                       <a
-                        href="https://www.instagram.com/m.arnaoutcell/"
+                        href="https://www.instagram.com/onalaastore.lb/"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-purple-600 hover:underline flex items-center gap-1 font-bold"
                       >
-                        <span>@m.arnaoutcell</span>
+                        <span>@onalaastore.lb</span>
                         <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
                     <p className="text-[11px] text-purple-800">
                       {isArabic
-                        ? 'مخصص حصرياً للنشر المباشر على صفحة https://www.instagram.com/m.arnaoutcell/'
-                        : 'Configured exclusively for direct publishing to https://www.instagram.com/m.arnaoutcell/'}
+                        ? 'مخصص حصرياً للنشر المباشر على صفحة https://www.instagram.com/onalaastore.lb/'
+                        : 'Configured exclusively for direct publishing to https://www.instagram.com/onalaastore.lb/'}
                     </p>
                   </div>
 
@@ -448,7 +448,7 @@ export const SocialAccountsManager: React.FC<SocialAccountsManagerProps> = ({ la
                     <p className="text-[10px] text-[#64748B] mt-1">
                       {isArabic
                         ? 'يتم الحصول عليه عبر استعلام Meta Graph API: /{page-id}?fields=instagram_business_account'
-                        : 'Obtained via Meta Graph API from the Facebook Page linked to @m.arnaoutcell (GET /{page-id}?fields=instagram_business_account).'}
+                        : 'Obtained via Meta Graph API from the Facebook Page linked to @onalaastore.lb (GET /{page-id}?fields=instagram_business_account).'}
                     </p>
                   </div>
 
@@ -489,7 +489,7 @@ export const SocialAccountsManager: React.FC<SocialAccountsManagerProps> = ({ la
                     </label>
                     <input
                       type="text"
-                      placeholder="@arnaoutstore_lb or -100123456789"
+                      placeholder="@onalaastore_lb or -100123456789"
                       value={formTelegramChannelId}
                       onChange={(e) => setFormTelegramChannelId(e.target.value)}
                       className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3.5 py-2.5 text-xs font-mono text-[#172033] focus:outline-none focus:border-[#007AFF]"

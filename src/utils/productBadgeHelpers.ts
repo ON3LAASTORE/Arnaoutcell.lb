@@ -94,7 +94,7 @@ export function getProductBadges(
   if (shouldShowNewBadge(product)) {
     badges.push({
       id: 'new',
-      label: lang === 'ar' ? 'جديد صيدا' : 'NEW',
+      label: lang === 'ar' ? 'وصل حديثاً' : 'NEW',
       type: 'primary',
     });
   }

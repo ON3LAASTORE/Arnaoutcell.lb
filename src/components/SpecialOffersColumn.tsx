@@ -53,18 +53,18 @@ export const SpecialOffersColumn: React.FC = () => {
             <h2 className="text-2xl sm:text-4xl font-black text-[#172033] dark:text-[#F8FAFC] tracking-tight">
               {lang === 'ar' ? (
                 <>
-                  أقوى العروض المخفضة — <span className="text-[#007AFF]">{storeSettings.storeNameAr || 'أرناؤوط ستور'}</span>
+                  أقوى العروض المخفضة — <span className="text-[#007AFF]">{storeSettings.storeNameAr || 'ON AlAA STORE'}</span>
                 </>
               ) : (
                 <>
-                  Official Special Offers — <span className="text-[#007AFF]">{storeSettings.storeName}</span>
+                  Official Special Offers — <span className="text-[#007AFF]">{storeSettings.storeName || 'ON AlAA STORE'}</span>
                 </>
               )}
             </h2>
             <p className="text-[#64748B] dark:text-slate-300 text-sm sm:text-base mt-1.5 max-w-2xl">
               {lang === 'ar'
-                ? 'تخفيضات أسبوعية حقيقية بكفالة معتمدة صيدا ساحة النجمة، مع إمكانية الطلب المباشر الفوري أو الاستفسار عبر واتساب 81900916.'
-                : 'Genuine, direct discounts on top smartphones, audiophile systems, and fast charging gear with official Saida store warranty.'}
+                ? 'تخفيضات أسبوعية حقيقية بكفالة معتمدة من ON AlAA STORE في الشوف، مع توصيل متاح لجميع مناطق لبنان أو الطلب عبر واتساب 03986718.'
+                : 'Genuine, direct discounts on top smartphones, audio gear, and fast chargers with official ON AlAA STORE warranty and delivery available to all Lebanon.'}
             </p>
           </div>
 
@@ -164,7 +164,7 @@ export const SpecialOffersColumn: React.FC = () => {
         <div className="mt-12 p-6 rounded-3xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white shadow-xl flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="space-y-1 text-center md:text-left rtl:md:text-right">
             <span className="text-xs font-extrabold uppercase tracking-widest text-emerald-200">
-              {lang === 'ar' ? 'خدمة الطلب السريع في صيدا ولبنان' : 'Fast Order Service in Saida & Lebanon'}
+              {lang === 'ar' ? 'متجر أونلاين في الشوف • توصيل لجميع لبنان' : 'Online Store Based in Chouf • All Lebanon Delivery'}
             </span>
             <h4 className="text-xl sm:text-2xl font-black">
               {lang === 'ar'
@@ -173,21 +173,21 @@ export const SpecialOffersColumn: React.FC = () => {
             </h4>
             <p className="text-xs sm:text-sm text-emerald-100 max-w-xl">
               {lang === 'ar'
-                ? 'فريق أرناؤوط ستور جاهز للرد على استفساراتكم وتأكيد الحجز الفوري مع التوصيل لكافة المحافظات.'
-                : 'Our technical team is active on WhatsApp to process instant reservations and confirm warranty.'}
+                ? 'فريق ON AlAA STORE جاهز للرد على استفساراتكم وتأكيد الطلب مع توصيل متاح لجميع المناطق اللبنانية.'
+                : 'Our team is active on WhatsApp to process instant orders with fast delivery available across all Lebanon.'}
             </p>
           </div>
 
           <a
-            href={`https://wa.me/${storeSettings.whatsapp || '96181900916'}?text=${encodeURIComponent(
-              'Hello ARNAOUT STORE! I am inquiring about current special offers and flash discounts.'
+            href={`https://wa.me/9613986718?text=${encodeURIComponent(
+              'Hello ON AlAA STORE! I am inquiring about current special offers and flash discounts.'
             )}`}
             target="_blank"
             rel="noopener noreferrer"
             className="px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-emerald-800 font-extrabold text-xs shadow-lg transition-all flex items-center gap-2 cursor-pointer flex-shrink-0 active:scale-95 group"
           >
             <WhatsApp3DIcon size={22} />
-            <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (81900916)' : 'Inquire / Order on WhatsApp (81900916)'}</span>
+            <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (03986718)' : 'Inquire / Order on WhatsApp (03986718)'}</span>
           </a>
         </div>
       </div>

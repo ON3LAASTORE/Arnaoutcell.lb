@@ -147,8 +147,8 @@ export const TestimonialsSlider: React.FC = () => {
     const newEntry = saveTestimonialToStorage({
       name: name.trim(),
       nameAr: name.trim(),
-      locationEn: location.trim() || 'Saida — Lebanon',
-      locationAr: location.trim() || 'صيدا — لبنان',
+      locationEn: location.trim() || 'Chouf — Lebanon',
+      locationAr: location.trim() || 'الشوف — لبنان',
       rating,
       productPurchasedEn: productPurchased.trim() || 'Tech Accessories & Devices',
       productPurchasedAr: productPurchased.trim() || 'أجهزة وإلكترونيات',
@@ -194,7 +194,7 @@ export const TestimonialsSlider: React.FC = () => {
             <h2 className="text-2xl sm:text-4xl font-black text-[#172033] dark:text-white tracking-tight">
               {isArabic ? (
                 <>
-                  شاركنا <span className="text-[#007AFF]">رأيك وتجربتك</span> مع أرناؤوط ستور
+                  شاركنا <span className="text-[#007AFF]">رأيك وتجربتك</span> مع ON AlAA STORE
                 </>
               ) : (
                 <>
@@ -205,8 +205,8 @@ export const TestimonialsSlider: React.FC = () => {
 
             <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 leading-relaxed font-normal">
               {isArabic
-                ? 'قسم التقييمات جاهز لاستقبال آراء وتجارب العملاء الحقيقية في صيدا وكافة المناطق اللبنانية. شاركنا رأيك حول أجهزتك وتجربة الشراء!'
-                : 'Our customer feedback board is ready for genuine buyer reviews and ratings across Saida and Lebanon. Share your experience with us!'}
+                ? 'قسم التقييمات جاهز لاستقبال آراء وتجارب العملاء الحقيقية في الشوف وكافة المناطق اللبنانية. شاركنا رأيك حول أجهزتك وتجربة الشراء!'
+                : 'Our customer feedback board is ready for genuine buyer reviews and ratings across Chouf and all Lebanon. Share your experience with us!'}
             </p>
           </div>
 
@@ -292,8 +292,8 @@ export const TestimonialsSlider: React.FC = () => {
               </h3>
               <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 max-w-lg mx-auto leading-relaxed">
                 {isArabic
-                  ? 'تم تحديث قسم التقييمات ليكون جاهزاً بالكامل لاستقبال تجاربكم الجديدة. شاركنا رأيك حول أجهزتك الأصلية وخدمات المعرض بصيدا أو التوصيل داخل صيدا.'
-                  : 'All reviews have been refreshed and prepared to receive your new feedback. Share your experience with our genuine devices, showroom services, and fast delivery in Saida!'}
+                  ? 'تم تحديث قسم التقييمات ليكون جاهزاً بالكامل لاستقبال تجاربكم الجديدة. شاركنا رأيك حول أجهزتك الأصلية وتجربة التسوق عبر الإنترنت والتوصيل لكافة المناطق اللبنانية!'
+                  : 'All reviews have been refreshed and prepared to receive your new feedback. Share your experience with our genuine devices and fast delivery available to all Lebanon!'}
               </p>
             </div>
 
@@ -308,17 +308,17 @@ export const TestimonialsSlider: React.FC = () => {
               </button>
 
               <a
-                href={`https://wa.me/${storeSettings.whatsapp || '96181900916'}?text=${encodeURIComponent(
+                href={`https://wa.me/9613986718?text=${encodeURIComponent(
                   isArabic
-                    ? 'مرحباً أرناؤوط ستور! أود مشاركة تقييمي وتجربتي مع الشراء والأجهزة.'
-                    : 'Hello ARNAOUT STORE! I want to share my customer review and feedback.'
+                    ? 'مرحباً ON AlAA STORE! أود مشاركة تقييمي وتجربتي مع الشراء والأجهزة.'
+                    : 'Hello ON AlAA STORE! I want to share my customer review and feedback.'
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 text-xs sm:text-sm font-bold transition-all cursor-pointer"
               >
                 <WhatsApp3DIcon size={18} />
-                <span>{isArabic ? 'إرسال رأيك عبر واتساب (81900916)' : 'Send Feedback via WhatsApp'}</span>
+                <span>{isArabic ? 'إرسال رأيك عبر واتساب (03986718)' : 'Send Feedback via WhatsApp'}</span>
               </a>
             </div>
           </div>
@@ -406,7 +406,7 @@ export const TestimonialsSlider: React.FC = () => {
                     <div className="pt-4 mt-5 border-t border-[#DCE5F0] dark:border-[#1E293B] flex items-center justify-between text-[11px] text-[#64748B] dark:text-slate-400">
                       <span className="flex items-center gap-1">
                         <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>{isArabic ? 'كفالة معتمدة صيدا' : 'Official Warranty'}</span>
+                        <span>{isArabic ? 'كفالة رسمية معتمدة' : 'Official Warranty'}</span>
                       </span>
                       <span className="font-medium">{item.date}</span>
                     </div>
@@ -422,10 +422,10 @@ export const TestimonialsSlider: React.FC = () => {
         ========================================================================== */}
         <div className="flex items-center justify-between gap-4 mt-8 pt-4">
           <a
-            href={`https://wa.me/${storeSettings.whatsapp || '96181900916'}?text=${encodeURIComponent(
+            href={`https://wa.me/9613986718?text=${encodeURIComponent(
               isArabic
-                ? 'مرحباً أرناؤوط ستور! أود مشاركة تقييمي وتجربتي مع الشراء والأجهزة.'
-                : 'Hello ARNAOUT STORE! I want to share my customer review and feedback.'
+                ? 'مرحباً ON AlAA STORE! أود مشاركة تقييمي وتجربتي مع الشراء والأجهزة.'
+                : 'Hello ON AlAA STORE! I want to share my customer review and feedback.'
             )}`}
             target="_blank"
             rel="noopener noreferrer"
@@ -506,7 +506,7 @@ export const TestimonialsSlider: React.FC = () => {
                       {isArabic ? 'كتابة تقييم ومشاركة رأيك' : 'Submit Customer Review & Feedback'}
                     </h3>
                     <p className="text-[11px] text-[#64748B] dark:text-slate-400">
-                      {isArabic ? 'أرناؤوط ستور — صيدا (خدمات المعرض والتوصيل)' : 'ON 3LAA STORE — Saida Showroom & Delivery'}
+                      {isArabic ? 'ON AlAA STORE — متجر إلكتروني في الشوف • توصيل لكل لبنان' : 'ON AlAA STORE — Online Store in Chouf • All Lebanon Delivery'}
                     </p>
                   </div>
                 </div>
@@ -595,7 +595,7 @@ export const TestimonialsSlider: React.FC = () => {
                         type="text"
                         value={location}
                         onChange={(e) => setLocation(e.target.value)}
-                        placeholder={isArabic ? 'صيدا، بيروت، صور...' : 'Saida, Beirut, Tyre...'}
+                        placeholder={isArabic ? 'الشوف، بيروت، جبل لبنان...' : 'Chouf, Beirut, Mount Lebanon...'}
                         className="w-full bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] rounded-xl px-3 py-2 text-xs text-[#172033] dark:text-white focus:outline-none focus:border-[#007AFF]"
                       />
                     </div>
@@ -627,8 +627,8 @@ export const TestimonialsSlider: React.FC = () => {
                       onChange={(e) => setComment(e.target.value)}
                       placeholder={
                         isArabic
-                          ? 'اكتب رأيك حول جودة المنتج، سرعة التوصيل، أو التعامل في صيدا ساحة النجمة...'
-                          : 'Write about the product quality, fast delivery, or customer service at Nijme Square...'
+                          ? 'اكتب رأيك حول جودة المنتج، سرعة التوصيل إلى منطقتك، أو خدمة العملاء...'
+                          : 'Write about the product quality, fast nationwide delivery, or customer support...'
                       }
                       className="w-full bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] rounded-xl px-3 py-2 text-xs text-[#172033] dark:text-white focus:outline-none focus:border-[#007AFF] resize-none"
                     />

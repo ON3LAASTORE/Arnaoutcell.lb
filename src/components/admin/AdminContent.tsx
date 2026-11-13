@@ -13,8 +13,8 @@ export const AdminContent: React.FC = () => {
 
   const currentBar = storeSettings?.announcementBar || {
     enabled: true,
-    textEn: '✨ Special discounts across all flagship smartphones in Saida',
-    textAr: '✨ عروض وتخفيضات خاصة على كافة الهواتف واللابتوبات بفرع صيدا',
+    textEn: '✨ ON AlAA STORE — Online Store in Chouf • Delivery Available to All Lebanon',
+    textAr: '✨ متجر ON AlAA STORE الإلكتروني بالشوف — توصيل متاح لجميع مناطق لبنان',
     bgColor: '#007AFF',
     textColor: '#FFFFFF',
   };

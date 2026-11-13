@@ -73,7 +73,7 @@ function loadSecureAccounts(): Map<string, SecureSocialAccount> {
     map.set('facebook', {
       platform: 'facebook',
       displayName: 'Facebook Page & Marketplace',
-      accountHandle: process.env.FACEBOOK_PAGE_NAME || 'ARNAOUT STORE Saida',
+      accountHandle: process.env.FACEBOOK_PAGE_NAME || 'ON AlAA STORE Lebanon',
       pageId: process.env.FACEBOOK_PAGE_ID || '',
       pageAccessToken: process.env.FACEBOOK_PAGE_ACCESS_TOKEN || '',
       isConnected: Boolean(process.env.FACEBOOK_PAGE_ACCESS_TOKEN),
@@ -83,17 +83,17 @@ function loadSecureAccounts(): Map<string, SecureSocialAccount> {
   }
 
   const existingIg = map.get('instagram');
-  if (!existingIg || !existingIg.accountHandle || existingIg.accountHandle === '@arnaoutstore') {
+  if (!existingIg || !existingIg.accountHandle || existingIg.accountHandle === '@arnaoutstore' || existingIg.accountHandle === '@m.arnaoutcell') {
     map.set('instagram', {
       platform: 'instagram',
-      displayName: 'Instagram Business – M.ARNAOUT CELL',
-      accountHandle: '@m.arnaoutcell',
+      displayName: 'Instagram Business – ON AlAA STORE',
+      accountHandle: '@onalaastore.lb',
       instagramAccountId: existingIg?.instagramAccountId || process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID || '',
       pageAccessToken: existingIg?.pageAccessToken || process.env.INSTAGRAM_ACCESS_TOKEN || process.env.FACEBOOK_PAGE_ACCESS_TOKEN || '',
       isConnected: Boolean((existingIg?.instagramAccountId || process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID) && (existingIg?.pageAccessToken || process.env.INSTAGRAM_ACCESS_TOKEN || process.env.FACEBOOK_PAGE_ACCESS_TOKEN)),
       directPublishSupported: true,
       directPublishEnabled: true,
-      pageName: 'M.ARNAOUT CELL',
+      pageName: 'ON AlAA STORE',
     });
   }
 
@@ -101,7 +101,7 @@ function loadSecureAccounts(): Map<string, SecureSocialAccount> {
     map.set('telegram', {
       platform: 'telegram',
       displayName: 'Telegram Channel Broadcast',
-      accountHandle: process.env.TELEGRAM_CHANNEL_ID || '@arnaoutstore_lb',
+      accountHandle: process.env.TELEGRAM_CHANNEL_ID || '@onalaastore_lb',
       telegramBotToken: process.env.TELEGRAM_BOT_TOKEN || '',
       telegramChannelId: process.env.TELEGRAM_CHANNEL_ID || '',
       isConnected: Boolean(process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHANNEL_ID),
@@ -440,7 +440,7 @@ async function startServer() {
     res.json({ success: true, message: `Disconnected ${platform}.` });
   });
 
-  // Dedicated Instagram Status Endpoint for M.ARNAOUT CELL
+  // Dedicated Instagram Status Endpoint for ON AlAA STORE
   app.get('/api/social/instagram-status', (_req: Request, res: Response) => {
     const igAcc = secureAccounts.get('instagram');
     const fbAcc = secureAccounts.get('facebook');
@@ -449,9 +449,9 @@ async function startServer() {
 
     res.json({
       success: true,
-      account: igAcc?.accountHandle || '@m.arnaoutcell',
-      targetUrl: 'https://www.instagram.com/m.arnaoutcell/',
-      displayName: igAcc?.displayName || 'Instagram Business – M.ARNAOUT CELL',
+      account: igAcc?.accountHandle || '@onalaastore.lb',
+      targetUrl: 'https://www.instagram.com/onalaastore.lb/',
+      displayName: igAcc?.displayName || 'Instagram Business – ON AlAA STORE',
       isConnected: Boolean(igAcc?.isConnected && token && igUserId),
       hasToken: Boolean(token),
       hasAccountId: Boolean(igUserId),
@@ -461,7 +461,7 @@ async function startServer() {
     });
   });
 
-  // Dedicated Instagram Direct Publishing for M.ARNAOUT CELL
+  // Dedicated Instagram Direct Publishing for ON AlAA STORE
   app.post('/api/social/publish-instagram', async (req: Request, res: Response) => {
     const {
       productId,
@@ -480,9 +480,9 @@ async function startServer() {
       res.status(400).json({
         success: false,
         needsSetup: true,
-        account: '@m.arnaoutcell',
-        instagramUrl: 'https://www.instagram.com/m.arnaoutcell/',
-        message: 'Instagram Business credentials for @m.arnaoutcell are not configured.',
+        account: '@onalaastore.lb',
+        instagramUrl: 'https://www.instagram.com/onalaastore.lb/',
+        message: 'Instagram Business credentials for @onalaastore.lb are not configured.',
         errorDetails: 'Requires Meta Page Access Token with instagram_content_publish permission and Instagram Business Account ID. Configure in Social Media Manager > Accounts & API.',
       });
       return;
@@ -595,9 +595,9 @@ async function startServer() {
         results: {
           instagram: {
             success: true,
-            message: 'Published directly to Instagram Business account (@m.arnaoutcell)!',
+            message: 'Published directly to Instagram Business account (@onalaastore.lb)!',
             postId: publishData.id,
-            postUrl: 'https://www.instagram.com/m.arnaoutcell/',
+            postUrl: 'https://www.instagram.com/onalaastore.lb/',
             timestamp: new Date().toISOString(),
           },
         },
@@ -610,11 +610,11 @@ async function startServer() {
 
       res.json({
         success: true,
-        message: 'Successfully published directly to Instagram (@m.arnaoutcell)!',
+        message: 'Successfully published directly to Instagram (@onalaastore.lb)!',
         postId: publishData.id,
         creationId,
-        postUrl: 'https://www.instagram.com/m.arnaoutcell/',
-        account: '@m.arnaoutcell',
+        postUrl: 'https://www.instagram.com/onalaastore.lb/',
+        account: '@onalaastore.lb',
         publicImageUrl,
       });
     } catch (err) {
@@ -830,9 +830,9 @@ async function startServer() {
           } else {
             results.instagram = {
               success: true,
-              message: 'Published directly to Instagram Business account (@m.arnaoutcell)!',
+              message: 'Published directly to Instagram Business account (@onalaastore.lb)!',
               postId: publishData.id,
-              postUrl: 'https://www.instagram.com/m.arnaoutcell/',
+              postUrl: 'https://www.instagram.com/onalaastore.lb/',
               timestamp: new Date().toISOString(),
             };
           }
@@ -867,8 +867,8 @@ async function startServer() {
             formData.append('reply_markup', JSON.stringify({
               inline_keyboard: [
                 [
-                  { text: '💬 Order via WhatsApp (81900916)', url: 'https://wa.me/96181900916' },
-                  { text: '🌐 View on Store', url: productUrl || 'https://arnaoutstore.com' }
+                  { text: '💬 Order via WhatsApp (03986718)', url: 'https://wa.me/9613986718' },
+                  { text: '🌐 View on Store', url: productUrl || 'https://onalaastore.com' }
                 ]
               ]
             }));
@@ -999,13 +999,13 @@ async function startServer() {
   app.get('/api/health', (_req: Request, res: Response) => {
     res.json({
       status: 'healthy',
-      store: 'SQUARE ARNAOUT CELL STORE',
+      store: 'ON AlAA STORE',
       version: '2027.1.0',
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'development',
-      database: 'ai-studio-marnaoutcellprem-6629f884-c968-499b-93cd-3c6b634467cb',
-      instagramHandle: '@m.arnaoutcell',
+      database: 'ai-studio-onalaastore-6629f884-c968-499b-93cd-3c6b634467cb',
+      instagramHandle: '@onalaastore.lb',
     });
   });
 
@@ -1063,7 +1063,7 @@ async function startServer() {
   }
 
   httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 SQUARE ARNAOUT CELL STORE Server running on http://0.0.0.0:${PORT}`);
+    console.log(`🚀 ON AlAA STORE Server running on http://0.0.0.0:${PORT}`);
   });
 }
 

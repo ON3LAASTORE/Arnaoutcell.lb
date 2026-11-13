@@ -176,7 +176,7 @@ export const StoreLocatorSection: React.FC = () => {
                     <span className="text-[10px] text-[#64748B] dark:text-slate-400 block font-semibold">
                       {isArabic ? 'اتصال مباشر:' : 'Direct Call:'}
                     </span>
-                    <span className="text-xs font-black">03 986 718</span>
+                    <span dir="ltr" className="text-xs font-black inline-block">03 986 718</span>
                   </div>
                 </a>
 
@@ -193,7 +193,7 @@ export const StoreLocatorSection: React.FC = () => {
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block font-semibold">
                       {isArabic ? 'محادثة واتساب:' : 'WhatsApp:'}
                     </span>
-                    <span className="text-xs font-black">03 986 718</span>
+                    <span dir="ltr" className="text-xs font-black inline-block">03 986 718</span>
                   </div>
                 </a>
               </div>

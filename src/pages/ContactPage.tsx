@@ -139,7 +139,8 @@ export const ContactPage: React.FC = () => {
                   </span>
                   <a
                     href="tel:03986718"
-                    className="text-base font-black text-[#172033] dark:text-white hover:text-[#007AFF] transition-colors"
+                    dir="ltr"
+                    className="inline-block text-base font-black text-[#172033] dark:text-white hover:text-[#007AFF] transition-colors"
                   >
                     03 986 718
                   </a>
@@ -159,7 +160,8 @@ export const ContactPage: React.FC = () => {
                     href="https://wa.me/9613986718"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-sm font-bold text-[#16A34A] hover:underline"
+                    dir="ltr"
+                    className="inline-block text-sm font-bold text-[#16A34A] hover:underline"
                   >
                     https://wa.me/9613986718 (03 986 718)
                   </a>

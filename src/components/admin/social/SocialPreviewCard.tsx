@@ -41,7 +41,7 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
 }) => {
   const { storeSettings } = useShop();
   const effectiveSettings = settings || storeSettings;
-  const storeName = effectiveSettings.storeName || 'ARNAOUT STORE';
+  const storeName = effectiveSettings.storeName || 'ON AlAA STORE';
   const caption = customCaption || (activeLang === 'ar' ? post.captionAr : post.captionEn) || '';
   const image =
     imageDataUrl ||
@@ -56,16 +56,16 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
         {/* WhatsApp Chat Header */}
         <div className="bg-[#005E54] text-white p-3 rounded-2xl flex items-center justify-between mb-4 shadow-xs">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-[#128C7E] flex items-center justify-center font-bold text-white text-xs">
-              AS
-            </div>
-            <div>
-              <div className="font-bold flex items-center gap-1">
-                <span>{storeName}</span>
-                <CheckCircle2 className="w-3.5 h-3.5 text-[#25D366] fill-[#25D366]" />
+              <div className="w-8 h-8 rounded-full bg-[#128C7E] flex items-center justify-center font-bold text-white text-xs">
+                OA
               </div>
-              <div className="text-[10px] text-emerald-100">online • Official Saida Showroom</div>
-            </div>
+              <div>
+                <div className="font-bold flex items-center gap-1">
+                  <span>{storeName}</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#25D366] fill-[#25D366]" />
+                </div>
+                <div className="text-[10px] text-emerald-100">online • Chouf • Delivery to All Lebanon</div>
+              </div>
           </div>
           <MoreHorizontal className="w-4 h-4 text-emerald-200" />
         </div>
@@ -102,7 +102,7 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
         {/* Story Header */}
         <div className="flex items-center gap-2.5 z-10">
           <div className="w-8 h-8 rounded-full bg-[#007AFF] flex items-center justify-center font-bold text-xs">
-            AS
+            OA
           </div>
           <div>
             <div className="font-bold text-xs">{storeName} Status</div>
@@ -134,24 +134,24 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
           <div className="flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-full bg-linear-to-tr from-amber-500 via-rose-500 to-purple-600 p-0.5">
               <div className="w-full h-full rounded-full bg-white flex items-center justify-center font-black text-[10px] text-purple-700">
-                MA
+                OA
               </div>
             </div>
             <div>
               <a
-                href="https://www.instagram.com/m.arnaoutcell/"
+                href="https://www.instagram.com/onalaastore.lb/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-bold text-[#172033] flex items-center gap-1 hover:text-purple-600 transition-colors"
               >
-                <span>m.arnaoutcell</span>
+                <span>onalaastore.lb</span>
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#007AFF] fill-[#007AFF]" />
               </a>
-              <div className="text-[10px] text-[#64748B]">M.ARNAOUT CELL • Saida, Lebanon</div>
+              <div className="text-[10px] text-[#64748B]">ON AlAA STORE • Chouf • All Lebanon</div>
             </div>
           </div>
           <a
-            href="https://www.instagram.com/m.arnaoutcell/"
+            href="https://www.instagram.com/onalaastore.lb/"
             target="_blank"
             rel="noopener noreferrer"
             className="text-[10px] font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-2.5 py-1 rounded-full border border-purple-200 transition-colors"
@@ -182,20 +182,20 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
 
           <div className="text-[#172033] text-[11px] leading-relaxed">
             <a
-              href="https://www.instagram.com/m.arnaoutcell/"
+              href="https://www.instagram.com/onalaastore.lb/"
               target="_blank"
               rel="noopener noreferrer"
               className="font-bold mr-1.5 hover:underline text-[#172033]"
             >
-              m.arnaoutcell
+              onalaastore.lb
             </a>
-            <span className="whitespace-pre-wrap">{caption || 'New arrival showcase at M.ARNAOUT CELL!'}</span>
+            <span className="whitespace-pre-wrap">{caption || 'New arrival showcase at ON AlAA STORE!'}</span>
           </div>
 
           <div className="text-[10px] text-[#64748B] uppercase">View all comments • Just now</div>
 
           <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-[#64748B]">
-            <span className="font-mono">Target: instagram.com/m.arnaoutcell</span>
+            <span className="font-mono">Target: instagram.com/onalaastore.lb</span>
             <span className="text-purple-600 font-bold">Meta Graph API v21.0</span>
           </div>
         </div>
@@ -210,14 +210,14 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-full bg-[#1877F2] text-white flex items-center justify-center font-bold text-xs">
-              AS
+              OA
             </div>
             <div>
               <div className="font-bold text-[#172033] flex items-center gap-1">
                 <span>{storeName}</span>
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#1877F2] fill-[#1877F2]" />
               </div>
-              <div className="text-[10px] text-[#64748B]">Just now • 🌍 Public • Saida</div>
+              <div className="text-[10px] text-[#64748B]">Just now • 🌍 Public • Chouf • All Lebanon</div>
             </div>
           </div>
           <MoreHorizontal className="w-4 h-4 text-[#64748B]" />
@@ -238,7 +238,7 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
         {/* Post Link / WhatsApp Bar */}
         <div className="bg-[#F5F8FC] p-3 rounded-xl border border-[#DCE5F0] flex items-center justify-between">
           <div>
-            <div className="text-[10px] text-[#64748B] uppercase font-mono">ARNAOUTSTORE.COM</div>
+            <div className="text-[10px] text-[#64748B] uppercase font-mono">ONALAASTORE.COM</div>
             <div className="font-bold text-[#172033] line-clamp-1">{post.productName}</div>
           </div>
           <button className="px-3 py-1.5 rounded-lg bg-[#1877F2] text-white font-bold text-[11px]">
@@ -271,11 +271,11 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
         {/* Telegram Header */}
         <div className="flex items-center gap-2.5 pb-2 border-b border-slate-700/60">
           <div className="w-8 h-8 rounded-full bg-[#2AABEE] flex items-center justify-center font-bold text-white text-xs">
-            AS
+            OA
           </div>
           <div>
             <div className="font-bold flex items-center gap-1">
-              <span>ARNAOUT STORE 🇱🇧</span>
+              <span>ON AlAA STORE 🇱🇧</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-[#2AABEE]/20 text-[#2AABEE]">Channel</span>
             </div>
             <div className="text-[10px] text-slate-400">14,200 subscribers</div>
@@ -291,7 +291,7 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
           )}
 
           <div className="text-slate-100 whitespace-pre-wrap text-[11px] leading-relaxed">
-            {caption || '💎 ARNAOUT STORE Tech Drop...'}
+            {caption || '💎 ON AlAA STORE Tech Drop...'}
           </div>
 
           <div className="flex items-center justify-between pt-1 text-[10px] text-slate-400">
@@ -303,7 +303,7 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
         {/* Inline Order Button */}
         <button className="w-full py-2 rounded-xl bg-[#2AABEE] hover:bg-[#229ED9] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs">
           <Send className="w-3.5 h-3.5" />
-          <span>Order via WhatsApp (81 900 916)</span>
+          <span>Order via WhatsApp (03 986 718)</span>
         </button>
       </div>
     );
@@ -314,21 +314,21 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
       <div className="bg-white rounded-3xl border border-[#DCE5F0] shadow-md max-w-md mx-auto p-4 sm:p-5 space-y-3 text-xs">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
-            AS
+            OA
           </div>
           <div className="flex-1 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1 flex-wrap">
                 <span className="font-black text-[#172033]">{storeName}</span>
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#007AFF] fill-[#007AFF]" />
-                <span className="text-[#64748B]">@ArnaoutStore</span>
+                <span className="text-[#64748B]">@OnAlaaStore</span>
                 <span className="text-[#64748B]">· 12m</span>
               </div>
               <MoreHorizontal className="w-4 h-4 text-[#64748B]" />
             </div>
 
             <div className="text-[#172033] text-[11px] whitespace-pre-wrap leading-relaxed">
-              {caption || 'Experience the new devices in Saida!'}
+              {caption || 'Order online from Chouf with express delivery across all Lebanon!'}
             </div>
 
             {image && (
@@ -365,9 +365,9 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
       </div>
 
       <div className="space-y-1.5 z-10 text-xs">
-        <div className="font-bold text-[#007AFF]">@arnaoutstore</div>
+        <div className="font-bold text-[#007AFF]">@onalaastore.lb</div>
         <p className="text-[11px] text-slate-200 line-clamp-3">
-          {caption || 'Latest gadget unboxing in Saida!'}
+          {caption || 'Latest gadget unboxing — Delivery to all Lebanon!'}
         </p>
       </div>
     </div>

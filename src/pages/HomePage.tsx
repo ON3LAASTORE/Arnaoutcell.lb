@@ -8,7 +8,6 @@ import { TestimonialsSlider } from '../components/TestimonialsSlider';
 import { StoreLocatorSection } from '../components/StoreLocatorSection';
 import { ServiceSection } from '../components/ServiceSection';
 import { CustomerTrust } from '../components/CustomerTrust';
-import { TimedNewsletterModal } from '../components/TimedNewsletterModal';
 import { ReactBitsBackground } from '../components/animations/ReactBitsBackground';
 
 export const HomePage: React.FC = () => {
@@ -23,7 +22,6 @@ export const HomePage: React.FC = () => {
       <StoreLocatorSection />
       <ServiceSection />
       <CustomerTrust />
-      <TimedNewsletterModal />
     </ReactBitsBackground>
   );
 };

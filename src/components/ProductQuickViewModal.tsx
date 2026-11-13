@@ -6,6 +6,7 @@ import {
   X,
   Star,
   Shield,
+  ShieldCheck,
   ShoppingCart,
   Zap,
   CheckCircle2,
@@ -602,7 +603,7 @@ export const ProductQuickViewModal: React.FC = () => {
                       : 'text-[#64748B] dark:text-slate-400 hover:text-[#172033] dark:hover:text-white'
                   }`}
                 >
-                  {lang === 'ar' ? 'التوصيل وصيدا' : 'Delivery & Pickup'}
+                  {lang === 'ar' ? 'التوصيل لكل لبنان' : 'All-Lebanon Delivery'}
                 </button>
                 <button
                   onClick={() => setActiveTab('reviews')}
@@ -642,13 +643,13 @@ export const ProductQuickViewModal: React.FC = () => {
                       </div>
 
                       <div className="p-2.5 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-[#16A34A] flex-shrink-0" />
+                        <Truck className="w-4 h-4 text-[#16A34A] flex-shrink-0" />
                         <div>
                           <span className="font-bold text-[#172033] dark:text-[#F8FAFC] block text-[11px]">
-                            {lang === 'ar' ? 'استلام فوري بصيدا' : 'Saida Store Pickup'}
+                            {lang === 'ar' ? 'توصيل لكافة لبنان' : 'All Lebanon Delivery'}
                           </span>
                           <span className="text-[10px] text-[#64748B] dark:text-slate-400">
-                            {lang === 'ar' ? 'ساحة النجمة (مجاناً)' : 'Nijme Square (Free)'}
+                            {lang === 'ar' ? 'مقرنا الشوف (شحن سريع)' : 'Based in Chouf (Fast)'}
                           </span>
                         </div>
                       </div>
@@ -742,33 +743,33 @@ export const ProductQuickViewModal: React.FC = () => {
                   </div>
                 )}
 
-                {/* 3. Delivery & Saida Pickup Tab */}
+                {/* 3. Delivery & Chouf Hub Tab */}
                 {activeTab === 'delivery' && (
                   <div className="space-y-3 text-xs">
                     <div className="p-3 rounded-2xl bg-[#EAF3FF] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-blue-900 flex items-start gap-3">
-                      <MapPin className="w-5 h-5 text-[#007AFF] flex-shrink-0 mt-0.5" />
+                      <Truck className="w-5 h-5 text-[#007AFF] flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-bold text-[#172033] dark:text-[#F8FAFC] block text-sm">
-                          {lang === 'ar' ? 'استلام مجاني من فرع صيدا (ساحة النجمة)' : 'Free Instant Pickup at Saida Showroom'}
+                          {lang === 'ar' ? 'التوصيل متاح لجميع مناطق لبنان' : 'Delivery Available to All Lebanon'}
                         </span>
                         <p className="text-[#64748B] dark:text-slate-300 text-xs mt-0.5">
                           {lang === 'ar'
-                            ? 'يمكنكم حجز القطعة واستلامها خلال 15 دقيقة من محلنا في ساحة النجمة، صيدا. مفتوح 17 ساعة يومياً (8:00 صباحاً – 1:00 بعد منتصف الليل).'
-                            : 'Reserve your device online and pick it up in 15 minutes at Nijme Square, Saida. Open 17 hours daily (8:00 AM – 1:00 AM).'}
+                            ? 'متجرنا الإلكتروني مقره الشوف، مع شحن سريع وموثوق لباب بيتك في كافة المحافظات والمناطق اللبنانية. خدمة الطلبات والدعم يومياً (8:00 ص – 1:00 ص).'
+                            : 'Online Store based in Chouf with fast, reliable door-to-door delivery across all Lebanese regions. Support daily (8:00 AM – 1:00 AM).'}
                         </p>
                       </div>
                     </div>
 
                     <div className="p-3 rounded-2xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] flex items-start gap-3">
-                      <Truck className="w-5 h-5 text-[#16A34A] flex-shrink-0 mt-0.5" />
+                      <ShieldCheck className="w-5 h-5 text-[#16A34A] flex-shrink-0 mt-0.5" />
                       <div>
                         <span className="font-bold text-[#172033] dark:text-[#F8FAFC] block text-sm">
-                          {lang === 'ar' ? 'خدمات المعرض والتوصيل داخل صيدا' : 'Showroom Services & Fast Delivery in Saida'}
+                          {lang === 'ar' ? 'دفع عند الاستلام وكفالة رسمية' : 'Cash on Delivery & Official Warranty'}
                         </span>
                         <p className="text-[#64748B] dark:text-slate-400 text-xs mt-0.5">
                           {lang === 'ar'
-                            ? 'خدمات المعرض الكاملة واستلام فوري بساحة النجمة، أو توصيل سريع في نفس اليوم داخل صيدا وضواحيها مع الدفع عند الاستلام.'
-                            : 'Full showroom services & instant pickup at Nijme Square, or rapid same-day local delivery across Saida and suburbs with Cash on Delivery.'}
+                            ? 'أجهزة أصلية 100% بكفالة رسمية معتمدة مع إمكانية الدفع نقداً عند الاستلام أو عبر Whish Money.'
+                            : '100% genuine devices backed by official warranty with Cash on Delivery or Whish Money across Lebanon.'}
                         </p>
                       </div>
                     </div>
@@ -801,7 +802,7 @@ export const ProductQuickViewModal: React.FC = () => {
                       ))
                     ) : (
                       <div className="p-4 text-center text-xs text-[#64748B] dark:text-slate-400">
-                        {lang === 'ar' ? 'كن أول من يقيم هذا المنتج من فرعنا بصيدا!' : 'Be the first to review this genuine item!'}
+                        {lang === 'ar' ? 'كن أول من يقيم هذا المنتج الأصلي في متجر ON AlAA!' : 'Be the first to review this genuine item at ON AlAA STORE!'}
                       </div>
                     )}
                   </div>
@@ -877,14 +878,14 @@ export const ProductQuickViewModal: React.FC = () => {
                 <WhatsApp3DIcon size={22} />
                 <span>
                   {lang === 'ar'
-                    ? 'استفسار / طلب عبر واتساب (81900916)'
-                    : 'Inquire / Order on WhatsApp (81900916)'}
+                    ? 'استفسار / طلب عبر واتساب (03986718)'
+                    : 'Inquire / Order on WhatsApp (03986718)'}
                 </span>
               </button>
 
               {/* Dedicated Page Option */}
               <div className="flex items-center justify-between text-[11px] text-[#64748B] dark:text-slate-400 pt-1">
-                <span>{lang === 'ar' ? 'كفالة رسمية صيدا - ساحة النجمة' : 'Official Warranty • Saida Nijme Square'}</span>
+                <span>{lang === 'ar' ? 'كفالة رسمية • الشوف وتوصيل لكل لبنان' : 'Official Warranty • Chouf & All Lebanon'}</span>
                 <button
                   onClick={() => {
                     setQuickViewProduct(null);

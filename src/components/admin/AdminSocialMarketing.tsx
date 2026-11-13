@@ -96,7 +96,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
   const [isPublishing, setIsPublishing] = useState(false);
   const [isPublishingInstagram, setIsPublishingInstagram] = useState(false);
 
-  // Dedicated Instagram Publishing Modal for M.ARNAOUT CELL
+  // Dedicated Instagram Publishing Modal for ON AlAA STORE
   const [instagramModal, setInstagramModal] = useState<{
     isOpen: boolean;
     stage: 'idle' | 'uploading' | 'container' | 'publishing' | 'done' | 'error';
@@ -241,7 +241,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
         platforms: selectedPlatforms,
         caption: targetCaption,
         imageBase64: generatedImageDataUrl,
-        productUrl: `https://arnaoutstore.com/?product=${encodeURIComponent(selectedProduct.id)}`,
+        productUrl: `https://onalaastore.com/?product=${encodeURIComponent(selectedProduct.id)}`,
         fallbackImageUrl: selectedProduct.images?.[0],
       });
 
@@ -310,7 +310,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
           isOpen: true,
           stage: 'done',
           postId: res.postId,
-          postUrl: res.postUrl || 'https://www.instagram.com/m.arnaoutcell/',
+          postUrl: res.postUrl || 'https://www.instagram.com/onalaastore.lb/',
         });
       } else {
         setInstagramModal({
@@ -525,7 +525,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
                       )}
                     </div>
                     <div className="text-[10px] text-[#64748B] mt-0.5">
-                      Warranty: 12M Official • Pickup: Saida Nejmeh Square (Plus Code: H97G+W2P)
+                      Warranty: 12M Official • Online Store in Chouf • Delivery Available to All Lebanon
                     </div>
                   </div>
                 </div>
@@ -799,8 +799,8 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
                     <Instagram className={`w-4 h-4 ${isPublishingInstagram ? 'animate-spin' : ''}`} />
                     <span>
                       {isPublishingInstagram
-                        ? isArabic ? 'جاري النشر لـ @m.arnaoutcell...' : 'Publishing to @m.arnaoutcell...'
-                        : isArabic ? 'نشر على إنستغرام (@m.arnaoutcell)' : 'Publish to Instagram'}
+                        ? isArabic ? 'جاري النشر لـ @onalaastore.lb...' : 'Publishing to @onalaastore.lb...'
+                        : isArabic ? 'نشر على إنستغرام (@onalaastore.lb)' : 'Publish to Instagram'}
                     </span>
                   </button>
 
@@ -859,16 +859,16 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-black text-xs text-[#172033]">M.ARNAOUT CELL</span>
+                    <span className="font-black text-xs text-[#172033]">ON AlAA STORE</span>
                     <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">Instagram Business</span>
                   </div>
                   <a
-                    href="https://www.instagram.com/m.arnaoutcell/"
+                    href="https://www.instagram.com/onalaastore.lb/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-[11px] font-bold text-purple-600 hover:underline flex items-center gap-1 truncate"
                   >
-                    <span>@m.arnaoutcell</span>
+                    <span>@onalaastore.lb</span>
                     <ExternalLink className="w-2.5 h-2.5" />
                   </a>
                 </div>
@@ -1006,7 +1006,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
       )}
 
       {/* =========================================================================
-          INSTAGRAM DIRECT PUBLISHING MODAL FOR M.ARNAOUT CELL
+          INSTAGRAM DIRECT PUBLISHING MODAL FOR ON AlAA STORE
       ========================================================================== */}
       {instagramModal?.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-200">
@@ -1023,12 +1023,12 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
                     <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">Meta v21.0</span>
                   </h3>
                   <a
-                    href="https://www.instagram.com/m.arnaoutcell/"
+                    href="https://www.instagram.com/onalaastore.lb/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-xs font-bold text-purple-600 hover:underline flex items-center gap-1"
                   >
-                    <span>M.ARNAOUT CELL (@m.arnaoutcell)</span>
+                    <span>ON AlAA STORE (@onalaastore.lb)</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
@@ -1058,7 +1058,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
               <div className="min-w-0 flex-1">
                 <h4 className="text-xs font-bold text-[#172033] truncate">{selectedProduct.name}</h4>
                 <div className="text-[11px] text-[#007AFF] font-bold">
-                  ${selectedProduct.price} USD • Cash on Delivery & Saida Pickup
+                  ${selectedProduct.price} USD • Cash on Delivery Across All Lebanon
                 </div>
               </div>
             </div>
@@ -1071,7 +1071,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
                   <span className="text-xs font-bold text-purple-900">
                     {instagramModal.stage === 'uploading' && (isArabic ? 'جاري تجهيز الصورة الإعلانية فائقة الدقة...' : 'Processing high-resolution promotional image...')}
                     {instagramModal.stage === 'container' && (isArabic ? 'جاري إنشاء حاوية وسائط Meta Instagram Container...' : 'Creating Instagram Media Container via Meta Graph API...')}
-                    {instagramModal.stage === 'publishing' && (isArabic ? 'جاري نشر الحاوية في موجز @m.arnaoutcell...' : 'Publishing container to @m.arnaoutcell feed...')}
+                    {instagramModal.stage === 'publishing' && (isArabic ? 'جاري نشر الحاوية في موجز @onalaastore.lb...' : 'Publishing container to @onalaastore.lb feed...')}
                   </span>
                 </div>
                 <div className="text-[11px] text-purple-700 font-mono">
@@ -1085,12 +1085,12 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
               <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-950 space-y-3">
                 <div className="flex items-center gap-2 text-emerald-700 font-black text-sm">
                   <CheckCircle2 className="w-5 h-5" />
-                  <span>{isArabic ? 'تم النشر بنجاح على إنستغرام!' : 'Published Successfully to @m.arnaoutcell!'}</span>
+                  <span>{isArabic ? 'تم النشر بنجاح على إنستغرام!' : 'Published Successfully to @onalaastore.lb!'}</span>
                 </div>
                 <p className="text-xs text-emerald-800 leading-relaxed">
                   {isArabic
-                    ? 'تم نشر تصميم المنتج والنص التسويقي والكفالة مباشرة في حساب إنستغرام الرسمي لـ M.ARNAOUT CELL.'
-                    : 'Your product graphic, pricing, warranty, and hashtags have been published directly to M.ARNAOUT CELL on Instagram.'}
+                    ? 'تم نشر تصميم المنتج والنص التسويقي والكفالة مباشرة في حساب إنستغرام الرسمي لـ ON AlAA STORE.'
+                    : 'Your product graphic, pricing, warranty, and hashtags have been published directly to ON AlAA STORE on Instagram.'}
                 </p>
                 {instagramModal.postId && (
                   <div className="text-[11px] font-mono text-emerald-800 bg-emerald-100/60 p-2 rounded-xl">
@@ -1099,12 +1099,12 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
                 )}
                 <div className="pt-2 flex items-center gap-2">
                   <a
-                    href="https://www.instagram.com/m.arnaoutcell/"
+                    href="https://www.instagram.com/onalaastore.lb/"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-xs flex items-center justify-center gap-1.5 hover:opacity-95 shadow-md shadow-pink-500/20"
                   >
-                    <span>View on Instagram (@m.arnaoutcell)</span>
+                    <span>View on Instagram (@onalaastore.lb)</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
@@ -1118,7 +1118,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
                   <AlertCircle className="w-5 h-5 flex-shrink-0" />
                   <span>
                     {instagramModal.needsSetup
-                      ? isArabic ? 'إعدادات ربط @m.arnaoutcell مطلوبة' : 'Meta API Connection Setup Required'
+                      ? isArabic ? 'إعدادات ربط @onalaastore.lb مطلوبة' : 'Meta API Connection Setup Required'
                       : isArabic ? 'تعذر النشر على إنستغرام' : 'Instagram Publishing Error'}
                   </span>
                 </div>
@@ -1139,7 +1139,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
                     {isArabic ? 'المتطلبات الرسمية لـ Meta Graph API:' : 'Required Meta Developer Setup:'}
                   </span>
                   <ul className="list-disc list-inside space-y-0.5 text-[11px] text-purple-800/90">
-                    <li>Link Instagram Business account <strong>@m.arnaoutcell</strong> to your Facebook Page</li>
+                    <li>Link Instagram Business account <strong>@onalaastore.lb</strong> to your Facebook Page</li>
                     <li>Generate a Page Access Token with <code>instagram_content_publish</code> & <code>instagram_basic</code></li>
                     <li>Enter your Instagram Business Account ID in <em>Accounts & API</em></li>
                   </ul>
@@ -1155,7 +1155,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
                     className="flex-1 py-2.5 px-4 rounded-xl bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
                   >
                     <Settings className="w-3.5 h-3.5" />
-                    <span>{isArabic ? 'إعداد مفاتيح وتصاريح @m.arnaoutcell' : 'Configure @m.arnaoutcell Credentials'}</span>
+                    <span>{isArabic ? 'إعداد مفاتيح وتصاريح @onalaastore.lb' : 'Configure @onalaastore.lb Credentials'}</span>
                   </button>
                 </div>
               </div>

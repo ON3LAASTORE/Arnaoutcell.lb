@@ -24,6 +24,7 @@ const KEYS = {
   WISHLIST: 'arnaout_cell_wishlist_v2',
   CART: 'arnaout_cell_cart_v2',
   TESTIMONIALS: 'arnaout_cell_testimonials_v2',
+  WARRANTY_SAMPLES_SEEDED: 'arnaout_cell_warranty_samples_v1',
 };
 
 // Initialize if empty
@@ -101,7 +102,7 @@ export function initStorage(): void {
         total: 1251,
         currency: 'USD',
         status: 'delivered',
-        paymentMethod: 'cash_on_delivery',
+        paymentMethod: 'cod',
         paymentStatus: 'paid',
         orderDate: '2026-10-10T14:20:00Z',
         statusHistory: [
@@ -112,7 +113,7 @@ export function initStorage(): void {
         ],
       },
       {
-        id: 'ARN-2027-1002',
+        id: 'OAA-2027-1002',
         customer: {
           fullName: 'Nour El-Hajj',
           phone: '70 987 654',
@@ -152,11 +153,179 @@ export function initStorage(): void {
           { status: 'new', timestamp: '2026-10-14T09:15:00Z' },
           { status: 'confirmed', timestamp: '2026-10-14T09:30:00Z' },
           { status: 'preparing', timestamp: '2026-10-14T10:00:00Z' },
-          { status: 'out_for_delivery', timestamp: '2026-10-14T12:00:00Z', note: 'Courier out in Beirut route' },
-        ],
-      },
-    ];
+            { status: 'out_for_delivery', timestamp: '2026-10-14T12:00:00Z', note: 'Courier out in Beirut route' },
+          ],
+        },
+        {
+          id: 'OAA-2025-0412',
+          customer: {
+            fullName: 'Karim Haddad',
+            phone: '71 555 210',
+            cityArea: 'Mount Lebanon (Aley)',
+            addressLine: 'Aley Main Street',
+          },
+          items: [
+            {
+              productId: 'prod-sonywh1000xm5',
+              productName: 'Sony WH-1000XM5 Wireless Noise-Cancelling Headphones',
+              brand: 'Sony',
+              price: 319,
+              quantity: 1,
+              image: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=800&auto=format&fit=crop&q=80',
+              color: 'Midnight Blue',
+            },
+          ],
+          subtotal: 319,
+          discount: 0,
+          deliveryFee: 3,
+          total: 322,
+          currency: 'USD',
+          status: 'delivered',
+          paymentMethod: 'cod',
+          paymentStatus: 'paid',
+          orderDate: '2025-02-01T10:00:00Z',
+          statusHistory: [
+            { status: 'new', timestamp: '2025-02-01T10:00:00Z' },
+            { status: 'delivered', timestamp: '2025-02-01T15:30:00Z', note: 'Delivered in Aley' },
+          ],
+        },
+        {
+          id: 'OAA-2026-0884',
+          customer: {
+            fullName: 'Rami Mansour',
+            phone: '76 345 901',
+            cityArea: 'Chouf (Deir El Qamar)',
+            addressLine: 'Main Square, Bldg 12',
+          },
+          items: [
+            {
+              productId: 'prod-s25ultra',
+              productName: 'Samsung Galaxy S25 Ultra 512GB Titanium Gray',
+              brand: 'Samsung',
+              price: 1299,
+              quantity: 1,
+              image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&auto=format&fit=crop&q=80',
+              color: 'Titanium Gray',
+            },
+          ],
+          subtotal: 1299,
+          discount: 0,
+          deliveryFee: 2,
+          total: 1301,
+          currency: 'USD',
+          status: 'delivered',
+          paymentMethod: 'cod',
+          paymentStatus: 'paid',
+          orderDate: '2026-04-15T11:00:00Z',
+          statusHistory: [
+            { status: 'new', timestamp: '2026-04-15T11:00:00Z' },
+            { status: 'delivered', timestamp: '2026-04-15T16:45:00Z', note: 'Delivered in Chouf' },
+          ],
+          warrantyClaim: {
+            status: 'replaced',
+            claimedAt: '2026-09-18T13:20:00Z',
+            claimReference: 'WCL-2026-084',
+            resolution: 'Display assembly serviced & replaced under official warranty.',
+            resolutionAr: 'تمت معالجة المطالبة واستبدال وحدة الشاشة ضمن الكفالة الرسمية.',
+          },
+        },
+      ];
     localStorage.setItem(KEYS.ORDERS, JSON.stringify(sampleOrders));
+    localStorage.setItem(KEYS.WARRANTY_SAMPLES_SEEDED, '1');
+  } else if (!localStorage.getItem(KEYS.WARRANTY_SAMPLES_SEEDED)) {
+    try {
+      const existingRaw = localStorage.getItem(KEYS.ORDERS);
+      const existingOrders: Order[] = existingRaw ? JSON.parse(existingRaw) : [];
+      const existingIds = new Set(existingOrders.map((o) => o.id));
+      const extraSamples: Order[] = [
+        {
+          id: 'OAA-2025-0412',
+          customer: {
+            fullName: 'Karim Haddad',
+            phone: '71 555 210',
+            cityArea: 'Mount Lebanon (Aley)',
+            addressLine: 'Aley Main Street',
+          },
+          items: [
+            {
+              productId: 'prod-sonywh1000xm5',
+              productName: 'Sony WH-1000XM5 Wireless Noise-Cancelling Headphones',
+              brand: 'Sony',
+              price: 319,
+              quantity: 1,
+              image: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=800&auto=format&fit=crop&q=80',
+              color: 'Midnight Blue',
+            },
+          ],
+          subtotal: 319,
+          discount: 0,
+          deliveryFee: 3,
+          total: 322,
+          currency: 'USD',
+          status: 'delivered',
+          paymentMethod: 'cod',
+          paymentStatus: 'paid',
+          orderDate: '2025-02-01T10:00:00Z',
+          statusHistory: [
+            { status: 'new', timestamp: '2025-02-01T10:00:00Z' },
+            { status: 'delivered', timestamp: '2025-02-01T15:30:00Z', note: 'Delivered in Aley' },
+          ],
+        },
+        {
+          id: 'OAA-2026-0884',
+          customer: {
+            fullName: 'Rami Mansour',
+            phone: '76 345 901',
+            cityArea: 'Chouf (Deir El Qamar)',
+            addressLine: 'Main Square, Bldg 12',
+          },
+          items: [
+            {
+              productId: 'prod-s25ultra',
+              productName: 'Samsung Galaxy S25 Ultra 512GB Titanium Gray',
+              brand: 'Samsung',
+              price: 1299,
+              quantity: 1,
+              image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&auto=format&fit=crop&q=80',
+              color: 'Titanium Gray',
+            },
+          ],
+          subtotal: 1299,
+          discount: 0,
+          deliveryFee: 2,
+          total: 1301,
+          currency: 'USD',
+          status: 'delivered',
+          paymentMethod: 'cod',
+          paymentStatus: 'paid',
+          orderDate: '2026-04-15T11:00:00Z',
+          statusHistory: [
+            { status: 'new', timestamp: '2026-04-15T11:00:00Z' },
+            { status: 'delivered', timestamp: '2026-04-15T16:45:00Z', note: 'Delivered in Chouf' },
+          ],
+          warrantyClaim: {
+            status: 'replaced',
+            claimedAt: '2026-09-18T13:20:00Z',
+            claimReference: 'WCL-2026-084',
+            resolution: 'Display assembly serviced & replaced under official warranty.',
+            resolutionAr: 'تمت معالجة المطالبة واستبدال وحدة الشاشة ضمن الكفالة الرسمية.',
+          },
+        },
+      ];
+      let added = false;
+      for (const sample of extraSamples) {
+        if (!existingIds.has(sample.id)) {
+          existingOrders.push(sample);
+          added = true;
+        }
+      }
+      if (added) {
+        localStorage.setItem(KEYS.ORDERS, JSON.stringify(existingOrders));
+      }
+      localStorage.setItem(KEYS.WARRANTY_SAMPLES_SEEDED, '1');
+    } catch {
+      // ignore
+    }
   }
 }
 
@@ -328,7 +497,7 @@ export function createOrder(orderData: Omit<Order, 'id' | 'orderDate' | 'statusH
   });
   saveProducts(updatedProducts);
 
-  const orderId = `ARN-2027-${Math.floor(1000 + Math.random() * 9000)}`;
+  const orderId = `OAA-2027-${Math.floor(1000 + Math.random() * 9000)}`;
   const now = new Date().toISOString();
 
   const newOrder: Order = {
@@ -449,8 +618,11 @@ export function getStoreSettings(): StoreSettings {
     if (!merged.storeName || merged.storeName.includes('ARNAOUT') || merged.storeName.includes('ON 3LAA') || merged.storeName.includes('SQUARE')) {
       merged.storeName = 'ON AlAA STORE';
     }
-    if (!merged.storeNameAr || merged.storeNameAr.includes('أرناؤوط') || merged.storeNameAr.includes('ON 3LAA')) {
-      merged.storeNameAr = 'متجر ON AlAA';
+    if (!merged.storeNameAr || merged.storeNameAr.includes('أرناؤوط') || merged.storeNameAr.includes('ON 3LAA') || merged.storeNameAr === 'متجر ON AlAA') {
+      merged.storeNameAr = 'متجر ON AlAA STORE';
+    }
+    if (!merged.logoUrl || merged.logoUrl.includes('m-arnaout-cell-logo')) {
+      merged.logoUrl = INITIAL_STORE_SETTINGS.logoUrl;
     }
     if (!merged.locationEn || merged.locationEn.includes('Saida') || merged.locationEn.includes('H97G+W2P')) {
       merged.locationEn = INITIAL_STORE_SETTINGS.locationEn;
@@ -464,10 +636,10 @@ export function getStoreSettings(): StoreSettings {
     if (!merged.whatsapp || merged.whatsapp.includes('81900916') || merged.whatsapp.includes('03099889') || merged.whatsapp.includes('70773067')) {
       merged.whatsapp = '9613986718';
     }
-    if (!merged.tagline || merged.tagline.includes('Saida') || merged.tagline.includes('صيدا')) {
+    if (!merged.tagline || merged.tagline.includes('Saida') || merged.tagline.includes('صيدا') || merged.tagline.includes('🚚')) {
       merged.tagline = INITIAL_STORE_SETTINGS.tagline;
     }
-    if (!merged.taglineAr || merged.taglineAr.includes('صيدا')) {
+    if (!merged.taglineAr || merged.taglineAr.includes('صيدا') || merged.taglineAr.includes('🚚')) {
       merged.taglineAr = INITIAL_STORE_SETTINGS.taglineAr;
     }
     // Ensure delivery zones reflect Chouf online store and all-Lebanon delivery

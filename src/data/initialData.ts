@@ -926,10 +926,10 @@ export const LEBANON_DELIVERY_ZONES: DeliveryZone[] = [
 
 export const INITIAL_STORE_SETTINGS: StoreSettings = {
   storeName: 'ON AlAA STORE',
-  storeNameAr: 'متجر ON AlAA',
-  tagline: 'Online Store Based in Chouf • Delivery Available to All Lebanon 🚚',
-  taglineAr: 'متجر إلكتروني مقره الشوف • التوصيل متاح لجميع مناطق لبنان 🚚',
-  logoUrl: '/m-arnaout-cell-logo.jpg',
+  storeNameAr: 'متجر ON AlAA STORE',
+  tagline: 'Online Store in Chouf • Delivery to All Lebanon',
+  taglineAr: 'متجر إلكتروني مقره الشوف • التوصيل لجميع مناطق لبنان',
+  logoUrl: '/on-alaa-logo.svg',
   phone: '03986718',
   whatsapp: '9613986718', // formatted for wa.me link
   locationEn: 'Online Store — Based in Chouf • Delivery Available to All Lebanon',

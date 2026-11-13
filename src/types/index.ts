@@ -122,7 +122,7 @@ export type OrderStatus =
 
 export type PaymentMethod =
   | 'cod' // Cash on Delivery (USD / LBP market rate)
-  | 'store_pickup' // Pickup at Saida Store (Nijme Square)
+  | 'store_pickup' // Arranged Express Dispatch / Pickup (Chouf Hub)
   | 'whish_money' // Whish Money Transfer
   | 'omt_western_union'; // OMT / Western Union Service
 
@@ -142,14 +142,23 @@ export interface CustomerDetails {
   phone: string;
   alternatePhone?: string;
   email?: string;
-  cityArea: string; // e.g. "Saida", "Beirut", "Tripoli"
+  cityArea: string; // e.g. "Chouf", "Beirut", "Tripoli"
   addressLine: string;
   buildingFloor?: string;
   notes?: string;
 }
 
+export interface WarrantyClaimInfo {
+  status: 'claimed' | 'in_service' | 'replaced';
+  claimedAt: string;
+  claimReference?: string;
+  resolution?: string;
+  resolutionAr?: string;
+  claimedProductIds?: string[];
+}
+
 export interface Order {
-  id: string; // e.g. "ARN-2027-1042"
+  id: string; // e.g. "OAA-2027-1042"
   customer: CustomerDetails;
   items: OrderItem[];
   subtotal: number;
@@ -166,6 +175,7 @@ export interface Order {
     timestamp: string;
     note?: string;
   }[];
+  warrantyClaim?: WarrantyClaimInfo;
   adminNotes?: string;
 }
 

@@ -197,13 +197,13 @@ export const CartDrawer: React.FC = () => {
                   className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100 hover:from-emerald-100 hover:to-green-100 dark:from-emerald-950/40 dark:via-emerald-900/40 dark:to-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 font-extrabold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-sm hover:shadow-md hover:shadow-emerald-500/20 group active:scale-98"
                 >
                   <WhatsApp3DIcon size={20} />
-                  <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (81900916)' : 'Inquire / Order on WhatsApp (81900916)'}</span>
+                  <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (03986718)' : 'Inquire / Order on WhatsApp (03986718)'}</span>
                 </button>
               </div>
 
               <div className="flex items-center justify-center gap-1.5 text-[10px] text-[#64748B] dark:text-slate-400">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#007AFF]" />
-                <span>{lang === 'ar' ? 'خدمات المعرض وتوصيل مضمون داخل صيدا' : 'Showroom services & verified delivery in Saida'}</span>
+                <span>{lang === 'ar' ? 'متجر إلكتروني بالشوف • التوصيل لجميع مناطق لبنان' : 'Online Store in Chouf • Delivery Available to All Lebanon'}</span>
               </div>
             </div>
           )}

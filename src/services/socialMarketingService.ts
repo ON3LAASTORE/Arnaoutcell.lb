@@ -13,12 +13,12 @@ export const INITIAL_SOCIAL_ACCOUNTS: SocialAccountConfig[] = [
     id: 'acc-whatsapp',
     platform: 'whatsapp',
     displayName: 'WhatsApp Business & Direct Orders',
-    accountHandle: '+961 81 900 916',
+    accountHandle: '+961 3 986 718',
     isConnected: true,
     directPublishSupported: true,
     directPublishEnabled: true,
     hasApiKey: true,
-    channelId: '96181900916',
+    channelId: '9613986718',
     lastSyncedAt: new Date().toISOString(),
     instructionsEn: 'Directly opens WhatsApp Web or mobile app with pre-formatted product message, pricing, warranty, and order link.',
     instructionsAr: 'يفتح تطبيق الواتساب أو واتساب ويب مباشرة مع رسالة منسقة بالأسعار، الكفالة، ورابط الطلب المباشر.',
@@ -27,7 +27,7 @@ export const INITIAL_SOCIAL_ACCOUNTS: SocialAccountConfig[] = [
     id: 'acc-whatsapp-status',
     platform: 'whatsapp_status',
     displayName: 'WhatsApp Status & Stories',
-    accountHandle: '+961 81 900 916 Status',
+    accountHandle: '+961 3 986 718 Status',
     isConnected: true,
     directPublishSupported: true,
     directPublishEnabled: true,
@@ -40,12 +40,12 @@ export const INITIAL_SOCIAL_ACCOUNTS: SocialAccountConfig[] = [
     id: 'acc-telegram',
     platform: 'telegram',
     displayName: 'Telegram Channel & Group Broadcast',
-    accountHandle: '@arnaoutstore_lb',
+    accountHandle: '@onalaastore_lb',
     isConnected: true,
     directPublishSupported: true,
     directPublishEnabled: true,
     hasApiKey: false, // Configurable bot token
-    channelId: '@arnaoutstore_lb',
+    channelId: '@onalaastore_lb',
     lastSyncedAt: new Date().toISOString(),
     instructionsEn: 'Broadcasts to Telegram channel subscribers or groups via direct intent share link or automated Telegram Bot API.',
     instructionsAr: 'نشر فوري في قناة وتيليجرام المشتركين عبر روابط المشاركة المباشرة أو بوت تيليجرام الآلي.',
@@ -53,27 +53,27 @@ export const INITIAL_SOCIAL_ACCOUNTS: SocialAccountConfig[] = [
   {
     id: 'acc-instagram',
     platform: 'instagram',
-    displayName: 'Instagram Business – M.ARNAOUT CELL',
-    accountHandle: '@m.arnaoutcell',
+    displayName: 'Instagram Business – ON AlAA STORE',
+    accountHandle: '@onalaastore.lb',
     isConnected: true,
     directPublishSupported: true, // Official Meta Instagram Graph API
     directPublishEnabled: true,
     hasApiKey: false,
-    channelId: 'm.arnaoutcell',
+    channelId: 'onalaastore.lb',
     lastSyncedAt: new Date().toISOString(),
-    instructionsEn: 'Directly publishes product photos and promotional designs to https://www.instagram.com/m.arnaoutcell/ via official Meta Instagram Graph API container flow.',
-    instructionsAr: 'نشر فوري مباشر لصور وتصاميم المنتجات في حساب إنستغرام للأعمال https://www.instagram.com/m.arnaoutcell/ عبر واجهة Meta Graph API الرسمية.',
+    instructionsEn: 'Directly publishes product photos and promotional designs to Instagram Business via official Meta Instagram Graph API container flow.',
+    instructionsAr: 'نشر فوري مباشر لصور وتصاميم المنتجات في حساب إنستغرام للأعمال عبر واجهة Meta Graph API الرسمية.',
   },
   {
     id: 'acc-facebook',
     platform: 'facebook',
     displayName: 'Facebook Page & Marketplace',
-    accountHandle: 'ARNAOUT STORE Saida',
+    accountHandle: 'ON AlAA STORE Lebanon',
     isConnected: true,
     directPublishSupported: true,
     directPublishEnabled: true,
     hasApiKey: false,
-    channelId: 'arnaoutstore.lb',
+    channelId: 'onalaastore.lb',
     lastSyncedAt: new Date().toISOString(),
     instructionsEn: '1-click Facebook share dialog with product card preview, cash USD price, and full description.',
     instructionsAr: 'مشاركة بنقرة واحدة على صفحة فيسبوك أو المجموعات مع معاينة بطاقة المنتج وتفاصيل السعر والكفالة.',
@@ -82,7 +82,7 @@ export const INITIAL_SOCIAL_ACCOUNTS: SocialAccountConfig[] = [
     id: 'acc-x',
     platform: 'x',
     displayName: 'X (formerly Twitter)',
-    accountHandle: '@ArnaoutStore',
+    accountHandle: '@ONAlAAStore',
     isConnected: true,
     directPublishSupported: true,
     directPublishEnabled: true,
@@ -95,7 +95,7 @@ export const INITIAL_SOCIAL_ACCOUNTS: SocialAccountConfig[] = [
     id: 'acc-tiktok',
     platform: 'tiktok',
     displayName: 'TikTok Showcase & Photo Mode',
-    accountHandle: '@arnaoutstore',
+    accountHandle: '@onalaastore',
     isConnected: true,
     directPublishSupported: false,
     directPublishEnabled: true,
@@ -121,9 +121,9 @@ export const INITIAL_MARKETING_POSTS: MarketingPost[] = [
     productImage: 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=800&auto=format&fit=crop&q=80',
     aspectRatio: '1:1',
     templateStyle: 'coloros_purple',
-    captionEn: '🔥 MEET THE ALL-NEW OPPO RENO 16 SERIES 5G at ARNAOUT STORE!\n\nExperience 3D Pop Planet Design, HoloVerse 3D Tech, and 50MP Ultra-Wide Selfie Camera.\n\n💰 Cash USD: $739 (Was $790 - Save 6% OFF)\n🛡️ 12 Months Official Warranty in Saida\n🚚 Lebanon-Wide Express Delivery\n\n📲 Order via WhatsApp: +961 81 900 916\n#ArnaoutStore #OPPOLebanon #Reno16Series #Saida #LebanonTech',
-    captionAr: '🔥 أحدث هواتف أوبو: OPPO Reno 16 Series 5G متوفر الآن لدى أرناؤوط ستور صيدا!\n\nتصميم ثوري مع تقنية HoloVerse 3D وكاميرا سيلفي 50 ميجابكسل فائقة الدقة.\n\n💰 السعر كاش: $739 دولار (خصم خاص 6%)\n🛡️ كفالة رسمية 12 شهراً\n🚚 توصيل سريع لجميع المناطق اللبنانية\n\n📲 للطلب الفوري عبر واتساب: 81900916 961+\n#أرناؤوط_ستور #صيدا #أوبو #هواتف_لبنان',
-    hashtags: ['#ArnaoutStore', '#OPPO', '#Reno16Series', '#Saida', '#LebanonTech', '#CashUSD'],
+    captionEn: '🔥 MEET THE ALL-NEW OPPO RENO 16 SERIES 5G at ON AlAA STORE!\n\nExperience 3D Pop Planet Design, HoloVerse 3D Tech, and 50MP Ultra-Wide Selfie Camera.\n\n💰 Cash USD: $739 (Was $790 - Save 6% OFF)\n🛡️ 12 Months Official Warranty\n🚚 Online Store in Chouf • Delivery Available to All Lebanon\n\n📲 Order via WhatsApp: https://wa.me/9613986718 (03 986 718)\n#ONAlAASTORE #OPPOLebanon #Reno16Series #Chouf #LebanonTech',
+    captionAr: '🔥 أحدث هواتف أوبو: OPPO Reno 16 Series 5G متوفر الآن لدى ON AlAA STORE!\n\nتصميم ثوري مع تقنية HoloVerse 3D وكاميرا سيلفي 50 ميجابكسل فائقة الدقة.\n\n💰 السعر كاش: $739 دولار (خصم خاص 6%)\n🛡️ كفالة رسمية 12 شهراً\n🚚 متجر أونلاين في الشوف • توصيل متاح لجميع مناطق لبنان\n\n📲 للطلب الفوري عبر واتساب: https://wa.me/9613986718 (03 986 718)\n#ONAlAASTORE #الشوف #أوبو #هواتف_لبنان',
+    hashtags: ['#ONAlAASTORE', '#OPPO', '#Reno16Series', '#Chouf', '#LebanonTech', '#CashUSD'],
     selectedPlatforms: ['whatsapp', 'whatsapp_status', 'instagram', 'facebook', 'telegram'],
     status: 'published',
     createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
@@ -146,9 +146,9 @@ export const INITIAL_MARKETING_POSTS: MarketingPost[] = [
     productImage: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80',
     aspectRatio: '9:16',
     templateStyle: 'modern_dark',
-    captionEn: '✨ Apple iPhone 16 Pro Max in Desert Titanium!\n\nPowered by A18 Pro chip with Apple Intelligence. Available in stock today at ARNAOUT STORE.\n\n💰 Best Cash USD Price: $1,249\n🛡️ 12 Months Official Warranty\n🚚 Lebanon Fast Delivery\n\nWhatsApp: +961 81 900 916\n#ArnaoutStore #iPhone16ProMax #AppleLebanon #Saida',
-    captionAr: '✨ آيفون 16 برو ماكس باللون التيتانيوم الصحراوي الفاخر!\n\nمعالج A18 Pro الأقوى وكاميرا احترافية 48 ميجابكسل. متوفر فورا في صيدا لدى أرناؤوط ستور.\n\n💰 السعر: $1,249 دولار كاش\n🛡️ كفالة رسمية\n🚚 توصيل لجميع المناطق\n\nواتساب: 81900916 961+\n#أرناؤوط_ستور #صيدا #آيفون',
-    hashtags: ['#ArnaoutStore', '#Apple', '#iPhone16ProMax', '#Saida', '#Beirut'],
+    captionEn: '✨ Apple iPhone 16 Pro Max in Desert Titanium!\n\nPowered by A18 Pro chip with Apple Intelligence. Available online today at ON AlAA STORE (Chouf).\n\n💰 Best Cash USD Price: $1,249\n🛡️ 12 Months Official Warranty\n🚚 Delivery Available to All Lebanon\n\nWhatsApp: https://wa.me/9613986718 (03 986 718)\n#ONAlAASTORE #iPhone16ProMax #AppleLebanon #Chouf',
+    captionAr: '✨ آيفون 16 برو ماكس باللون التيتانيوم الصحراوي الفاخر!\n\nمعالج A18 Pro الأقوى وكاميرا احترافية 48 ميجابكسل. متوفر الآن لدى ON AlAA STORE في الشوف.\n\n💰 السعر: $1,249 دولار كاش\n🛡️ كفالة رسمية\n🚚 توصيل متاح لجميع مناطق لبنان\n\nواتساب: https://wa.me/9613986718 (03 986 718)\n#ONAlAASTORE #الشوف #آيفون #توصيل_لكل_لبنان',
+    hashtags: ['#ONAlAASTORE', '#Apple', '#iPhone16ProMax', '#Chouf', '#Lebanon'],
     selectedPlatforms: ['whatsapp_status', 'instagram', 'x', 'tiktok'],
     status: 'draft',
     createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
@@ -309,7 +309,7 @@ export async function executeSocialShare(
   post: MarketingPost,
   canvasBlobUrl?: string
 ): Promise<SocialPublishResult> {
-  const productUrl = `https://arnaoutstore.com/?product=${encodeURIComponent(post.productId)}`;
+  const productUrl = `https://onalaastore.com/?product=${encodeURIComponent(post.productId)}`;
   const text = post.captionEn || post.captionAr;
 
   try {
@@ -545,7 +545,7 @@ export async function fetchBackendPublishLogs(): Promise<any[]> {
 }
 
 /**
- * Fetches status specifically for M.ARNAOUT CELL (@m.arnaoutcell) Instagram integration.
+ * Fetches status specifically for ON AlAA STORE (@onalaastore.lb) Instagram integration.
  */
 export async function fetchInstagramStatus(): Promise<{
   success: boolean;
@@ -567,9 +567,9 @@ export async function fetchInstagramStatus(): Promise<{
   } catch {}
   return {
     success: false,
-    account: '@m.arnaoutcell',
-    targetUrl: 'https://www.instagram.com/m.arnaoutcell/',
-    displayName: 'Instagram Business – M.ARNAOUT CELL',
+    account: '@onalaastore.lb',
+    targetUrl: 'https://www.instagram.com/onalaastore.lb/',
+    displayName: 'Instagram Business – ON AlAA STORE',
     isConnected: false,
     hasToken: false,
     hasAccountId: false,
@@ -578,7 +578,7 @@ export async function fetchInstagramStatus(): Promise<{
 }
 
 /**
- * Publishes directly to Instagram Business account (@m.arnaoutcell) using official Meta Instagram Graph API.
+ * Publishes directly to Instagram Business account (@onalaastore.lb) using official Meta Instagram Graph API.
  */
 export async function publishToInstagramDirectly(params: {
   productId: string;

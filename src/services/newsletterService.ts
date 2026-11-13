@@ -43,8 +43,8 @@ export async function subscribeToNewsletter(
     return {
       success: true,
       alreadySubscribed: true,
-      messageEn: "You are already subscribed to ARNAOUT STORE VIP updates! Thank you.",
-      messageAr: 'أنت مشترك بالفعل في نشرة أرناؤوط ستور الإخبارية! شكراً لولائك.',
+      messageEn: 'You are already subscribed to ON AlAA STORE VIP updates! Thank you.',
+      messageAr: 'أنت مشترك بالفعل في نشرة ON AlAA STORE الإخبارية! شكراً لولائك.',
     };
   }
 
@@ -77,7 +77,7 @@ export async function subscribeToNewsletter(
   return {
     success: true,
     alreadySubscribed: false,
-    messageEn: '🎉 Welcome to ARNAOUT STORE VIP Club! Check your inbox for exclusive deals and fresh tech drops.',
-    messageAr: '🎉 أهلاً بك في نادي أرناؤوط ستور VIP! ستصلك أقوى العروض والتخفيضات الحصرية على بريدك.',
+    messageEn: '🎉 Welcome to ON AlAA STORE VIP Club! Check your inbox for exclusive deals and fresh tech drops.',
+    messageAr: '🎉 أهلاً بك في نادي ON AlAA STORE VIP! ستصلك أقوى العروض والتخفيضات الحصرية على بريدك.',
   };
 }

@@ -72,20 +72,20 @@ export const Navbar: React.FC = () => {
           />
 
           {/* Global Search Component - Quick filter by Name or Brand */}
-          <GlobalSearch isMobile={false} className="hidden md:flex flex-1 max-w-lg relative mx-2" />
+          <GlobalSearch isMobile={false} className="hidden md:flex flex-1 min-w-[160px] max-w-xs xl:max-w-sm relative mx-1 lg:mx-2" />
 
           {/* Quick Actions & Cart */}
-          <div className="flex items-center gap-1.5 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {/* Real-time Firebase Firestore Sync & Connectivity Indicator */}
             <ConnectivityIndicator
               lang={lang}
               isCompact={false}
-              className="hidden md:inline-flex"
+              className="hidden md:inline-flex shrink-0"
             />
             <ConnectivityIndicator
               lang={lang}
               isCompact={true}
-              className="md:hidden inline-flex"
+              className="md:hidden inline-flex shrink-0"
             />
 
             {/* WhatsApp 3D direct link */}
@@ -93,26 +93,26 @@ export const Navbar: React.FC = () => {
               href="https://wa.me/9613986718"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition-all group hover:shadow-sm"
+              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition-all group hover:shadow-sm whitespace-nowrap shrink-0"
               title="WhatsApp: 03 986 718"
             >
               <WhatsApp3DIcon size={18} />
-              <span>03 986 718</span>
+              <span dir="ltr">03 986 718</span>
             </a>
 
             {/* Call button */}
             <a
               href="tel:03986718"
-              className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-[#172033] dark:text-[#F8FAFC] text-xs font-semibold transition-all group"
+              className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-[#172033] dark:text-[#F8FAFC] text-xs font-semibold transition-all group whitespace-nowrap shrink-0"
             >
-              <Phone className="w-3.5 h-3.5 text-[#007AFF] group-hover:scale-110 transition-transform" />
-              <span>03 986 718</span>
+              <Phone className="w-3.5 h-3.5 text-[#007AFF] group-hover:scale-110 transition-transform shrink-0" />
+              <span dir="ltr">03 986 718</span>
             </a>
 
             {/* Language Switcher */}
             <button
               onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-xs font-bold text-[#172033] dark:text-[#F8FAFC] transition-transform duration-100 active:scale-90 cursor-pointer"
+              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-xs font-bold text-[#172033] dark:text-[#F8FAFC] transition-transform duration-100 active:scale-90 cursor-pointer whitespace-nowrap shrink-0"
               title="Change Language / تغيير اللغة"
               aria-label="Toggle language"
             >
@@ -123,7 +123,7 @@ export const Navbar: React.FC = () => {
             {/* Global Dark Mode Theme Toggle */}
             <button
               onClick={toggleDarkMode}
-              className="flex items-center justify-center p-2 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-[#172033] dark:text-[#F8FAFC] transition-transform duration-100 active:scale-90 cursor-pointer group shadow-xs"
+              className="flex items-center justify-center p-2 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-[#172033] dark:text-[#F8FAFC] transition-transform duration-100 active:scale-90 cursor-pointer group shadow-xs shrink-0"
               title={
                 isDarkMode
                   ? (lang === 'ar' ? 'التبديل إلى الوضع الفاتح' : 'Switch to Light Mode')
@@ -141,7 +141,7 @@ export const Navbar: React.FC = () => {
             {/* Wishlist */}
             <button
               onClick={() => setCurrentView('wishlist')}
-              className="hidden sm:flex relative p-2 rounded-xl text-[#64748B] dark:text-slate-300 hover:text-[#007AFF] dark:hover:text-[#38BDF8] hover:bg-[#EAF3FF]/50 dark:hover:bg-[#111A2E] transition-transform duration-100 active:scale-90 cursor-pointer"
+              className="hidden sm:flex relative p-2 rounded-xl text-[#64748B] dark:text-slate-300 hover:text-[#007AFF] dark:hover:text-[#38BDF8] hover:bg-[#EAF3FF]/50 dark:hover:bg-[#111A2E] transition-transform duration-100 active:scale-90 cursor-pointer shrink-0"
               title={t.wishlist}
               aria-label="Wishlist"
             >
@@ -156,7 +156,7 @@ export const Navbar: React.FC = () => {
             {/* Cart Trigger */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:py-2 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs sm:text-sm font-semibold shadow-md shadow-[#007AFF]/25 transition-transform duration-100 active:scale-90 cursor-pointer"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:py-2 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs sm:text-sm font-semibold shadow-md shadow-[#007AFF]/25 transition-transform duration-100 active:scale-90 cursor-pointer whitespace-nowrap shrink-0"
               aria-label="Shopping Cart"
             >
               <div className="relative">
@@ -267,7 +267,7 @@ export const Navbar: React.FC = () => {
             ))}
           </div>
 
-          {/* Saida store location pill */}
+          {/* Chouf Online Store & Lebanon Delivery pill */}
           <div
             onClick={() => setCurrentView('contact')}
             className="flex items-center gap-1.5 text-[#64748B] dark:text-slate-400 hover:text-[#007AFF] dark:hover:text-[#38BDF8] cursor-pointer transition-colors"

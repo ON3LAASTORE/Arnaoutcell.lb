@@ -8,7 +8,7 @@ import {
 
 test('isValidEmailFormat validates correct emails', () => {
   assert.strictEqual(isValidEmailFormat('user@example.com'), true);
-  assert.strictEqual(isValidEmailFormat('client.tech@saida-store.lb'), true);
+  assert.strictEqual(isValidEmailFormat('client.tech@onalaastore.lb'), true);
   assert.strictEqual(isValidEmailFormat('optimatech.lb@gmail.com'), true);
   assert.strictEqual(isValidEmailFormat('ahmad+deals@domain.org'), true);
 });
@@ -34,6 +34,6 @@ test('formatNewsletterWelcome provides localized welcome messages', () => {
   assert.strictEqual(en.subtitle.includes('vip@lebanon.com'), true);
 
   const ar = formatNewsletterWelcome('vip@lebanon.com', 'ar');
-  assert.strictEqual(ar.title.includes('أرناؤوط ستور'), true);
+  assert.strictEqual(ar.title.includes('ON AlAA STORE'), true);
   assert.strictEqual(ar.subtitle.includes('vip@lebanon.com'), true);
 });

@@ -74,7 +74,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormBrand(brands[0]?.name || 'Apple');
     setFormCategory(categories[0]?.name || 'Phones');
     setFormSubcategory('');
-    setFormSku(`ARN-${Math.floor(1000 + Math.random() * 9000)}`);
+    setFormSku(`OAA-${Math.floor(1000 + Math.random() * 9000)}`);
     setFormBarcode('');
     setFormOriginalPrice(100);
     setFormPrice(89);
@@ -204,9 +204,9 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
           ? formImages
           : ['https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=800'],
       videoUrl: formVideoUrl.trim() || undefined,
-      description: formDesc.trim() || 'Genuine device with full Lebanese store warranty, showroom services and Saida delivery.',
+      description: formDesc.trim() || 'Genuine device with full Lebanese store warranty from ON AlAA STORE (Chouf) and express delivery to all Lebanon.',
       descriptionAr:
-        formDescAr.trim() || 'جهاز أصلي مع كفالة المتجر الرسمية وخدمات المعرض والتوصيل داخل صيدا.',
+        formDescAr.trim() || 'جهاز أصلي مع كفالة متجر ON AlAA STORE الرسمية (الشوف) وتوصيل سريع متاح لجميع مناطق لبنان.',
       specifications: formSpecs,
       colors: formColors,
       rating: editingProduct ? editingProduct.rating : 5.0,

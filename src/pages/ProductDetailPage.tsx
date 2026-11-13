@@ -98,15 +98,15 @@ export const ProductDetailPage: React.FC = () => {
   };
 
   const handleWhatsAppInquiry = () => {
-    const msg = `Hello ${storeSettings.storeName} (${storeSettings.phone})! I'm inquiring about: ${product.name} (SKU: ${product.sku}, Price: $${activePrice}). Is it available at your Saida store for immediate pickup or delivery?`;
-    openExternalUrl(`https://wa.me/${storeSettings.whatsapp || '96181900916'}?text=${encodeURIComponent(msg)}`);
+    const msg = `Hello ON AlAA STORE (03 986 718)! I'm inquiring about: ${product.name} (SKU: ${product.sku}, Price: $${activePrice}). Is it available for delivery in Lebanon?`;
+    openExternalUrl(`https://wa.me/9613986718?text=${encodeURIComponent(msg)}`);
   };
 
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
         title: product.name,
-        text: `Check out ${product.name} at ${storeSettings.storeName} Saida for $${activePrice}!`,
+        text: `Check out ${product.name} at ON AlAA STORE Lebanon for $${activePrice}!`,
         url: window.location.href,
       }).catch(() => {});
     } else if (navigator.clipboard) {
@@ -179,7 +179,7 @@ export const ProductDetailPage: React.FC = () => {
             >
               <LazyImage
                 src={product.images[activeImageIndex] || product.images[0]}
-                alt={`${product.name} - ${product.brand} authentic tech at ARNAOUT STORE Saida Lebanon`}
+                alt={`${product.name} - ${product.brand} authentic tech at ON AlAA STORE Lebanon`}
                 width={500}
                 height={500}
                 priority={true}
@@ -341,7 +341,7 @@ export const ProductDetailPage: React.FC = () => {
                 </div>
                 <span className="text-[#DCE5F0]">•</span>
                 <span className="text-[#64748B]">
-                  {product.reviewCount} {lang === 'ar' ? 'تقييم موثق من عملاء صيدا ولبنان' : 'Verified Reviews'}
+                  {product.reviewCount} {lang === 'ar' ? 'تقييم موثق من عملاء لبنان' : 'Verified Reviews'}
                 </span>
                 <span className="text-[#DCE5F0]">•</span>
                 <span className="text-[#16A34A] font-semibold">{t.warranty}</span>
@@ -439,14 +439,14 @@ export const ProductDetailPage: React.FC = () => {
                   <>
                     <AlertTriangle className="w-4 h-4 text-amber-600" />
                     <span className="text-amber-600 font-bold">
-                      {lang === 'ar' ? `كمية محدودة جداً (${product.stock} متوفرة)` : `Low Stock: Only ${product.stock} left in Saida`}
+                      {lang === 'ar' ? `كمية محدودة جداً (${product.stock} متوفرة)` : `Low Stock: Only ${product.stock} left`}
                     </span>
                   </>
                 ) : (
                   <>
                     <CheckCircle className="w-4 h-4 text-[#16A34A]" />
                     <span className="text-[#16A34A] font-bold">
-                      {lang === 'ar' ? `متوفر في متجر صيدا (${product.stock} قطع)` : `In Stock at Nijme Square Saida (${product.stock} units)`}
+                      {lang === 'ar' ? `متوفر للشحن لكل لبنان (${product.stock} قطع)` : `In Stock — Delivery to All Lebanon (${product.stock} units)`}
                     </span>
                   </>
                 )}
@@ -511,7 +511,7 @@ export const ProductDetailPage: React.FC = () => {
                 className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100 hover:from-emerald-100 hover:to-green-100 border border-emerald-300 text-emerald-800 font-extrabold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-sm hover:shadow-md hover:shadow-emerald-500/20 group active:scale-98"
               >
                 <WhatsApp3DIcon size={22} />
-                <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (81900916)' : 'Inquire / Order on WhatsApp (81900916)'}</span>
+                <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (03986718)' : 'Inquire / Order on WhatsApp (03986718)'}</span>
               </button>
 
               {/* Compare Specs Button */}
@@ -605,8 +605,8 @@ export const ProductDetailPage: React.FC = () => {
                 <h3 className="text-xl font-bold text-[#172033]">{t.customerReviews}</h3>
                 <p className="text-xs text-[#64748B] mt-0.5">
                   {lang === 'ar'
-                    ? `تقييمات واقعية وموثقة من عملاء ${storeSettings.storeNameAr || 'أرناؤوط ستور'}.`
-                    : 'Authentic customer feedback from verified buyers in Lebanon.'}
+                    ? `تقييمات واقعية وموثقة من عملاء ${storeSettings.storeNameAr || 'ON AlAA STORE'}.`
+                    : 'Authentic customer feedback from verified buyers across Lebanon.'}
                 </p>
               </div>
 

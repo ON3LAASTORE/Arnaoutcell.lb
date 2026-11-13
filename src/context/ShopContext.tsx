@@ -390,8 +390,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   // Generate WhatsApp Order link for store
   const generateWhatsAppOrderUrl = (order: any): string => {
-    const phone = storeSettings.whatsapp || '96181900916';
-    let text = `*New Order Inquiry - ${storeSettings.storeName} (${storeSettings.phone})* 🏠\n\n`;
+    const phone = storeSettings.whatsapp || '9613986718';
+    let text = `*New Order Inquiry - ${storeSettings.storeName || 'ON AlAA STORE'} (${storeSettings.phone || '03 986 718'})* 🏠\n\n`;
 
     if (order.id) {
       text += `*Order Reference:* ${order.id}\n`;
@@ -417,7 +417,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (order.paymentMethod) {
       text += `\n*Payment Method:* ${order.paymentMethod.toUpperCase()}`;
     }
-    text += `\n\n_Thank you for contacting ${storeSettings.storeName} Saida!_`;
+    text += `\n\n_Thank you for contacting ${storeSettings.storeName || 'ON AlAA STORE'} (Chouf • All Lebanon Delivery)!_`;
 
     return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
   };

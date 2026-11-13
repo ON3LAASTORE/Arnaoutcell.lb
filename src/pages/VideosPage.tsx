@@ -23,8 +23,8 @@ export const VideosPage: React.FC = () => {
           </h1>
           <p className="text-[#64748B] text-xs sm:text-sm">
             {lang === 'ar'
-              ? `شاهد اختبارات الأداء المباشرة والمواصفات الواقعية للأجهزة المتوفرة في فرع ${storeSettings.storeNameAr || 'أرناؤوط ستور'} صيدا.`
-              : `Watch real performance tests, unboxings, and hands-on demos from ${storeSettings.storeName} Saida.`}
+              ? `شاهد اختبارات الأداء المباشرة والمواصفات الواقعية للأجهزة المتوفرة لدى ${storeSettings.storeNameAr || 'ON AlAA STORE'} مع التوصيل لجميع مناطق لبنان.`
+              : `Watch real performance tests, unboxings, and hands-on demos from ${storeSettings.storeName || 'ON AlAA STORE'} — Based in Chouf, Delivering to All Lebanon.`}
           </p>
         </div>
 

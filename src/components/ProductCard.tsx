@@ -348,7 +348,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             ) : (
               <span className="inline-flex items-center gap-1 text-[11px] font-bold text-[#16A34A] dark:text-emerald-400">
                 <CheckCircle className="w-3 h-3" />
-                {lang === 'ar' ? 'متوفر بصيدا' : 'In Stock Saida'}
+                {lang === 'ar' ? 'متوفر للشحن' : 'In Stock'}
               </span>
             )}
           </div>
@@ -422,7 +422,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </div>
 
             <span className="text-[9px] sm:text-[10px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider">
-              {lang === 'ar' ? 'صيدا • لبنان' : 'Saida • Lebanon'}
+              {lang === 'ar' ? 'الشوف • توصيل لكل لبنان' : 'Chouf • All Lebanon'}
             </span>
           </div>
 

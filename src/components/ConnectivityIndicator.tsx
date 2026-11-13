@@ -81,11 +81,11 @@ export const ConnectivityIndicator: React.FC<ConnectivityIndicatorProps> = ({
   };
 
   return (
-    <div ref={containerRef} className={`relative inline-flex items-center ${className}`}>
+    <div ref={containerRef} className={`relative items-center ${className || 'inline-flex'}`}>
       {/* Trigger Button */}
       <button
         onClick={() => setPopoverOpen((prev) => !prev)}
-        className={`group flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer text-xs font-semibold select-none ${meta.badgeClasses} ${
+        className={`group flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer text-xs font-semibold select-none whitespace-nowrap shrink-0 ${meta.badgeClasses} ${
           popoverOpen ? 'ring-2 ring-primary/30' : ''
         }`}
         title={meta.tooltip}
@@ -94,7 +94,7 @@ export const ConnectivityIndicator: React.FC<ConnectivityIndicatorProps> = ({
         aria-haspopup="dialog"
       >
         {/* Pulsing Dot */}
-        <span className="relative flex h-2 w-2">
+        <span className="relative flex h-2 w-2 shrink-0">
           {meta.isPulsing && (
             <span
               className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${meta.dotColor}`}
