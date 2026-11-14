@@ -14,13 +14,17 @@
     <meta name="description" content="ON AlAA STORE — Online Tech Store based in Chouf with fast delivery available to all Lebanon. Smartphones, laptops, gaming gear, smart accessories, and premium tech." />
     <meta property="og:title" content="ON AlAA STORE | Online Tech Store Lebanon" />
     <meta property="og:description" content="ON AlAA STORE — Online Tech Store based in Chouf with fast delivery available to all Lebanon. Smartphones, laptops, gaming gear, smart accessories, and premium tech." />
-    <link rel="icon" type="image/svg+xml" href="/on-alaa-logo.svg" />
-    <link rel="apple-touch-icon" href="/on-alaa-logo.svg" />
-    <meta property="og:image" content="/on-alaa-logo.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <meta property="og:image" content="/on-alaa-store-profile.png" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="/on-alaa-logo.svg" />
-    <!-- High-priority preload for store logo to ensure instant LCP render -->
-    <link rel="preload" as="image" href="/on-alaa-logo.svg" fetchpriority="high" />
+    <meta name="twitter:image" content="/on-alaa-store-profile.png" />
+    <!-- High-priority preload for store profile emblem to ensure instant LCP render -->
+    <link rel="preload" as="image" href="/on-alaa-store-profile.png" fetchpriority="high" />
     <!-- DNS prefetch & preconnect for external CDNs -->
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
     <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
@@ -42,6 +46,18 @@
             document.documentElement.classList.add('dark');
           } else {
             document.documentElement.classList.remove('dark');
+          }
+          var savedLang = localStorage.getItem('arnaout_lang');
+          if (savedLang === 'ar') {
+            document.documentElement.lang = 'ar';
+            document.documentElement.dir = 'rtl';
+            document.documentElement.classList.add('rtl');
+            document.documentElement.classList.remove('ltr');
+          } else {
+            document.documentElement.lang = 'en';
+            document.documentElement.dir = 'ltr';
+            document.documentElement.classList.add('ltr');
+            document.documentElement.classList.remove('rtl');
           }
         } catch (e) {}
       })();

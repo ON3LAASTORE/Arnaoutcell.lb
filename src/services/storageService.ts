@@ -13,6 +13,40 @@ import {
 } from './productFirestoreService';
 import { db } from '../firebase';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
+import { resolveStoreLogoUrl } from '../utils/storeSettingsHelpers';
+import { hasLegacyScheduleText, migrateOpeningSchedule } from '../utils/storeSchedule';
+import {
+  safeStorageSetItem,
+  compactStoreSettingsPayload,
+  compactProductsForStorage,
+  SafeStorageSetResult,
+} from '../utils/storageQuotaHelpers';
+import { optimizeUploadedImage } from '../utils/imageCompression';
+
+const memoryStorageFallback = new Map<string, string>();
+
+function getStorageItem(key: string): string | null {
+  if (typeof window === 'undefined') {
+    return memoryStorageFallback.get(key) ?? null;
+  }
+  try {
+    return localStorage.getItem(key) ?? memoryStorageFallback.get(key) ?? null;
+  } catch {
+    return memoryStorageFallback.get(key) ?? null;
+  }
+}
+
+function setStorageItem(
+  key: string,
+  value: string,
+  onQuotaRecovery?: () => string | null
+): SafeStorageSetResult {
+  memoryStorageFallback.set(key, value);
+  if (typeof window === 'undefined') {
+    return { ok: true, recovered: false, persistedValue: value };
+  }
+  return safeStorageSetItem(window.localStorage, key, value, { onQuotaRecovery });
+}
 
 const KEYS = {
   PRODUCTS: 'arnaout_cell_products_v2',
@@ -31,12 +65,12 @@ const KEYS = {
 export function initStorage(): void {
   if (typeof window === 'undefined') return;
 
-  if (!localStorage.getItem(KEYS.PRODUCTS)) {
-    localStorage.setItem(KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+  if (!getStorageItem(KEYS.PRODUCTS)) {
+    setStorageItem(KEYS.PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
   } else {
     // Clean any legacy mock reviews from cached products
     try {
-      const raw = localStorage.getItem(KEYS.PRODUCTS);
+      const raw = getStorageItem(KEYS.PRODUCTS);
       if (raw) {
         const stored = JSON.parse(raw);
         if (Array.isArray(stored)) {
@@ -49,7 +83,7 @@ export function initStorage(): void {
             return p;
           });
           if (hasOldReviews) {
-            localStorage.setItem(KEYS.PRODUCTS, JSON.stringify(cleaned));
+            setStorageItem(KEYS.PRODUCTS, JSON.stringify(cleaned));
           }
         }
       }
@@ -58,22 +92,22 @@ export function initStorage(): void {
     }
   }
 
-  if (!localStorage.getItem(KEYS.TESTIMONIALS)) {
-    localStorage.setItem(KEYS.TESTIMONIALS, JSON.stringify([]));
+  if (!getStorageItem(KEYS.TESTIMONIALS)) {
+    setStorageItem(KEYS.TESTIMONIALS, JSON.stringify([]));
   }
-  if (!localStorage.getItem(KEYS.CATEGORIES)) {
-    localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
+  if (!getStorageItem(KEYS.CATEGORIES)) {
+    setStorageItem(KEYS.CATEGORIES, JSON.stringify(INITIAL_CATEGORIES));
   }
-  if (!localStorage.getItem(KEYS.BRANDS)) {
-    localStorage.setItem(KEYS.BRANDS, JSON.stringify(INITIAL_BRANDS));
+  if (!getStorageItem(KEYS.BRANDS)) {
+    setStorageItem(KEYS.BRANDS, JSON.stringify(INITIAL_BRANDS));
   }
-  if (!localStorage.getItem(KEYS.VIDEOS)) {
-    localStorage.setItem(KEYS.VIDEOS, JSON.stringify(INITIAL_MARKETING_VIDEOS));
+  if (!getStorageItem(KEYS.VIDEOS)) {
+    setStorageItem(KEYS.VIDEOS, JSON.stringify(INITIAL_MARKETING_VIDEOS));
   }
-  if (!localStorage.getItem(KEYS.SETTINGS)) {
-    localStorage.setItem(KEYS.SETTINGS, JSON.stringify(INITIAL_STORE_SETTINGS));
+  if (!getStorageItem(KEYS.SETTINGS)) {
+    setStorageItem(KEYS.SETTINGS, JSON.stringify(INITIAL_STORE_SETTINGS));
   }
-  if (!localStorage.getItem(KEYS.ORDERS)) {
+  if (!getStorageItem(KEYS.ORDERS)) {
     // Seed sample initial orders for demonstration
     const sampleOrders: Order[] = [
       {
@@ -230,11 +264,11 @@ export function initStorage(): void {
           },
         },
       ];
-    localStorage.setItem(KEYS.ORDERS, JSON.stringify(sampleOrders));
-    localStorage.setItem(KEYS.WARRANTY_SAMPLES_SEEDED, '1');
-  } else if (!localStorage.getItem(KEYS.WARRANTY_SAMPLES_SEEDED)) {
+    setStorageItem(KEYS.ORDERS, JSON.stringify(sampleOrders));
+    setStorageItem(KEYS.WARRANTY_SAMPLES_SEEDED, '1');
+  } else if (!getStorageItem(KEYS.WARRANTY_SAMPLES_SEEDED)) {
     try {
-      const existingRaw = localStorage.getItem(KEYS.ORDERS);
+      const existingRaw = getStorageItem(KEYS.ORDERS);
       const existingOrders: Order[] = existingRaw ? JSON.parse(existingRaw) : [];
       const existingIds = new Set(existingOrders.map((o) => o.id));
       const extraSamples: Order[] = [
@@ -320,9 +354,9 @@ export function initStorage(): void {
         }
       }
       if (added) {
-        localStorage.setItem(KEYS.ORDERS, JSON.stringify(existingOrders));
+        setStorageItem(KEYS.ORDERS, JSON.stringify(existingOrders));
       }
-      localStorage.setItem(KEYS.WARRANTY_SAMPLES_SEEDED, '1');
+      setStorageItem(KEYS.WARRANTY_SAMPLES_SEEDED, '1');
     } catch {
       // ignore
     }
@@ -332,7 +366,7 @@ export function initStorage(): void {
 // Products
 export function getProducts(): Product[] {
   try {
-    const raw = localStorage.getItem(KEYS.PRODUCTS);
+    const raw = getStorageItem(KEYS.PRODUCTS);
     if (!raw) return INITIAL_PRODUCTS;
     const parsed: Product[] = JSON.parse(raw);
     const existingIds = new Set(parsed.map((p) => p.id));
@@ -346,7 +380,7 @@ export function getProducts(): Product[] {
       }
     }
     if (changed) {
-      localStorage.setItem(KEYS.PRODUCTS, JSON.stringify(merged));
+      saveProducts(merged);
     }
     return merged;
   } catch {
@@ -355,7 +389,11 @@ export function getProducts(): Product[] {
 }
 
 export function saveProducts(products: Product[]): void {
-  localStorage.setItem(KEYS.PRODUCTS, JSON.stringify(products));
+  setStorageItem(
+    KEYS.PRODUCTS,
+    JSON.stringify(products),
+    () => JSON.stringify(compactProductsForStorage(products))
+  );
 }
 
 export function saveProduct(product: Product): Product {
@@ -389,7 +427,7 @@ export function deleteProduct(productId: string): void {
 // Categories
 export function getCategories(): Category[] {
   try {
-    const raw = localStorage.getItem(KEYS.CATEGORIES);
+    const raw = getStorageItem(KEYS.CATEGORIES);
     if (!raw) return INITIAL_CATEGORIES;
     const parsed: Category[] = JSON.parse(raw);
     const existingNames = new Set(parsed.map((c) => c.name.toLowerCase()));
@@ -403,7 +441,7 @@ export function getCategories(): Category[] {
       }
     }
     if (changed) {
-      localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(merged));
+      saveCategories(merged);
     }
     return merged;
   } catch {
@@ -412,13 +450,13 @@ export function getCategories(): Category[] {
 }
 
 export function saveCategories(categories: Category[]): void {
-  localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(categories));
+  setStorageItem(KEYS.CATEGORIES, JSON.stringify(categories));
 }
 
 // Brands
 export function getBrands(): Brand[] {
   try {
-    const raw = localStorage.getItem(KEYS.BRANDS);
+    const raw = getStorageItem(KEYS.BRANDS);
     if (!raw) return INITIAL_BRANDS;
     const parsed: Brand[] = JSON.parse(raw);
     const existingNames = new Set(parsed.map((b) => b.name.toLowerCase()));
@@ -432,7 +470,7 @@ export function getBrands(): Brand[] {
       }
     }
     if (changed) {
-      localStorage.setItem(KEYS.BRANDS, JSON.stringify(merged));
+      saveBrands(merged);
     }
     return merged;
   } catch {
@@ -441,13 +479,13 @@ export function getBrands(): Brand[] {
 }
 
 export function saveBrands(brands: Brand[]): void {
-  localStorage.setItem(KEYS.BRANDS, JSON.stringify(brands));
+  setStorageItem(KEYS.BRANDS, JSON.stringify(brands));
 }
 
 // Marketing Videos
 export function getMarketingVideos(): MarketingVideo[] {
   try {
-    const raw = localStorage.getItem(KEYS.VIDEOS);
+    const raw = getStorageItem(KEYS.VIDEOS);
     return raw ? JSON.parse(raw) : INITIAL_MARKETING_VIDEOS;
   } catch {
     return INITIAL_MARKETING_VIDEOS;
@@ -455,13 +493,13 @@ export function getMarketingVideos(): MarketingVideo[] {
 }
 
 export function saveMarketingVideos(videos: MarketingVideo[]): void {
-  localStorage.setItem(KEYS.VIDEOS, JSON.stringify(videos));
+  setStorageItem(KEYS.VIDEOS, JSON.stringify(videos));
 }
 
 // Orders & Inventory Logic
 export function getOrders(): Order[] {
   try {
-    const raw = localStorage.getItem(KEYS.ORDERS);
+    const raw = getStorageItem(KEYS.ORDERS);
     return raw ? JSON.parse(raw) : [];
   } catch {
     return [];
@@ -469,7 +507,7 @@ export function getOrders(): Order[] {
 }
 
 export function saveOrders(orders: Order[]): void {
-  localStorage.setItem(KEYS.ORDERS, JSON.stringify(orders));
+  setStorageItem(KEYS.ORDERS, JSON.stringify(orders));
 }
 
 export function createOrder(orderData: Omit<Order, 'id' | 'orderDate' | 'statusHistory'>): Order {
@@ -607,7 +645,7 @@ export function updateOrderStatus(orderId: string, newStatus: OrderStatus, note?
 // Store Settings
 export function getStoreSettings(): StoreSettings {
   try {
-    const raw = localStorage.getItem(KEYS.SETTINGS);
+    const raw = getStorageItem(KEYS.SETTINGS);
     if (!raw) return INITIAL_STORE_SETTINGS;
     const parsed = JSON.parse(raw);
     const merged: StoreSettings = {
@@ -621,9 +659,7 @@ export function getStoreSettings(): StoreSettings {
     if (!merged.storeNameAr || merged.storeNameAr.includes('أرناؤوط') || merged.storeNameAr.includes('ON 3LAA') || merged.storeNameAr === 'متجر ON AlAA') {
       merged.storeNameAr = 'متجر ON AlAA STORE';
     }
-    if (!merged.logoUrl || merged.logoUrl.includes('m-arnaout-cell-logo')) {
-      merged.logoUrl = INITIAL_STORE_SETTINGS.logoUrl;
-    }
+    merged.logoUrl = resolveStoreLogoUrl(merged.logoUrl);
     if (!merged.locationEn || merged.locationEn.includes('Saida') || merged.locationEn.includes('H97G+W2P')) {
       merged.locationEn = INITIAL_STORE_SETTINGS.locationEn;
     }
@@ -658,18 +694,32 @@ export function getStoreSettings(): StoreSettings {
     if (merged.heroSlides && merged.heroSlides.some((s) => s.titleEn && (s.titleEn.includes('SAIDA') || s.titleEn.includes('ON 3LAA')))) {
       merged.heroSlides = INITIAL_STORE_SETTINGS.heroSlides;
     }
-    // Ensure schedule is properly structured
-    if (!merged.openingSchedule || (merged.openingSchedule.customMessageEn && merged.openingSchedule.customMessageEn.includes('Saida'))) {
-      merged.openingSchedule = INITIAL_STORE_SETTINGS.openingSchedule;
+    // Ensure schedule & display strings migrate off legacy Saida / 8:00 AM / 17-hour text
+    if (!merged.openingHoursEn || hasLegacyScheduleText(merged.openingHoursEn)) {
+      merged.openingHoursEn = INITIAL_STORE_SETTINGS.openingHoursEn;
     }
+    if (!merged.openingHoursAr || hasLegacyScheduleText(merged.openingHoursAr)) {
+      merged.openingHoursAr = INITIAL_STORE_SETTINGS.openingHoursAr;
+    }
+    merged.openingSchedule = migrateOpeningSchedule(
+      merged.openingSchedule,
+      INITIAL_STORE_SETTINGS.openingSchedule!
+    );
     return merged;
   } catch {
     return INITIAL_STORE_SETTINGS;
   }
 }
 
-export function saveStoreSettings(settings: StoreSettings): void {
-  localStorage.setItem(KEYS.SETTINGS, JSON.stringify(settings));
+export function saveStoreSettings(settings: StoreSettings): SafeStorageSetResult {
+  const serialized = JSON.stringify(settings);
+  return setStorageItem(KEYS.SETTINGS, serialized, () => {
+    // If localStorage quota is exceeded (e.g., due to a large inline base64 logo or hero image),
+    // compact oversized inline blobs to default assets while preserving all text/schedule settings
+    // and keeping the full version in the active session memory cache.
+    const { compacted } = compactStoreSettingsPayload(settings, resolveStoreLogoUrl(undefined));
+    return JSON.stringify(compacted);
+  });
 }
 
 export function saveAnnouncementBar(bar: StoreSettings['announcementBar']): void {
@@ -678,24 +728,16 @@ export function saveAnnouncementBar(bar: StoreSettings['announcementBar']): void
   saveStoreSettings(settings);
 }
 
-// File / Image reading helper with persistent Base64 Data URL
+// File / Image reading helper with automatic canvas compression to stay within browser storage quota
 export function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    // 10MB limit check
-    if (file.size > 10 * 1024 * 1024) {
-      reject(new Error('File exceeds maximum size of 10MB'));
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === 'string') {
-        resolve(reader.result);
-      } else {
-        reject(new Error('Failed to read file as Data URL'));
-      }
-    };
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
+  // 10MB limit check
+  if (file.size > 10 * 1024 * 1024) {
+    return Promise.reject(new Error('File exceeds maximum size of 10MB'));
+  }
+  return optimizeUploadedImage(file, {
+    maxDimension: 1200,
+    maxDataUrlLength: 320_000,
+    initialQuality: 0.84,
   });
 }
 
@@ -705,7 +747,7 @@ export function readFileAsDataUrl(file: File): Promise<string> {
 
 export function getTestimonials(): Testimonial[] {
   if (typeof window === 'undefined') return [];
-  const raw = localStorage.getItem(KEYS.TESTIMONIALS);
+  const raw = getStorageItem(KEYS.TESTIMONIALS);
   if (!raw) return [];
   try {
     return JSON.parse(raw);
@@ -716,7 +758,7 @@ export function getTestimonials(): Testimonial[] {
 
 export function saveTestimonials(testimonials: Testimonial[]): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(KEYS.TESTIMONIALS, JSON.stringify(testimonials));
+  setStorageItem(KEYS.TESTIMONIALS, JSON.stringify(testimonials));
 }
 
 export function addTestimonial(testimonialData: Omit<Testimonial, 'id' | 'date'>): Testimonial {

@@ -3,17 +3,17 @@ import { useShop } from '../context/ShopContext';
 import { subscribeToNewsletter } from '../services/newsletterService';
 import {
   Mail,
-  Sparkles,
   CheckCircle2,
   AlertCircle,
   ArrowRight,
-  ShieldCheck,
+  Lock,
   Send,
   Loader2,
 } from 'lucide-react';
 
 export const NewsletterFooterSection: React.FC = () => {
   const { lang, storeSettings } = useShop();
+  const isArabic = lang === 'ar';
 
   const [email, setEmail] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,11 +21,12 @@ export const NewsletterFooterSection: React.FC = () => {
     success: boolean;
     message: string;
     alreadySubscribed?: boolean;
+    subscribedEmail?: string;
   } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || isSubmitting) return;
+    if (isSubmitting) return;
 
     setIsSubmitting(true);
     setResult(null);
@@ -34,8 +35,9 @@ export const NewsletterFooterSection: React.FC = () => {
       const res = await subscribeToNewsletter(email, lang, 'footer');
       setResult({
         success: res.success,
-        message: lang === 'ar' ? res.messageAr : res.messageEn,
+        message: isArabic ? res.messageAr : res.messageEn,
         alreadySubscribed: res.alreadySubscribed,
+        subscribedEmail: res.email,
       });
 
       if (res.success && !res.alreadySubscribed) {
@@ -44,118 +46,144 @@ export const NewsletterFooterSection: React.FC = () => {
     } catch {
       setResult({
         success: false,
-        message:
-          lang === 'ar'
-            ? 'حدث خطأ أثناء الاشتراك. يرجى التحقق من اتصالك والمحاولة مجدداً.'
-            : 'An unexpected error occurred. Please check your connection and try again.',
+        message: isArabic
+          ? 'حدث خطأ أثناء الاشتراك. يرجى المحاولة مرة أخرى.'
+          : 'Unable to complete your subscription right now. Please try again.',
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  return (
-    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0A0F1D] text-white p-6 sm:p-10 mb-14 border border-blue-500/20 shadow-xl shadow-blue-950/20">
-      {/* Ambient Radial Highlights */}
-      <div className="absolute top-0 right-0 w-80 h-80 bg-[#007AFF]/20 blur-[100px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-72 h-72 bg-emerald-500/15 blur-[100px] rounded-full pointer-events-none" />
+  const errorId = 'footer-newsletter-error';
 
+  return (
+    <section
+      id="footer-newsletter-section"
+      data-testid="newsletter-footer-section"
+      dir={isArabic ? 'rtl' : 'ltr'}
+      aria-labelledby="footer-newsletter-heading"
+      className="relative overflow-hidden rounded-2xl bg-[#0F172A] text-white p-6 sm:p-8 lg:p-10 mb-14 border border-slate-800 shadow-lg"
+    >
       <div className="relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-        {/* Left Column: Headlines & Benefits */}
+        {/* Left Column: Editorial Headline & Benefits */}
         <div className="lg:col-span-7 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/15 border border-blue-400/30 text-[#38BDF8] text-xs font-bold tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>
-              {lang === 'ar'
-                ? 'نادي ON AlAA STORE VIP الإخباري'
-                : 'ON AlAA STORE VIP CLUB'}
+          <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-[#38BDF8]">
+            <span>{storeSettings.storeName || 'ON AlAA STORE'}</span>
+            <span aria-hidden="true" className="text-slate-500">
+              ·
+            </span>
+            <span className="text-slate-300">
+              {isArabic ? 'النشرة البريدية للعروض التقنية' : 'Tech Deals & Marketing Updates'}
             </span>
           </div>
 
-          <h3 className="text-xl sm:text-2xl lg:text-3xl font-black text-white tracking-tight leading-snug">
-            {lang === 'ar'
-              ? 'كن أول من يعلم بأحدث الأجهزة والتخفيضات الحصرية'
-              : 'Stay Ahead with 2027 Tech Drops & Exclusive Deals'}
+          <h3
+            id="footer-newsletter-heading"
+            className="text-xl sm:text-2xl lg:text-3xl font-bold text-white tracking-tight leading-snug max-w-2xl"
+          >
+            {isArabic
+              ? 'اشترك للحصول على أحدث العروض التقنية والتخفيضات الحصرية'
+              : 'Get Special Tech Deals & Marketing Updates'}
           </h3>
 
           <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-xl">
-            {lang === 'ar'
-              ? `انضم لأكثر من 2,400+ من عشاق الإلكترونيات في الشوف وكافة مناطق لبنان. احصل على عروض فورية بأسعار الدولار النقدي، تنبيهات الأجهزة الجديدة، وهدايا التسوق الحصرية من ${storeSettings.storeNameAr || 'ON AlAA STORE'}.`
-              : `Join 2,400+ tech lovers across Chouf and all Lebanon. Get early alerts on fresh USD price drops, flash discounts, and flagship device arrivals straight to your inbox.`}
+            {isArabic
+              ? 'انضم إلى قائمة عملائنا في الشوف وكافة مناطق لبنان لتصلك تنبيهات الهواتف الذكية الجديدة، العروض الأسبوعية بالدولار النقدي، والتخفيضات الخاصة مباشرة إلى بريدك الإلكتروني.'
+              : 'Join shoppers across Chouf and all Lebanon for direct inbox alerts on flagship smartphone drops, USD cash discounts, and seasonal electronics deals.'}
           </p>
 
-          <div className="flex flex-wrap items-center gap-4 pt-1 text-[11px] text-slate-300">
-            <span className="flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-              <span>{lang === 'ar' ? 'بدون رسائل مزعجة' : 'Zero Spam Guarantee'}</span>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 pt-1 text-xs text-slate-300">
+            <span>{isArabic ? 'بدون رسائل مزعجة' : 'Zero spam guarantee'}</span>
+            <span aria-hidden="true" className="text-slate-600">
+              ·
             </span>
-            <span className="text-slate-600">•</span>
-            <span className="flex items-center gap-1.5">
-              <CheckCircle2 className="w-4 h-4 text-[#38BDF8] flex-shrink-0" />
-              <span>{lang === 'ar' ? 'عروض أسعار خاصة للأعضاء' : 'VIP Member Pricing'}</span>
+            <span>{isArabic ? 'أسعار خاصة للمشتركين' : 'Subscriber-only deals'}</span>
+            <span aria-hidden="true" className="text-slate-600">
+              ·
             </span>
-            <span className="text-slate-600">•</span>
-            <span className="flex items-center gap-1.5">
-              <Mail className="w-4 h-4 text-amber-400 flex-shrink-0" />
-              <span>{lang === 'ar' ? 'إلغاء الاشتراك بنقرة واحدة' : '1-Click Unsubscribe'}</span>
-            </span>
+            <span>{isArabic ? 'إلغاء الاشتراك في أي وقت' : 'Unsubscribe anytime'}</span>
           </div>
         </div>
 
-        {/* Right Column: Interactive Subscription Form */}
+        {/* Right Column: Subscription Form or Confirmation */}
         <div className="lg:col-span-5">
           {result?.success ? (
-            <div className="p-6 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-200 space-y-3 animate-in fade-in zoom-in-95 duration-300">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-300 flex-shrink-0">
-                  <CheckCircle2 className="w-6 h-6" />
-                </div>
-                <div>
+            <div
+              role="status"
+              data-testid="newsletter-success"
+              className="p-5 sm:p-6 rounded-xl bg-emerald-950/50 border border-emerald-500/40 text-emerald-100 space-y-3"
+            >
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+                <div className="space-y-1">
                   <h4 className="text-sm font-bold text-white">
-                    {lang === 'ar' ? 'تم تأكيد اشتراكك بنجاح!' : 'Subscription Confirmed!'}
+                    {result.alreadySubscribed
+                      ? isArabic
+                        ? 'أنت مشترك بالفعل'
+                        : 'Already Subscribed'
+                      : isArabic
+                      ? 'تم تأكيد اشتراكك بنجاح'
+                      : 'Subscription Confirmed'}
                   </h4>
-                  <span className="text-[11px] text-emerald-300/90 font-mono">
-                    {lang === 'ar' ? 'عضوية VIP مفعلة' : 'VIP Member Active'}
-                  </span>
+                  <p className="text-xs text-slate-200 leading-relaxed">{result.message}</p>
                 </div>
               </div>
-
-              <p className="text-xs text-slate-200 leading-relaxed">
-                {result.message}
-              </p>
 
               <button
                 type="button"
                 onClick={() => setResult(null)}
-                className="text-xs text-[#38BDF8] hover:underline font-semibold cursor-pointer pt-1 inline-block"
+                className="text-xs text-[#38BDF8] hover:text-white hover:underline font-semibold cursor-pointer pt-1 inline-flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#38BDF8] rounded"
               >
-                {lang === 'ar' ? '← تسجيل بريد إلكتروني آخر' : '← Register another email'}
+                <span>
+                  {isArabic ? 'تسجيل بريد إلكتروني آخر' : 'Register another email'}
+                </span>
               </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 rtl:left-auto rtl:right-0 pl-3.5 rtl:pl-0 rtl:pr-3.5 flex items-center pointer-events-none text-slate-400">
-                  <Mail className="w-5 h-5 text-[#38BDF8]" />
-                </div>
+            <form noValidate onSubmit={handleSubmit} className="space-y-3">
+              <div>
+                <label htmlFor="footer-newsletter-email" className="sr-only">
+                  {isArabic ? 'البريد الإلكتروني' : 'Email address'}
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 rtl:left-auto rtl:right-0 pl-3.5 rtl:pl-0 rtl:pr-3.5 flex items-center pointer-events-none text-[#38BDF8]">
+                    <Mail className="w-4 h-4" />
+                  </div>
 
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder={
-                    lang === 'ar'
-                      ? 'أدخل بريدك الإلكتروني (name@example.com)...'
-                      : 'Enter your email (name@example.com)...'
-                  }
-                  className="w-full pl-11 pr-4 rtl:pl-4 rtl:pr-11 py-3.5 rounded-2xl bg-slate-900/90 border border-slate-700/80 text-white placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/30 transition-all shadow-inner"
-                  disabled={isSubmitting}
-                />
+                  <input
+                    id="footer-newsletter-email"
+                    data-testid="newsletter-email-input"
+                    type="email"
+                    inputMode="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (result && !result.success) {
+                        setResult(null);
+                      }
+                    }}
+                    placeholder={
+                      isArabic
+                        ? 'أدخل بريدك الإلكتروني (name@example.com)'
+                        : 'Enter your email (name@example.com)'
+                    }
+                    aria-invalid={Boolean(result && !result.success)}
+                    aria-describedby={result && !result.success ? errorId : undefined}
+                    className="w-full pl-10 pr-4 rtl:pl-4 rtl:pr-10 py-3 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-400 text-xs sm:text-sm focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/40 transition-colors"
+                    disabled={isSubmitting}
+                  />
+                </div>
               </div>
 
               {result && !result.success && (
-                <div className="flex items-center gap-2 p-2.5 rounded-xl bg-red-950/50 border border-red-500/40 text-red-200 text-xs animate-in fade-in">
+                <div
+                  id={errorId}
+                  role="alert"
+                  data-testid="newsletter-error"
+                  className="flex items-center gap-2 p-2.5 rounded-xl bg-red-950/60 border border-red-500/40 text-red-200 text-xs"
+                >
                   <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
                   <span>{result.message}</span>
                 </div>
@@ -163,34 +191,38 @@ export const NewsletterFooterSection: React.FC = () => {
 
               <button
                 type="submit"
-                disabled={isSubmitting || !email.trim()}
-                className="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-[#007AFF] to-[#0051C6] hover:from-[#0066E0] hover:to-[#0047AF] text-white text-xs sm:text-sm font-bold shadow-lg shadow-blue-600/30 hover:shadow-blue-600/50 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed group active:scale-98"
+                data-testid="newsletter-submit-btn"
+                disabled={isSubmitting}
+                className="w-full py-3 px-5 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed whitespace-nowrap focus:outline-none focus-visible:ring-2 focus-visible:ring-[#38BDF8]"
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin" />
-                    <span>{lang === 'ar' ? 'جارٍ الاشتراك...' : 'Subscribing...'}</span>
+                    <span>{isArabic ? 'جارٍ الاشتراك...' : 'Subscribing...'}</span>
                   </>
                 ) : (
                   <>
-                    <Send className="w-4 h-4 group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 transition-transform" />
+                    <Send className="w-4 h-4" />
                     <span>
-                      {lang === 'ar' ? 'اشترك في العروض الآن' : 'Subscribe for VIP Deals'}
+                      {isArabic ? 'اشترك للحصول على العروض' : 'Subscribe for Tech Deals'}
                     </span>
                     <ArrowRight className="w-4 h-4 rtl:rotate-180" />
                   </>
                 )}
               </button>
 
-              <p className="text-[11px] text-slate-400 text-center">
-                {lang === 'ar'
-                  ? '🔒 بياناتك محمية بالكامل. لن نشارك بريدك مع أي جهة خارجية أبداً.'
-                  : '🔒 We respect your privacy. No spam, ever. Unsubscribe with one click.'}
+              <p className="text-[11px] text-slate-400 flex items-center justify-center gap-1.5 text-center">
+                <Lock className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                <span>
+                  {isArabic
+                    ? 'بياناتك محمية ولن نشارك بريدك الإلكتروني مع أي طرف ثالث.'
+                    : 'Your privacy is protected. Unsubscribe at any time.'}
+                </span>
               </p>
             </form>
           )}
         </div>
       </div>
-    </div>
+    </section>
   );
 };

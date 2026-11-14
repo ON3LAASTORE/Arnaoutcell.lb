@@ -314,8 +314,8 @@ export const ServicesPage: React.FC = () => {
               </p>
               <p className="text-xs text-[#64748B] dark:text-slate-400">
                 {lang === 'ar'
-                  ? 'فريق ON AlAA STORE في الشوف متاح يومياً 8:00 ص – 1:00 ص لخدمة جميع مناطق لبنان.'
-                  : 'Our Chouf-based support team is available daily 8:00 AM – 1:00 AM for all Lebanon.'}
+                  ? 'فريق ON AlAA STORE في الشوف متاح يومياً 10:00 ص – 1:00 ص لخدمة جميع مناطق لبنان.'
+                  : 'Our Chouf-based support team is available daily 10:00 AM – 1:00 AM for all Lebanon.'}
               </p>
             </div>
             <div className="flex items-center gap-2.5 shrink-0">

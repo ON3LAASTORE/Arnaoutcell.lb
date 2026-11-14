@@ -26,6 +26,17 @@ import {
   seedInitialProductsToCloud,
 } from '../services/productFirestoreService';
 import { validateAddToCompare, toggleCompareList } from '../utils/compareHelpers';
+import {
+  RECENTLY_VIEWED_STORAGE_KEY,
+  recordRecentlyViewedId,
+  parseStoredRecentlyViewedIds,
+  resolveRecentlyViewedProducts,
+} from '../utils/recentlyViewedHelpers';
+import { safeStorageSetItem } from '../utils/storageQuotaHelpers';
+import {
+  applyDocumentLanguageDirection,
+  normalizeLanguage,
+} from '../utils/languageToggleHelpers';
 
 interface ShopContextType {
   lang: Language;
@@ -79,6 +90,10 @@ interface ShopContextType {
   // Modals & Active state
   quickViewProduct: Product | null;
   setQuickViewProduct: (product: Product | null) => void;
+  recentlyViewedProducts: Product[];
+  recordProductView: (productId: string) => void;
+  removeFromRecentlyViewed: (productId: string) => void;
+  clearRecentlyViewed: () => void;
   lastCompletedOrder: Order | null;
   setLastCompletedOrder: (order: Order | null) => void;
   submitOrder: (orderData: Omit<Order, 'id' | 'orderDate' | 'statusHistory'>) => Order;
@@ -95,8 +110,11 @@ const ShopContext = createContext<ShopContextType | undefined>(undefined);
 export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [lang, setLangState] = useState<Language>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('arnaout_lang') as Language;
-      return saved === 'ar' || saved === 'en' ? saved : 'en';
+      try {
+        return normalizeLanguage(localStorage.getItem('arnaout_lang'));
+      } catch {
+        return 'en';
+      }
     }
     return 'en';
   });
@@ -121,10 +139,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const root = document.documentElement;
       if (isDarkMode) {
         root.classList.add('dark');
-        localStorage.setItem('arnaout_theme', 'dark');
+        safeStorageSetItem(typeof window !== 'undefined' ? window.localStorage : null, 'arnaout_theme', 'dark');
       } else {
         root.classList.remove('dark');
-        localStorage.setItem('arnaout_theme', 'light');
+        safeStorageSetItem(typeof window !== 'undefined' ? window.localStorage : null, 'arnaout_theme', 'light');
       }
     }
   }, [isDarkMode]);
@@ -170,7 +188,17 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return [];
   });
 
-  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const [quickViewProduct, setQuickViewProductState] = useState<Product | null>(null);
+  const [recentlyViewedIds, setRecentlyViewedIds] = useState<string[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return parseStoredRecentlyViewedIds(localStorage.getItem(RECENTLY_VIEWED_STORAGE_KEY));
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
   const [lastCompletedOrder, setLastCompletedOrder] = useState<Order | null>(null);
 
   // Compare Products State & Persistence (up to 3 products)
@@ -190,7 +218,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.setItem('arnaout_compare_list', JSON.stringify(compareList));
+        safeStorageSetItem(window.localStorage, 'arnaout_compare_list', JSON.stringify(compareList));
       } catch {
         // storage fallback
       }
@@ -250,24 +278,51 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
-  // Update HTML direction when language changes
+  // Update HTML direction and .rtl class when language changes
   useEffect(() => {
     if (typeof document !== 'undefined') {
-      document.documentElement.lang = lang;
-      document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+      applyDocumentLanguageDirection(lang, document.documentElement, document.body);
     }
-    localStorage.setItem('arnaout_lang', lang);
+    safeStorageSetItem(typeof window !== 'undefined' ? window.localStorage : null, 'arnaout_lang', lang);
   }, [lang]);
 
   // Persist cart
   useEffect(() => {
-    localStorage.setItem('arnaout_cart', JSON.stringify(cart));
+    safeStorageSetItem(typeof window !== 'undefined' ? window.localStorage : null, 'arnaout_cart', JSON.stringify(cart));
   }, [cart]);
 
   // Persist wishlist
   useEffect(() => {
-    localStorage.setItem('arnaout_wishlist', JSON.stringify(wishlist));
+    safeStorageSetItem(typeof window !== 'undefined' ? window.localStorage : null, 'arnaout_wishlist', JSON.stringify(wishlist));
   }, [wishlist]);
+
+  // Persist recently viewed product IDs (max 5)
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      safeStorageSetItem(window.localStorage, RECENTLY_VIEWED_STORAGE_KEY, JSON.stringify(recentlyViewedIds));
+    }
+  }, [recentlyViewedIds]);
+
+  const recordProductView = (productId: string) => {
+    setRecentlyViewedIds((prev) => recordRecentlyViewedId(prev, productId));
+  };
+
+  const removeFromRecentlyViewed = (productId: string) => {
+    setRecentlyViewedIds((prev) => prev.filter((id) => id !== productId));
+  };
+
+  const clearRecentlyViewed = () => {
+    setRecentlyViewedIds([]);
+  };
+
+  const setQuickViewProduct = (product: Product | null) => {
+    if (product?.id) {
+      recordProductView(product.id);
+    }
+    setQuickViewProductState(product);
+  };
+
+  const recentlyViewedProducts = resolveRecentlyViewedProducts(recentlyViewedIds, products);
 
   const setLang = (newLang: Language) => {
     setLangState(newLang);
@@ -356,10 +411,13 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const isInWishlist = (productId: string) => wishlist.includes(productId);
 
   const viewProductDetail = (productId: string, openAsModal = true) => {
+    if (productId) {
+      recordProductView(productId);
+    }
     setSelectedProductId(productId);
     const p = products.find((item) => item.id === productId);
     if (openAsModal && p) {
-      setQuickViewProduct(p);
+      setQuickViewProductState(p);
     } else {
       setCurrentView('product-detail');
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -369,6 +427,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const selectCategory = (slug: string | null) => {
     setSelectedCategorySlug(slug);
     setSelectedBrandName(null);
+    if (slug) {
+      setSearchQuery('');
+    }
     setCurrentView('products');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -376,6 +437,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const selectBrand = (brandName: string | null) => {
     setSelectedBrandName(brandName);
     setSelectedCategorySlug(null);
+    if (brandName) {
+      setSearchQuery('');
+    }
     setCurrentView('products');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -468,6 +532,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setSearchQuery,
         quickViewProduct,
         setQuickViewProduct,
+        recentlyViewedProducts,
+        recordProductView,
+        removeFromRecentlyViewed,
+        clearRecentlyViewed,
         lastCompletedOrder,
         setLastCompletedOrder,
         submitOrder,

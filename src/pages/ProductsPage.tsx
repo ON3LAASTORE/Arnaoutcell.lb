@@ -19,6 +19,7 @@ import {
   countProductsPerTier,
   BUDGET_TIERS,
 } from '../utils/priceFilterHelpers';
+import { matchesProductSearchQuery } from '../utils/globalSearchHelpers';
 
 export const ProductsPage: React.FC = () => {
   const {
@@ -98,15 +99,11 @@ export const ProductsPage: React.FC = () => {
     const filtered = products
       .filter((p) => p.isPublished)
       .filter((p) => {
-        // Search filter
+        // Search filter (name EN/AR, brand, category EN/AR/slug, subcategory, SKU)
         if (searchQuery.trim()) {
-          const q = searchQuery.toLowerCase();
-          const matchName = p.name.toLowerCase().includes(q);
-          const matchNameAr = p.nameAr && p.nameAr.includes(q);
-          const matchBrand = p.brand.toLowerCase().includes(q);
-          const matchCategory = p.category.toLowerCase().includes(q);
-          const matchSku = p.sku.toLowerCase().includes(q);
-          if (!matchName && !matchNameAr && !matchBrand && !matchCategory && !matchSku) return false;
+          if (!matchesProductSearchQuery(p, searchQuery, categories, 'all')) {
+            return false;
+          }
         }
 
         // Category filter
@@ -136,6 +133,7 @@ export const ProductsPage: React.FC = () => {
     return sortProducts(filtered, sortOption);
   }, [
     products,
+    categories,
     searchQuery,
     selectedCategorySlug,
     activeCategory,

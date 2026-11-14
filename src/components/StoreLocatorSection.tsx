@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useShop } from '../context/ShopContext';
+import { resolveStoreLogoUrl } from '../utils/storeSettingsHelpers';
 import {
   Clock,
   Phone,
@@ -111,8 +112,12 @@ export const StoreLocatorSection: React.FC = () => {
               {/* Store Identity Badge */}
               <div className="flex items-center justify-between border-b border-[#DCE5F0] dark:border-[#1E293B] pb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-[#007AFF] text-white flex items-center justify-center font-black text-lg shadow-md shadow-[#007AFF]/25">
-                    OA
+                  <div className="w-13 h-13 rounded-full overflow-hidden bg-[#000000] p-[2px] border border-[#1E3A5F]/85 ring-1 ring-[#007AFF]/35 shadow-[0_0_14px_rgba(0,122,255,0.28)] shrink-0 flex items-center justify-center">
+                    <img
+                      src={resolveStoreLogoUrl(storeSettings.logoUrl)}
+                      alt={storeSettings.storeName || 'ON AlAA STORE'}
+                      className="w-full h-full rounded-full object-contain object-center"
+                    />
                   </div>
                   <div>
                     <h3 className="font-black text-base text-[#172033] dark:text-white leading-tight">

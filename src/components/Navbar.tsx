@@ -5,7 +5,6 @@ import {
   Heart,
   Menu,
   X,
-  Globe,
   Flame,
   ShieldCheck,
   MapPin,
@@ -19,11 +18,11 @@ import { StoreLogo } from './StoreLogo';
 import { GlobalSearch } from './GlobalSearch';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import { ConnectivityIndicator } from './ConnectivityIndicator';
+import { LanguageToggle } from './LanguageToggle';
 
 export const Navbar: React.FC = () => {
   const {
     lang,
-    setLang,
     t,
     cartCount,
     cartSubtotal,
@@ -57,7 +56,7 @@ export const Navbar: React.FC = () => {
         paddingLeft: 'max(env(safe-area-inset-left, 0px), 0px)',
         paddingRight: 'max(env(safe-area-inset-right, 0px), 0px)',
       }}
-      className="sticky top-0 z-40 bg-white/95 dark:bg-[#0A0F1D]/95 backdrop-blur-xl border-b border-[#DCE5F0] dark:border-[#1E293B] shadow-[0_2px_15px_-3px_rgba(0,122,255,0.06)] dark:shadow-[0_2px_20px_-3px_rgba(0,0,0,0.6)] transition-colors duration-200"
+      className="sticky top-0 z-40 w-full max-w-full overflow-x-clip bg-white/95 dark:bg-[#0A0F1D]/95 backdrop-blur-xl border-b border-[#DCE5F0] dark:border-[#1E293B] shadow-[0_2px_15px_-3px_rgba(0,122,255,0.06)] dark:shadow-[0_2px_20px_-3px_rgba(0,0,0,0.6)] transition-colors duration-200"
     >
       {/* Main Bar */}
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
@@ -71,11 +70,11 @@ export const Navbar: React.FC = () => {
             }}
           />
 
-          {/* Global Search Component - Quick filter by Name or Brand */}
-          <GlobalSearch isMobile={false} className="hidden md:flex flex-1 min-w-[160px] max-w-xs xl:max-w-sm relative mx-1 lg:mx-2" />
+          {/* Global Search Component - Quick search by Name, Brand, or Category */}
+          <GlobalSearch isMobile={false} className="hidden md:flex flex-1 min-w-[230px] max-w-md xl:max-w-lg relative mx-1 lg:mx-2" />
 
           {/* Quick Actions & Cart */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
             {/* Real-time Firebase Firestore Sync & Connectivity Indicator */}
             <ConnectivityIndicator
               lang={lang}
@@ -100,25 +99,17 @@ export const Navbar: React.FC = () => {
               <span dir="ltr">03 986 718</span>
             </a>
 
-            {/* Call button */}
+            {/* Call button (redundant with WhatsApp 03 986 718 below 2xl) */}
             <a
               href="tel:03986718"
-              className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-[#172033] dark:text-[#F8FAFC] text-xs font-semibold transition-all group whitespace-nowrap shrink-0"
+              className="hidden 2xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-[#172033] dark:text-[#F8FAFC] text-xs font-semibold transition-all group whitespace-nowrap shrink-0"
             >
               <Phone className="w-3.5 h-3.5 text-[#007AFF] group-hover:scale-110 transition-transform shrink-0" />
               <span dir="ltr">03 986 718</span>
             </a>
 
-            {/* Language Switcher */}
-            <button
-              onClick={() => setLang(lang === 'en' ? 'ar' : 'en')}
-              className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-xs font-bold text-[#172033] dark:text-[#F8FAFC] transition-transform duration-100 active:scale-90 cursor-pointer whitespace-nowrap shrink-0"
-              title="Change Language / تغيير اللغة"
-              aria-label="Toggle language"
-            >
-              <Globe className="w-3.5 h-3.5 text-[#007AFF]" />
-              <span className="font-bold">{lang === 'en' ? 'AR' : 'EN'}</span>
-            </button>
+            {/* Language Switcher Component (EN / AR with RTL class support) */}
+            <LanguageToggle variant="compact" />
 
             {/* Global Dark Mode Theme Toggle */}
             <button
@@ -215,7 +206,7 @@ export const Navbar: React.FC = () => {
               </button>
 
               {categoriesDropdownOpen && (
-                <div className="absolute top-full left-0 w-72 bg-white dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] rounded-2xl shadow-xl p-3 z-50 grid grid-cols-1 gap-1">
+                <div className="absolute top-full left-0 rtl:left-auto rtl:right-0 w-72 bg-white dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] rounded-2xl shadow-xl p-3 z-50 grid grid-cols-1 gap-1">
                   <div className="px-3 py-1.5 text-[11px] font-bold text-[#007AFF] uppercase tracking-wider border-b border-[#DCE5F0] dark:border-[#1E293B] mb-1 flex justify-between bg-[#F5F8FC] dark:bg-[#111A2E] rounded-lg">
                     <span>{lang === 'ar' ? 'الأقسام الرئيسية' : 'Popular Departments'}</span>
                     <button
@@ -238,7 +229,7 @@ export const Navbar: React.FC = () => {
                       className="w-full text-left rtl:text-right px-3 py-2 rounded-lg text-[#172033] dark:text-slate-200 hover:bg-[#EAF3FF] dark:hover:bg-[#1A253C] hover:text-[#007AFF] dark:hover:text-[#38BDF8] text-xs transition-colors cursor-pointer flex items-center justify-between"
                     >
                       <span>{lang === 'ar' ? cat.nameAr : cat.name}</span>
-                      <span className="text-[10px] text-[#64748B] dark:text-slate-500">→</span>
+                      <span className="text-[10px] text-[#64748B] dark:text-slate-500 rtl:rotate-180">→</span>
                     </button>
                   ))}
                 </div>
@@ -280,7 +271,24 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-[#0A0F1D] border-b border-[#DCE5F0] dark:border-[#1E293B] px-4 pt-3 pb-6 space-y-4 animate-in slide-in-from-top duration-200 shadow-lg">
+        <div className="md:hidden w-full max-w-full overflow-hidden bg-white dark:bg-[#0A0F1D] border-b border-[#DCE5F0] dark:border-[#1E293B] px-3 sm:px-4 pt-3 pb-6 space-y-4 animate-in slide-in-from-top duration-200 shadow-lg">
+          {/* Mobile Drawer Store Profile Header */}
+          <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-[#F5F8FC] dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] min-w-0">
+            <StoreLogo
+              size="md"
+              showTagline={true}
+              className="min-w-0 flex-1"
+              onClick={() => {
+                setCurrentView('home');
+                setMobileMenuOpen(false);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+            />
+            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EAF3FF] dark:bg-[#132238] text-[#007AFF] dark:text-[#38BDF8] border border-[#BAE6FD] dark:border-[#1E3A5F] shrink-0">
+              {lang === 'ar' ? 'الشوف' : 'Chouf'}
+            </span>
+          </div>
+
           {/* Quick Category Navigation Shortcuts */}
           <div className="pt-1">
             <button
@@ -291,9 +299,12 @@ export const Navbar: React.FC = () => {
               className="w-full flex items-center justify-between p-3 rounded-xl bg-[#007AFF]/10 text-[#007AFF] dark:text-[#38BDF8] font-bold text-xs"
             >
               <span>{lang === 'ar' ? 'تصفح كافة الأقسام (35 قسماً)' : 'Browse All 35 Departments'}</span>
-              <span>→</span>
+              <span className="rtl:rotate-180">→</span>
             </button>
           </div>
+
+          {/* Mobile Language Switcher (English / Arabic RTL) */}
+          <LanguageToggle variant="full" />
 
           {/* Mobile Theme Toggle Banner */}
           <div className="flex items-center justify-between p-3 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B]">

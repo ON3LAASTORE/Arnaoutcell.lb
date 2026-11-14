@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
+@custom-variant rtl (&:where([dir="rtl"], [dir="rtl"] *, .rtl, .rtl *));
 
 @layer base {
   :root {
@@ -64,8 +65,21 @@
     color: #F8FAFC;
   }
 
+  .ltr,
+  [dir="ltr"] {
+    direction: ltr;
+    font-family: var(--font-sans);
+  }
+
+  .rtl,
   [dir="rtl"] {
+    direction: rtl;
     font-family: var(--font-arabic);
+  }
+
+  .rtl [dir="ltr"] {
+    direction: ltr;
+    unicode-bidi: isolate;
   }
 }
 

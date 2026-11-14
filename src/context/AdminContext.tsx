@@ -5,6 +5,7 @@ import {
   changeAdminPassword,
   initializeAdminAuth,
 } from '../services/authService';
+import { safeStorageSetItem } from '../utils/storageQuotaHelpers';
 import { auth } from '../firebase';
 import {
   GoogleAuthProvider,
@@ -120,9 +121,13 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
   useEffect(() => {
     if (user) {
-      localStorage.setItem('arnaout_admin_user', JSON.stringify(user));
+      safeStorageSetItem(window.localStorage, 'arnaout_admin_user', JSON.stringify(user));
     } else {
-      localStorage.removeItem('arnaout_admin_user');
+      try {
+        localStorage.removeItem('arnaout_admin_user');
+      } catch {
+        // ignore
+      }
     }
   }, [user]);
 

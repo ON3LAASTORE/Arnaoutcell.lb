@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useShop } from '../context/ShopContext';
 import { Product } from '../types';
+import { resolveStoreLogoUrl } from '../utils/storeSettingsHelpers';
 
 export const SEOHead: React.FC = () => {
   const {
@@ -30,8 +31,7 @@ export const SEOHead: React.FC = () => {
       'Official ON AlAA STORE online electronics store based in Chouf. Shop authentic smartphones, laptops, GaN fast chargers, and audio gear with delivery available to all Lebanon.';
     let canonicalUrl = window.location.origin + window.location.pathname;
     let ogType = 'website';
-    let ogImage =
-      'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=1200&auto=format&fit=crop&q=80';
+    let ogImage = resolveStoreLogoUrl(storeSettings.logoUrl);
 
     // 1. Dynamic Titles & Descriptions by Route/View
     switch (currentView) {
@@ -84,7 +84,7 @@ export const SEOHead: React.FC = () => {
 
       case 'services':
         pageTitle = `Touch Telecom & Whish Money Hub | ${storeName}`;
-        metaDescription = `Official digital wallet and telecom support at ${storeName} (Chouf): Touch & Alfa line renewal and Whish Money assistance open 8:00 AM – 1:00 AM daily.`;
+        metaDescription = `Official digital wallet and telecom support at ${storeName} (Chouf): Touch & Alfa line renewal and Whish Money assistance open 10:00 AM – 1:00 AM daily.`;
         canonicalUrl = `${window.location.origin}/#/services`;
         break;
 
@@ -103,7 +103,7 @@ export const SEOHead: React.FC = () => {
 
       case 'contact':
         pageTitle = `Contact Online Store (Chouf) | ${storeName} (03 986 718)`;
-        metaDescription = `Contact ${storeName} — Online Store based in Chouf with delivery available to all Lebanon. Open 8:00 AM - 1:00 AM daily. Call or WhatsApp 03 986 718.`;
+        metaDescription = `Contact ${storeName} — Online Store based in Chouf with delivery available to all Lebanon. Open 10:00 AM - 1:00 AM daily. Call or WhatsApp 03 986 718.`;
         canonicalUrl = `${window.location.origin}/#/contact`;
         break;
 
@@ -213,8 +213,8 @@ export const SEOHead: React.FC = () => {
           {
             '@type': 'OpeningHoursSpecification',
             dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-            opens: '08:00',
-            closes: '01:00',
+            opens: storeSettings.openingSchedule?.openTime || '10:00',
+            closes: storeSettings.openingSchedule?.closeTime || '01:00',
           },
         ],
         paymentAccepted: 'Cash on Delivery, Whish Money, OMT, Western Union',

@@ -754,8 +754,8 @@ export const ProductQuickViewModal: React.FC = () => {
                         </span>
                         <p className="text-[#64748B] dark:text-slate-300 text-xs mt-0.5">
                           {lang === 'ar'
-                            ? 'متجرنا الإلكتروني مقره الشوف، مع شحن سريع وموثوق لباب بيتك في كافة المحافظات والمناطق اللبنانية. خدمة الطلبات والدعم يومياً (8:00 ص – 1:00 ص).'
-                            : 'Online Store based in Chouf with fast, reliable door-to-door delivery across all Lebanese regions. Support daily (8:00 AM – 1:00 AM).'}
+                            ? 'متجرنا الإلكتروني مقره الشوف، مع شحن سريع وموثوق لباب بيتك في كافة المحافظات والمناطق اللبنانية. خدمة الطلبات والدعم يومياً (10:00 ص – 1:00 ص).'
+                            : 'Online Store based in Chouf with fast, reliable door-to-door delivery across all Lebanese regions. Support daily (10:00 AM – 1:00 AM).'}
                         </p>
                       </div>
                     </div>

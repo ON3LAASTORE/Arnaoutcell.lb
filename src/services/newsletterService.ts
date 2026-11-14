@@ -1,8 +1,17 @@
-import { db } from '../firebase';
 import { doc, setDoc } from 'firebase/firestore';
-import { isValidEmailFormat, sanitizeSubscriberId } from '../utils/newsletterHelpers';
+import { db, handleFirestoreError, OperationType } from '../firebase';
+import {
+  buildSubscriberPayload,
+  isValidEmailFormat,
+  normalizeEmail,
+} from '../utils/newsletterHelpers';
 
-export { isValidEmailFormat, sanitizeSubscriberId } from '../utils/newsletterHelpers';
+export {
+  buildSubscriberPayload,
+  isValidEmailFormat,
+  normalizeEmail,
+  sanitizeSubscriberId,
+} from '../utils/newsletterHelpers';
 
 const STORAGE_KEY = 'arnaout_newsletter_subscribers';
 
@@ -11,12 +20,17 @@ export interface NewsletterSubscriptionResult {
   messageEn: string;
   messageAr: string;
   alreadySubscribed?: boolean;
+  email?: string;
 }
 
 export function getLocalSubscribers(): string[] {
   try {
+    if (typeof window === 'undefined') return [];
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string')
+      : [];
   } catch {
     return [];
   }
@@ -27,7 +41,7 @@ export async function subscribeToNewsletter(
   lang: 'en' | 'ar' = 'en',
   source: string = 'footer'
 ): Promise<NewsletterSubscriptionResult> {
-  const cleanEmail = email.trim().toLowerCase();
+  const cleanEmail = normalizeEmail(email);
 
   if (!isValidEmailFormat(cleanEmail)) {
     return {
@@ -37,18 +51,31 @@ export async function subscribeToNewsletter(
     };
   }
 
-  // Check local cache for duplicates
   const existingSubscribers = getLocalSubscribers();
   if (existingSubscribers.includes(cleanEmail)) {
     return {
       success: true,
       alreadySubscribed: true,
-      messageEn: 'You are already subscribed to ON AlAA STORE VIP updates! Thank you.',
-      messageAr: 'أنت مشترك بالفعل في نشرة ON AlAA STORE الإخبارية! شكراً لولائك.',
+      email: cleanEmail,
+      messageEn: `You are already subscribed with ${cleanEmail} for ON AlAA STORE marketing updates and special tech deals.`,
+      messageAr: `البريد الإلكتروني ${cleanEmail} مشترك بالفعل في نشرة ON AlAA STORE للعروض والتحديثات الحصرية.`,
     };
   }
 
-  // Save to local cache
+  const subscriberData = buildSubscriberPayload(cleanEmail, lang, source);
+
+  if (typeof window !== 'undefined') {
+    try {
+      await setDoc(doc(db, 'newsletter_subscribers', subscriberData.id), subscriberData);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
+      if (msg.includes('permission') || msg.includes('missing or insufficient permissions')) {
+        handleFirestoreError(err, OperationType.WRITE, `newsletter_subscribers/${subscriberData.id}`);
+      }
+      console.warn('Firestore newsletter subscription sync deferred:', err);
+    }
+  }
+
   try {
     const updated = [...existingSubscribers, cleanEmail];
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
@@ -56,28 +83,11 @@ export async function subscribeToNewsletter(
     // Non-critical local storage fallback
   }
 
-  const subscriberId = sanitizeSubscriberId(cleanEmail);
-  const subscriberData = {
-    id: subscriberId,
-    email: cleanEmail,
-    subscribedAt: new Date().toISOString(),
-    lang,
-    source,
-  };
-
-  // Sync to Firestore in background
-  if (typeof window !== 'undefined') {
-    try {
-      await setDoc(doc(db, 'newsletter_subscribers', subscriberId), subscriberData);
-    } catch (err) {
-      console.warn('Firestore newsletter subscription sync:', err);
-    }
-  }
-
   return {
     success: true,
     alreadySubscribed: false,
-    messageEn: '🎉 Welcome to ON AlAA STORE VIP Club! Check your inbox for exclusive deals and fresh tech drops.',
-    messageAr: '🎉 أهلاً بك في نادي ON AlAA STORE VIP! ستصلك أقوى العروض والتخفيضات الحصرية على بريدك.',
+    email: cleanEmail,
+    messageEn: `Subscribed ${cleanEmail}. Watch your inbox for marketing updates, flash discounts, and special tech deals.`,
+    messageAr: `تم تسجيل ${cleanEmail} بنجاح. ستصلك أحدث العروض التقنية والتخفيضات الحصرية عبر البريد الإلكتروني.`,
   };
 }

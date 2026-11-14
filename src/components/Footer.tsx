@@ -16,6 +16,7 @@ import {
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import { StoreLogo } from './StoreLogo';
 import { NewsletterFooterSection } from './NewsletterFooterSection';
+import { TrustBadgesFooterSection } from './TrustBadgesFooterSection';
 import { StoreStatusBadge } from './StoreStatusBadge';
 import {
   SAIDA_STORE_DATA,
@@ -122,7 +123,7 @@ export const Footer: React.FC = () => {
                 </div>
                 <div className="space-y-0.5">
                   <span className="font-bold text-[#172033] dark:text-[#F8FAFC] block">
-                    {lang === 'ar' ? 'طلبات أونلاين 24/7 (الدعم: 8:00 ص – 1:00 ص)' : 'ONLINE ORDERS 24/7 (SUPPORT: 8:00 AM – 1:00 AM)'}
+                    {lang === 'ar' ? 'طلبات أونلاين 24/7 (الدعم: 10:00 ص – 1:00 ص)' : 'ONLINE ORDERS 24/7 (SUPPORT: 10:00 AM – 1:00 AM)'}
                   </span>
                   <span className="text-[11px] text-[#64748B] dark:text-slate-400 block">
                     {lang === 'ar' ? SAIDA_STORE_DATA.openingHoursAr : SAIDA_STORE_DATA.openingHoursEn}
@@ -269,6 +270,9 @@ export const Footer: React.FC = () => {
             </ul>
           </div>
         </div>
+
+        {/* Trust Badges: Verified Payment Methods & Customer Protection */}
+        <TrustBadgesFooterSection />
 
         {/* Bottom Bar */}
         <div className="pt-8 border-t border-[#DCE5F0] dark:border-[#1E293B] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#64748B] dark:text-slate-400">

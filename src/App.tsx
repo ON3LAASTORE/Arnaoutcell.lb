@@ -72,7 +72,8 @@ const FastSpinner: React.FC = () => (
 );
 
 const AppContent: React.FC = () => {
-  const { currentView } = useShop();
+  const { currentView, lang } = useShop();
+  const dirClass = lang === 'ar' ? 'rtl' : 'ltr';
 
   // Instant scroll-to-top on page or view transition
   useEffect(() => {
@@ -82,17 +83,20 @@ const AppContent: React.FC = () => {
   // If in admin view, AdminPage has its own dedicated dashboard shell
   if (currentView === 'admin') {
     return (
-      <>
+      <div className={dirClass} dir={dirClass}>
         <SEOHead />
         <React.Suspense fallback={<FastSpinner />}>
           <AdminPage />
         </React.Suspense>
-      </>
+      </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-[100dvh] w-full overflow-x-hidden bg-[#FFFFFF] dark:bg-[#0A0F1D] text-[#172033] dark:text-[#F8FAFC] selection:bg-[#007AFF] selection:text-white transition-colors duration-200">
+    <div
+      dir={dirClass}
+      className={`${dirClass} flex flex-col min-h-[100dvh] w-full overflow-x-hidden bg-[#FFFFFF] dark:bg-[#0A0F1D] text-[#172033] dark:text-[#F8FAFC] selection:bg-[#007AFF] selection:text-white transition-colors duration-200`}
+    >
       <SEOHead />
       <GsapScrollLines showTopIndicator={true} showVerticalGuideLines={true} />
       <AnnouncementBar />

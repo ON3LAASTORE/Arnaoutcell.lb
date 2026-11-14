@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { validateImageFile, formatFileSize } from '../../utils/imageUploadHelpers';
+import { validateImageFile } from '../../utils/imageUploadHelpers';
+import { optimizeUploadedImage } from '../../utils/imageCompression';
 
 export interface ProductImageUploaderProps {
   onImageConverted?: (base64String: string, fileName?: string) => void;
@@ -32,25 +33,21 @@ export default function ProductImageUploader({
     setError('');
     setFileName(file.name);
 
-    const reader = new FileReader();
-
-    reader.onload = (uploadEvent) => {
-      const base64String = uploadEvent.target?.result as string;
-      setImageBase64(base64String);
-
-      // Pass the Base64 string up to parent component or form state if needed
-      if (onImageConverted) {
-        onImageConverted(base64String, file.name);
-      }
-    };
-
-    reader.onerror = (err) => {
-      console.error('FileReader error:', err);
-      setError('Failed to read the image file.');
-    };
-
-    // Converts the file to a Data URL (Base64 string)
-    reader.readAsDataURL(file);
+    optimizeUploadedImage(file, {
+      maxDimension: 1200,
+      maxDataUrlLength: 320_000,
+      initialQuality: 0.84,
+    })
+      .then((base64String) => {
+        setImageBase64(base64String);
+        if (onImageConverted) {
+          onImageConverted(base64String, file.name);
+        }
+      })
+      .catch((err) => {
+        console.error('Image optimization error:', err);
+        setError('Failed to read the image file.');
+      });
   };
 
   const handleRemove = () => {

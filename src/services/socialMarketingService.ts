@@ -2,6 +2,7 @@ import { MarketingPost, SocialAccountConfig, SocialPlatform, SocialPublishResult
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, doc, setDoc, deleteDoc, getDocs, onSnapshot } from 'firebase/firestore';
 import { openExternalUrl } from '../utils/navigation';
+import { safeStorageSetItem } from '../utils/storageQuotaHelpers';
 
 const STORAGE_KEYS = {
   POSTS: 'arnaout_social_posts_v2',
@@ -163,7 +164,7 @@ export function getSavedMarketingPosts(): MarketingPost[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.POSTS);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(INITIAL_MARKETING_POSTS));
+      safeStorageSetItem(window.localStorage, STORAGE_KEYS.POSTS, JSON.stringify(INITIAL_MARKETING_POSTS));
       return INITIAL_MARKETING_POSTS;
     }
     const parsed: MarketingPost[] = JSON.parse(raw);
@@ -178,7 +179,7 @@ export function getSavedMarketingPosts(): MarketingPost[] {
  */
 export function saveMarketingPosts(posts: MarketingPost[]): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEYS.POSTS, JSON.stringify(posts));
+  safeStorageSetItem(window.localStorage, STORAGE_KEYS.POSTS, JSON.stringify(posts));
 }
 
 /**
@@ -254,7 +255,7 @@ export function getSavedSocialAccounts(): SocialAccountConfig[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
     if (!raw) {
-      localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(INITIAL_SOCIAL_ACCOUNTS));
+      safeStorageSetItem(window.localStorage, STORAGE_KEYS.ACCOUNTS, JSON.stringify(INITIAL_SOCIAL_ACCOUNTS));
       return INITIAL_SOCIAL_ACCOUNTS;
     }
     const parsed: SocialAccountConfig[] = JSON.parse(raw);
@@ -270,7 +271,7 @@ export function getSavedSocialAccounts(): SocialAccountConfig[] {
       }
     }
     if (hasMissing) {
-      localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(merged));
+      safeStorageSetItem(window.localStorage, STORAGE_KEYS.ACCOUNTS, JSON.stringify(merged));
     }
     return merged;
   } catch {
@@ -284,7 +285,7 @@ export function getSavedSocialAccounts(): SocialAccountConfig[] {
  */
 export function saveSocialAccounts(accounts: SocialAccountConfig[]): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
+  safeStorageSetItem(window.localStorage, STORAGE_KEYS.ACCOUNTS, JSON.stringify(accounts));
 }
 
 /**

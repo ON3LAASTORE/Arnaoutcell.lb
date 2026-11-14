@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useShop } from '../context/ShopContext';
 import { LazyImage } from './LazyImage';
+import { DEFAULT_STORE_PROFILE_PICTURE, resolveStoreLogoUrl } from '../utils/storeSettingsHelpers';
 
 interface StoreLogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -19,36 +20,45 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
 }) => {
   const { storeSettings, lang } = useShop();
 
-  const logoUrl = storeSettings.logoUrl || '/on-alaa-logo.svg';
+  const logoUrl = resolveStoreLogoUrl(storeSettings.logoUrl);
   const storeName = storeSettings.storeName || 'ON AlAA STORE';
   const tagline = lang === 'ar' ? storeSettings.taglineAr : storeSettings.tagline;
 
-  // Dynamically synchronize favicon with custom store logo if available
+  // Dynamically synchronize favicon & mobile home-screen icon with active store logo
   useEffect(() => {
     if (typeof document !== 'undefined' && logoUrl) {
-      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
-      if (!link) {
-        link = document.createElement('link');
-        link.rel = 'shortcut icon';
-        document.getElementsByTagName('head')[0].appendChild(link);
+      const isDefaultOfficial = logoUrl === DEFAULT_STORE_PROFILE_PICTURE;
+      const faviconHref = isDefaultOfficial ? '/favicon.png' : logoUrl;
+      const appleHref = isDefaultOfficial ? '/apple-touch-icon.png' : logoUrl;
+
+      document.querySelectorAll("link[rel*='icon']").forEach((el) => {
+        if (el instanceof HTMLLinkElement && el.rel !== 'apple-touch-icon' && el.getAttribute('href') !== '/favicon.ico') {
+          if (!isDefaultOfficial || el.getAttribute('sizes') === '64x64' || !el.getAttribute('sizes')) {
+            el.href = faviconHref;
+          }
+        }
+      });
+
+      const appleLink = document.querySelector("link[rel='apple-touch-icon']");
+      if (appleLink instanceof HTMLLinkElement) {
+        appleLink.href = appleHref;
       }
-      link.href = logoUrl;
     }
   }, [logoUrl]);
 
   const sizeClasses = {
     sm: {
-      image: 'w-7 h-7 sm:w-8 sm:h-8',
+      image: 'w-8 h-8 sm:w-9 sm:h-9',
       title: 'text-xs',
       tagline: 'text-[9px]',
     },
     md: {
-      image: 'w-8 h-8 sm:w-10 sm:h-10',
+      image: 'w-9 h-9 sm:w-11 sm:h-11',
       title: 'text-xs sm:text-base lg:text-lg',
       tagline: 'text-[10px] sm:text-[11px]',
     },
     lg: {
-      image: 'w-10 h-10 sm:w-14 sm:h-14',
+      image: 'w-12 h-12 sm:w-16 sm:h-16',
       title: 'text-lg sm:text-2xl',
       tagline: 'text-xs',
     },
@@ -61,27 +71,27 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
   return (
     <div
       onClick={onClick}
-      className={`inline-flex items-center gap-2.5 select-none transition-all shrink-0 ${
+      className={`inline-flex items-center gap-2 sm:gap-2.5 select-none transition-all min-w-0 sm:shrink-0 ${
         onClick ? 'cursor-pointer group' : ''
       } ${className}`}
     >
-      <div className="flex items-center gap-2.5">
-        {/* Official Circular Profile Emblem */}
-        <div className="shrink-0 overflow-hidden rounded-full border border-slate-200/90 dark:border-slate-700 shadow-xs bg-white p-0.5 flex items-center justify-center transition-transform group-hover:scale-105">
+      <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+        {/* Official Circular Profile Emblem on deep dark backing so neon glow and metallic outer ring never clip */}
+        <div className="shrink-0 overflow-hidden rounded-full bg-[#000000] p-[1.5px] border border-[#1E3A5F]/85 dark:border-[#38BDF8]/45 ring-1 ring-[#007AFF]/30 shadow-[0_0_12px_rgba(0,122,255,0.24)] flex items-center justify-center transition-transform group-hover:scale-105">
           <LazyImage
             src={logoUrl}
             alt={storeName}
-            width={size === 'sm' ? 32 : size === 'lg' ? 48 : 40}
-            height={size === 'sm' ? 32 : size === 'lg' ? 48 : 40}
+            width={size === 'sm' ? 36 : size === 'lg' ? 64 : 44}
+            height={size === 'sm' ? 36 : size === 'lg' ? 64 : 44}
             priority={true}
-            wrapperClassName="rounded-full overflow-hidden"
-            className={`${sizeClasses.image} rounded-full object-cover`}
+            wrapperClassName={`${sizeClasses.image} rounded-full overflow-hidden bg-[#000000]`}
+            className="w-full h-full rounded-full object-contain object-center"
           />
         </div>
 
-        <div className="leading-tight">
+        <div className="leading-tight min-w-0">
           <span
-            className={`font-black tracking-tight text-[#172033] dark:text-[#F8FAFC] block whitespace-nowrap group-hover:text-[#007AFF] transition-colors ${sizeClasses.title}`}
+            className={`font-black tracking-tight text-[#172033] dark:text-[#F8FAFC] block whitespace-nowrap truncate group-hover:text-[#007AFF] transition-colors ${sizeClasses.title}`}
           >
             {firstWord} <span className="text-[#007AFF]">{restWords}</span>
               {adminMode && (
@@ -92,7 +102,7 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
             </span>
             {showTagline && tagline && (
               <span
-                className={`text-[#64748B] dark:text-slate-400 font-medium block truncate max-w-[140px] sm:max-w-[290px] lg:max-w-[340px] ${sizeClasses.tagline}`}
+                className={`text-[#64748B] dark:text-slate-400 font-medium block truncate max-w-[115px] sm:max-w-[290px] lg:max-w-[340px] ${sizeClasses.tagline}`}
               >
                 {tagline}
               </span>

@@ -19,6 +19,7 @@ import {
   buildLocationShareData,
 } from '../utils/storeLocatorHelpers';
 import { useShop } from '../context/ShopContext';
+import { resolveStoreLogoUrl } from '../utils/storeSettingsHelpers';
 
 interface StoreLocationModalProps {
   isOpen: boolean;
@@ -98,20 +99,29 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({ isOpen, 
             <X className="w-5 h-5" />
           </button>
 
-          <div className="space-y-2 pr-10 rtl:pr-0 rtl:pl-10">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-black tracking-wider uppercase">
-              <Globe className="w-3.5 h-3.5" />
-              <span>{isArabic ? 'متجر إلكتروني — مقره الشوف' : 'ONLINE STORE — BASED IN CHOUF'}</span>
+          <div className="flex items-center gap-4 pr-10 rtl:pr-0 rtl:pl-10">
+            <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-[#000000] p-[2px] border border-blue-400/55 ring-1 ring-white/25 shadow-[0_0_18px_rgba(0,122,255,0.45)] shrink-0 flex items-center justify-center">
+              <img
+                src={resolveStoreLogoUrl(storeSettings.logoUrl)}
+                alt={storeSettings.storeName || 'ON AlAA STORE'}
+                className="w-full h-full rounded-full object-contain object-center"
+              />
             </div>
+            <div className="space-y-1.5">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-white text-xs font-black tracking-wider uppercase">
+                <Globe className="w-3.5 h-3.5" />
+                <span>{isArabic ? 'متجر إلكتروني — مقره الشوف' : 'ONLINE STORE — BASED IN CHOUF'}</span>
+              </div>
 
-            <h3 id="store-location-title" className="text-xl sm:text-2xl font-black leading-tight">
-              {isArabic ? (storeSettings.storeNameAr || 'متجر ON AlAA') : (storeSettings.storeName || 'ON AlAA STORE')}
-            </h3>
+              <h3 id="store-location-title" className="text-xl sm:text-2xl font-black leading-tight">
+                {isArabic ? (storeSettings.storeNameAr || 'متجر ON AlAA') : (storeSettings.storeName || 'ON AlAA STORE')}
+              </h3>
 
-            <p className="text-xs sm:text-sm text-blue-100 font-medium flex items-center gap-2">
-              <Truck className="w-4 h-4 flex-shrink-0" />
-              <span>{isArabic ? 'التوصيل متاح لجميع مناطق لبنان' : 'Delivery Available to All Lebanon'}</span>
-            </p>
+              <p className="text-xs sm:text-sm text-blue-100 font-medium flex items-center gap-2">
+                <Truck className="w-4 h-4 flex-shrink-0" />
+                <span>{isArabic ? 'التوصيل متاح لجميع مناطق لبنان' : 'Delivery Available to All Lebanon'}</span>
+              </p>
+            </div>
           </div>
         </div>
 
@@ -188,8 +198,8 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({ isOpen, 
               </p>
               <p className="text-[11px] text-[#64748B] dark:text-slate-400">
                 {isArabic
-                  ? 'خدمة العملاء، الاستشارات التقنية، ومتابعة شحنات التوصيل طيلة 17 ساعة حتى 1:00 بعد منتصف الليل.'
-                  : 'Customer support, tech inquiries, and courier tracking are active continuously until 1:00 AM.'}
+                  ? 'خدمة العملاء، الاستشارات التقنية، ومتابعة شحنات التوصيل يومياً من 10:00 ص حتى 1:00 بعد منتصف الليل.'
+                  : 'Customer support, tech inquiries, and courier tracking are active daily from 10:00 AM until 1:00 AM.'}
               </p>
             </div>
           </div>

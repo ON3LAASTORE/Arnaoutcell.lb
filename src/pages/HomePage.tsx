@@ -1,6 +1,7 @@
 import React from 'react';
 import { HeroSection } from '../components/HeroSection';
 import { SpecialOffersColumn } from '../components/SpecialOffersColumn';
+import { RecentlyViewedSection } from '../components/RecentlyViewedSection';
 import { CategoryGrid } from '../components/CategoryGrid';
 import { BrandCarousel } from '../components/BrandCarousel';
 import { VideoShowcase } from '../components/VideoShowcase';
@@ -15,6 +16,7 @@ export const HomePage: React.FC = () => {
     <ReactBitsBackground variant="combined" className="min-h-[100dvh]">
       <HeroSection />
       <SpecialOffersColumn />
+      <RecentlyViewedSection />
       <CategoryGrid />
       <BrandCarousel />
       <VideoShowcase />

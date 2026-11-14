@@ -5,6 +5,8 @@
  * Never stores or exposes plaintext passwords in browser storage, logs, or source code.
  */
 
+import { safeStorageSetItem } from '../utils/storageQuotaHelpers';
+
 const AUTH_STORAGE_KEY = 'arnaout_admin_security_v2';
 const SESSION_TOKEN_KEY = 'arnaout_admin_session_token';
 
@@ -90,7 +92,7 @@ export async function initializeAdminAuth(): Promise<StoredAuthRecord> {
       hash: INITIAL_PROVISIONED_HASH,
       updatedAt: new Date().toISOString(),
     };
-    localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(record));
+    safeStorageSetItem(window.localStorage, AUTH_STORAGE_KEY, JSON.stringify(record));
     return record;
   } catch (err) {
     console.error('Failed to initialize admin auth', err);
@@ -276,7 +278,7 @@ export async function changeAdminPassword(
     updatedAt: new Date().toISOString(),
   };
 
-  localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(updatedRecord));
+  safeStorageSetItem(window.localStorage, AUTH_STORAGE_KEY, JSON.stringify(updatedRecord));
 
   // Invalidate and refresh session token
   const newSessionToken = generateSalt(24);

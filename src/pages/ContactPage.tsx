@@ -19,6 +19,7 @@ import {
   buildSendToPhoneUrl,
   buildLocationShareData,
 } from '../utils/storeLocatorHelpers';
+import { resolveStoreLogoUrl } from '../utils/storeSettingsHelpers';
 
 export const ContactPage: React.FC = () => {
   const { lang, storeSettings } = useShop();
@@ -66,8 +67,18 @@ export const ContactPage: React.FC = () => {
   return (
     <div className="py-12 md:py-20 bg-white dark:bg-[#0A0F1D] min-h-[100dvh] w-full transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+        {/* Header / Store Profile Badge */}
         <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
+          <div className="flex justify-center pb-1">
+            <div className="w-20 h-20 rounded-full overflow-hidden bg-[#000000] p-[2px] border border-[#1E3A5F] ring-2 ring-[#007AFF]/35 shadow-[0_0_22px_rgba(0,122,255,0.28)] flex items-center justify-center">
+              <img
+                src={resolveStoreLogoUrl(storeSettings.logoUrl)}
+                alt={storeSettings.storeName || 'ON AlAA STORE'}
+                className="w-full h-full rounded-full object-contain object-center"
+              />
+            </div>
+          </div>
+
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF3FF] dark:bg-[#132238] border border-[#BAE6FD] dark:border-[#1E3A5F] text-[#007AFF] text-xs font-bold tracking-wider">
             <Globe className="w-3.5 h-3.5" />
             <span>{isArabic ? 'متجر إلكتروني — مقره الشوف' : 'ONLINE TECH STORE — BASED IN CHOUF'}</span>
@@ -196,7 +207,7 @@ export const ContactPage: React.FC = () => {
                     {isArabic ? 'ساعات الطلبات وخدمة العملاء:' : 'Online Orders & Support Schedule:'}
                   </span>
                   <p className="text-xs font-black text-purple-600 dark:text-purple-400">
-                    {isArabic ? 'الطلبات أونلاين: 24/7 (الدعم: 8:00 ص – 1:00 ص)' : 'Online Orders: 24/7 (Support: 8:00 AM – 1:00 AM)'}
+                    {isArabic ? 'الطلبات أونلاين: 24/7 (الدعم: 10:00 ص – 1:00 ص)' : 'Online Orders: 24/7 (Support: 10:00 AM – 1:00 AM)'}
                   </p>
                   <p className="text-xs font-semibold text-[#172033] dark:text-white">
                     {isArabic ? CHOUF_STORE_DATA.openingHoursAr : CHOUF_STORE_DATA.openingHoursEn}

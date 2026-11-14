@@ -188,13 +188,13 @@ export interface DeliveryZone {
 }
 
 export interface StoreOpeningSchedule {
-  openTime: string; // e.g. "08:00"
+  openTime: string; // e.g. "10:00"
   closeTime: string; // e.g. "01:00"
   daysOpenEn: string; // e.g. "Monday – Sunday"
   daysOpenAr: string; // e.g. "الإثنين – الأحد"
   displayHours: boolean;
-  customMessageEn: string; // e.g. "OPEN EVERY DAY — 17 HOURS DAILY"
-  customMessageAr: string; // e.g. "مفتوح يومياً — 17 ساعة في اليوم"
+  customMessageEn: string; // e.g. "OPEN EVERY DAY — 15 HOURS DAILY"
+  customMessageAr: string; // e.g. "مفتوح يومياً — 15 ساعة يومياً"
   timezone: string; // e.g. "Asia/Beirut"
 }
 

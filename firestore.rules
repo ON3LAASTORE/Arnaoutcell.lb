@@ -59,10 +59,14 @@ service cloud.firestore {
     }
 
     function isValidNewsletterSubscriber(data) {
-      return data.keys().hasAll(['email', 'subscribedAt', 'source'])
+      return data.keys().hasAll(['id', 'email', 'subscribedAt', 'lang', 'source'])
+        && data.keys().hasOnly(['id', 'email', 'subscribedAt', 'lang', 'source'])
+        && isValidId(data.id)
         && data.email is string && data.email.size() >= 3 && data.email.size() <= 128
-        && data.subscribedAt is string && data.subscribedAt.size() <= 64
-        && data.source is string && data.source.size() <= 64;
+        && data.email.matches('^[a-zA-Z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)+$')
+        && data.subscribedAt is string && data.subscribedAt.size() > 0 && data.subscribedAt.size() <= 64
+        && data.lang in ['en', 'ar']
+        && data.source is string && data.source.size() > 0 && data.source.size() <= 64;
     }
 
     function isValidSocialPost(data) {
@@ -169,12 +173,23 @@ service cloud.firestore {
       allow delete: if isValidId(productId);
     }
 
-    // 9. Newsletter Subscribers Collection: Public signup with email validation
+    // 9. Newsletter Subscribers Collection: PII-isolated signup with strict field validation
     match /newsletter_subscribers/{subscriberId} {
       allow get, list: if isAdmin();
-      allow create, update: if isValidId(subscriberId)
-        && isValidNewsletterSubscriber(incoming());
-      allow delete: if isAdmin();
+      allow create: if isValidId(subscriberId)
+        && isValidNewsletterSubscriber(incoming())
+        && incoming().id == subscriberId;
+      allow update: if isValidId(subscriberId)
+        && isValidNewsletterSubscriber(incoming())
+        && (
+          isAdmin() ||
+          (
+            incoming().id == existing().id
+            && incoming().email == existing().email
+            && incoming().diff(existing()).affectedKeys().hasOnly(['subscribedAt', 'lang', 'source'])
+          )
+        );
+      allow delete: if isAdmin() && isValidId(subscriberId);
     }
 
     // 10. Social Posts Collection: Admin marketing drafts and campaign log

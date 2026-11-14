@@ -2,10 +2,46 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   filterProductsByNameOrBrand,
+  filterProductsGlobally,
   getUniqueMatchingBrands,
+  getUniqueMatchingCategories,
+  matchesProductSearchQuery,
   getFilterModeLabels,
 } from './globalSearchHelpers';
-import type { Product, Brand } from '../types';
+import type { Product, Brand, Category } from '../types';
+
+const mockCategories: Category[] = [
+  {
+    id: 'cat-phones',
+    name: 'Smartphones',
+    nameAr: 'الهواتف الذكية',
+    slug: 'smartphones',
+    iconName: 'Smartphone',
+    featured: true,
+    displayOrder: 1,
+    subcategories: ['Flagship Phones', '5G Devices'],
+  },
+  {
+    id: 'cat-power',
+    name: 'Chargers & Power',
+    nameAr: 'شواحن وبنوك طاقة',
+    slug: 'chargers-power',
+    iconName: 'Zap',
+    featured: true,
+    displayOrder: 2,
+    subcategories: ['GaN Chargers', 'Power Banks'],
+  },
+  {
+    id: 'cat-audio',
+    name: 'Audio',
+    nameAr: 'سماعات وصوتيات',
+    slug: 'audio',
+    iconName: 'Headphones',
+    featured: true,
+    displayOrder: 3,
+    subcategories: ['True Wireless', 'ANC Earbuds'],
+  },
+];
 
 const mockProducts: Product[] = [
   {
@@ -14,6 +50,7 @@ const mockProducts: Product[] = [
     nameAr: 'أبل آيفون 16 برو ماكس',
     brand: 'Apple',
     category: 'Smartphones',
+    subcategory: 'Flagship Phones',
     price: 1199,
     originalPrice: 1299,
     stock: 5,
@@ -36,6 +73,7 @@ const mockProducts: Product[] = [
     nameAr: 'سامسونج جالاكسي اس 25 الترا',
     brand: 'Samsung',
     category: 'Smartphones',
+    subcategory: 'Flagship Phones',
     price: 1299,
     originalPrice: 1399,
     stock: 2,
@@ -58,6 +96,7 @@ const mockProducts: Product[] = [
     nameAr: 'شاحن متنقل انكر برايم 200 واط',
     brand: 'Anker',
     category: 'Chargers & Power',
+    subcategory: 'Power Banks',
     price: 129,
     originalPrice: 149,
     stock: 0, // out of stock
@@ -100,6 +139,7 @@ const mockProducts: Product[] = [
     nameAr: 'سماعات ابل ايربودز برو 2',
     brand: 'Apple',
     category: 'Audio',
+    subcategory: 'ANC Earbuds',
     price: 239,
     originalPrice: 249,
     stock: 8,
@@ -176,31 +216,73 @@ test('filterProductsByNameOrBrand filters products by brand name', () => {
 });
 
 test('filterProductsByNameOrBrand respects mode="brand"', () => {
-  // Query "Apple": mode="brand" matches Apple products
   const brandResults = filterProductsByNameOrBrand(mockProducts, 'Apple', 'brand');
   assert.equal(brandResults.length, 2);
 
-  // Query "iPhone": mode="brand" should NOT match since brand is "Apple", not "iPhone"
   const iphoneResults = filterProductsByNameOrBrand(mockProducts, 'iPhone', 'brand');
   assert.equal(iphoneResults.length, 0);
 });
 
 test('filterProductsByNameOrBrand respects mode="name"', () => {
-  // Query "iPhone": mode="name" matches p1
   const iphoneResults = filterProductsByNameOrBrand(mockProducts, 'iPhone', 'name');
   assert.equal(iphoneResults.length, 1);
   assert.equal(iphoneResults[0].id, 'p1');
 
-  // Query "Anker": brand is "Anker", but name is "Anker Prime...", so it matches if name has Anker
-  // Let's test a brand name that isn't in product name:
-  // p2 is "Samsung Galaxy S25...", brand is Samsung.
   const nameOnly = filterProductsByNameOrBrand(mockProducts, 'AirPods', 'name');
   assert.equal(nameOnly.length, 1);
   assert.equal(nameOnly[0].id, 'p5');
 });
 
+test('filterProductsGlobally finds products by English and Arabic category names and respects mode="category"', () => {
+  // Query "Smartphones" finds p1 and p2 (excluding draft p4)
+  const enCat = filterProductsGlobally(mockProducts, 'Smartphones', 'category', mockCategories);
+  assert.equal(enCat.length, 2);
+  assert.ok(enCat.every((p) => p.category === 'Smartphones'));
+
+  // Query "Audio" in category mode matches p5, whereas "iPhone" does not match category
+  const audioCat = filterProductsGlobally(mockProducts, 'Audio', 'category', mockCategories);
+  assert.equal(audioCat.length, 1);
+  assert.equal(audioCat[0].id, 'p5');
+
+  const nonCatQuery = filterProductsGlobally(mockProducts, 'iPhone', 'category', mockCategories);
+  assert.equal(nonCatQuery.length, 0);
+
+  // Arabic category name match: "الهواتف" matches cat-phones -> p1, p2
+  const arCat = filterProductsGlobally(mockProducts, 'الهواتف', 'category', mockCategories);
+  assert.equal(arCat.length, 2);
+});
+
+test('filterProductsGlobally finds products by subcategory and SKU in mode="all"', () => {
+  const subcat = filterProductsGlobally(mockProducts, 'ANC Earbuds', 'all', mockCategories);
+  assert.equal(subcat.length, 1);
+  assert.equal(subcat[0].id, 'p5');
+
+  const skuMatch = filterProductsGlobally(mockProducts, 'SAM-S25-U', 'all', mockCategories);
+  assert.equal(skuMatch.length, 1);
+  assert.equal(skuMatch[0].id, 'p2');
+});
+
+test('getUniqueMatchingCategories finds matching categories in EN/AR and counts published items', () => {
+  const enMatches = getUniqueMatchingCategories(mockProducts, mockCategories, 'Smartphones');
+  assert.equal(enMatches.length, 1);
+  assert.equal(enMatches[0].slug, 'smartphones');
+  assert.equal(enMatches[0].count, 2); // excludes draft p4
+
+  const arMatches = getUniqueMatchingCategories(mockProducts, mockCategories, 'شواحن');
+  assert.equal(arMatches.length, 1);
+  assert.equal(arMatches[0].slug, 'chargers-power');
+  assert.equal(arMatches[0].count, 1);
+});
+
+test('matchesProductSearchQuery validates single product against name, brand, or category', () => {
+  assert.equal(matchesProductSearchQuery(mockProducts[0], '', mockCategories), true);
+  assert.equal(matchesProductSearchQuery(mockProducts[0], 'Apple', mockCategories), true);
+  assert.equal(matchesProductSearchQuery(mockProducts[0], 'Smartphones', mockCategories), true);
+  assert.equal(matchesProductSearchQuery(mockProducts[0], 'الهواتف', mockCategories), true);
+  assert.equal(matchesProductSearchQuery(mockProducts[0], 'Sony', mockCategories), false);
+});
+
 test('filterProductsByNameOrBrand prioritizes in-stock items over out-of-stock items', () => {
-  // Query "Power": matches p3 (Anker Prime 200W Power Bank)
   const results = filterProductsByNameOrBrand(mockProducts, 'Power', 'all');
   assert.equal(results.length, 1);
   assert.equal(results[0].id, 'p3');
@@ -213,16 +295,18 @@ test('getUniqueMatchingBrands finds brands and calculates accurate product count
   assert.equal(matching[0].count, 2);
 });
 
-test('getFilterModeLabels returns English and Arabic configurations', () => {
+test('getFilterModeLabels returns English and Arabic configurations for all 4 search scopes', () => {
   const en = getFilterModeLabels('en');
-  assert.equal(en.length, 3);
+  assert.equal(en.length, 4);
   assert.equal(en[0].mode, 'all');
   assert.equal(en[1].mode, 'name');
   assert.equal(en[2].mode, 'brand');
+  assert.equal(en[3].mode, 'category');
 
   const ar = getFilterModeLabels('ar');
-  assert.equal(ar.length, 3);
+  assert.equal(ar.length, 4);
   assert.equal(ar[0].label, 'الكل');
   assert.equal(ar[1].label, 'بالاسم');
   assert.equal(ar[2].label, 'بالماركة');
+  assert.equal(ar[3].label, 'بالقسم');
 });

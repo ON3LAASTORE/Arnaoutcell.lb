@@ -5,6 +5,8 @@ import { saveStoreSettings } from '../../services/storageService';
 import { evaluatePasswordStrength } from '../../services/authService';
 import { StoreOpeningSchedule, StoreSettings } from '../../types';
 import { calculateScheduleDuration, checkStoreOpenStatus } from '../../utils/storeSchedule';
+import { DEFAULT_STORE_PROFILE_PICTURE, resolveStoreLogoUrl } from '../../utils/storeSettingsHelpers';
+import { optimizeUploadedImage } from '../../utils/imageCompression';
 import { StoreLogo } from '../StoreLogo';
 import {
   Settings,
@@ -76,8 +78,8 @@ export const AdminSettings: React.FC = () => {
   const [tagline, setTagline] = useState(storeSettings.tagline || 'Your Home in Electronics 🏠');
   const [taglineAr, setTaglineAr] = useState(storeSettings.taglineAr || 'بيتك في عالم الإلكترونيات 🏠');
 
-  // Logo upload & management
-  const [logoUrl, setLogoUrl] = useState<string>(storeSettings.logoUrl || '');
+  // Logo upload & management (defaults to saved Full HD profile emblem)
+  const [logoUrl, setLogoUrl] = useState<string>(() => resolveStoreLogoUrl(storeSettings.logoUrl));
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [logoError, setLogoError] = useState<string>('');
@@ -86,23 +88,23 @@ export const AdminSettings: React.FC = () => {
 
   // Store Schedule & Opening Hours
   const initialSchedule: StoreOpeningSchedule = storeSettings.openingSchedule || {
-    openTime: '08:00',
+    openTime: '10:00',
     closeTime: '01:00',
     daysOpenEn: 'Monday – Sunday',
     daysOpenAr: 'الإثنين – الأحد',
     displayHours: true,
-    customMessageEn: 'OPEN EVERY DAY — 17 HOURS DAILY',
-    customMessageAr: 'مفتوح يومياً — 17 ساعة يومياً',
+    customMessageEn: 'OPEN EVERY DAY — 15 HOURS DAILY',
+    customMessageAr: 'مفتوح يومياً — 15 ساعة يومياً',
     timezone: 'Asia/Beirut',
   };
 
-  const [openTime, setOpenTime] = useState(initialSchedule.openTime || '08:00');
+  const [openTime, setOpenTime] = useState(initialSchedule.openTime || '10:00');
   const [closeTime, setCloseTime] = useState(initialSchedule.closeTime || '01:00');
   const [daysOpenEn, setDaysOpenEn] = useState(initialSchedule.daysOpenEn || 'Monday – Sunday');
   const [daysOpenAr, setDaysOpenAr] = useState(initialSchedule.daysOpenAr || 'الإثنين – الأحد');
   const [displayHours, setDisplayHours] = useState(initialSchedule.displayHours ?? true);
-  const [customMessageEn, setCustomMessageEn] = useState(initialSchedule.customMessageEn || 'OPEN EVERY DAY — 17 HOURS DAILY');
-  const [customMessageAr, setCustomMessageAr] = useState(initialSchedule.customMessageAr || 'مفتوح يومياً — 17 ساعة يومياً');
+  const [customMessageEn, setCustomMessageEn] = useState(initialSchedule.customMessageEn || 'OPEN EVERY DAY (10:00 AM – 1:00 AM)');
+  const [customMessageAr, setCustomMessageAr] = useState(initialSchedule.customMessageAr || 'مفتوح يومياً (10:00 ص – 1:00 ص)');
   const [timezone, setTimezone] = useState(initialSchedule.timezone || 'Asia/Beirut');
 
   // General Store Info State
@@ -188,31 +190,30 @@ export const AdminSettings: React.FC = () => {
       };
       reader.readAsText(file);
     } else {
-      // Normal raster formats: PNG, JPG, WebP
-      const reader = new FileReader();
-      reader.onprogress = (evt) => {
-        if (evt.lengthComputable) {
-          const percent = Math.round((evt.loaded / evt.total) * 90);
-          setUploadProgress(percent);
-        }
-      };
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          setLogoUrl(reader.result);
+      // Normal raster formats: PNG, JPG, WebP — automatically optimize to keep browser storage fast & quota-safe
+      setUploadProgress(45);
+      optimizeUploadedImage(file, {
+        maxDimension: 512,
+        maxDataUrlLength: 220_000,
+        initialQuality: 0.88,
+        preferPng: true,
+      })
+        .then((optimizedDataUrl) => {
+          setLogoUrl(optimizedDataUrl);
           setUploadProgress(100);
           setTimeout(() => setUploadProgress(null), 600);
-        }
-      };
-      reader.onerror = () => {
-        setLogoError('Failed to read image file.');
-        setUploadProgress(null);
-      };
-      reader.readAsDataURL(file);
+        })
+        .catch(() => {
+          setLogoError(
+            lang === 'ar' ? 'تعذر قراءة ملف الصورة.' : 'Failed to process image file.'
+          );
+          setUploadProgress(null);
+        });
     }
   };
 
-  const handleRemoveLogo = () => {
-    setLogoUrl('');
+  const handleResetOfficialLogo = () => {
+    setLogoUrl(DEFAULT_STORE_PROFILE_PICTURE);
     setLogoFile(null);
     setLogoError('');
     if (fileInputRef.current) {
@@ -256,41 +257,62 @@ export const AdminSettings: React.FC = () => {
       storeNameAr: storeNameAr.trim() || 'ON AlAA STORE',
       tagline: tagline.trim() || 'Your Home in Electronics 🏠',
       taglineAr: taglineAr.trim() || 'بيتك في عالم الإلكترونيات 🏠',
-      logoUrl: logoUrl.trim() || undefined,
+      logoUrl: resolveStoreLogoUrl(logoUrl),
       phone: phone.trim(),
       whatsapp: whatsapp.trim(),
       locationEn: locationEn.trim(),
       locationAr: locationAr.trim(),
-      openingHoursEn: formattedEn || 'Monday – Sunday: 8:00 AM – 1:00 AM',
-      openingHoursAr: formattedAr || 'الإثنين – الأحد: 8:00 ص – 1:00 ص',
+      openingHoursEn: formattedEn || 'Monday – Sunday: 10:00 AM – 1:00 AM',
+      openingHoursAr: formattedAr || 'الإثنين – الأحد: 10:00 ص – 1:00 ص',
       openingSchedule: newOpeningSchedule,
       deliveryZones: zones,
     };
 
-    saveStoreSettings(updated);
+    const saveResult = saveStoreSettings(updated);
     refreshData();
 
     // Immediately update browser tab title
     document.title = `${updated.storeName} | ${updated.tagline}`;
 
-    // Immediately synchronize favicon if logo is provided
-    if (typeof document !== 'undefined') {
-      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
-      if (updated.logoUrl) {
-        if (!link) {
-          link = document.createElement('link');
-          link.rel = 'shortcut icon';
-          document.getElementsByTagName('head')[0].appendChild(link);
+    // Immediately synchronize favicon & apple-touch-icon with saved logo
+    if (typeof document !== 'undefined' && updated.logoUrl) {
+      const isDefaultOfficial = updated.logoUrl === DEFAULT_STORE_PROFILE_PICTURE;
+      const faviconHref = isDefaultOfficial ? '/favicon.png' : updated.logoUrl;
+      const appleHref = isDefaultOfficial ? '/apple-touch-icon.png' : updated.logoUrl;
+
+      document.querySelectorAll("link[rel*='icon']").forEach((el) => {
+        if (el instanceof HTMLLinkElement && el.rel !== 'apple-touch-icon' && el.getAttribute('href') !== '/favicon.ico') {
+          if (!isDefaultOfficial || el.getAttribute('sizes') === '64x64' || !el.getAttribute('sizes')) {
+            el.href = faviconHref;
+          }
         }
-        link.href = updated.logoUrl;
+      });
+
+      const appleIcon: HTMLLinkElement | null = document.querySelector("link[rel='apple-touch-icon']");
+      if (appleIcon) {
+        appleIcon.href = appleHref;
       }
     }
 
-    setStoreFeedback(
-      lang === 'ar'
-        ? 'تم حفظ إعدادات المتجر والهوية البصرية وساعات العمل بنجاح!'
-        : 'Store information, branding, logo, and opening schedule saved successfully!'
-    );
+    if (!saveResult.ok) {
+      setStoreFeedback(
+        lang === 'ar'
+          ? 'تم تطبيق الإعدادات للجلسة الحالية (مساحة التخزين المحلية ممتلئة).'
+          : 'Settings applied for the current session (browser storage quota was full).'
+      );
+    } else if (saveResult.recovered) {
+      setStoreFeedback(
+        lang === 'ar'
+          ? 'تم حفظ إعدادات المتجر بنجاح بعد تحسين مساحة التخزين!'
+          : 'Store settings saved cleanly after freeing local storage space!'
+      );
+    } else {
+      setStoreFeedback(
+        lang === 'ar'
+          ? 'تم حفظ إعدادات المتجر والهوية البصرية وساعات العمل بنجاح!'
+          : 'Store information, branding, logo, and opening schedule saved successfully!'
+      );
+    }
     setTimeout(() => setStoreFeedback(''), 5000);
   };
 
@@ -380,8 +402,8 @@ export const AdminSettings: React.FC = () => {
           </h1>
           <p className="text-xs text-[#64748B] mt-1">
             {lang === 'ar'
-              ? 'إدارة شعار المحل، الاسم الرسمي، أوقات العمل لـ 17 ساعة يومياً، وكلمات المرور المشفرة.'
-              : 'Upload and manage your store logo, official display name, 17-hour opening schedule, and security.'}
+              ? 'إدارة شعار المحل، الاسم الرسمي، أوقات العمل اليومية (10:00 ص – 1:00 ص)، وكلمات المرور المشفرة.'
+              : 'Upload and manage your store logo, official display name, daily opening schedule (10:00 AM – 1:00 AM), and security.'}
           </p>
         </div>
 
@@ -455,16 +477,18 @@ export const AdminSettings: React.FC = () => {
               <div>
                 <h3 className="font-bold text-[#172033] text-base flex items-center gap-2">
                   <ImageIcon className="w-5 h-5 text-[#007AFF]" />
-                  <span>{lang === 'ar' ? 'شعار المتجر (Store Logo)' : 'Store Logo Management'}</span>
+                  <span>{lang === 'ar' ? 'إدارة شعار المتجر وصورة الملف الشخصي (Store Logo Management)' : 'Store Logo Management'}</span>
                 </h3>
                 <p className="text-xs text-[#64748B] mt-0.5">
                   {lang === 'ar'
-                    ? 'قم برفع شعار متجرك مباشرة من جهازك. يدعم صيغ PNG الشفافة، JPG، WebP، و SVG المعقمة.'
-                    : 'Upload your store logo directly from your computer. Supports transparent PNG, JPG/JPEG, WebP, and sanitized SVG.'}
+                    ? 'الشعار وصورة الملف الشخصي الرسمية بدقة Full HD مطبقة على كافة أجزاء الموقع (الهيدر، الفوتر، لوحة التحكم، وأيقونة المتصفح).'
+                    : 'Official Full HD website logo and profile picture applied across Website Header, Footer, Store Locator, Admin Portal, Social Previews, and Browser Favicon.'}
                 </p>
               </div>
               <span className="text-[11px] font-bold text-[#007AFF] bg-[#EAF3FF] px-2.5 py-1 rounded-full self-start sm:self-auto border border-[#BAE6FD]">
-                {logoUrl ? 'Custom Image Logo' : 'Default Text-Based Logo'}
+                {logoUrl === DEFAULT_STORE_PROFILE_PICTURE
+                  ? (lang === 'ar' ? 'صورة الملف الشخصي الرسمية (Full HD)' : 'Official Full HD Profile Logo')
+                  : (lang === 'ar' ? 'شعار مخصص' : 'Custom Uploaded Logo')}
               </span>
             </div>
 
@@ -503,10 +527,10 @@ export const AdminSettings: React.FC = () => {
 
             {/* PREVIEW LOGO AREA */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              {/* Desktop Header Preview */}
+              {/* Official Full HD Profile Emblem & Desktop Header Preview */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs font-semibold text-[#172033]">
-                  <span>{lang === 'ar' ? 'معاينة الشعار (Preview Logo - سطح المكتب)' : 'Preview Logo (Desktop Header Preview)'}</span>
+                  <span>{lang === 'ar' ? 'معاينة الشعار وصورة الملف الشخصي (Full HD)' : 'Website Logo & Profile Picture Preview'}</span>
                   <button
                     type="button"
                     onClick={() => setShowCheckerboard(!showCheckerboard)}
@@ -516,76 +540,64 @@ export const AdminSettings: React.FC = () => {
                   </button>
                 </div>
                 <div
-                  className={`p-6 rounded-2xl border border-[#DCE5F0] flex items-center justify-center min-h-[140px] transition-all relative overflow-hidden ${
+                  className={`p-6 rounded-2xl border border-[#DCE5F0] flex flex-col items-center justify-center min-h-[160px] transition-all relative overflow-hidden gap-3 ${
                     showCheckerboard
                       ? 'bg-[radial-gradient(#e2e8f0_1px,transparent_1px)] [background-size:12px_12px] bg-white'
                       : 'bg-white'
                   }`}
                 >
-                  {logoUrl ? (
-                    <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-4">
+                    <div className="w-20 h-20 rounded-full overflow-hidden bg-[#000000] p-[2px] border border-[#1E3A5F] ring-1 ring-[#007AFF]/35 shadow-[0_0_16px_rgba(0,122,255,0.28)] shrink-0 flex items-center justify-center">
                       <img
-                        src={logoUrl}
-                        alt="Store Logo Preview"
-                        className="max-h-16 max-w-[260px] object-contain transition-all"
-                        style={{ imageRendering: 'auto' }}
+                        src={resolveStoreLogoUrl(logoUrl)}
+                        alt={storeName}
+                        className="w-full h-full rounded-full object-contain object-center"
                       />
-                      <span className="text-[10px] text-[#64748B] font-mono mt-1">
-                        Aspect ratio preserved • Non-stretched
+                    </div>
+                    <div>
+                      <span className="font-black text-lg text-[#172033] tracking-tight block">
+                        {storeName}
+                      </span>
+                      <span className="text-xs text-[#64748B] block">{tagline}</span>
+                      <span className="text-[10px] text-[#007AFF] font-mono mt-1 block">
+                        1254 × 1254 Full HD • Circular Profile Emblem
                       </span>
                     </div>
-                  ) : (
-                    <div className="flex flex-col items-center gap-2">
-                      {/* Default Text-based Logo Preview */}
-                      <div className="flex items-center gap-3">
-                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#0066D6] to-[#007AFF] text-white flex items-center justify-center font-black text-lg shadow-sm shadow-[#007AFF]/25">
-                          {storeName.slice(0, 2).toUpperCase()}
-                        </div>
-                        <div>
-                          <span className="font-black text-lg text-[#172033] tracking-tight uppercase block">
-                            {storeName}
-                          </span>
-                          <span className="text-xs text-[#64748B] block">{tagline}</span>
-                        </div>
-                      </div>
-                      <span className="text-[10px] text-[#64748B] font-medium mt-1">
-                        {lang === 'ar' ? 'الشعار النصي الافتراضي الذكي' : 'Default Text-Based Brand Badge'}
-                      </span>
-                    </div>
-                  )}
+                  </div>
                 </div>
               </div>
 
-              {/* Mobile Display Preview */}
+              {/* Mobile Header & Live Navbar Preview */}
               <div className="space-y-2">
                 <span className="text-xs font-semibold text-[#172033] block">
-                  {lang === 'ar' ? 'معاينة الشعار على الهاتف (Mobile Header Preview)' : 'Preview Logo (Mobile Header Preview)'}
+                  {lang === 'ar' ? 'معاينة الشعار في الهيدر والفوتر (Header & Mobile Preview)' : 'Header & Mobile Navigation Preview'}
                 </span>
                 <div className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] flex items-center justify-between max-w-sm mx-auto shadow-xs">
-                  {logoUrl ? (
-                    <img
-                      src={logoUrl}
-                      alt="Mobile Logo"
-                      className="max-h-8 max-w-[140px] object-contain"
-                    />
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <div className="w-7 h-7 rounded-lg bg-[#007AFF] text-white flex items-center justify-center font-black text-xs">
-                        {storeName.slice(0, 2).toUpperCase()}
-                      </div>
-                      <span className="font-black text-xs text-[#172033] uppercase">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-[#000000] p-[1.5px] border border-[#1E3A5F] ring-1 ring-[#007AFF]/30 shadow-[0_0_10px_rgba(0,122,255,0.22)] shrink-0 flex items-center justify-center">
+                      <img
+                        src={resolveStoreLogoUrl(logoUrl)}
+                        alt="Mobile Logo"
+                        className="w-full h-full rounded-full object-contain object-center"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <span className="font-black text-xs text-[#172033] block truncate">
                         {storeName}
                       </span>
+                      <span className="text-[9px] text-[#64748B] block truncate">
+                        {tagline}
+                      </span>
                     </div>
-                  )}
-                  <span className="text-[10px] font-bold text-[#64748B] bg-white px-2 py-0.5 rounded-md border border-[#DCE5F0]">
-                    Mobile View
+                  </div>
+                  <span className="text-[10px] font-bold text-[#64748B] bg-white px-2 py-0.5 rounded-md border border-[#DCE5F0] shrink-0">
+                    Header / Mobile
                   </span>
                 </div>
                 <p className="text-[11px] text-[#64748B] leading-relaxed pt-1">
                   {lang === 'ar'
-                    ? 'يتم تطبيق الشعار فور حفظ التغييرات على ترويسة الموقع، والفوتر، ولوحة التحكم، وصفحة الدخول، وأيقونة المتصفح (Favicon).'
-                    : 'Automatically applied to Website Header, Footer, Admin Dashboard, Login Page, and Browser Favicon upon save.'}
+                    ? 'يتم تطبيق الصورة تلقائياً كصورة الملف الشخصي وشعار الموقع في الهيدر، الفوتر، لوحة التحكم، صفحة الدخول، وأيقونة المتصفح (Favicon).'
+                    : 'Active across Website Header, Footer, Store Locator, Admin Dashboard, Login Page, Social Previews, and Browser Favicon.'}
                 </p>
               </div>
             </div>
@@ -598,28 +610,28 @@ export const AdminSettings: React.FC = () => {
                 className="px-5 py-2.5 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white font-bold text-xs shadow-sm shadow-[#007AFF]/20 transition-all flex items-center gap-2 cursor-pointer"
               >
                 <Upload className="w-4 h-4" />
-                <span>{logoUrl ? (lang === 'ar' ? 'استبدال الشعار' : 'Replace Logo') : (lang === 'ar' ? 'رفع الشعار' : 'Upload Logo')}</span>
+                <span>{lang === 'ar' ? 'رفع / استبدال الشعار' : 'Upload / Replace Logo'}</span>
               </button>
 
-              {logoUrl && (
+              {logoUrl !== DEFAULT_STORE_PROFILE_PICTURE && (
                 <button
                   type="button"
-                  onClick={handleRemoveLogo}
-                  className="px-5 py-2.5 rounded-xl bg-white hover:bg-red-50 text-[#DC2626] border border-red-200 font-bold text-xs transition-colors flex items-center gap-2 cursor-pointer"
+                  onClick={handleResetOfficialLogo}
+                  className="px-5 py-2.5 rounded-xl bg-white hover:bg-blue-50 text-[#007AFF] border border-[#BAE6FD] font-bold text-xs transition-colors flex items-center gap-2 cursor-pointer"
                 >
-                  <Trash2 className="w-4 h-4" />
-                  <span>{lang === 'ar' ? 'حذف الشعار' : 'Remove Logo'}</span>
+                  <RefreshCw className="w-4 h-4" />
+                  <span>{lang === 'ar' ? 'استعادة الشعار الرسمي' : 'Reset to Official Profile Emblem'}</span>
                 </button>
               )}
 
               <a
-                href="/on-alaa-logo.svg"
-                download="on-alaa-store-logo.svg"
+                href={resolveStoreLogoUrl(logoUrl)}
+                download="on-alaa-store-profile-fullhd.png"
                 className="px-5 py-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold text-xs transition-colors flex items-center gap-2 cursor-pointer"
-                title="Download Official Vector Brand Emblem (SVG)"
+                title="Download Full HD Store Profile Picture (PNG)"
               >
                 <Download className="w-4 h-4" />
-                <span>{lang === 'ar' ? 'تحميل شعار المتجر (SVG)' : 'Download Official Emblem (SVG)'}</span>
+                <span>{lang === 'ar' ? 'تحميل صورة الملف الشخصي (Full HD PNG)' : 'Download Full HD Profile (PNG)'}</span>
               </a>
 
               <span className="text-[11px] text-[#64748B] ml-auto">
@@ -713,12 +725,12 @@ export const AdminSettings: React.FC = () => {
               <div>
                 <h3 className="font-bold text-[#172033] text-base flex items-center gap-2">
                   <Clock className="w-5 h-5 text-[#007AFF]" />
-                  <span>{lang === 'ar' ? 'ساعات العمل والجدول الزمني (Store Opening Hours)' : 'Store Opening Schedule (8:00 AM – 1:00 AM)'}</span>
+                  <span>{lang === 'ar' ? 'ساعات العمل والجدول الزمني (Store Opening Hours)' : 'Store Opening Schedule (10:00 AM – 1:00 AM)'}</span>
                 </h3>
                 <p className="text-xs text-[#64748B] mt-0.5">
                   {lang === 'ar'
-                    ? 'جدول العمل: الإثنين – الأحد من 8:00 صباحاً حتى 1:00 فجراً (17 ساعة متواصلة يومياً مع دعم منتصف الليل).'
-                    : 'Configured schedule: Monday – Sunday: 8:00 AM – 1:00 AM (17 continuous daily operating hours).'}
+                    ? 'جدول العمل: الإثنين – الأحد من 10:00 صباحاً حتى 1:00 فجراً (15 ساعة متواصلة يومياً مع دعم منتصف الليل).'
+                    : 'Configured schedule: Monday – Sunday: 10:00 AM – 1:00 AM (15 continuous daily operating hours).'}
                 </p>
               </div>
 
@@ -751,8 +763,8 @@ export const AdminSettings: React.FC = () => {
                 {scheduleDuration.spansMidnight && (
                   <p className="text-[11px] text-[#64748B]">
                     {lang === 'ar'
-                      ? '✓ يمتد بعد منتصف الليل (من 8:00 صباحاً حتى 1:00 فجر اليوم التالي). لا يتم اعتبار المتجر مغلقاً عند منتصف الليل.'
-                      : '✓ Spans past midnight (8:00 AM to 1:00 AM following calendar day). Correctly handled.'}
+                      ? '✓ يمتد بعد منتصف الليل (من 10:00 صباحاً حتى 1:00 فجر اليوم التالي). لا يتم اعتبار المتجر مغلقاً عند منتصف الليل.'
+                      : '✓ Spans past midnight (10:00 AM to 1:00 AM following calendar day). Correctly handled.'}
                   </p>
                 )}
               </div>
@@ -765,7 +777,7 @@ export const AdminSettings: React.FC = () => {
               {/* Opening Time */}
               <div>
                 <label className="text-xs text-[#172033] font-semibold block mb-1">
-                  {lang === 'ar' ? 'وقت الفتح (Opening Time)' : 'Opening Time (e.g. 08:00 = 8:00 AM)'}
+                  {lang === 'ar' ? 'وقت الفتح (Opening Time)' : 'Opening Time (e.g. 10:00 = 10:00 AM)'}
                   <span className="text-[#007AFF] ml-1">*</span>
                 </label>
                 <input
@@ -774,7 +786,7 @@ export const AdminSettings: React.FC = () => {
                   value={openTime}
                   onChange={(e) => setOpenTime(e.target.value)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] font-mono font-bold focus:outline-none focus:border-[#007AFF]"
-                  placeholder="08:00"
+                  placeholder="10:00"
                 />
               </div>
 
@@ -832,7 +844,7 @@ export const AdminSettings: React.FC = () => {
                   value={customMessageEn}
                   onChange={(e) => setCustomMessageEn(e.target.value)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
-                  placeholder="OPEN EVERY DAY — 17 HOURS DAILY"
+                  placeholder="OPEN EVERY DAY (10:00 AM – 1:00 AM)"
                 />
               </div>
 
@@ -846,7 +858,7 @@ export const AdminSettings: React.FC = () => {
                   value={customMessageAr}
                   onChange={(e) => setCustomMessageAr(e.target.value)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
-                  placeholder="مفتوح يومياً — 17 ساعة يومياً"
+                  placeholder="مفتوح يومياً (10:00 ص – 1:00 ص)"
                 />
               </div>
             </div>

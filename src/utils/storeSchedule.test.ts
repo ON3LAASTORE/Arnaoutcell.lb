@@ -5,19 +5,28 @@ import {
   calculateScheduleDuration,
   checkStoreOpenStatus,
   getLebanonTimeParts,
+  formatTimeDisplay,
+  migrateOpeningSchedule,
 } from './storeSchedule.ts';
 
 test('parseTimeToMinutes parses 24h and 12h formats', () => {
-  assert.equal(parseTimeToMinutes('08:00'), 480);
+  assert.equal(parseTimeToMinutes('10:00'), 600);
   assert.equal(parseTimeToMinutes('01:00'), 60);
   assert.equal(parseTimeToMinutes('13:30'), 810);
-  assert.equal(parseTimeToMinutes('8:00 AM'), 480);
+  assert.equal(parseTimeToMinutes('10:00 AM'), 600);
   assert.equal(parseTimeToMinutes('1:00 AM'), 60);
 });
 
-test('calculateScheduleDuration calculates accurate 17-hour continuous operation for 8:00 AM to 1:00 AM', () => {
-  const result = calculateScheduleDuration('08:00', '01:00');
-  assert.equal(result.durationHours, 17);
+test('formatTimeDisplay formats 24h strings cleanly in EN and AR', () => {
+  assert.equal(formatTimeDisplay('10:00', 'en'), '10:00 AM');
+  assert.equal(formatTimeDisplay('01:00', 'en'), '1:00 AM');
+  assert.equal(formatTimeDisplay('10:00', 'ar'), '10:00 ص');
+  assert.equal(formatTimeDisplay('01:00', 'ar'), '1:00 ص');
+});
+
+test('calculateScheduleDuration calculates accurate 15-hour continuous operation for 10:00 AM to 1:00 AM', () => {
+  const result = calculateScheduleDuration('10:00', '01:00');
+  assert.equal(result.durationHours, 15);
   assert.equal(result.spansMidnight, true);
 });
 
@@ -35,37 +44,81 @@ test('getLebanonTimeParts parses timezone correctly', () => {
   assert.equal(parts.currentMinutes, 720);
 });
 
-test('checkStoreOpenStatus handles overnight midnight hours and calculates minutes until change', () => {
-  // Mock date at 11:30 PM (23:30)
-  const eveningDate = new Date('2026-10-15T23:30:00Z');
-  // Mock date at 12:30 AM (00:30)
-  const afterMidnightDate = new Date('2026-10-16T00:30:00Z');
-  // Mock date at 3:00 AM (03:00)
-  const closedMorningDate = new Date('2026-10-16T03:00:00Z');
-
+test('checkStoreOpenStatus handles 10:00 AM - 1:00 AM overnight hours and boundaries', () => {
   const schedule = {
-    openTime: '08:00',
+    openTime: '10:00',
     closeTime: '01:00',
-    timezone: 'UTC', // test with UTC for deterministic assertions
+    timezone: 'UTC',
   };
 
-  const eveningStatus = checkStoreOpenStatus(schedule, eveningDate);
+  // 11:30 PM -> OPEN, 90 mins left
+  const eveningStatus = checkStoreOpenStatus(schedule, new Date('2026-10-15T23:30:00Z'));
   assert.equal(eveningStatus.isOpen, true);
-  assert.equal(eveningStatus.durationHours, 17);
-  assert.equal(eveningStatus.operatingHoursLabel, 'Open 17 hours');
-  // From 23:30 to 01:00 is 90 minutes
+  assert.equal(eveningStatus.durationHours, 15);
+  assert.equal(eveningStatus.operatingHoursLabel, 'Open 15 hours');
   assert.equal(eveningStatus.minutesUntilChange, 90);
   assert.ok(eveningStatus.timeRemainingTextEn.includes('1h 30m'));
+  assert.equal(eveningStatus.formattedHoursEn, 'Monday – Sunday: 10:00 AM – 1:00 AM');
 
-  const midnightStatus = checkStoreOpenStatus(schedule, afterMidnightDate);
+  // 12:30 AM -> OPEN, 30 mins left
+  const midnightStatus = checkStoreOpenStatus(schedule, new Date('2026-10-16T00:30:00Z'));
   assert.equal(midnightStatus.isOpen, true);
-  // From 00:30 to 01:00 is 30 minutes
   assert.equal(midnightStatus.minutesUntilChange, 30);
   assert.ok(midnightStatus.timeRemainingTextEn.includes('30m'));
 
-  const closedStatus = checkStoreOpenStatus(schedule, closedMorningDate);
-  assert.equal(closedStatus.isOpen, false);
-  // From 03:00 to 08:00 is 5 hours = 300 minutes
-  assert.equal(closedStatus.minutesUntilChange, 300);
-  assert.ok(closedStatus.timeRemainingTextEn.includes('5h'));
+  // 01:00 AM -> CLOSED (exact closing boundary), 9 hours until 10:00 AM
+  const exactCloseStatus = checkStoreOpenStatus(schedule, new Date('2026-10-16T01:00:00Z'));
+  assert.equal(exactCloseStatus.isOpen, false);
+  assert.equal(exactCloseStatus.minutesUntilChange, 540);
+
+  // 09:30 AM -> CLOSED (previously open under 08:00, now closed until 10:00 AM)
+  const beforeOpenStatus = checkStoreOpenStatus(schedule, new Date('2026-10-16T09:30:00Z'));
+  assert.equal(beforeOpenStatus.isOpen, false);
+  assert.equal(beforeOpenStatus.minutesUntilChange, 30);
+  assert.ok(beforeOpenStatus.statusBadgeEn.includes('10:00 AM'));
+
+  // 10:00 AM -> OPEN (exact opening boundary)
+  const exactOpenStatus = checkStoreOpenStatus(schedule, new Date('2026-10-16T10:00:00Z'));
+  assert.equal(exactOpenStatus.isOpen, true);
+});
+
+test('checkStoreOpenStatus defaults to 10:00 AM – 1:00 AM when no schedule is passed', () => {
+  const beforeTenStatus = checkStoreOpenStatus(
+    { timezone: 'UTC' },
+    new Date('2026-10-16T09:00:00Z')
+  );
+  assert.equal(beforeTenStatus.isOpen, false);
+  assert.equal(beforeTenStatus.durationHours, 15);
+  assert.equal(beforeTenStatus.openMinutes, 600);
+  assert.equal(beforeTenStatus.closeMinutes, 60);
+});
+
+test('migrateOpeningSchedule upgrades legacy 08:00 / 17-hour schedules to 10:00 AM – 1:00 AM', () => {
+  const defaultSchedule = {
+    openTime: '10:00',
+    closeTime: '01:00',
+    daysOpenEn: 'Monday – Sunday',
+    daysOpenAr: 'الإثنين – الأحد',
+    displayHours: true,
+    customMessageEn: 'Online Store Based in Chouf • Delivery Available to All Lebanon | Orders & Support 10:00 AM – 1:00 AM',
+    customMessageAr: 'متجر إلكتروني مقره الشوف • التوصيل متاح لجميع مناطق لبنان | طلبات ودعم: 10:00 ص – 1:00 ص',
+    timezone: 'Asia/Beirut',
+  };
+
+  const migrated = migrateOpeningSchedule(
+    {
+      openTime: '08:00',
+      closeTime: '01:00',
+      customMessageEn: 'OPEN EVERY DAY — 17 HOURS DAILY',
+      customMessageAr: 'مفتوح يومياً — 17 ساعة يومياً',
+      timezone: 'Asia/Beirut',
+    },
+    defaultSchedule
+  );
+
+  assert.equal(migrated.openTime, '10:00');
+  assert.equal(migrated.closeTime, '01:00');
+  assert.ok(!migrated.customMessageEn.includes('17'));
+  assert.ok(migrated.customMessageEn.includes('10:00 AM'));
+  assert.ok(!migrated.customMessageAr.includes('17'));
 });

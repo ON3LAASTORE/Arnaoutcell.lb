@@ -1,6 +1,7 @@
 import React from 'react';
 import { useShop } from '../context/ShopContext';
 import { ShieldCheck, Truck, MapPin, Headphones, RefreshCw, Check } from 'lucide-react';
+import { resolveStoreLogoUrl } from '../utils/storeSettingsHelpers';
 
 export const CustomerTrust: React.FC = () => {
   const { lang, setCurrentView, storeSettings } = useShop();
@@ -82,8 +83,12 @@ export const CustomerTrust: React.FC = () => {
         {/* Chouf Online Store & Nationwide Delivery Hub */}
         <div className="mt-12 p-6 sm:p-8 rounded-3xl bg-[#F5F8FC] border border-[#DCE5F0] flex flex-col lg:flex-row items-center justify-between gap-6 shadow-xs">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 rounded-2xl bg-[#EAF3FF] border border-[#BAE6FD] flex items-center justify-center text-[#007AFF] flex-shrink-0">
-              <Truck className="w-7 h-7" />
+            <div className="w-14 h-14 rounded-full overflow-hidden bg-[#000000] p-[2px] border border-[#1E3A5F]/85 ring-1 ring-[#007AFF]/35 shadow-[0_0_14px_rgba(0,122,255,0.25)] flex items-center justify-center flex-shrink-0">
+              <img
+                src={resolveStoreLogoUrl(storeSettings.logoUrl)}
+                alt={storeSettings.storeName || 'ON AlAA STORE'}
+                className="w-full h-full rounded-full object-contain object-center"
+              />
             </div>
             <div>
               <span className="text-[11px] font-bold text-[#007AFF] tracking-wider uppercase">

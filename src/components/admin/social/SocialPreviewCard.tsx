@@ -2,6 +2,7 @@ import React from 'react';
 import { useShop } from '../../../context/ShopContext';
 import { Product, StoreSettings } from '../../../types';
 import { SocialPlatform, MarketingPost } from '../../../types/socialMarketing';
+import { resolveStoreLogoUrl } from '../../../utils/storeSettingsHelpers';
 import {
   MessageSquare,
   Instagram,
@@ -42,6 +43,7 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
   const { storeSettings } = useShop();
   const effectiveSettings = settings || storeSettings;
   const storeName = effectiveSettings.storeName || 'ON AlAA STORE';
+  const storeLogoUrl = resolveStoreLogoUrl(effectiveSettings.logoUrl);
   const caption = customCaption || (activeLang === 'ar' ? post.captionAr : post.captionEn) || '';
   const image =
     imageDataUrl ||
@@ -56,9 +58,11 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
         {/* WhatsApp Chat Header */}
         <div className="bg-[#005E54] text-white p-3 rounded-2xl flex items-center justify-between mb-4 shadow-xs">
           <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-[#128C7E] flex items-center justify-center font-bold text-white text-xs">
-                OA
-              </div>
+              <img
+                src={storeLogoUrl}
+                alt={storeName}
+                className="w-8 h-8 rounded-full object-cover border border-white/25 bg-[#050811] shrink-0"
+              />
               <div>
                 <div className="font-bold flex items-center gap-1">
                   <span>{storeName}</span>
@@ -101,9 +105,11 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
 
         {/* Story Header */}
         <div className="flex items-center gap-2.5 z-10">
-          <div className="w-8 h-8 rounded-full bg-[#007AFF] flex items-center justify-center font-bold text-xs">
-            OA
-          </div>
+          <img
+            src={storeLogoUrl}
+            alt={storeName}
+            className="w-8 h-8 rounded-full object-cover bg-[#050811] border border-white/30 shrink-0"
+          />
           <div>
             <div className="font-bold text-xs">{storeName} Status</div>
             <div className="text-[10px] text-slate-400">Just now</div>
@@ -132,10 +138,12 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
         {/* Instagram Post Header */}
         <div className="p-3.5 flex items-center justify-between border-b border-slate-100 bg-[#FBFDFF]">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-linear-to-tr from-amber-500 via-rose-500 to-purple-600 p-0.5">
-              <div className="w-full h-full rounded-full bg-white flex items-center justify-center font-black text-[10px] text-purple-700">
-                OA
-              </div>
+            <div className="w-8 h-8 rounded-full bg-linear-to-tr from-amber-500 via-rose-500 to-purple-600 p-0.5 shrink-0">
+              <img
+                src={storeLogoUrl}
+                alt={storeName}
+                className="w-full h-full rounded-full object-cover bg-[#050811]"
+              />
             </div>
             <div>
               <a
@@ -209,9 +217,11 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
         {/* Facebook Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-full bg-[#1877F2] text-white flex items-center justify-center font-bold text-xs">
-              OA
-            </div>
+            <img
+              src={storeLogoUrl}
+              alt={storeName}
+              className="w-9 h-9 rounded-full object-cover bg-[#050811] border border-slate-200 shrink-0"
+            />
             <div>
               <div className="font-bold text-[#172033] flex items-center gap-1">
                 <span>{storeName}</span>
@@ -270,9 +280,11 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
       <div className="bg-[#17212B] text-white rounded-3xl p-4 sm:p-5 border border-slate-700 shadow-md max-w-md mx-auto text-xs space-y-3 font-sans">
         {/* Telegram Header */}
         <div className="flex items-center gap-2.5 pb-2 border-b border-slate-700/60">
-          <div className="w-8 h-8 rounded-full bg-[#2AABEE] flex items-center justify-center font-bold text-white text-xs">
-            OA
-          </div>
+          <img
+            src={storeLogoUrl}
+            alt={storeName}
+            className="w-8 h-8 rounded-full object-cover bg-[#050811] border border-sky-400/40 shrink-0"
+          />
           <div>
             <div className="font-bold flex items-center gap-1">
               <span>ON AlAA STORE 🇱🇧</span>
@@ -313,9 +325,11 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
     return (
       <div className="bg-white rounded-3xl border border-[#DCE5F0] shadow-md max-w-md mx-auto p-4 sm:p-5 space-y-3 text-xs">
         <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-full bg-black text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
-            OA
-          </div>
+          <img
+            src={storeLogoUrl}
+            alt={storeName}
+            className="w-10 h-10 rounded-full object-cover bg-[#050811] border border-slate-200 shrink-0"
+          />
           <div className="flex-1 space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1 flex-wrap">

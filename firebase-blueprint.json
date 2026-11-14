@@ -266,27 +266,32 @@
         "id": {
           "type": "string",
           "description": "Sanitized subscriber ID based on email",
-          "maxLength": 128
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
         },
         "email": {
           "type": "string",
           "description": "Subscriber email address",
+          "minLength": 3,
           "maxLength": 128
         },
         "subscribedAt": {
           "type": "string",
-          "description": "ISO timestamp of subscription"
+          "description": "ISO timestamp of subscription",
+          "maxLength": 64
         },
         "lang": {
           "type": "string",
-          "description": "User language preference (en or ar)"
+          "description": "User language preference (en or ar)",
+          "enum": ["en", "ar"]
         },
         "source": {
           "type": "string",
-          "description": "Acquisition source (footer, popup, checkout)"
+          "description": "Acquisition source (footer, checkout, services)",
+          "maxLength": 64
         }
       },
-      "required": ["email", "subscribedAt", "source"]
+      "required": ["id", "email", "subscribedAt", "lang", "source"]
     },
     "SocialMarketingPost": {
       "title": "SocialMarketingPost",

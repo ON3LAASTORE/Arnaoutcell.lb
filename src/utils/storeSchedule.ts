@@ -3,7 +3,7 @@
  * 
  * Target Schedule:
  * ON AlAA STORE — Online Store based in Chouf, Lebanon
- * Open 17 hours (08:00 AM to 01:00 AM next day continuous, 7 days a week)
+ * Open daily 10:00 AM – 01:00 AM next day (15 hours continuous, 7 days a week)
  * Timezone: Asia/Beirut (Lebanon Standard Time / Daylight Time)
  */
 
@@ -56,9 +56,9 @@ export function parseTimeToMinutes(timeStr: string): number {
 /**
  * Calculates continuous operating duration in hours.
  * For example:
- * - Open 08:00 (8 AM) to Close 01:00 (1 AM next day):
- *   openMinutes = 480 (8h), closeMinutes = 60 (1h)
- *   Duration = (1440 - 480) + 60 = 960 + 60 = 1020 minutes = 17.0 hours!
+ * - Open 10:00 (10 AM) to Close 01:00 (1 AM next day):
+ *   openMinutes = 600 (10h), closeMinutes = 60 (1h)
+ *   Duration = (1440 - 600) + 60 = 840 + 60 = 900 minutes = 15.0 hours
  */
 export function calculateScheduleDuration(openTime: string, closeTime: string): { durationHours: number; spansMidnight: boolean } {
   const openMinutes = parseTimeToMinutes(openTime);
@@ -80,7 +80,7 @@ export function calculateScheduleDuration(openTime: string, closeTime: string): 
 }
 
 /**
- * Formats 24h string "08:00" to "8:00 AM" and "01:00" to "1:00 AM"
+ * Formats 24h string "10:00" to "10:00 AM" and "01:00" to "1:00 AM"
  */
 export function formatTimeDisplay(timeStr: string, lang: 'en' | 'ar' = 'en'): string {
   const mins = parseTimeToMinutes(timeStr);
@@ -89,7 +89,7 @@ export function formatTimeDisplay(timeStr: string, lang: 'en' | 'ar' = 'en'): st
 
   const hours12 = hours24 % 12 || 12;
   const ampm = hours24 < 12 ? (lang === 'ar' ? 'ص' : 'AM') : (lang === 'ar' ? 'م' : 'PM');
-  const minPad = minutes === 0 ? '' : `:${minutes.toString().padStart(2, '0')}`;
+  const minPad = `:${minutes.toString().padStart(2, '0')}`;
 
   return `${hours12}${minPad} ${ampm}`;
 }
@@ -151,7 +151,7 @@ export function checkStoreOpenStatus(
   schedule?: Partial<StoreOpeningSchedule>,
   now: Date = new Date()
 ): ScheduleCalculationResult {
-  const openTime = schedule?.openTime || '08:00';
+  const openTime = schedule?.openTime || '10:00';
   const closeTime = schedule?.closeTime || '01:00';
   const timezone = schedule?.timezone || 'Asia/Beirut';
   const daysOpenEn = schedule?.daysOpenEn || 'Monday – Sunday';
@@ -168,9 +168,9 @@ export function checkStoreOpenStatus(
   let minutesUntilChange = 0;
 
   if (spansMidnight) {
-    // Open from openMinutes (480 = 8 AM) through midnight (1440) until closeMinutes (60 = 1 AM)
+    // Open from openMinutes (e.g. 600 = 10:00 AM) through midnight (1440) until closeMinutes (e.g. 60 = 1:00 AM)
     if (currentMinutes >= openMinutes) {
-      // Current time is between 8:00 AM and 11:59 PM
+      // Current time is between 10:00 AM and 11:59 PM
       isOpen = true;
       minutesUntilChange = (1440 - currentMinutes) + closeMinutes;
     } else if (currentMinutes < closeMinutes) {
@@ -178,7 +178,7 @@ export function checkStoreOpenStatus(
       isOpen = true;
       minutesUntilChange = closeMinutes - currentMinutes;
     } else {
-      // Current time is between 1:00 AM and 8:00 AM (store is closed)
+      // Current time is between 1:00 AM and 10:00 AM (store is closed)
       isOpen = false;
       minutesUntilChange = openMinutes - currentMinutes;
     }
@@ -233,11 +233,11 @@ export function checkStoreOpenStatus(
 
   const nextEventTextEn = isOpen
     ? `Open today until ${closeDisplayEn} (${durationHours} Hours Daily)`
-    : `Opens at ${openDisplayEn} in the morning (${durationHours} Hours Daily)`;
+    : `Opens at ${openDisplayEn} (${durationHours} Hours Daily)`;
 
   const nextEventTextAr = isOpen
     ? `مفتوح اليوم حتى ${closeDisplayAr} (${durationHours} ساعة يومياً)`
-    : `يفتح عند ${openDisplayAr} صباحاً (${durationHours} ساعة يومياً)`;
+    : `يفتح عند ${openDisplayAr} (${durationHours} ساعة يومياً)`;
 
   return {
     isOpen,
@@ -259,5 +259,38 @@ export function checkStoreOpenStatus(
     timeRemainingTextAr,
     operatingHoursLabel: `Open ${durationHours} hours`,
     operatingHoursLabelAr: `مفتوح ${durationHours} ساعة`,
+  };
+}
+
+/**
+ * Migrates any legacy 8:00 AM / 17-hour schedule strings persisted in storage to 10:00 AM – 1:00 AM.
+ */
+export function hasLegacyScheduleText(text?: string): boolean {
+  if (!text) return false;
+  return /8:00|08:00|17\s*(hours?|hrs?|ساعة)|saida/i.test(text);
+}
+
+export function migrateOpeningSchedule(
+  savedSchedule: Partial<StoreOpeningSchedule> | undefined,
+  defaultSchedule: StoreOpeningSchedule
+): StoreOpeningSchedule {
+  if (!savedSchedule) return defaultSchedule;
+
+  const isLegacyOpenTime = savedSchedule.openTime === '08:00' || savedSchedule.openTime === '8:00';
+  const hasLegacyMsg =
+    hasLegacyScheduleText(savedSchedule.customMessageEn) ||
+    hasLegacyScheduleText(savedSchedule.customMessageAr);
+
+  return {
+    ...defaultSchedule,
+    ...savedSchedule,
+    openTime: isLegacyOpenTime ? defaultSchedule.openTime : (savedSchedule.openTime || defaultSchedule.openTime),
+    closeTime: savedSchedule.closeTime || defaultSchedule.closeTime,
+    customMessageEn: hasLegacyMsg
+      ? defaultSchedule.customMessageEn
+      : (savedSchedule.customMessageEn || defaultSchedule.customMessageEn),
+    customMessageAr: hasLegacyMsg
+      ? defaultSchedule.customMessageAr
+      : (savedSchedule.customMessageAr || defaultSchedule.customMessageAr),
   };
 }

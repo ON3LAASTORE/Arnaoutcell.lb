@@ -1,7 +1,7 @@
 import React from 'react';
 import { useShop } from '../context/ShopContext';
 import { Phone, Sparkles, Clock } from 'lucide-react';
-import { checkStoreOpenStatus } from '../utils/storeSchedule';
+import { checkStoreOpenStatus, formatTimeDisplay } from '../utils/storeSchedule';
 
 export const AnnouncementBar: React.FC = () => {
   const { storeSettings, lang, setCurrentView } = useShop();
@@ -10,6 +10,8 @@ export const AnnouncementBar: React.FC = () => {
   if (!bar?.enabled) return null;
 
   const scheduleInfo = checkStoreOpenStatus(storeSettings.openingSchedule);
+  const openDisplay = formatTimeDisplay(storeSettings.openingSchedule?.openTime || '10:00', lang);
+  const closeDisplay = formatTimeDisplay(storeSettings.openingSchedule?.closeTime || '01:00', lang);
   const text = lang === 'ar' ? bar.textAr || bar.textEn : bar.textEn;
 
   return (
@@ -28,16 +30,24 @@ export const AnnouncementBar: React.FC = () => {
         {/* Schedule & Live Status Pill */}
         {storeSettings.openingSchedule?.displayHours !== false && (
           <div className="hidden md:flex items-center gap-2 flex-shrink-0 text-xs">
-            <div className="flex items-center gap-1.5 bg-black/20 backdrop-blur-xs px-2.5 py-1 rounded-full border border-white/15">
-              <Clock className="w-3.5 h-3.5 text-white/90" />
+            <div
+              data-testid="header-hours-pill"
+              className="flex items-center gap-1.5 bg-black/20 backdrop-blur-xs px-2.5 py-1 rounded-full border border-white/15"
+            >
+              <span
+                className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                  scheduleInfo.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                }`}
+              />
               <span className="font-bold tracking-tight">
                 {lang === 'ar'
-                  ? (storeSettings.openingSchedule?.customMessageAr || 'مفتوح يومياً — 17 ساعة يومياً')
-                  : (storeSettings.openingSchedule?.customMessageEn || 'OPEN EVERY DAY — 17 HOURS DAILY')}
+                  ? (scheduleInfo.isOpen ? 'مفتوح الآن' : 'مغلق الآن')
+                  : (scheduleInfo.isOpen ? 'OPEN NOW' : 'CLOSED NOW')}
               </span>
               <span className="text-white/60">•</span>
-              <span className="font-medium text-[11px] text-white/90">
-                {lang === 'ar' ? '8:00 ص – 1:00 ص' : '8:00 AM – 1:00 AM'}
+              <Clock className="w-3.5 h-3.5 text-white/90" />
+              <span className="font-medium text-[11px] text-white/95" dir="ltr">
+                {`${openDisplay} – ${closeDisplay}`}
               </span>
             </div>
           </div>
