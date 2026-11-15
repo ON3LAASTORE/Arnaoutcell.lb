@@ -101,24 +101,6 @@ service cloud.firestore {
         && data.isPublished is bool;
     }
 
-    function isValidStockNotification(data) {
-      return data.keys().hasAll(['id', 'productId', 'productName', 'productPrice', 'email', 'lang', 'status', 'createdAt'])
-        && data.keys().hasOnly(['id', 'productId', 'productName', 'productNameAr', 'productBrand', 'productPrice', 'productImage', 'email', 'lang', 'status', 'createdAt', 'notifiedAt'])
-        && isValidId(data.id)
-        && isValidId(data.productId)
-        && data.productName is string && data.productName.size() > 0 && data.productName.size() <= 255
-        && (!('productNameAr' in data) || (data.productNameAr is string && data.productNameAr.size() <= 255))
-        && (!('productBrand' in data) || (data.productBrand is string && data.productBrand.size() <= 64))
-        && data.productPrice is number && data.productPrice >= 0
-        && (!('productImage' in data) || (data.productImage is string && data.productImage.size() <= 1024))
-        && data.email is string && data.email.size() >= 3 && data.email.size() <= 128
-        && data.email.matches('^[a-zA-Z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)+$')
-        && data.lang in ['en', 'ar']
-        && data.status in ['pending', 'notified']
-        && data.createdAt is string && data.createdAt.size() > 0 && data.createdAt.size() <= 64
-        && (!('notifiedAt' in data) || (data.notifiedAt is string && data.notifiedAt.size() <= 64));
-    }
-
     // 4. Connection Test Document for getDocFromServer
     match /test/connection {
       allow read: if true;
@@ -222,33 +204,6 @@ service cloud.firestore {
       allow get, list: if isAdmin();
       allow create, update: if isAdmin() && isValidId(accountId) && isValidSocialAccount(incoming()) && incoming().id == accountId;
       allow delete: if isAdmin() && isValidId(accountId);
-    }
-
-    // 12. Stock Notifications Collection: PII-isolated out-of-stock restock alerts
-    match /stock_notifications/{notificationId} {
-      allow get, list: if isAdmin();
-
-      allow create: if isValidId(notificationId)
-        && isValidStockNotification(incoming())
-        && incoming().id == notificationId
-        && incoming().status == 'pending'
-        && !('notifiedAt' in incoming());
-
-      allow update: if isValidId(notificationId)
-        && isValidStockNotification(incoming())
-        && (
-          isAdmin() ||
-          (
-            incoming().id == existing().id
-            && incoming().productId == existing().productId
-            && incoming().email == existing().email
-            && incoming().status == 'pending'
-            && !('notifiedAt' in incoming())
-            && incoming().diff(existing()).affectedKeys().hasOnly(['lang', 'createdAt', 'productPrice', 'productName', 'productNameAr', 'productBrand', 'productImage', 'status', 'notifiedAt'])
-          )
-        );
-
-      allow delete: if isAdmin() && isValidId(notificationId);
     }
   }
 }

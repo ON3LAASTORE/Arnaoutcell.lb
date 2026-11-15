@@ -24,7 +24,6 @@ import { openExternalUrl } from '../utils/navigation';
 import { getProductBadges, hasProductDiscount } from '../utils/productBadgeHelpers';
 import { addProductReview } from '../services/storageService';
 import { resolveFullResolutionImageUrl } from '../utils/imageResolutionHelpers';
-import { NotifyMeControl } from '../components/NotifyMeControl';
 
 export const ProductDetailPage: React.FC = () => {
   const {
@@ -504,10 +503,6 @@ export const ProductDetailPage: React.FC = () => {
                   <span>{t.buyNow}</span>
                 </button>
               </div>
-
-              {isOutOfStock && (
-                <NotifyMeControl product={product} lang={lang} variant="panel" />
-              )}
 
               {/* WhatsApp direct inquiry button with Real 3D WhatsApp Icon */}
               <button

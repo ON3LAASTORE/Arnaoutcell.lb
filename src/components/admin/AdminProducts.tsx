@@ -3,7 +3,6 @@ import { useShop } from '../../context/ShopContext';
 import { useAdmin } from '../../context/AdminContext';
 import { Product, ProductSpec } from '../../types';
 import { saveProduct, deleteProduct, readFileAsDataUrl } from '../../services/storageService';
-import { maybeTriggerRestockNotifications } from '../../services/stockNotificationService';
 import {
   Plus,
   Search,
@@ -222,7 +221,6 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
       createdAt: editingProduct ? editingProduct.createdAt : new Date().toISOString(),
     };
 
-    const previousStock = editingProduct ? editingProduct.stock : savedProduct.stock;
     saveProduct(savedProduct);
     refreshData();
     setIsModalOpen(false);
@@ -230,23 +228,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
       type: 'success',
       msg: `Product "${savedProduct.name}" saved and live in database.`,
     });
-
-    if (editingProduct) {
-      maybeTriggerRestockNotifications(previousStock, savedProduct)
-        .then((dispatchResult) => {
-          if (dispatchResult && dispatchResult.dispatchedCount > 0) {
-            setFeedback({
-              type: 'success',
-              msg: `Product "${savedProduct.name}" restocked — Automated alert sent to ${dispatchResult.dispatchedCount} waiting subscriber(s)!`,
-            });
-          }
-        })
-        .catch(() => {
-          // Non-critical
-        });
-    }
-
-    setTimeout(() => setFeedback(null), 4500);
+    setTimeout(() => setFeedback(null), 3500);
   };
 
   const handleDelete = (id: string, name: string) => {

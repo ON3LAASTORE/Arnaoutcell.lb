@@ -8,7 +8,6 @@ import { LazyImage } from './LazyImage';
 import { openExternalUrl } from '../utils/navigation';
 import { ReactBitsPicture } from './animations/ReactBitsPicture';
 import { getProductBadges, hasProductDiscount } from '../utils/productBadgeHelpers';
-import { NotifyMeControl } from './NotifyMeControl';
 
 interface ProductCardProps {
   product: Product;
@@ -362,7 +361,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               href={`#/product/${product.id}`}
               onClick={(e) => {
                 e.preventDefault();
-                e.stopPropagation();
                 viewProductDetail(product.id, false);
               }}
               className="hover:underline focus:outline-none"
@@ -459,10 +457,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 <span className="truncate">{lang === 'ar' ? 'طلب فوري' : 'Direct Order ⚡'}</span>
               </button>
             </div>
-
-            {isOutOfStock && (
-              <NotifyMeControl product={product} lang={lang} variant="compact" />
-            )}
 
             <button
               onClick={handleWhatsAppInquiry}

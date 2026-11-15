@@ -409,76 +409,6 @@
         }
       },
       "required": ["id", "platform", "displayName", "isConnected"]
-    },
-    "StockNotification": {
-      "title": "StockNotification",
-      "description": "Customer email subscription requesting an automated restock alert when an out-of-stock product becomes available again",
-      "type": "object",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Sanitized deterministic notification ID combining productId and email",
-          "maxLength": 128,
-          "pattern": "^[a-zA-Z0-9_\\-]+$"
-        },
-        "productId": {
-          "type": "string",
-          "description": "Referenced out-of-stock product identifier",
-          "maxLength": 128,
-          "pattern": "^[a-zA-Z0-9_\\-]+$"
-        },
-        "productName": {
-          "type": "string",
-          "description": "English product name at subscription time",
-          "maxLength": 255
-        },
-        "productNameAr": {
-          "type": "string",
-          "description": "Arabic product name at subscription time",
-          "maxLength": 255
-        },
-        "productBrand": {
-          "type": "string",
-          "description": "Brand name",
-          "maxLength": 64
-        },
-        "productPrice": {
-          "type": "number",
-          "description": "Product unit price in USD"
-        },
-        "productImage": {
-          "type": "string",
-          "description": "Primary product image URL",
-          "maxLength": 1024
-        },
-        "email": {
-          "type": "string",
-          "description": "Subscriber email address for automated restock alert",
-          "minLength": 3,
-          "maxLength": 128
-        },
-        "lang": {
-          "type": "string",
-          "description": "Preferred notification language (en or ar)",
-          "enum": ["en", "ar"]
-        },
-        "status": {
-          "type": "string",
-          "description": "Notification dispatch lifecycle status",
-          "enum": ["pending", "notified"]
-        },
-        "createdAt": {
-          "type": "string",
-          "description": "ISO timestamp when restock alert was requested",
-          "maxLength": 64
-        },
-        "notifiedAt": {
-          "type": "string",
-          "description": "ISO timestamp when automated restock update was dispatched",
-          "maxLength": 64
-        }
-      },
-      "required": ["id", "productId", "productName", "productPrice", "email", "lang", "status", "createdAt"]
     }
   },
   "firestore": {
@@ -523,12 +453,6 @@
         "$ref": "SocialAccountConfig"
       },
       "description": "Connected social media channels configuration and account handles"
-    },
-    "/stock_notifications/{notificationId}": {
-      "schema": {
-        "$ref": "StockNotification"
-      },
-      "description": "Out-of-stock product restock email subscriptions and automated dispatch status"
     }
   }
 }
