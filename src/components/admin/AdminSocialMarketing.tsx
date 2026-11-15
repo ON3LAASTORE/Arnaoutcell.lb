@@ -501,7 +501,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
               {selectedProduct && selectedProduct.id && (
                 <div className="p-3.5 rounded-2xl bg-[#F8FAFC] border border-[#DCE5F0] flex items-center gap-3">
                   <LazyImage
-                    src={selectedProduct.images?.[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=800'}
+                    src={selectedProduct.images?.[0] || 'https://images.unsplash.com/photo-1598327105666-5b89351aff97'}
                     alt={selectedProduct.name}
                     width={56}
                     height={56}

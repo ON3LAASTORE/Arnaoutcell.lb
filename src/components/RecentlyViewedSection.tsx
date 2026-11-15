@@ -3,6 +3,8 @@ import { History, Trash2, ShoppingBag, Eye, X, Package } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { MAX_RECENTLY_VIEWED } from '../utils/recentlyViewedHelpers';
 import { Product } from '../types';
+import { resolveFullResolutionImageUrl } from '../utils/imageResolutionHelpers';
+import { LazyImage } from './LazyImage';
 
 export const RecentlyViewedSection: React.FC = () => {
   const {
@@ -131,7 +133,7 @@ export const RecentlyViewedSection: React.FC = () => {
             {recentlyViewedProducts.map((product) => {
               const displayName = lang === 'ar' ? product.nameAr || product.name : product.name;
               const isOutOfStock = product.stock <= 0;
-              const imageUrl = product.images?.[0];
+              const imageUrl = resolveFullResolutionImageUrl(product.images?.[0]);
               const hasImgError = !imageUrl || failedImages[product.id];
 
               return (
@@ -165,15 +167,16 @@ export const RecentlyViewedSection: React.FC = () => {
                     className="w-full aspect-[4/3] rounded-xl bg-[#F8FAFC] dark:bg-[#111A2E] border border-[#DCE5F0]/70 dark:border-[#1E293B] flex items-center justify-center p-3 mb-3 overflow-hidden cursor-pointer"
                   >
                     {!hasImgError ? (
-                      <img
+                      <LazyImage
                         src={imageUrl}
                         alt={`${displayName} - ${product.brand}`}
-                        referrerPolicy="no-referrer"
-                        loading="lazy"
+                        priority={false}
+                        rootMargin="0px"
                         onError={() =>
                           setFailedImages((prev) => ({ ...prev, [product.id]: true }))
                         }
-                        className="max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-200 group-hover:scale-105"
+                        wrapperClassName="w-full h-full flex items-center justify-center"
+                        className="product-card-image max-w-full max-h-full w-auto h-auto object-contain transition-transform duration-200 group-hover:scale-105"
                       />
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center gap-1.5 text-[#64748B] dark:text-slate-400">

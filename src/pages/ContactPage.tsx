@@ -20,6 +20,7 @@ import {
   buildLocationShareData,
 } from '../utils/storeLocatorHelpers';
 import { resolveStoreLogoUrl } from '../utils/storeSettingsHelpers';
+import { LazyImage } from '../components/LazyImage';
 
 export const ContactPage: React.FC = () => {
   const { lang, storeSettings } = useShop();
@@ -71,9 +72,13 @@ export const ContactPage: React.FC = () => {
         <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
           <div className="flex justify-center pb-1">
             <div className="w-20 h-20 rounded-full overflow-hidden bg-[#000000] p-[2px] border border-[#1E3A5F] ring-2 ring-[#007AFF]/35 shadow-[0_0_22px_rgba(0,122,255,0.28)] flex items-center justify-center">
-              <img
+              <LazyImage
                 src={resolveStoreLogoUrl(storeSettings.logoUrl)}
                 alt={storeSettings.storeName || 'ON AlAA STORE'}
+                width={80}
+                height={80}
+                priority={true}
+                wrapperClassName="w-full h-full rounded-full overflow-hidden"
                 className="w-full h-full rounded-full object-contain object-center"
               />
             </div>

@@ -1,9 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'fs';
+import path from 'path';
 import {
   evaluatePasswordStrength,
   generateSalt,
   hashPasswordWithSalt,
+  hashPasswordWithBcrypt,
+  verifyPasswordWithBcrypt,
 } from './authService.ts';
 
 test('evaluatePasswordStrength identifies weak passwords', () => {
@@ -34,4 +38,19 @@ test('hashPasswordWithSalt is deterministic for same input and salt', async () =
   const hash2 = await hashPasswordWithSalt('SecretPassword123!', salt);
   assert.equal(hash1, hash2);
   assert.notEqual(hash1, 'SecretPassword123!');
+});
+
+test('hashPasswordWithBcrypt and verifyPasswordWithBcrypt hash securely and reject legacy defaults', async () => {
+  const hash = await hashPasswordWithBcrypt('Alaa123321a', 8);
+  assert.notEqual(hash, 'Alaa123321a');
+  assert.equal(hash.startsWith('$2'), true);
+  assert.equal(await verifyPasswordWithBcrypt('Alaa123321a', hash), true);
+  assert.equal(await verifyPasswordWithBcrypt('admin123', hash), false);
+});
+
+test('authService.ts contains no hardcoded plaintext administrator passwords', () => {
+  const source = fs.readFileSync(path.resolve(process.cwd(), 'src/services/authService.ts'), 'utf-8');
+  assert.equal(source.includes('admin123'), false);
+  assert.equal(source.includes('Arnaout2027!'), false);
+  assert.equal(source.includes('Alaa123321a'), false);
 });

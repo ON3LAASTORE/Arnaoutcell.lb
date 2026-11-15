@@ -1,8 +1,11 @@
+import { FOUR_K_MAX_WIDTH, preserveDimensionsUpToFourK } from './imageResolutionHelpers';
+
 export interface ImageCompressionOptions {
   maxDimension?: number;
   maxDataUrlLength?: number;
   initialQuality?: number;
   preferPng?: boolean;
+  preserveOriginal?: boolean;
 }
 
 function readRawDataUrl(file: File): Promise<string> {
@@ -30,34 +33,43 @@ function loadImage(src: string): Promise<HTMLImageElement> {
 }
 
 /**
- * Optimizes large raster image uploads (PNG/JPG/WebP) using an HTML5 canvas so
- * browser localStorage quota (~5MB total across origin) is never exhausted.
+ * Reads uploaded images at full original resolution (preserving up to 4K 3840x2160
+ * without downscaling or lossy compression by default). Explicit callers that opt out
+ * of preserveOriginal retain up to 4K dimensions at high quality.
  */
 export async function optimizeUploadedImage(
   file: File,
   options?: ImageCompressionOptions
 ): Promise<string> {
   const rawDataUrl = await readRawDataUrl(file);
+  const preserveOriginal = options?.preserveOriginal !== false;
 
-  // Preserve SVGs and already-lightweight files untouched
+  // Preserve SVGs and original raster uploads untouched (no downscaling or compression)
   if (
+    preserveOriginal ||
     file.type === 'image/svg+xml' ||
     file.name.toLowerCase().endsWith('.svg') ||
-    typeof document === 'undefined' ||
-    rawDataUrl.length <= (options?.maxDataUrlLength ?? 220_000)
+    typeof document === 'undefined'
   ) {
     return rawDataUrl;
   }
 
-  const maxDimension = options?.maxDimension ?? 1024;
-  const maxDataUrlLength = options?.maxDataUrlLength ?? 280_000;
-  let quality = options?.initialQuality ?? 0.86;
+  const maxDimension = options?.maxDimension ?? FOUR_K_MAX_WIDTH;
+  const maxDataUrlLength = options?.maxDataUrlLength ?? 2_000_000;
+  const quality = options?.initialQuality ?? 1.0;
 
   try {
     const img = await loadImage(rawDataUrl);
-    const scale = Math.min(1, maxDimension / Math.max(img.width || 1, img.height || 1));
-    const targetWidth = Math.max(1, Math.round((img.width || maxDimension) * scale));
-    const targetHeight = Math.max(1, Math.round((img.height || maxDimension) * scale));
+    const { width: targetWidth, height: targetHeight } = preserveDimensionsUpToFourK(
+      img.width || maxDimension,
+      img.height || maxDimension,
+      maxDimension,
+      maxDimension
+    );
+
+    if (targetWidth === img.width && targetHeight === img.height) {
+      return rawDataUrl;
+    }
 
     const canvas = document.createElement('canvas');
     canvas.width = targetWidth;
@@ -66,36 +78,17 @@ export async function optimizeUploadedImage(
     const ctx = canvas.getContext('2d');
     if (!ctx) return rawDataUrl;
 
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
     ctx.clearRect(0, 0, targetWidth, targetHeight);
     ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
 
-    // WebP preserves alpha transparency at a fraction of PNG file size
-    const mimeCandidates = options?.preferPng
-      ? ['image/webp', 'image/png', 'image/jpeg']
-      : ['image/webp', 'image/jpeg'];
-
-    for (const mime of mimeCandidates) {
-      if (mime === 'image/png') {
-        const pngData = canvas.toDataURL('image/png');
-        if (pngData.length <= maxDataUrlLength) {
-          return pngData;
-        }
-        continue;
-      }
-
-      let currentQ = quality;
-      for (let attempt = 0; attempt < 4; attempt++) {
-        const encoded = canvas.toDataURL(mime, currentQ);
-        if (encoded.startsWith(`data:${mime}`) && encoded.length <= maxDataUrlLength) {
-          return encoded;
-        }
-        currentQ = Math.max(0.45, Number((currentQ - 0.14).toFixed(2)));
-      }
+    const mime = options?.preferPng ? 'image/png' : file.type || 'image/png';
+    const encoded = mime === 'image/png' ? canvas.toDataURL('image/png') : canvas.toDataURL(mime, quality);
+    if (encoded.length <= maxDataUrlLength) {
+      return encoded;
     }
-
-    // Last resort: scaled-down WebP/JPEG at 0.65 quality
-    const fallbackEncoded = canvas.toDataURL('image/webp', 0.65);
-    return fallbackEncoded.length < rawDataUrl.length ? fallbackEncoded : rawDataUrl;
+    return rawDataUrl;
   } catch {
     return rawDataUrl;
   }

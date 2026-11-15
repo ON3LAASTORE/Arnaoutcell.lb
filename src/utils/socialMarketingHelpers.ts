@@ -5,6 +5,7 @@ import {
   SocialGraphicTemplate,
   MarketingPost,
 } from '../types/socialMarketing';
+import { DEFAULT_FULL_RES_FALLBACK_IMAGE, resolveFullResolutionImageUrl } from './imageResolutionHelpers';
 
 export const STORE_PHONE_DISPLAY = '03 986 718';
 export const STORE_PHONE_INTL = '9613986718';
@@ -458,8 +459,10 @@ export async function renderSocialMarketingGraphic(
     imgBoxWidth = width * 0.45;
   }
 
-  // Load and draw product image
-  const imageUrl = product.images?.[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=800';
+  // Load and draw product image at original full resolution
+  const imageUrl = resolveFullResolutionImageUrl(
+    product.images?.[0] || DEFAULT_FULL_RES_FALLBACK_IMAGE
+  );
   await new Promise<void>((resolve) => {
     const img = new Image();
     img.crossOrigin = 'anonymous';

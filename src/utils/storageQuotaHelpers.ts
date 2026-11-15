@@ -1,5 +1,6 @@
 import { Product, StoreSettings } from '../types';
 import { DEFAULT_STORE_PROFILE_PICTURE } from './storeSettingsHelpers';
+import { DEFAULT_FULL_RES_FALLBACK_IMAGE } from './imageResolutionHelpers';
 
 export interface StorageLike {
   getItem: (key: string) => string | null;
@@ -161,8 +162,7 @@ export function compactProductsForStorage(
         )
       : [];
 
-    const fallbackImage =
-      'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=800&auto=format&fit=crop&q=80';
+    const fallbackImage = DEFAULT_FULL_RES_FALLBACK_IMAGE;
 
     return {
       ...product,

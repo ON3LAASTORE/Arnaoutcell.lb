@@ -41,6 +41,8 @@ export default defineConfig(() => {
           },
     },
     build: {
+      target: 'es2020',
+      cssCodeSplit: true,
       rollupOptions: {
         output: {
           manualChunks(id) {
@@ -49,6 +51,15 @@ export default defineConfig(() => {
             }
             if (id.includes('node_modules/motion')) {
               return 'vendor-motion';
+            }
+            if (id.includes('node_modules/gsap')) {
+              return 'vendor-gsap';
+            }
+            if (id.includes('node_modules/jsqr')) {
+              return 'vendor-qr';
+            }
+            if (id.includes('node_modules/@google/genai')) {
+              return 'vendor-genai';
             }
             if (id.includes('node_modules/lucide-react')) {
               return 'vendor-icons';

@@ -49,7 +49,7 @@ export const GsapScrollLines: React.FC<GsapScrollLinesProps> = ({
 
           if (glowHeadRef.current) {
             gsap.to(glowHeadRef.current, {
-              left: `${progress * 100}%`,
+              x: `${progress * 100}vw`,
               duration: 0.15,
               ease: 'power1.out',
               overwrite: 'auto',
@@ -125,9 +125,9 @@ export const GsapScrollLines: React.FC<GsapScrollLinesProps> = ({
             {/* Guide Line 1 (Far Left) */}
             <div className="relative w-[1px] h-full bg-gradient-to-b from-transparent via-[#007AFF]/15 to-transparent">
               <div
-                className="absolute w-[2px] -left-[0.5px] h-28 rounded-full bg-gradient-to-b from-transparent via-[#007AFF] to-transparent shadow-[0_0_8px_#007AFF] transition-all duration-200 ease-out"
+                className="absolute top-0 w-[2px] -left-[0.5px] h-28 rounded-full bg-gradient-to-b from-transparent via-[#007AFF] to-transparent shadow-[0_0_8px_#007AFF] transition-transform duration-200 ease-out will-change-transform"
                 style={{
-                  top: `${beams[0]?.yPercent || 0}%`,
+                  transform: `translate3d(0, ${(beams[0]?.yPercent || 0)}vh, 0)`,
                   opacity: beams[0]?.opacity || 0,
                 }}
               />
@@ -136,9 +136,9 @@ export const GsapScrollLines: React.FC<GsapScrollLinesProps> = ({
             {/* Guide Line 2 (One-third) */}
             <div className="relative w-[1px] h-full bg-gradient-to-b from-transparent via-slate-300/10 dark:via-slate-700/10 to-transparent">
               <div
-                className="absolute w-[2px] -left-[0.5px] h-20 rounded-full bg-gradient-to-b from-transparent via-[#38BDF8] to-transparent shadow-[0_0_8px_#38BDF8] transition-all duration-200 ease-out"
+                className="absolute top-0 w-[2px] -left-[0.5px] h-20 rounded-full bg-gradient-to-b from-transparent via-[#38BDF8] to-transparent shadow-[0_0_8px_#38BDF8] transition-transform duration-200 ease-out will-change-transform"
                 style={{
-                  top: `${beams[1]?.yPercent || 20}%`,
+                  transform: `translate3d(0, ${(beams[1]?.yPercent || 20)}vh, 0)`,
                   opacity: beams[1]?.opacity || 0,
                 }}
               />
@@ -147,9 +147,9 @@ export const GsapScrollLines: React.FC<GsapScrollLinesProps> = ({
             {/* Guide Line 3 (Two-thirds) */}
             <div className="relative w-[1px] h-full bg-gradient-to-b from-transparent via-slate-300/10 dark:via-slate-700/10 to-transparent">
               <div
-                className="absolute w-[2px] -left-[0.5px] h-24 rounded-full bg-gradient-to-b from-transparent via-[#00D26A] to-transparent shadow-[0_0_8px_#00D26A] transition-all duration-200 ease-out"
+                className="absolute top-0 w-[2px] -left-[0.5px] h-24 rounded-full bg-gradient-to-b from-transparent via-[#00D26A] to-transparent shadow-[0_0_8px_#00D26A] transition-transform duration-200 ease-out will-change-transform"
                 style={{
-                  top: `${beams[2]?.yPercent || 40}%`,
+                  transform: `translate3d(0, ${(beams[2]?.yPercent || 40)}vh, 0)`,
                   opacity: beams[2]?.opacity || 0,
                 }}
               />
@@ -158,9 +158,9 @@ export const GsapScrollLines: React.FC<GsapScrollLinesProps> = ({
             {/* Guide Line 4 (Far Right) */}
             <div className="relative w-[1px] h-full bg-gradient-to-b from-transparent via-[#007AFF]/15 to-transparent">
               <div
-                className="absolute w-[2px] -left-[0.5px] h-32 rounded-full bg-gradient-to-b from-transparent via-[#007AFF] to-transparent shadow-[0_0_8px_#007AFF] transition-all duration-200 ease-out"
+                className="absolute top-0 w-[2px] -left-[0.5px] h-32 rounded-full bg-gradient-to-b from-transparent via-[#007AFF] to-transparent shadow-[0_0_8px_#007AFF] transition-transform duration-200 ease-out will-change-transform"
                 style={{
-                  top: `${beams[3]?.yPercent || 60}%`,
+                  transform: `translate3d(0, ${(beams[3]?.yPercent || 60)}vh, 0)`,
                   opacity: beams[3]?.opacity || 0,
                 }}
               />

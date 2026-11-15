@@ -2,6 +2,7 @@ import React from 'react';
 import { useShop } from '../context/ShopContext';
 import { ShieldCheck, Truck, MapPin, Headphones, RefreshCw, Check } from 'lucide-react';
 import { resolveStoreLogoUrl } from '../utils/storeSettingsHelpers';
+import { LazyImage } from './LazyImage';
 
 export const CustomerTrust: React.FC = () => {
   const { lang, setCurrentView, storeSettings } = useShop();
@@ -84,9 +85,12 @@ export const CustomerTrust: React.FC = () => {
         <div className="mt-12 p-6 sm:p-8 rounded-3xl bg-[#F5F8FC] border border-[#DCE5F0] flex flex-col lg:flex-row items-center justify-between gap-6 shadow-xs">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-full overflow-hidden bg-[#000000] p-[2px] border border-[#1E3A5F]/85 ring-1 ring-[#007AFF]/35 shadow-[0_0_14px_rgba(0,122,255,0.25)] flex items-center justify-center flex-shrink-0">
-              <img
+              <LazyImage
                 src={resolveStoreLogoUrl(storeSettings.logoUrl)}
                 alt={storeSettings.storeName || 'ON AlAA STORE'}
+                width={56}
+                height={56}
+                wrapperClassName="w-full h-full rounded-full overflow-hidden"
                 className="w-full h-full rounded-full object-contain object-center"
               />
             </div>

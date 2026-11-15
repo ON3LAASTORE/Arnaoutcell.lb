@@ -114,11 +114,12 @@ export const SEOHead: React.FC = () => {
         break;
     }
 
-    // 2. Set Document Title
+    // 2. Synchronize Document Title & Global Language Attribute
+    document.documentElement.lang = lang;
     document.title = pageTitle;
 
     // 3. Helper to update or create meta tags
-    const setMetaTag = (attr: 'name' | 'property', key: string, content: string) => {
+    const setMetaTag = (attr: 'name' | 'property' | 'http-equiv', key: string, content: string) => {
       let element = document.querySelector(`meta[${attr}="${key}"]`);
       if (!element) {
         element = document.createElement('meta');
@@ -128,9 +129,11 @@ export const SEOHead: React.FC = () => {
       element.setAttribute('content', content);
     };
 
+    setMetaTag('http-equiv', 'content-language', lang);
     setMetaTag('name', 'description', metaDescription);
     setMetaTag('property', 'og:title', pageTitle);
     setMetaTag('property', 'og:description', metaDescription);
+    setMetaTag('property', 'og:locale', lang === 'ar' ? 'ar_LB' : 'en_US');
     setMetaTag('property', 'og:type', ogType);
     setMetaTag('property', 'og:url', canonicalUrl);
     setMetaTag('property', 'og:image', ogImage);
@@ -192,6 +195,7 @@ export const SEOHead: React.FC = () => {
       schemaJson = {
         '@context': 'https://schema.org',
         '@type': 'ElectronicsStore',
+        inLanguage: lang,
         name: storeName,
         alternateName: 'ON AlAA STORE',
         description: metaDescription,

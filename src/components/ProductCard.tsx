@@ -8,6 +8,7 @@ import { LazyImage } from './LazyImage';
 import { openExternalUrl } from '../utils/navigation';
 import { ReactBitsPicture } from './animations/ReactBitsPicture';
 import { getProductBadges, hasProductDiscount } from '../utils/productBadgeHelpers';
+import { NotifyMeControl } from './NotifyMeControl';
 
 interface ProductCardProps {
   product: Product;
@@ -121,11 +122,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         >
           <div className="w-full h-full flex items-center justify-center p-1.5 sm:p-2 bg-white dark:bg-[#0E1726] rounded-2xl">
             <LazyImage
-              src={product.images[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=600&auto=format&fit=crop&q=80'}
+              src={product.images[0] || 'https://images.unsplash.com/photo-1598327105666-5b89351aff97'}
               alt={`${product.name} - ${product.brand} authentic tech in Lebanon`}
+              width={800}
+              height={800}
+              responsiveSizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
               priority={priority}
-              loading="lazy"
-              decoding="async"
+              rootMargin="0px"
               onLoaded={() => setIsImageLoaded(true)}
               wrapperClassName="w-full h-full max-w-full max-h-full flex items-center justify-center bg-white dark:bg-[#0E1726] rounded-2xl"
               className="product-card-image max-w-full max-h-full w-auto h-auto object-contain object-center bg-white dark:bg-transparent rounded-2xl transition-transform duration-350 ease-out group-hover:scale-105"
@@ -359,6 +362,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               href={`#/product/${product.id}`}
               onClick={(e) => {
                 e.preventDefault();
+                e.stopPropagation();
                 viewProductDetail(product.id, false);
               }}
               className="hover:underline focus:outline-none"
@@ -455,6 +459,10 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 <span className="truncate">{lang === 'ar' ? 'طلب فوري' : 'Direct Order ⚡'}</span>
               </button>
             </div>
+
+            {isOutOfStock && (
+              <NotifyMeControl product={product} lang={lang} variant="compact" />
+            )}
 
             <button
               onClick={handleWhatsAppInquiry}

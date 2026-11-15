@@ -494,12 +494,12 @@ export const ProductsPage: React.FC = () => {
                     : 'grid-cols-1 gap-4'
                 }`}
               >
-                {filteredProducts.map((product, idx) => (
+                {filteredProducts.map((product) => (
                   <ProductCard
                     key={product.id}
                     product={product}
                     layout={viewMode === 'grid' ? 'grid' : 'column'}
-                    priority={idx < 2}
+                    priority={false}
                   />
                 ))}
               </div>

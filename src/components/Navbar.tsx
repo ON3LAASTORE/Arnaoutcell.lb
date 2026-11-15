@@ -271,7 +271,7 @@ export const Navbar: React.FC = () => {
 
       {/* Mobile Menu Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden w-full max-w-full overflow-hidden bg-white dark:bg-[#0A0F1D] border-b border-[#DCE5F0] dark:border-[#1E293B] px-3 sm:px-4 pt-3 pb-6 space-y-4 animate-in slide-in-from-top duration-200 shadow-lg">
+        <div className="md:hidden w-full max-w-full overflow-hidden bg-white dark:bg-[#0A0F1D] border-b border-[#DCE5F0] dark:border-[#1E293B] px-3 sm:px-4 pt-3 pb-24 space-y-4 animate-in slide-in-from-top duration-200 shadow-lg">
           {/* Mobile Drawer Store Profile Header */}
           <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-[#F5F8FC] dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] min-w-0">
             <StoreLogo
@@ -422,8 +422,8 @@ export const Navbar: React.FC = () => {
 
           <div className="pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B] flex items-center justify-between text-xs text-[#64748B] dark:text-slate-400">
             <a href="tel:03986718" className="flex items-center gap-1.5 text-[#007AFF] font-bold">
-              <Phone className="w-3.5 h-3.5" />
-              <span>03 986 718</span>
+              <Phone className="w-3.5 h-3.5 shrink-0" />
+              <span dir="ltr">03 986 718</span>
             </a>
             <button
               onClick={() => {

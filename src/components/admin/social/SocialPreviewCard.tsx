@@ -3,6 +3,7 @@ import { useShop } from '../../../context/ShopContext';
 import { Product, StoreSettings } from '../../../types';
 import { SocialPlatform, MarketingPost } from '../../../types/socialMarketing';
 import { resolveStoreLogoUrl } from '../../../utils/storeSettingsHelpers';
+import { DEFAULT_FULL_RES_FALLBACK_IMAGE, resolveFullResolutionImageUrl } from '../../../utils/imageResolutionHelpers';
 import {
   MessageSquare,
   Instagram,
@@ -45,12 +46,13 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
   const storeName = effectiveSettings.storeName || 'ON AlAA STORE';
   const storeLogoUrl = resolveStoreLogoUrl(effectiveSettings.logoUrl);
   const caption = customCaption || (activeLang === 'ar' ? post.captionAr : post.captionEn) || '';
-  const image =
+  const image = resolveFullResolutionImageUrl(
     imageDataUrl ||
-    previewImageUrl ||
-    post.productImage ||
-    product?.images?.[0] ||
-    'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=800';
+      previewImageUrl ||
+      post.productImage ||
+      product?.images?.[0] ||
+      DEFAULT_FULL_RES_FALLBACK_IMAGE
+  );
 
   if (platform === 'whatsapp') {
     return (

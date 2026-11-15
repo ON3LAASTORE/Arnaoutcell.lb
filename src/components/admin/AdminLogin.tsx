@@ -203,7 +203,7 @@ export const AdminLogin: React.FC = () => {
           {/* Secure Encrypted Session Footer */}
           <div className="pt-4 border-t border-[#DCE5F0] flex items-center justify-center gap-1.5 text-[11px] text-[#64748B]">
             <Shield className="w-3.5 h-3.5 text-[#007AFF]" />
-            <span>{lang === 'ar' ? 'جلسة مشفرة ومحمية بتقنية SHA-256' : 'SHA-256 Encrypted & Protected Session'}</span>
+            <span>{lang === 'ar' ? 'جلسة مشفرة ومحمية بتقنية bcrypt' : 'bcrypt Encrypted & Protected Session'}</span>
           </div>
         </div>
       </div>

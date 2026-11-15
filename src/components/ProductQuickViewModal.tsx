@@ -34,6 +34,7 @@ import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon, Orbit3DIcon } from './icons/Thre
 import { LazyImage } from './LazyImage';
 import { openExternalUrl } from '../utils/navigation';
 import { getProductBadges, hasProductDiscount } from '../utils/productBadgeHelpers';
+import { NotifyMeControl } from './NotifyMeControl';
 
 export const ProductQuickViewModal: React.FC = () => {
   const {
@@ -129,7 +130,7 @@ export const ProductQuickViewModal: React.FC = () => {
   const activePrice = selectedVariant ? selectedVariant.price : product.price;
   const discountAmount = product.originalPrice > activePrice ? product.originalPrice - activePrice : 0;
   const images = product.images && product.images.length > 0 ? product.images : [
-    'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=800'
+    'https://images.unsplash.com/photo-1598327105666-5b89351aff97'
   ];
 
   // 3D Tilt handlers
@@ -328,7 +329,7 @@ export const ProductQuickViewModal: React.FC = () => {
                   transform: `rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale(${isZoomed ? 1.4 : 1})`,
                   transition: isAutoOrbit ? 'none' : 'transform 0.15s ease-out',
                 }}
-                className="relative w-full h-full max-w-sm max-h-80 flex items-center justify-center"
+                className="relative w-full h-full flex items-center justify-center"
               >
                 {/* 3D Floating Ground Pedestal Shadow */}
                 <div
@@ -396,14 +397,13 @@ export const ProductQuickViewModal: React.FC = () => {
                 <LazyImage
                   src={images[selectedImageIndex] || images[0]}
                   alt={`${product.name} - ${product.brand} interactive 3D view at ON AlAA STORE Lebanon`}
-                  width={500}
-                  height={500}
                   priority={true}
+                  wrapperClassName="w-full h-full flex items-center justify-center"
                   style={{
                     transform: 'translateZ(40px)',
                     filter: 'drop-shadow(0 20px 25px rgba(0,0,0,0.22))',
                   }}
-                  className="max-h-64 sm:max-h-76 w-auto object-contain pointer-events-none transition-all duration-300"
+                  className="max-h-full max-w-full w-auto h-auto object-contain pointer-events-none transition-all duration-300"
                 />
 
                 {/* Specular Light Reflection / Glare Overlay */}
@@ -869,6 +869,10 @@ export const ProductQuickViewModal: React.FC = () => {
                   <span>{lang === 'ar' ? 'شراء فوري مباشر ⚡' : 'Direct Order ⚡'}</span>
                 </button>
               </div>
+
+              {isOutOfStock && (
+                <NotifyMeControl product={product} lang={lang} variant="panel" />
+              )}
 
               {/* WhatsApp Fast Inquiry Button with Real 3D Icon */}
               <button

@@ -51,6 +51,9 @@ export const VideoShowcase: React.FC = () => {
                   <LazyImage
                     src={video.thumbnail}
                     alt={video.title}
+                    width={640}
+                    height={360}
+                    responsiveSizes="(max-width: 768px) 100vw, 33vw"
                     priority={false}
                     wrapperClassName="w-full h-full"
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-90 group-hover:opacity-100"
@@ -150,6 +153,10 @@ export const VideoShowcase: React.FC = () => {
             <div className="relative aspect-video bg-black">
               <video
                 src={activeVideo.videoUrl}
+                poster={activeVideo.thumbnail}
+                width={1280}
+                height={720}
+                preload="metadata"
                 controls
                 autoPlay
                 className="w-full h-full object-contain"

@@ -23,6 +23,8 @@ import { LazyImage } from '../components/LazyImage';
 import { openExternalUrl } from '../utils/navigation';
 import { getProductBadges, hasProductDiscount } from '../utils/productBadgeHelpers';
 import { addProductReview } from '../services/storageService';
+import { resolveFullResolutionImageUrl } from '../utils/imageResolutionHelpers';
+import { NotifyMeControl } from '../components/NotifyMeControl';
 
 export const ProductDetailPage: React.FC = () => {
   const {
@@ -180,11 +182,9 @@ export const ProductDetailPage: React.FC = () => {
               <LazyImage
                 src={product.images[activeImageIndex] || product.images[0]}
                 alt={`${product.name} - ${product.brand} authentic tech at ON AlAA STORE Lebanon`}
-                width={500}
-                height={500}
                 priority={true}
-                wrapperClassName="max-h-full max-w-full flex items-center justify-center"
-                className="max-h-full max-w-full object-contain select-none"
+                wrapperClassName="w-full h-full flex items-center justify-center"
+                className="max-h-full max-w-full w-auto h-auto object-contain select-none"
               />
 
               {/* Magnified Lens Portal */}
@@ -192,7 +192,7 @@ export const ProductDetailPage: React.FC = () => {
                 <div
                   className="absolute inset-0 pointer-events-none rounded-3xl overflow-hidden hidden md:block bg-no-repeat bg-cover z-20"
                   style={{
-                    backgroundImage: `url(${product.images[activeImageIndex] || product.images[0]})`,
+                    backgroundImage: `url(${resolveFullResolutionImageUrl(product.images[activeImageIndex] || product.images[0])})`,
                     backgroundPosition: `${zoomStyle.x}% ${zoomStyle.y}%`,
                     backgroundSize: '220%',
                   }}
@@ -504,6 +504,10 @@ export const ProductDetailPage: React.FC = () => {
                   <span>{t.buyNow}</span>
                 </button>
               </div>
+
+              {isOutOfStock && (
+                <NotifyMeControl product={product} lang={lang} variant="panel" />
+              )}
 
               {/* WhatsApp direct inquiry button with Real 3D WhatsApp Icon */}
               <button

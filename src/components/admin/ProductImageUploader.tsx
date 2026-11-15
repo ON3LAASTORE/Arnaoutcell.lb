@@ -34,9 +34,8 @@ export default function ProductImageUploader({
     setFileName(file.name);
 
     optimizeUploadedImage(file, {
-      maxDimension: 1200,
-      maxDataUrlLength: 320_000,
-      initialQuality: 0.84,
+      maxDimension: 3840,
+      preserveOriginal: true,
     })
       .then((base64String) => {
         setImageBase64(base64String);

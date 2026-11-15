@@ -3,6 +3,7 @@ import { useShop } from '../../context/ShopContext';
 import { useAdmin } from '../../context/AdminContext';
 import { Product, ProductSpec } from '../../types';
 import { saveProduct, deleteProduct, readFileAsDataUrl } from '../../services/storageService';
+import { maybeTriggerRestockNotifications } from '../../services/stockNotificationService';
 import {
   Plus,
   Search,
@@ -14,6 +15,7 @@ import {
 } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
 import ProductImageUploader from './ProductImageUploader';
+import { DEFAULT_FULL_RES_FALLBACK_IMAGE, resolveFullResolutionImageUrl } from '../../utils/imageResolutionHelpers';
 
 interface AdminProductsProps {
   onShareProduct?: (productId: string) => void;
@@ -80,7 +82,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormPrice(89);
     setFormStock(15);
     setFormLowStockThreshold(3);
-    setFormImages(['https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=800']);
+    setFormImages([DEFAULT_FULL_RES_FALLBACK_IMAGE]);
     setFormVideoUrl('');
     setFormDesc('');
     setFormDescAr('');
@@ -141,7 +143,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
 
   const handleAddImageUrl = () => {
     if (newImageUrl.trim()) {
-      setFormImages((prev) => [...prev, newImageUrl.trim()]);
+      setFormImages((prev) => [...prev, resolveFullResolutionImageUrl(newImageUrl.trim())]);
       setNewImageUrl('');
     }
   };
@@ -201,8 +203,8 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
       lowStockThreshold: formLowStockThreshold,
       images:
         formImages.length > 0
-          ? formImages
-          : ['https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=800'],
+          ? formImages.map((img) => resolveFullResolutionImageUrl(img))
+          : [DEFAULT_FULL_RES_FALLBACK_IMAGE],
       videoUrl: formVideoUrl.trim() || undefined,
       description: formDesc.trim() || 'Genuine device with full Lebanese store warranty from ON AlAA STORE (Chouf) and express delivery to all Lebanon.',
       descriptionAr:
@@ -220,6 +222,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
       createdAt: editingProduct ? editingProduct.createdAt : new Date().toISOString(),
     };
 
+    const previousStock = editingProduct ? editingProduct.stock : savedProduct.stock;
     saveProduct(savedProduct);
     refreshData();
     setIsModalOpen(false);
@@ -227,7 +230,23 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
       type: 'success',
       msg: `Product "${savedProduct.name}" saved and live in database.`,
     });
-    setTimeout(() => setFeedback(null), 3500);
+
+    if (editingProduct) {
+      maybeTriggerRestockNotifications(previousStock, savedProduct)
+        .then((dispatchResult) => {
+          if (dispatchResult && dispatchResult.dispatchedCount > 0) {
+            setFeedback({
+              type: 'success',
+              msg: `Product "${savedProduct.name}" restocked — Automated alert sent to ${dispatchResult.dispatchedCount} waiting subscriber(s)!`,
+            });
+          }
+        })
+        .catch(() => {
+          // Non-critical
+        });
+    }
+
+    setTimeout(() => setFeedback(null), 4500);
   };
 
   const handleDelete = (id: string, name: string) => {

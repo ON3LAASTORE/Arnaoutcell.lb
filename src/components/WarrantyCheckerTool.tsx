@@ -18,9 +18,13 @@ import {
 } from 'lucide-react';
 import { useShop } from '../context/ShopContext';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
-import { WarrantyQrScannerModal } from './WarrantyQrScannerModal';
+import { LazyImage } from './LazyImage';
 import { lookupWarrantyInFirestore } from '../services/warrantyFirestoreService';
 import { parseScannedWarrantyCode } from '../utils/qrPayloadParser';
+
+const WarrantyQrScannerModal = React.lazy(() =>
+  import('./WarrantyQrScannerModal').then((m) => ({ default: m.WarrantyQrScannerModal }))
+);
 import {
   SAMPLE_WARRANTY_LOOKUPS,
   WarrantyCoverageStatus,
@@ -571,10 +575,13 @@ export const WarrantyCheckerTool: React.FC = () => {
                         <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                           <div className="flex items-start gap-3.5 min-w-0">
                             {item.image && (
-                              <img
+                              <LazyImage
                                 src={item.image}
                                 alt={displayName}
-                                className="w-14 h-14 rounded-xl object-cover border border-[#DCE5F0] dark:border-[#1E293B] bg-[#F8FAFC] shrink-0"
+                                width={56}
+                                height={56}
+                                wrapperClassName="w-14 h-14 rounded-xl overflow-hidden border border-[#DCE5F0] dark:border-[#1E293B] bg-[#F8FAFC] shrink-0"
+                                className="w-full h-full object-cover"
                               />
                             )}
                             <div className="min-w-0 space-y-1">
@@ -891,12 +898,16 @@ export const WarrantyCheckerTool: React.FC = () => {
         )}
       </div>
 
-      <WarrantyQrScannerModal
-        isOpen={isScannerOpen}
-        onClose={() => setIsScannerOpen(false)}
-        onDetected={handleQrDetected}
-        lang={lang}
-      />
+      {isScannerOpen && (
+        <React.Suspense fallback={null}>
+          <WarrantyQrScannerModal
+            isOpen={isScannerOpen}
+            onClose={() => setIsScannerOpen(false)}
+            onDetected={handleQrDetected}
+            lang={lang}
+          />
+        </React.Suspense>
+      )}
     </section>
   );
 };

@@ -138,13 +138,13 @@ export const SpecialOffersColumn: React.FC = () => {
         {/* Dynamic Offer Products Grid */}
         {filteredOffers.length > 0 ? (
           <ReactBitsColumns columns={4} showDividers={false}>
-            {filteredOffers.map((product, idx) => (
+            {filteredOffers.map((product) => (
               <ProductCard
                 key={product.id}
                 product={product}
                 layout="grid"
                 showOfferDetails={true}
-                priority={idx < 2}
+                priority={false}
               />
             ))}
           </ReactBitsColumns>

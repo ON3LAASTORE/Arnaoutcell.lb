@@ -20,6 +20,7 @@ import {
 } from '../utils/storeLocatorHelpers';
 import { useShop } from '../context/ShopContext';
 import { resolveStoreLogoUrl } from '../utils/storeSettingsHelpers';
+import { LazyImage } from './LazyImage';
 
 interface StoreLocationModalProps {
   isOpen: boolean;
@@ -101,9 +102,13 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({ isOpen, 
 
           <div className="flex items-center gap-4 pr-10 rtl:pr-0 rtl:pl-10">
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-[#000000] p-[2px] border border-blue-400/55 ring-1 ring-white/25 shadow-[0_0_18px_rgba(0,122,255,0.45)] shrink-0 flex items-center justify-center">
-              <img
+              <LazyImage
                 src={resolveStoreLogoUrl(storeSettings.logoUrl)}
                 alt={storeSettings.storeName || 'ON AlAA STORE'}
+                width={64}
+                height={64}
+                priority={true}
+                wrapperClassName="w-full h-full rounded-full overflow-hidden"
                 className="w-full h-full rounded-full object-contain object-center"
               />
             </div>

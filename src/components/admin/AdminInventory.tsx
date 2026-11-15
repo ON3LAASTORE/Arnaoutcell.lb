@@ -1,9 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { useAdmin } from '../../context/AdminContext';
 import { saveProduct } from '../../services/storageService';
+import {
+  fetchStockNotificationsOverview,
+  maybeTriggerRestockNotifications,
+  RestockDispatchLogEntry,
+  StockNotificationRecord,
+} from '../../services/stockNotificationService';
 import { Product } from '../../types';
-import { Warehouse, AlertTriangle, Search } from 'lucide-react';
+import { Warehouse, AlertTriangle, Search, BellRing, MailCheck, Send } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
 
 export const AdminInventory: React.FC = () => {
@@ -14,17 +20,42 @@ export const AdminInventory: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [feedback, setFeedback] = useState('');
+  const [subscriptions, setSubscriptions] = useState<StockNotificationRecord[]>([]);
+  const [dispatchLogs, setDispatchLogs] = useState<RestockDispatchLogEntry[]>([]);
 
-  const handleAdjustStock = (product: Product, delta: number) => {
-    const newStock = Math.max(0, product.stock + delta);
+  const loadNotificationsOverview = useCallback(async () => {
+    const overview = await fetchStockNotificationsOverview();
+    setSubscriptions(overview.subscriptions);
+    setDispatchLogs(overview.logs);
+  }, []);
+
+  useEffect(() => {
+    loadNotificationsOverview();
+  }, [loadNotificationsOverview]);
+
+  const handleAdjustStock = async (product: Product, delta: number) => {
+    const previousStock = product.stock;
+    const newStock = Math.max(0, previousStock + delta);
     const updated: Product = {
       ...product,
       stock: newStock,
     };
     saveProduct(updated);
     refreshData();
-    setFeedback(`Updated stock for ${product.name} to ${newStock} units`);
-    setTimeout(() => setFeedback(''), 3000);
+
+    const dispatchResult = await maybeTriggerRestockNotifications(previousStock, updated);
+    await loadNotificationsOverview();
+
+    if (dispatchResult && dispatchResult.dispatchedCount > 0) {
+      setFeedback(
+        lang === 'ar'
+          ? `تم تحديث مخزون ${product.name} إلى ${newStock} قطعة — تم إرسال تنبيه التوفر تلقائياً إلى ${dispatchResult.dispatchedCount} عملاء.`
+          : `Updated stock for ${product.name} to ${newStock} units — Automated restock update sent to ${dispatchResult.dispatchedCount} waiting subscriber(s)!`
+      );
+    } else {
+      setFeedback(`Updated stock for ${product.name} to ${newStock} units`);
+    }
+    setTimeout(() => setFeedback(''), 5000);
   };
 
   const filtered = products.filter((p) => {
@@ -37,6 +68,13 @@ export const AdminInventory: React.FC = () => {
   });
 
   const lowStockCount = products.filter((p) => p.stock <= (p.lowStockThreshold || 3)).length;
+  const pendingCountByProduct = subscriptions.reduce<Record<string, number>>((acc, item) => {
+    if (item.status === 'pending') {
+      acc[item.productId] = (acc[item.productId] || 0) + 1;
+    }
+    return acc;
+  }, {});
+  const totalPendingAlerts = subscriptions.filter((s) => s.status === 'pending').length;
 
   return (
     <div className="space-y-6">
@@ -49,22 +87,38 @@ export const AdminInventory: React.FC = () => {
           </h1>
           <p className="text-xs text-[#64748B] mt-1">
             {lang === 'ar'
-              ? 'مراقبة كميات الأجهزة الحقيقية، تنبيهات النقص، وتعديل كميات الشحن والاستلام.'
-              : 'Monitor real stock levels, low-quantity triggers, and rapid warehouse adjustments.'}
+              ? 'مراقبة كميات الأجهزة الحقيقية، تنبيهات النقص، وإرسال إشعارات إعادة التوفر التلقائية.'
+              : 'Monitor real stock levels, low-quantity triggers, and automated customer restock email alerts.'}
           </p>
         </div>
 
-        {lowStockCount > 0 && (
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold self-start sm:self-auto">
-            <AlertTriangle className="w-4 h-4 text-amber-600" />
-            <span>{lowStockCount} {lang === 'ar' ? 'منتجات تحتاج لإعادة تزويد' : 'Products need Restock'}</span>
-          </div>
-        )}
+        <div className="flex flex-wrap items-center gap-2">
+          {totalPendingAlerts > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-[#007AFF] text-xs font-bold">
+              <BellRing className="w-4 h-4" />
+              <span>
+                {totalPendingAlerts}{' '}
+                {lang === 'ar' ? 'طلبات تنبيه بانتظار التوفر' : 'Waiting Restock Alerts'}
+              </span>
+            </div>
+          )}
+
+          {lowStockCount > 0 && (
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 text-xs font-bold">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <span>{lowStockCount} {lang === 'ar' ? 'منتجات تحتاج لإعادة تزويد' : 'Products need Restock'}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {feedback && (
-        <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-[#16A34A] text-xs font-semibold">
-          {feedback}
+        <div
+          role="status"
+          className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[#16A34A] text-xs font-semibold flex items-center gap-2"
+        >
+          <MailCheck className="w-4 h-4 flex-shrink-0" />
+          <span>{feedback}</span>
         </div>
       )}
 
@@ -104,6 +158,7 @@ export const AdminInventory: React.FC = () => {
                 <th className="py-3 px-4">Item Details</th>
                 <th className="py-3 px-4">SKU / Barcode</th>
                 <th className="py-3 px-4">Current Stock</th>
+                <th className="py-3 px-4">Restock Queue</th>
                 <th className="py-3 px-4">Threshold</th>
                 <th className="py-3 px-4 text-right rtl:text-left">Quick Stock Adjust</th>
               </tr>
@@ -112,6 +167,7 @@ export const AdminInventory: React.FC = () => {
               {filtered.map((p) => {
                 const isLow = p.stock <= (p.lowStockThreshold || 3);
                 const isOut = p.stock <= 0;
+                const waitingCount = pendingCountByProduct[p.id] || 0;
 
                 return (
                   <tr key={p.id} className="hover:bg-[#F5F8FC] transition-colors">
@@ -145,6 +201,17 @@ export const AdminInventory: React.FC = () => {
                       )}
                     </td>
 
+                    <td className="py-3 px-4">
+                      {waitingCount > 0 ? (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 border border-blue-200 text-[#007AFF] text-[10px] font-bold">
+                          <BellRing className="w-3 h-3" />
+                          {waitingCount} waiting
+                        </span>
+                      ) : (
+                        <span className="text-[11px] text-[#94A3B8]">0 waiting</span>
+                      )}
+                    </td>
+
                     <td className="py-3 px-4 text-[#64748B] font-mono">
                       ≤ {p.lowStockThreshold || 3}
                     </td>
@@ -152,22 +219,28 @@ export const AdminInventory: React.FC = () => {
                     <td className="py-3 px-4 text-right rtl:text-left">
                       <div className="flex items-center justify-end gap-1.5 font-mono">
                         <button
+                          type="button"
                           onClick={() => handleAdjustStock(p, -1)}
-                          className="px-2.5 py-1 rounded-lg bg-[#F5F8FC] hover:bg-slate-200 border border-[#DCE5F0] text-[#172033] font-bold"
+                          aria-label={`Deduct 1 unit from ${p.name}`}
+                          className="px-2.5 py-1 rounded-lg bg-[#F5F8FC] hover:bg-slate-200 border border-[#DCE5F0] text-[#172033] font-bold cursor-pointer"
                           title="Deduct 1"
                         >
                           -1
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleAdjustStock(p, 5)}
-                          className="px-2.5 py-1 rounded-lg bg-[#EAF3FF] hover:bg-[#007AFF] hover:text-white border border-[#BAE6FD] text-[#007AFF] font-bold transition-colors"
+                          aria-label={`Restock 5 units for ${p.name}`}
+                          className="px-2.5 py-1 rounded-lg bg-[#EAF3FF] hover:bg-[#007AFF] hover:text-white border border-[#BAE6FD] text-[#007AFF] font-bold transition-colors cursor-pointer"
                           title="Restock 5"
                         >
                           +5
                         </button>
                         <button
+                          type="button"
                           onClick={() => handleAdjustStock(p, 10)}
-                          className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-[#16A34A] hover:text-white border border-emerald-200 text-[#16A34A] font-bold transition-colors"
+                          aria-label={`Restock 10 units for ${p.name}`}
+                          className="px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-[#16A34A] hover:text-white border border-emerald-200 text-[#16A34A] font-bold transition-colors cursor-pointer"
                           title="Restock 10"
                         >
                           +10
@@ -181,6 +254,75 @@ export const AdminInventory: React.FC = () => {
           </table>
         </div>
       </div>
+
+      {/* Restock Notification Subscriptions & Automated Dispatch Log */}
+      {(subscriptions.length > 0 || dispatchLogs.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="rounded-2xl border border-[#DCE5F0] bg-white p-4 space-y-3 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-black text-[#172033] flex items-center gap-2">
+                <BellRing className="w-4 h-4 text-[#007AFF]" />
+                <span>{lang === 'ar' ? 'قائمة انتظار توفر المنتجات' : 'Restock Email Alert Queue'}</span>
+              </h2>
+              <span className="text-[11px] font-bold text-[#64748B]">{subscriptions.length} total</span>
+            </div>
+
+            <div className="divide-y divide-[#DCE5F0] max-h-60 overflow-y-auto">
+              {subscriptions.map((sub) => (
+                <div key={sub.id} className="py-2.5 flex items-center justify-between gap-3 text-xs">
+                  <div className="min-w-0">
+                    <div className="font-bold text-[#172033] truncate">{sub.email}</div>
+                    <div className="text-[11px] text-[#64748B] truncate">{sub.productName}</div>
+                  </div>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex-shrink-0 ${
+                      sub.status === 'notified'
+                        ? 'bg-emerald-50 text-[#16A34A] border border-emerald-200'
+                        : 'bg-amber-50 text-amber-700 border border-amber-200'
+                    }`}
+                  >
+                    {sub.status === 'notified' ? 'Notified' : 'Pending'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#DCE5F0] bg-white p-4 space-y-3 shadow-xs">
+            <div className="flex items-center justify-between">
+              <h2 className="text-sm font-black text-[#172033] flex items-center gap-2">
+                <Send className="w-4 h-4 text-[#16A34A]" />
+                <span>{lang === 'ar' ? 'سجل الإشعارات التلقائية المرسلة' : 'Automated Restock Dispatch Log'}</span>
+              </h2>
+              <span className="text-[11px] font-bold text-[#64748B]">{dispatchLogs.length} sent</span>
+            </div>
+
+            {dispatchLogs.length === 0 ? (
+              <p className="text-xs text-[#64748B] py-4">
+                {lang === 'ar'
+                  ? 'سيتم إرسال البريد الإلكتروني تلقائياً بمجرد إعادة تزويد المخزون لأي منتج غير متوفر.'
+                  : 'Automated updates will appear here whenever an out-of-stock item is restocked.'}
+              </p>
+            ) : (
+              <div className="divide-y divide-[#DCE5F0] max-h-60 overflow-y-auto">
+                {dispatchLogs.map((log) => (
+                  <div key={log.id} className="py-2.5 space-y-1 text-xs">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-bold text-[#172033] truncate">{log.productName}</span>
+                      <span className="text-[10px] font-bold text-[#16A34A] bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        {log.recipientCount} notified
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-[#64748B] truncate">
+                      {log.emails.join(', ')}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

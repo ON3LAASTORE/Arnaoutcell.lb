@@ -22,6 +22,7 @@ import {
   SafeStorageSetResult,
 } from '../utils/storageQuotaHelpers';
 import { optimizeUploadedImage } from '../utils/imageCompression';
+import { resolveFullResolutionImageUrl } from '../utils/imageResolutionHelpers';
 
 const memoryStorageFallback = new Map<string, string>();
 
@@ -126,7 +127,7 @@ export function initStorage(): void {
             brand: 'Apple',
             price: 1249,
             quantity: 1,
-            image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80',
+            image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569',
             color: 'Desert Titanium',
           },
         ],
@@ -162,7 +163,7 @@ export function initStorage(): void {
             brand: 'Anker',
             price: 119,
             quantity: 1,
-            image: 'https://images.unsplash.com/photo-1609081219090-a6d81d3085bf?w=800&auto=format&fit=crop&q=80',
+            image: 'https://images.unsplash.com/photo-1609081219090-a6d81d3085bf',
           },
           {
             productId: 'prod-greenlionsmartwatch',
@@ -170,7 +171,7 @@ export function initStorage(): void {
             brand: 'Green Lion',
             price: 59,
             quantity: 1,
-            image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80',
+            image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30',
             color: 'Titanium Orange',
           },
         ],
@@ -205,7 +206,7 @@ export function initStorage(): void {
               brand: 'Sony',
               price: 319,
               quantity: 1,
-              image: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=800&auto=format&fit=crop&q=80',
+              image: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb',
               color: 'Midnight Blue',
             },
           ],
@@ -238,7 +239,7 @@ export function initStorage(): void {
               brand: 'Samsung',
               price: 1299,
               quantity: 1,
-              image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&auto=format&fit=crop&q=80',
+              image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c',
               color: 'Titanium Gray',
             },
           ],
@@ -287,7 +288,7 @@ export function initStorage(): void {
               brand: 'Sony',
               price: 319,
               quantity: 1,
-              image: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=800&auto=format&fit=crop&q=80',
+              image: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb',
               color: 'Midnight Blue',
             },
           ],
@@ -320,7 +321,7 @@ export function initStorage(): void {
               brand: 'Samsung',
               price: 1299,
               quantity: 1,
-              image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=800&auto=format&fit=crop&q=80',
+              image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c',
               color: 'Titanium Gray',
             },
           ],
@@ -371,7 +372,15 @@ export function getProducts(): Product[] {
     const parsed: Product[] = JSON.parse(raw);
     const existingIds = new Set(parsed.map((p) => p.id));
     let changed = false;
-    const merged = [...parsed];
+    const merged = parsed.map((p) => {
+      if (!Array.isArray(p.images)) return p;
+      const upgraded = p.images.map((img) => resolveFullResolutionImageUrl(img) || img);
+      if (upgraded.some((img, idx) => img !== p.images[idx])) {
+        changed = true;
+        return { ...p, images: upgraded };
+      }
+      return p;
+    });
     for (const initProd of INITIAL_PRODUCTS) {
       if (!existingIds.has(initProd.id)) {
         merged.push(initProd);
@@ -461,7 +470,14 @@ export function getBrands(): Brand[] {
     const parsed: Brand[] = JSON.parse(raw);
     const existingNames = new Set(parsed.map((b) => b.name.toLowerCase()));
     let changed = false;
-    const merged = [...parsed];
+    const merged = parsed.map((b) => {
+      const upgradedLogo = b.logo ? resolveFullResolutionImageUrl(b.logo) || b.logo : b.logo;
+      if (upgradedLogo !== b.logo) {
+        changed = true;
+        return { ...b, logo: upgradedLogo };
+      }
+      return b;
+    });
     for (const initBrand of INITIAL_BRANDS) {
       if (!existingNames.has(initBrand.name.toLowerCase())) {
         merged.push(initBrand);
@@ -486,7 +502,12 @@ export function saveBrands(brands: Brand[]): void {
 export function getMarketingVideos(): MarketingVideo[] {
   try {
     const raw = getStorageItem(KEYS.VIDEOS);
-    return raw ? JSON.parse(raw) : INITIAL_MARKETING_VIDEOS;
+    if (!raw) return INITIAL_MARKETING_VIDEOS;
+    const parsed: MarketingVideo[] = JSON.parse(raw);
+    return parsed.map((v) => ({
+      ...v,
+      thumbnail: resolveFullResolutionImageUrl(v.thumbnail) || v.thumbnail,
+    }));
   } catch {
     return INITIAL_MARKETING_VIDEOS;
   }
@@ -694,6 +715,12 @@ export function getStoreSettings(): StoreSettings {
     if (merged.heroSlides && merged.heroSlides.some((s) => s.titleEn && (s.titleEn.includes('SAIDA') || s.titleEn.includes('ON 3LAA')))) {
       merged.heroSlides = INITIAL_STORE_SETTINGS.heroSlides;
     }
+    if (Array.isArray(merged.heroSlides)) {
+      merged.heroSlides = merged.heroSlides.map((slide) => ({
+        ...slide,
+        image: slide.image ? resolveFullResolutionImageUrl(slide.image) || slide.image : slide.image,
+      }));
+    }
     // Ensure schedule & display strings migrate off legacy Saida / 8:00 AM / 17-hour text
     if (!merged.openingHoursEn || hasLegacyScheduleText(merged.openingHoursEn)) {
       merged.openingHoursEn = INITIAL_STORE_SETTINGS.openingHoursEn;
@@ -728,16 +755,15 @@ export function saveAnnouncementBar(bar: StoreSettings['announcementBar']): void
   saveStoreSettings(settings);
 }
 
-// File / Image reading helper with automatic canvas compression to stay within browser storage quota
+// File / Image reading helper preserving original full 4K resolution without downscaling or lossy compression
 export function readFileAsDataUrl(file: File): Promise<string> {
   // 10MB limit check
   if (file.size > 10 * 1024 * 1024) {
     return Promise.reject(new Error('File exceeds maximum size of 10MB'));
   }
   return optimizeUploadedImage(file, {
-    maxDimension: 1200,
-    maxDataUrlLength: 320_000,
-    initialQuality: 0.84,
+    maxDimension: 3840,
+    preserveOriginal: true,
   });
 }
 

@@ -190,12 +190,11 @@ export const AdminSettings: React.FC = () => {
       };
       reader.readAsText(file);
     } else {
-      // Normal raster formats: PNG, JPG, WebP — automatically optimize to keep browser storage fast & quota-safe
+      // Normal raster formats: PNG, JPG, WebP — preserve full 4K resolution without downscaling or compression
       setUploadProgress(45);
       optimizeUploadedImage(file, {
-        maxDimension: 512,
-        maxDataUrlLength: 220_000,
-        initialQuality: 0.88,
+        maxDimension: 3840,
+        preserveOriginal: true,
         preferPng: true,
       })
         .then((optimizedDataUrl) => {
@@ -1003,8 +1002,8 @@ export const AdminSettings: React.FC = () => {
                   </h3>
                   <p className="text-xs text-[#64748B] mt-0.5">
                     {lang === 'ar'
-                      ? 'قم بتعيين كلمة مرور قوية جديدة. يتم تشفير كلمة المرور فوراً باستخدام خوارزمية SHA-256 مع ملح عشوائي.'
-                      : 'Set a new strong password. Your password is immediately encrypted with salted SHA-256.'}
+                      ? 'قم بتعيين كلمة مرور قوية جديدة. يتم تشفير كلمة المرور فوراً باستخدام خوارزمية bcrypt الآمنة.'
+                      : 'Set a new strong password. Your password is immediately encrypted using salted bcrypt hashing.'}
                   </p>
                 </div>
               </div>

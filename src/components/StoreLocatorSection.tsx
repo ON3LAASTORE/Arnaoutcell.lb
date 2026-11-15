@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import { StoreStatusBadge } from './StoreStatusBadge';
+import { LazyImage } from './LazyImage';
 import {
   CHOUF_STORE_DATA,
   buildSendToPhoneUrl,
@@ -113,9 +114,12 @@ export const StoreLocatorSection: React.FC = () => {
               <div className="flex items-center justify-between border-b border-[#DCE5F0] dark:border-[#1E293B] pb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-13 h-13 rounded-full overflow-hidden bg-[#000000] p-[2px] border border-[#1E3A5F]/85 ring-1 ring-[#007AFF]/35 shadow-[0_0_14px_rgba(0,122,255,0.28)] shrink-0 flex items-center justify-center">
-                    <img
+                    <LazyImage
                       src={resolveStoreLogoUrl(storeSettings.logoUrl)}
                       alt={storeSettings.storeName || 'ON AlAA STORE'}
+                      width={52}
+                      height={52}
+                      wrapperClassName="w-full h-full rounded-full overflow-hidden"
                       className="w-full h-full rounded-full object-contain object-center"
                     />
                   </div>

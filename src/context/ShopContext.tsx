@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import {
   Product,
   Category,
@@ -34,13 +34,19 @@ import {
 } from '../utils/recentlyViewedHelpers';
 import { safeStorageSetItem } from '../utils/storageQuotaHelpers';
 import {
+  LANGUAGE_STORAGE_KEY,
+  DIRECTION_TRANSITION_DURATION_MS,
   applyDocumentLanguageDirection,
   normalizeLanguage,
+  readStoredLanguage,
+  persistStoredLanguage,
+  syncLanguageSettingImmediately,
 } from '../utils/languageToggleHelpers';
 
 interface ShopContextType {
   lang: Language;
   setLang: (lang: Language) => void;
+  isSwitchingLanguage: boolean;
   t: typeof translations.en;
   products: Product[];
   categories: Category[];
@@ -110,14 +116,16 @@ const ShopContext = createContext<ShopContextType | undefined>(undefined);
 export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [lang, setLangState] = useState<Language>(() => {
     if (typeof window !== 'undefined') {
-      try {
-        return normalizeLanguage(localStorage.getItem('arnaout_lang'));
-      } catch {
-        return 'en';
+      const initial = readStoredLanguage(window.localStorage);
+      if (typeof document !== 'undefined') {
+        applyDocumentLanguageDirection(initial, document.documentElement, document.body);
       }
+      return initial;
     }
     return 'en';
   });
+  const [isSwitchingLanguage, setIsSwitchingLanguage] = useState<boolean>(false);
+  const langTransitionTimerRef = useRef<number | null>(null);
 
   // Dark Mode Theme State & Persistence
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
@@ -278,13 +286,36 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
-  // Update HTML direction and .rtl class when language changes
+  // Keep HTML lang, dir, .rtl/.dir-transitioning classes, and localStorage synchronized globally
   useEffect(() => {
     if (typeof document !== 'undefined') {
-      applyDocumentLanguageDirection(lang, document.documentElement, document.body);
+      applyDocumentLanguageDirection(lang, document.documentElement, document.body, {
+        isTransitioning: isSwitchingLanguage,
+      });
     }
-    safeStorageSetItem(typeof window !== 'undefined' ? window.localStorage : null, 'arnaout_lang', lang);
-  }, [lang]);
+    persistStoredLanguage(typeof window !== 'undefined' ? window.localStorage : null, lang);
+  }, [lang, isSwitchingLanguage]);
+
+  // Synchronize language setting across tabs/windows when storage changes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === LANGUAGE_STORAGE_KEY && event.newValue) {
+        const synced = normalizeLanguage(event.newValue);
+        setLangState(synced);
+        if (typeof document !== 'undefined') {
+          applyDocumentLanguageDirection(synced, document.documentElement, document.body);
+        }
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      if (langTransitionTimerRef.current !== null) {
+        window.clearTimeout(langTransitionTimerRef.current);
+      }
+    };
+  }, []);
 
   // Persist cart
   useEffect(() => {
@@ -325,7 +356,41 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const recentlyViewedProducts = resolveRecentlyViewedProducts(recentlyViewedIds, products);
 
   const setLang = (newLang: Language) => {
-    setLangState(newLang);
+    const normalized = normalizeLanguage(newLang);
+    if (normalized === lang) {
+      // Still guarantee storage and document lang remain in sync if externally modified
+      syncLanguageSettingImmediately({
+        nextLang: normalized,
+        storage: typeof window !== 'undefined' ? window.localStorage : null,
+        htmlEl: typeof document !== 'undefined' ? document.documentElement : null,
+        bodyEl: typeof document !== 'undefined' ? document.body : null,
+      });
+      return;
+    }
+
+    // Persist in localStorage and update html[lang], dir, and .rtl immediately upon toggle
+    syncLanguageSettingImmediately({
+      nextLang: normalized,
+      storage: typeof window !== 'undefined' ? window.localStorage : null,
+      htmlEl: typeof document !== 'undefined' ? document.documentElement : null,
+      bodyEl: typeof document !== 'undefined' ? document.body : null,
+      isTransitioning: true,
+    });
+
+    setIsSwitchingLanguage(true);
+    setLangState(normalized);
+
+    if (typeof window !== 'undefined') {
+      if (langTransitionTimerRef.current !== null) {
+        window.clearTimeout(langTransitionTimerRef.current);
+      }
+      langTransitionTimerRef.current = window.setTimeout(() => {
+        setIsSwitchingLanguage(false);
+        langTransitionTimerRef.current = null;
+      }, DIRECTION_TRANSITION_DURATION_MS);
+    } else {
+      setIsSwitchingLanguage(false);
+    }
   };
 
   const refreshData = () => {
@@ -493,6 +558,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       value={{
         lang,
         setLang,
+        isSwitchingLanguage,
         t,
         products,
         categories,

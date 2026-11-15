@@ -6,3 +6,6 @@ coverage/
 *.log
 .env*
 !.env.example
+.admin_credentials.json
+.social_credentials.json
+.restock_notifications.json

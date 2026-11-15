@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useShop } from '../context/ShopContext';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
@@ -8,18 +8,10 @@ import { openExternalUrl } from '../utils/navigation';
 export const FloatingWhatsAppButton: React.FC = () => {
   const { lang, storeSettings } = useShop();
   const [isHovered, setIsHovered] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(true);
+  const [showTooltip, setShowTooltip] = useState(false);
   const [tilt, setTilt] = useState({ x: 0, y: 0 });
   const [glare, setGlare] = useState({ x: 30, y: 30, opacity: 0.3 });
   const buttonRef = useRef<HTMLDivElement>(null);
-
-  // Auto-dismiss initial tooltip after 8 seconds if untouched
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowTooltip(false);
-    }, 8000);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Mouse move handler for realistic 3D perspective tilt & specular reflection
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -76,9 +68,9 @@ export const FloatingWhatsAppButton: React.FC = () => {
             initial={{ opacity: 0, scale: 0.85, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.85, y: 10 }}
-            transition={{ duration: 0.25, ease: 'easeOut' }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
             onClick={handleWhatsAppClick}
-            className="cursor-pointer max-w-xs p-3.5 rounded-2xl bg-white/95 dark:bg-[#0E172A]/95 backdrop-blur-xl border border-emerald-500/30 dark:border-emerald-500/40 shadow-[0_12px_35px_-5px_rgba(18,140,126,0.35)] dark:shadow-[0_12px_35px_-5px_rgba(0,0,0,0.6)] mb-1"
+            className="cursor-pointer w-64 p-3.5 rounded-2xl bg-white/95 dark:bg-[#0E172A]/95 backdrop-blur-xl border border-emerald-500/30 dark:border-emerald-500/40 shadow-[0_12px_35px_-5px_rgba(18,140,126,0.35)] dark:shadow-[0_12px_35px_-5px_rgba(0,0,0,0.6)] mb-1"
           >
             <div className="flex items-start justify-between gap-2 mb-1">
               <div className="flex items-center gap-1.5">

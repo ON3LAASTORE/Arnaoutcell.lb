@@ -174,7 +174,7 @@ export const SocialPostHistory: React.FC<SocialPostHistoryProps> = ({ onEditPost
                 {/* Product Info & Thumbnail */}
                 <div className="flex items-start gap-3">
                   <LazyImage
-                    src={post.productImage || 'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=800'}
+                    src={post.productImage || 'https://images.unsplash.com/photo-1598327105666-5b89351aff97'}
                     alt={post.productName}
                     width={56}
                     height={56}

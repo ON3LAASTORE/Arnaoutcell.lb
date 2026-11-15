@@ -60,6 +60,12 @@
     overflow-x: hidden;
   }
 
+  img {
+    image-rendering: high-quality;
+    max-width: 100%;
+    height: auto;
+  }
+
   .dark body, html.dark body {
     background-color: #0A0F1D;
     color: #F8FAFC;
@@ -80,6 +86,51 @@
   .rtl [dir="ltr"] {
     direction: ltr;
     unicode-bidi: isolate;
+  }
+
+  @keyframes dirSwitchSettleRtl {
+    0% {
+      opacity: 0.88;
+      transform: translateX(-10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  @keyframes dirSwitchSettleLtr {
+    0% {
+      opacity: 0.88;
+      transform: translateX(10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .dir-transitioning {
+    transition: opacity 260ms cubic-bezier(0.16, 1, 0.3, 1), transform 300ms cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+  }
+
+  .rtl-switch-enter {
+    animation: dirSwitchSettleRtl 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  .ltr-switch-enter {
+    animation: dirSwitchSettleLtr 300ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .dir-transitioning,
+    .rtl-switch-enter,
+    .ltr-switch-enter {
+      animation: none !important;
+      transition: none !important;
+      transform: none !important;
+    }
   }
 }
 
@@ -215,6 +266,7 @@
 .product-card-image {
   object-fit: contain !important;
   object-position: center !important;
+  image-rendering: high-quality;
   background-color: #FFFFFF;
   border-radius: 1rem; /* rounded-2xl to match app design system */
   animation: productCardImageFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;

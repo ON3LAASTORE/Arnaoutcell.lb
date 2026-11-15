@@ -139,12 +139,13 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const trimmedUser = username.toLowerCase().trim();
     if (!trimmedUser) return false;
 
-    // Verify password securely if provided
-    if (password) {
-      const isValid = await verifyAdminPassword(password);
-      if (!isValid) {
-        return false;
-      }
+    // Always require and verify administrator password securely via backend bcrypt endpoint
+    if (!password) {
+      return false;
+    }
+    const isValid = await verifyAdminPassword(password);
+    if (!isValid) {
+      return false;
     }
 
     if (DEMO_USERS[trimmedUser]) {

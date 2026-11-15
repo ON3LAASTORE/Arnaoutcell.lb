@@ -268,10 +268,8 @@ export const ProductCompareModal: React.FC = () => {
                       {/* Product Thumbnail */}
                       <div className="w-full h-32 rounded-2xl bg-white dark:bg-[#070C16] border border-[#DCE5F0]/80 dark:border-[#1E293B] p-2 flex items-center justify-center mb-2">
                         <LazyImage
-                          src={product.images[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=300'}
+                          src={product.images[0] || 'https://images.unsplash.com/photo-1598327105666-5b89351aff97'}
                           alt={product.name}
-                          width={200}
-                          height={120}
                           priority={true}
                           wrapperClassName="w-full h-full flex items-center justify-center"
                           className="w-full h-full object-contain"
@@ -390,10 +388,8 @@ export const ProductCompareModal: React.FC = () => {
                             className="w-full p-2 rounded-xl hover:bg-[#F5F8FC] dark:hover:bg-[#1A253C] flex items-center gap-2 text-left rtl:text-right transition-colors cursor-pointer"
                           >
                             <LazyImage
-                              src={cand.images[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=80'}
+                              src={cand.images[0] || 'https://images.unsplash.com/photo-1598327105666-5b89351aff97'}
                               alt={cand.name}
-                              width={32}
-                              height={32}
                               priority={false}
                               wrapperClassName="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-white"
                               className="w-full h-full object-contain"

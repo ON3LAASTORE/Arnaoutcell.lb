@@ -54,10 +54,8 @@ export const CompareFloatingBar: React.FC = () => {
                 title={isArabic ? product.nameAr || product.name : product.name}
               >
                 <LazyImage
-                  src={product.images[0] || 'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=100'}
+                  src={product.images[0] || 'https://images.unsplash.com/photo-1598327105666-5b89351aff97'}
                   alt={product.name}
-                  width={36}
-                  height={36}
                   priority={true}
                   wrapperClassName="w-full h-full flex items-center justify-center"
                   className="w-full h-full object-contain"

@@ -3,6 +3,7 @@ import { db, handleFirestoreError, OperationType } from '../firebase';
 import { collection, doc, setDoc, deleteDoc, getDocs, onSnapshot } from 'firebase/firestore';
 import { openExternalUrl } from '../utils/navigation';
 import { safeStorageSetItem } from '../utils/storageQuotaHelpers';
+import { resolveFullResolutionImageUrl } from '../utils/imageResolutionHelpers';
 
 const STORAGE_KEYS = {
   POSTS: 'arnaout_social_posts_v2',
@@ -119,7 +120,7 @@ export const INITIAL_MARKETING_POSTS: MarketingPost[] = [
     productPrice: 739,
     originalPrice: 790,
     discountPercentage: 6,
-    productImage: 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?w=800&auto=format&fit=crop&q=80',
+    productImage: 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd',
     aspectRatio: '1:1',
     templateStyle: 'coloros_purple',
     captionEn: '🔥 MEET THE ALL-NEW OPPO RENO 16 SERIES 5G at ON AlAA STORE!\n\nExperience 3D Pop Planet Design, HoloVerse 3D Tech, and 50MP Ultra-Wide Selfie Camera.\n\n💰 Cash USD: $739 (Was $790 - Save 6% OFF)\n🛡️ 12 Months Official Warranty\n🚚 Online Store in Chouf • Delivery Available to All Lebanon\n\n📲 Order via WhatsApp: https://wa.me/9613986718 (03 986 718)\n#ONAlAASTORE #OPPOLebanon #Reno16Series #Chouf #LebanonTech',
@@ -144,7 +145,7 @@ export const INITIAL_MARKETING_POSTS: MarketingPost[] = [
     productPrice: 1249,
     originalPrice: 1399,
     discountPercentage: 11,
-    productImage: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80',
+    productImage: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569',
     aspectRatio: '9:16',
     templateStyle: 'modern_dark',
     captionEn: '✨ Apple iPhone 16 Pro Max in Desert Titanium!\n\nPowered by A18 Pro chip with Apple Intelligence. Available online today at ON AlAA STORE (Chouf).\n\n💰 Best Cash USD Price: $1,249\n🛡️ 12 Months Official Warranty\n🚚 Delivery Available to All Lebanon\n\nWhatsApp: https://wa.me/9613986718 (03 986 718)\n#ONAlAASTORE #iPhone16ProMax #AppleLebanon #Chouf',
@@ -168,7 +169,10 @@ export function getSavedMarketingPosts(): MarketingPost[] {
       return INITIAL_MARKETING_POSTS;
     }
     const parsed: MarketingPost[] = JSON.parse(raw);
-    return parsed;
+    return parsed.map((post) => ({
+      ...post,
+      productImage: resolveFullResolutionImageUrl(post.productImage) || post.productImage,
+    }));
   } catch {
     return INITIAL_MARKETING_POSTS;
   }

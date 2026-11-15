@@ -75,14 +75,34 @@ export const HeroSection: React.FC = () => {
     }
   };
 
-  // Auto-play on mount
+  // Auto-play only while hero video is visible in viewport to save battery, CPU, and INP budget
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.muted = true;
-      videoRef.current.play().catch(() => {
+    const videoEl = videoRef.current;
+    if (!videoEl) return;
+    videoEl.muted = true;
+
+    if (typeof IntersectionObserver === 'undefined') {
+      videoEl.play().catch(() => {
         setIsPlaying(false);
       });
+      return;
     }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry || !videoRef.current) return;
+        if (entry.isIntersecting) {
+          videoRef.current.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        } else {
+          videoRef.current.pause();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    observer.observe(videoEl);
+    return () => observer.disconnect();
   }, []);
 
   const handleExploreReno = () => {
@@ -323,11 +343,13 @@ export const HeroSection: React.FC = () => {
                     {/* High Quality 9:16 Video Player */}
                     <video
                       ref={videoRef}
-                      autoPlay
+                      width={370}
+                      height={658}
+                      poster="/on-alaa-store-profile.png"
                       loop
                       muted={isMuted}
                       playsInline
-                      preload="auto"
+                      preload="metadata"
                       onLoadedData={() => setVideoLoaded(true)}
                       className="w-full h-full object-cover object-center cursor-pointer"
                       onClick={togglePlay}

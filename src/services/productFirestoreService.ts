@@ -9,6 +9,10 @@ import {
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { Product } from '../types';
 import { INITIAL_PRODUCTS } from '../data/initialData';
+import {
+  DEFAULT_FULL_RES_FALLBACK_IMAGE,
+  resolveFullResolutionImageUrl,
+} from '../utils/imageResolutionHelpers';
 
 const PRODUCTS_COLLECTION = 'products';
 
@@ -28,8 +32,8 @@ function cleanProductForFirestore(product: Product): Record<string, unknown> {
     stock: Number(product.stock) >= 0 ? Number(product.stock) : 0,
     lowStockThreshold: Number(product.lowStockThreshold) || 3,
     images: Array.isArray(product.images) && product.images.length > 0
-      ? product.images.slice(0, 20)
-      : ['https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=800'],
+      ? product.images.slice(0, 20).map((img) => resolveFullResolutionImageUrl(img) || img)
+      : [DEFAULT_FULL_RES_FALLBACK_IMAGE],
     description: product.description || 'Genuine device with official warranty.',
     warrantyMonths: Number(product.warrantyMonths) || 12,
     isPublished: product.isPublished !== false,
@@ -139,8 +143,8 @@ export function subscribeToLiveProducts(
           stock: Number(data.stock) ?? 10,
           lowStockThreshold: Number(data.lowStockThreshold) || 3,
           images: Array.isArray(data.images) && data.images.length > 0
-            ? data.images
-            : ['https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=800'],
+            ? data.images.map((img: string) => resolveFullResolutionImageUrl(img) || img)
+            : [DEFAULT_FULL_RES_FALLBACK_IMAGE],
           videoUrl: data.videoUrl || undefined,
           description: data.description || '',
           descriptionAr: data.descriptionAr || '',

@@ -61,7 +61,7 @@ export const AdminContent: React.FC = () => {
       videoUrl: videoUrl.trim(),
       thumbnail:
         videoThumbnail.trim() ||
-        'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=600&auto=format&fit=crop&q=80',
+        'https://images.unsplash.com/photo-1598327105666-5b89351aff97',
       description: videoDesc.trim(),
       linkedProductIds: videoLinkedProductId ? [videoLinkedProductId] : [],
       isFeatured: true,

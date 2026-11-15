@@ -1,24 +1,19 @@
 /**
  * ON AlAA STORE Security & Authentication Service
- * 
- * Implements cryptographically secure password hashing using Web Crypto API (SHA-256 + Salt).
- * Never stores or exposes plaintext passwords in browser storage, logs, or source code.
+ *
+ * Delegates administrator credential verification and rotation to the server-side
+ * bcrypt authentication controller (`/api/admin/auth/*`), which hashes the `.env`
+ * `ADMIN_PASSWORD` using bcrypt rather than storing or checking plaintext passwords
+ * in client code, browser storage, or databases.
  */
 
-import { safeStorageSetItem } from '../utils/storageQuotaHelpers';
+import bcrypt from 'bcryptjs';
 
-const AUTH_STORAGE_KEY = 'arnaout_admin_security_v2';
+const LEGACY_AUTH_STORAGE_KEY = 'arnaout_admin_security_v2';
 const SESSION_TOKEN_KEY = 'arnaout_admin_session_token';
 
-interface StoredAuthRecord {
-  salt: string;
-  hash: string;
-  updatedAt: string;
-}
-
-// Convert ArrayBuffer to Hex string
-function bufferToHex(buffer: ArrayBuffer): string {
-  const bytes = new Uint8Array(buffer);
+// Convert ArrayBuffer / Uint8Array to Hex string
+function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes)
     .map((b) => b.toString(16).padStart(2, '0'))
     .join('');
@@ -27,27 +22,26 @@ function bufferToHex(buffer: ArrayBuffer): string {
 // Generate cryptographically secure random salt
 export function generateSalt(length = 16): string {
   const randomBytes = new Uint8Array(length);
-  if (typeof window !== 'undefined' && window.crypto) {
-    window.crypto.getRandomValues(randomBytes);
+  if (typeof globalThis !== 'undefined' && globalThis.crypto?.getRandomValues) {
+    globalThis.crypto.getRandomValues(randomBytes);
   } else {
     for (let i = 0; i < length; i++) {
       randomBytes[i] = Math.floor(Math.random() * 256);
     }
   }
-  return bufferToHex(randomBytes.buffer);
+  return bytesToHex(randomBytes);
 }
 
-// Compute SHA-256 hash of salt + password
+// Compute cryptographic hash using salted SHA-256 (utility helper)
 export async function hashPasswordWithSalt(password: string, salt: string): Promise<string> {
   const enc = new TextEncoder();
-  const data = enc.encode(`${salt}:${password}:arnaout_store_secure_pepper`);
-  
-  if (typeof window !== 'undefined' && window.crypto && window.crypto.subtle) {
-    const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
-    return bufferToHex(hashBuffer);
+  const data = enc.encode(`${salt}:${password}:onalaa_store_secure_pepper`);
+
+  if (typeof globalThis !== 'undefined' && globalThis.crypto?.subtle) {
+    const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', data);
+    return bytesToHex(new Uint8Array(hashBuffer));
   }
 
-  // Fallback for non-browser/test environments if subtle crypto isn't available
   let hash = 0;
   const str = `${salt}:${password}`;
   for (let i = 0; i < str.length; i++) {
@@ -58,64 +52,64 @@ export async function hashPasswordWithSalt(password: string, salt: string): Prom
   return Math.abs(hash).toString(16).padStart(32, '0');
 }
 
-// Initial provisioned cryptographic record (Salted SHA-256 with pepper).
-// Never stores or exposes plaintext password anywhere in the codebase.
-const INITIAL_PROVISIONED_SALT = 'd9f2a78e41bc605389a024fe1c3b5d72';
-const INITIAL_PROVISIONED_HASH = '489da682dd786767c6c4c663f742098cc0b6feb788ae0b28af9acbd73f3889ee';
+// Bcrypt hashing helper
+export async function hashPasswordWithBcrypt(password: string, rounds = 12): Promise<string> {
+  return bcrypt.hash(password, rounds);
+}
+
+export async function verifyPasswordWithBcrypt(candidate: string, hash: string): Promise<boolean> {
+  if (!candidate || !hash) return false;
+  return bcrypt.compare(candidate, hash);
+}
 
 /**
- * Initializes secure credentials migration if not already set.
- * Migrates existing authorized administrator credential into a salted hash
- * so that authorized administrators are not locked out.
+ * Ensures any legacy client-side credential artifacts are removed and confirms
+ * server-side bcrypt auth store readiness.
  */
-export async function initializeAdminAuth(): Promise<StoredAuthRecord> {
-  if (typeof window === 'undefined') {
-    return {
-      salt: INITIAL_PROVISIONED_SALT,
-      hash: INITIAL_PROVISIONED_HASH,
-      updatedAt: new Date().toISOString(),
-    };
+export async function initializeAdminAuth(): Promise<{ initialized: boolean; algorithm: string }> {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.removeItem(LEGACY_AUTH_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+  }
+
+  if (typeof fetch === 'undefined') {
+    return { initialized: true, algorithm: 'bcrypt' };
   }
 
   try {
-    const existing = localStorage.getItem(AUTH_STORAGE_KEY);
-    if (existing) {
-      const parsed = JSON.parse(existing) as StoredAuthRecord;
-      if (parsed.salt && parsed.hash) {
-        return parsed;
-      }
+    const response = await fetch('/api/admin/auth/status', {
+      method: 'GET',
+      credentials: 'same-origin',
+    });
+    if (!response.ok) {
+      return { initialized: false, algorithm: 'bcrypt' };
     }
-
-    // Seed initial credential securely using precomputed cryptographic salted hash
-    const record: StoredAuthRecord = {
-      salt: INITIAL_PROVISIONED_SALT,
-      hash: INITIAL_PROVISIONED_HASH,
-      updatedAt: new Date().toISOString(),
-    };
-    safeStorageSetItem(window.localStorage, AUTH_STORAGE_KEY, JSON.stringify(record));
-    return record;
-  } catch (err) {
-    console.error('Failed to initialize admin auth', err);
-    return {
-      salt: INITIAL_PROVISIONED_SALT,
-      hash: INITIAL_PROVISIONED_HASH,
-      updatedAt: new Date().toISOString(),
-    };
+    return (await response.json()) as { initialized: boolean; algorithm: string };
+  } catch {
+    return { initialized: false, algorithm: 'bcrypt' };
   }
 }
 
 /**
- * Verifies if candidate password matches stored salted hash
+ * Verifies administrator candidate password against the backend bcrypt hash.
  */
 export async function verifyAdminPassword(candidate: string): Promise<boolean> {
-  if (!candidate) return false;
-  if (candidate === 'admin123' || candidate === 'admin' || candidate === 'Arnaout2027!') {
-    return true;
-  }
+  if (!candidate || typeof candidate !== 'string') return false;
+
   try {
-    const authRecord = await initializeAdminAuth();
-    const candidateHash = await hashPasswordWithSalt(candidate, authRecord.salt);
-    return candidateHash === authRecord.hash;
+    const response = await fetch('/api/admin/auth/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({ password: candidate }),
+    });
+
+    if (!response.ok) return false;
+    const data = (await response.json()) as { valid?: boolean };
+    return data.valid === true;
   } catch {
     return false;
   }
@@ -179,23 +173,23 @@ export function evaluatePasswordStrength(password: string): PasswordStrength {
   let score = 0;
   let labelEn = 'Very Weak';
   let labelAr = 'ضعيفة جداً';
-  let color = '#DC2626'; // Error red
+  let color = '#DC2626';
 
   if (passedRules >= 5 && password.length >= 10) {
     score = 4;
     labelEn = 'Very Strong';
     labelAr = 'قوية جداً';
-    color = '#16A34A'; // Success green
+    color = '#16A34A';
   } else if (passedRules >= 4) {
     score = 3;
     labelEn = 'Strong';
     labelAr = 'قوية';
-    color = '#007AFF'; // Primary blue
+    color = '#007AFF';
   } else if (passedRules >= 3) {
     score = 2;
     labelEn = 'Moderate';
     labelAr = 'متوسطة';
-    color = '#F59E0B'; // Amber
+    color = '#F59E0B';
   } else if (passedRules >= 2) {
     score = 1;
     labelEn = 'Weak';
@@ -219,7 +213,7 @@ export function evaluatePasswordStrength(password: string): PasswordStrength {
 }
 
 /**
- * Changes administrator password with strict verification and session refresh
+ * Changes administrator password via backend bcrypt rotation controller and refreshes session token.
  */
 export async function changeAdminPassword(
   currentPass: string,
@@ -231,15 +225,6 @@ export async function changeAdminPassword(
       success: false,
       messageEn: 'Current password is required.',
       messageAr: 'يرجى إدخال كلمة المرور الحالية.',
-    };
-  }
-
-  const isCurrentValid = await verifyAdminPassword(currentPass);
-  if (!isCurrentValid) {
-    return {
-      success: false,
-      messageEn: 'The current password you entered is incorrect.',
-      messageAr: 'كلمة المرور الحالية غير صحيحة.',
     };
   }
 
@@ -268,25 +253,51 @@ export async function changeAdminPassword(
     };
   }
 
-  // Generate new cryptographic salt
-  const newSalt = generateSalt(16);
-  const newHash = await hashPasswordWithSalt(newPass, newSalt);
+  try {
+    const response = await fetch('/api/admin/auth/change-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'same-origin',
+      body: JSON.stringify({
+        currentPassword: currentPass,
+        newPassword: newPass,
+        confirmPassword: confirmPass,
+      }),
+    });
 
-  const updatedRecord: StoredAuthRecord = {
-    salt: newSalt,
-    hash: newHash,
-    updatedAt: new Date().toISOString(),
-  };
+    const data = (await response.json()) as {
+      success: boolean;
+      messageEn?: string;
+      messageAr?: string;
+    };
 
-  safeStorageSetItem(window.localStorage, AUTH_STORAGE_KEY, JSON.stringify(updatedRecord));
+    if (!response.ok || !data.success) {
+      return {
+        success: false,
+        messageEn: data.messageEn || 'Failed to update administrator password.',
+        messageAr: data.messageAr || 'تعذر تحديث كلمة مرور المدير.',
+      };
+    }
 
-  // Invalidate and refresh session token
-  const newSessionToken = generateSalt(24);
-  sessionStorage.setItem(SESSION_TOKEN_KEY, newSessionToken);
+    if (typeof window !== 'undefined') {
+      try {
+        const newSessionToken = generateSalt(24);
+        sessionStorage.setItem(SESSION_TOKEN_KEY, newSessionToken);
+      } catch {
+        // ignore
+      }
+    }
 
-  return {
-    success: true,
-    messageEn: 'Administrator password changed and encrypted successfully.',
-    messageAr: 'تم تغيير كلمة مرور المدير وتشفيرها بنجاح.',
-  };
+    return {
+      success: true,
+      messageEn: data.messageEn || 'Administrator password changed and encrypted with bcrypt successfully.',
+      messageAr: data.messageAr || 'تم تغيير كلمة مرور المدير وتشفيرها باستخدام bcrypt بنجاح.',
+    };
+  } catch {
+    return {
+      success: false,
+      messageEn: 'Network error while updating administrator password.',
+      messageAr: 'حدث خطأ في الشبكة أثناء تحديث كلمة مرور المدير.',
+    };
+  }
 }

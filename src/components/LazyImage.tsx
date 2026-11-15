@@ -1,4 +1,18 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import {
+  DEFAULT_FULL_RES_FALLBACK_IMAGE,
+  resolveFullResolutionImageUrl,
+  stripRestrictiveImageAttributes,
+} from '../utils/imageResolutionHelpers';
+import {
+  DEFAULT_INTERSECTION_THRESHOLD,
+  DEFAULT_VIEWPORT_ROOT_MARGIN,
+  observeElementInViewport,
+} from '../utils/lazyLoadingHelpers';
+import {
+  buildNextGenResponsiveSources,
+  resolveExplicitImageDimensions,
+} from '../utils/webVitalsHelpers';
 
 export interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -9,7 +23,7 @@ export interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement
    */
   priority?: boolean;
   /**
-   * Margin around the root. Default '200px 0px' to start fetching right before entering viewport.
+   * Margin around the root. Default '0px' so images only load when entering the viewport.
    */
   rootMargin?: string;
   /**
@@ -20,6 +34,15 @@ export interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement
    * Fallback image URL on loading error.
    */
   fallbackSrc?: string;
+  /**
+   * Responsive sizes descriptor used for AVIF/WebP srcSet candidate selection.
+   */
+  responsiveSizes?: string;
+  /**
+   * Explicit fallback intrinsic width/height for CLS prevention when width/height props are omitted.
+   */
+  fallbackWidth?: number;
+  fallbackHeight?: number;
   /**
    * Outer wrapper container CSS classes.
    */
@@ -34,9 +57,12 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   src,
   alt,
   priority = false,
-  rootMargin = '200px 0px',
-  threshold = 0.01,
-  fallbackSrc = 'https://images.unsplash.com/photo-1511707171634-5f897ff02597?w=600&auto=format&fit=crop&q=80',
+  rootMargin = DEFAULT_VIEWPORT_ROOT_MARGIN,
+  threshold = DEFAULT_INTERSECTION_THRESHOLD,
+  fallbackSrc = DEFAULT_FULL_RES_FALLBACK_IMAGE,
+  responsiveSizes,
+  fallbackWidth = 800,
+  fallbackHeight = 800,
   className = '',
   wrapperClassName = '',
   style,
@@ -46,20 +72,35 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   height,
   ...rest
 }) => {
+  const resolvedSrc = resolveFullResolutionImageUrl(src) || src;
+  const resolvedFallbackSrc =
+    resolveFullResolutionImageUrl(fallbackSrc) || DEFAULT_FULL_RES_FALLBACK_IMAGE;
+  const cleanRestProps = stripRestrictiveImageAttributes(rest);
+
   const [isInView, setIsInView] = useState<boolean>(priority);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
-  const [currentSrc, setCurrentSrc] = useState<string>(priority ? src : '');
+  const [currentSrc, setCurrentSrc] = useState<string>(priority ? resolvedSrc : '');
   const [hasError, setHasError] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
+
+  const explicitDimensions = useMemo(
+    () => resolveExplicitImageDimensions(width, height, fallbackWidth, fallbackHeight),
+    [width, height, fallbackWidth, fallbackHeight]
+  );
+
+  const nextGenSources = useMemo(
+    () => buildNextGenResponsiveSources(currentSrc || resolvedSrc, responsiveSizes || rest.sizes),
+    [currentSrc, resolvedSrc, responsiveSizes, rest.sizes]
+  );
 
   // Synchronize src if it changes
   useEffect(() => {
     setHasError(false);
     if (priority || isInView) {
-      setCurrentSrc(src);
+      setCurrentSrc(resolvedSrc);
     }
-  }, [src, priority, isInView]);
+  }, [resolvedSrc, priority, isInView]);
 
   // Handle instantaneously cached images
   useEffect(() => {
@@ -71,47 +112,32 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     }
   }, [currentSrc, onLoaded, isLoaded]);
 
-  // Set up IntersectionObserver for non-priority images
+  // Observe viewport intersection using shared IntersectionObserver pool
   useEffect(() => {
     if (priority) {
       setIsInView(true);
-      setCurrentSrc(src);
+      setCurrentSrc(resolvedSrc);
       return;
     }
 
-    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) {
-      setIsInView(true);
-      setCurrentSrc(src);
+    if (isInView) {
       return;
     }
 
     const element = containerRef.current;
     if (!element) return;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const [entry] = entries;
-        if (entry && entry.isIntersecting) {
-          setIsInView(true);
-          setCurrentSrc(src);
-          observer.disconnect();
-        }
-      },
-      {
-        root: null,
-        rootMargin,
-        threshold,
+    return observeElementInViewport(
+      element,
+      { rootMargin, threshold },
+      () => {
+        setIsInView(true);
+        setCurrentSrc(resolvedSrc);
       }
     );
+  }, [priority, isInView, rootMargin, threshold, resolvedSrc]);
 
-    observer.observe(element);
-
-    return () => {
-      observer.disconnect();
-    };
-  }, [priority, rootMargin, threshold, src]);
-
-  const handleImageLoad = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+  const handleImageLoad = (_e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     setIsLoaded(true);
     if (onLoaded) {
       onLoaded();
@@ -119,30 +145,55 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   };
 
   const handleImageError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
-    if (!hasError && fallbackSrc && currentSrc !== fallbackSrc) {
+    if (!hasError && resolvedFallbackSrc && currentSrc !== resolvedFallbackSrc) {
       setHasError(true);
-      setCurrentSrc(fallbackSrc);
+      setCurrentSrc(resolvedFallbackSrc);
     }
     if (onError) {
       onError(e);
     }
   };
 
-    const hasResponsiveWidth = wrapperClassName.includes('w-');
-    const hasResponsiveHeight = wrapperClassName.includes('h-');
+  const hasResponsiveWidth = wrapperClassName.includes('w-');
+  const hasResponsiveHeight = wrapperClassName.includes('h-');
 
-    const wrapperStyle: React.CSSProperties = {
-      ...style,
-      width: style?.width ?? (hasResponsiveWidth ? undefined : width ? (typeof width === 'number' ? `${width}px` : width) : undefined),
-      height: style?.height ?? (hasResponsiveHeight ? undefined : height ? (typeof height === 'number' ? `${height}px` : height) : undefined),
-    };
+  const wrapperStyle: React.CSSProperties = {
+    ...style,
+    width:
+      style?.width ??
+      (hasResponsiveWidth
+        ? undefined
+        : width
+        ? typeof width === 'number'
+          ? `${width}px`
+          : width
+        : undefined),
+    height:
+      style?.height ??
+      (hasResponsiveHeight
+        ? undefined
+        : height
+        ? typeof height === 'number'
+          ? `${height}px`
+          : height
+        : undefined),
+  };
 
-    return (
-      <div
-        ref={containerRef}
-        className={`relative overflow-hidden inline-flex items-center justify-center ${wrapperClassName}`}
-        style={wrapperStyle}
-      >
+  const imgStyle: React.CSSProperties = {
+    imageRendering: 'high-quality' as React.CSSProperties['imageRendering'],
+    ...style,
+  };
+
+  const lazyState = isLoaded ? 'loaded' : isInView ? 'loading' : 'deferred';
+
+  return (
+    <div
+      ref={containerRef}
+      data-lazy-state={lazyState}
+      data-lazy-priority={priority ? 'true' : 'false'}
+      className={`relative overflow-hidden inline-flex items-center justify-center ${wrapperClassName}`}
+      style={wrapperStyle}
+    >
       {/* Smooth Shimmer Skeleton Placeholder while element is outside viewport or loading */}
       <div
         aria-hidden="true"
@@ -151,25 +202,44 @@ export const LazyImage: React.FC<LazyImageProps> = ({
         }`}
       />
 
-      {/* Actual Image rendered only after IntersectionObserver triggers or immediately if priority */}
+      {/* Next-gen AVIF / WebP <picture> element mounts only when viewport intersection is triggered */}
       {isInView && currentSrc ? (
-        <img
-          ref={imgRef}
-          src={currentSrc}
-          alt={alt}
-          width={width}
-          height={height}
-          loading={rest.loading || (priority ? 'eager' : 'lazy')}
-          decoding="async"
-          {...(priority ? { fetchPriority: 'high' } : { fetchPriority: 'auto' })}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-          style={style}
-          className={`${className} transition-opacity duration-500 ease-out ${
-            isLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          {...rest}
-        />
+        <picture className="w-full h-full flex items-center justify-center relative z-[1]">
+          {nextGenSources.isResponsiveSupported && nextGenSources.avifSrcSet && (
+            <source
+              type="image/avif"
+              srcSet={nextGenSources.avifSrcSet}
+              sizes={nextGenSources.sizes}
+            />
+          )}
+          {nextGenSources.isResponsiveSupported && nextGenSources.webpSrcSet && (
+            <source
+              type="image/webp"
+              srcSet={nextGenSources.webpSrcSet}
+              sizes={nextGenSources.sizes}
+            />
+          )}
+          <img
+            ref={imgRef}
+            src={currentSrc}
+            srcSet={nextGenSources.isResponsiveSupported ? nextGenSources.fallbackSrcSet : undefined}
+            sizes={nextGenSources.isResponsiveSupported ? nextGenSources.sizes : undefined}
+            width={explicitDimensions.width}
+            height={explicitDimensions.height}
+            alt={alt}
+            loading={cleanRestProps.loading || (priority ? 'eager' : 'lazy')}
+            decoding={priority ? 'sync' : 'async'}
+            referrerPolicy={cleanRestProps.referrerPolicy || 'no-referrer'}
+            {...(priority ? { fetchPriority: 'high' } : { fetchPriority: 'low' })}
+            onLoad={handleImageLoad}
+            onError={handleImageError}
+            style={imgStyle}
+            className={`${className} transition-opacity duration-500 ease-out ${
+              isLoaded ? 'opacity-100' : 'opacity-0'
+            }`}
+            {...cleanRestProps}
+          />
+        </picture>
       ) : null}
     </div>
   );
