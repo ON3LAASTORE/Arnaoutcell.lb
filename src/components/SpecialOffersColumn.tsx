@@ -63,7 +63,7 @@ export const SpecialOffersColumn: React.FC = () => {
             </h2>
             <p className="text-[#64748B] dark:text-slate-300 text-sm sm:text-base mt-1.5 max-w-2xl">
               {lang === 'ar'
-                ? 'تخفيضات أسبوعية حقيقية بكفالة معتمدة من ON AlAA STORE في الشوف، مع توصيل متاح لجميع مناطق لبنان أو الطلب عبر واتساب 03986718.'
+                ? 'تخفيضات أسبوعية حقيقية بكفالة معتمدة من ON AlAA STORE في الشوف، مع توصيل متاح لجميع مناطق لبنان أو الطلب عبر واتساب 70773067.'
                 : 'Genuine, direct discounts on top smartphones, audio gear, and fast chargers with official ON AlAA STORE warranty and delivery available to all Lebanon.'}
             </p>
           </div>
@@ -179,7 +179,7 @@ export const SpecialOffersColumn: React.FC = () => {
           </div>
 
           <a
-            href={`https://wa.me/9613986718?text=${encodeURIComponent(
+            href={`https://wa.me/96170773067?text=${encodeURIComponent(
               'Hello ON AlAA STORE! I am inquiring about current special offers and flash discounts.'
             )}`}
             target="_blank"
@@ -187,7 +187,7 @@ export const SpecialOffersColumn: React.FC = () => {
             className="px-6 py-3.5 rounded-2xl bg-white hover:bg-slate-100 text-emerald-800 font-extrabold text-xs shadow-lg transition-all flex items-center gap-2 cursor-pointer flex-shrink-0 active:scale-95 group"
           >
             <WhatsApp3DIcon size={22} />
-            <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (03986718)' : 'Inquire / Order on WhatsApp (03986718)'}</span>
+            <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (70773067)' : 'Inquire / Order on WhatsApp (70773067)'}</span>
           </a>
         </div>
       </div>

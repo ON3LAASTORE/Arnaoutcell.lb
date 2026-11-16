@@ -197,7 +197,7 @@ export const CartDrawer: React.FC = () => {
                   className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100 hover:from-emerald-100 hover:to-green-100 dark:from-emerald-950/40 dark:via-emerald-900/40 dark:to-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 font-extrabold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-sm hover:shadow-md hover:shadow-emerald-500/20 group active:scale-98"
                 >
                   <WhatsApp3DIcon size={20} />
-                  <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (03986718)' : 'Inquire / Order on WhatsApp (03986718)'}</span>
+                  <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (70773067)' : 'Inquire / Order on WhatsApp (70773067)'}</span>
                 </button>
               </div>
 

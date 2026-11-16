@@ -100,8 +100,8 @@ export const ProductDetailPage: React.FC = () => {
   };
 
   const handleWhatsAppInquiry = () => {
-    const msg = `Hello ON AlAA STORE (03 986 718)! I'm inquiring about: ${product.name} (SKU: ${product.sku}, Price: $${activePrice}). Is it available for delivery in Lebanon?`;
-    openExternalUrl(`https://wa.me/9613986718?text=${encodeURIComponent(msg)}`);
+    const msg = `Hello ON AlAA STORE (70 773 067)! I'm inquiring about: ${product.name} (SKU: ${product.sku}, Price: $${activePrice}). Is it available for delivery in Lebanon?`;
+    openExternalUrl(`https://wa.me/96170773067?text=${encodeURIComponent(msg)}`);
   };
 
   const handleShare = () => {
@@ -515,7 +515,7 @@ export const ProductDetailPage: React.FC = () => {
                 className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100 hover:from-emerald-100 hover:to-green-100 border border-emerald-300 text-emerald-800 font-extrabold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-sm hover:shadow-md hover:shadow-emerald-500/20 group active:scale-98"
               >
                 <WhatsApp3DIcon size={22} />
-                <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (03986718)' : 'Inquire / Order on WhatsApp (03986718)'}</span>
+                <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (70773067)' : 'Inquire / Order on WhatsApp (70773067)'}</span>
               </button>
 
               {/* Compare Specs Button */}

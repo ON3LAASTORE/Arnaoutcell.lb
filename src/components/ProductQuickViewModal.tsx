@@ -207,7 +207,7 @@ export const ProductQuickViewModal: React.FC = () => {
   };
 
   const handleWhatsAppInquiry = () => {
-    const phone = storeSettings.whatsapp || '9613986718';
+    const phone = storeSettings.whatsapp || '96170773067';
     const storeName = storeSettings.storeName || 'ON AlAA STORE';
     const text = `*Inquiry: ${product.name}*\n` +
       `Price: $${activePrice} USD\n` +
@@ -882,8 +882,8 @@ export const ProductQuickViewModal: React.FC = () => {
                 <WhatsApp3DIcon size={22} />
                 <span>
                   {lang === 'ar'
-                    ? 'استفسار / طلب عبر واتساب (03986718)'
-                    : 'Inquire / Order on WhatsApp (03986718)'}
+                    ? 'استفسار / طلب عبر واتساب (70773067)'
+                    : 'Inquire / Order on WhatsApp (70773067)'}
                 </span>
               </button>
 

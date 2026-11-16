@@ -42,11 +42,11 @@ export const CustomerTrust: React.FC = () => {
       icon: Headphones,
       color: 'text-purple-600 bg-purple-50 border-purple-200',
       titleEn: 'Friendly Lebanese Support',
-      titleAr: 'خدمة عملاء مباشرة 03 986 718',
+      titleAr: 'خدمة عملاء مباشرة 70 773 067',
       descEn:
-        'Need advice before purchasing? Reach our experienced technicians directly via call or WhatsApp at 03 986 718.',
+        'Need advice before purchasing? Reach our experienced technicians directly via call or WhatsApp at 70 773 067.',
       descAr:
-        'استشارة تقنية صادقة وسريعة لاختيار الجهاز والملحقات المناسبة لميزانيتك واحتياجاتك عبر الهاتف أو واتساب على 03 986 718.',
+        'استشارة تقنية صادقة وسريعة لاختيار الجهاز والملحقات المناسبة لميزانيتك واحتياجاتك عبر الهاتف أو واتساب على 70 773 067.',
     },
   ];
 
@@ -109,7 +109,7 @@ export const CustomerTrust: React.FC = () => {
 
           <div className="flex flex-wrap items-center gap-3">
             <a
-              href="https://wa.me/9613986718"
+              href="https://wa.me/96170773067"
               target="_blank"
               rel="noopener noreferrer"
               className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-colors cursor-pointer flex items-center gap-2"
@@ -117,10 +117,10 @@ export const CustomerTrust: React.FC = () => {
               <span>{lang === 'ar' ? 'طلب فوري عبر واتساب' : 'Order via WhatsApp'}</span>
             </a>
             <a
-              href="tel:03986718"
+              href="tel:70773067"
               className="px-5 py-2.5 rounded-xl bg-white hover:bg-[#EAF3FF] text-[#172033] font-bold text-xs border border-[#DCE5F0] transition-colors"
             >
-              03 986 718
+              70 773 067
             </a>
           </div>
         </div>

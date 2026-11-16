@@ -102,14 +102,14 @@ export const SEOHead: React.FC = () => {
         break;
 
       case 'contact':
-        pageTitle = `Contact Online Store (Chouf) | ${storeName} (03 986 718)`;
-        metaDescription = `Contact ${storeName} — Online Store based in Chouf with delivery available to all Lebanon. Open 10:00 AM - 1:00 AM daily. Call or WhatsApp 03 986 718.`;
+        pageTitle = `Contact Online Store (Chouf) | ${storeName} (70 773 067)`;
+        metaDescription = `Contact ${storeName} — Online Store based in Chouf with delivery available to all Lebanon. Open 10:00 AM - 1:00 AM daily. Call or WhatsApp 70 773 067.`;
         canonicalUrl = `${window.location.origin}/#/contact`;
         break;
 
       default:
         pageTitle = `${storeName} | Online Tech Store Based in Chouf • All Lebanon Delivery`;
-        metaDescription = `Premier online electronics store based in Chouf, Lebanon. Flagship smartphones, GaN fast chargers, audio gear, and delivery available to all Lebanon. Call or WhatsApp 03 986 718.`;
+        metaDescription = `Premier online electronics store based in Chouf, Lebanon. Flagship smartphones, GaN fast chargers, audio gear, and delivery available to all Lebanon. Call or WhatsApp 70 773 067.`;
         canonicalUrl = `${window.location.origin}/`;
         break;
     }
@@ -200,7 +200,7 @@ export const SEOHead: React.FC = () => {
         alternateName: 'ON AlAA STORE',
         description: metaDescription,
         url: window.location.origin,
-        telephone: '+9613986718',
+        telephone: '+96170773067',
         priceRange: '$$',
         image: ogImage,
         address: {

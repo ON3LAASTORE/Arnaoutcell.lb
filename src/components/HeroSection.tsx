@@ -111,7 +111,7 @@ export const HeroSection: React.FC = () => {
   };
 
   const handleWhatsAppBuyNow = () => {
-    const phone = '9613986718';
+    const phone = '96170773067';
     const text = encodeURIComponent(
       lang === 'ar'
         ? `مرحباً ON AlAA STORE! أود طلب وشراء هاتف OPPO Reno 16 Series 5G الجديد (إصدار 3D Pop Planet):\n- السعر: $${renoProduct?.price || 629} USD\n- الكفالة: كفالة رسمية معتمدة 12 شهراً\nالرجاء تأكيد التوفر والتوصيل داخل لبنان (المقر الرئيسي: الشوف).`

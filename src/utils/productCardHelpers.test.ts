@@ -72,19 +72,19 @@ test('computeProductPricingMetrics handles non-discounted items cleanly', () => 
 });
 
 test('buildProductWhatsAppUrl encodes dynamic title, price, and SKU for EN and AR', () => {
-  const urlEn = buildProductWhatsAppUrl(BASE_PRODUCT, '+961 3 986 718', 'en');
-  assert.ok(urlEn.startsWith('https://wa.me/9613986718?text='));
+  const urlEn = buildProductWhatsAppUrl(BASE_PRODUCT, '+961 70 773 067', 'en');
+  assert.ok(urlEn.startsWith('https://wa.me/96170773067?text='));
   assert.ok(decodeURIComponent(urlEn).includes('Green Lion Muscle Care Massage Gun 3800 RPM'));
   assert.ok(decodeURIComponent(urlEn).includes('$25 USD'));
   assert.ok(decodeURIComponent(urlEn).includes('prod-101'));
 
   const urlAr = buildProductWhatsAppUrl(BASE_PRODUCT, undefined, 'ar');
-  assert.ok(urlAr.startsWith('https://wa.me/9613986718?text='));
+  assert.ok(urlAr.startsWith('https://wa.me/96170773067?text='));
   assert.ok(decodeURIComponent(urlAr).includes('مسدس مساج غرين لايون'));
 });
 
 test('buildProductCardViewModel produces consistent uppercased brand, stock flags, and rating', () => {
-  const vm = buildProductCardViewModel(BASE_PRODUCT, 'en', '9613986718');
+  const vm = buildProductCardViewModel(BASE_PRODUCT, 'en', '96170773067');
   assert.equal(vm.brandLabel, 'GREEN LION');
   assert.equal(vm.inStock, true);
   assert.equal(vm.isLowStock, false);

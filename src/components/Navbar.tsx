@@ -89,23 +89,23 @@ export const Navbar: React.FC = () => {
 
             {/* WhatsApp 3D direct link */}
             <a
-              href="https://wa.me/9613986718"
+              href="https://wa.me/96170773067"
               target="_blank"
               rel="noopener noreferrer"
               className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition-all group hover:shadow-sm whitespace-nowrap shrink-0"
-              title="WhatsApp: 03 986 718"
+              title="WhatsApp: 70 773 067"
             >
               <WhatsApp3DIcon size={18} />
-              <span dir="ltr">03 986 718</span>
+              <span dir="ltr">70 773 067</span>
             </a>
 
-            {/* Call button (redundant with WhatsApp 03 986 718 below 2xl) */}
+            {/* Call button (redundant with WhatsApp 70 773 067 below 2xl) */}
             <a
-              href="tel:03986718"
+              href="tel:70773067"
               className="hidden 2xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-[#172033] dark:text-[#F8FAFC] text-xs font-semibold transition-all group whitespace-nowrap shrink-0"
             >
               <Phone className="w-3.5 h-3.5 text-[#007AFF] group-hover:scale-110 transition-transform shrink-0" />
-              <span dir="ltr">03 986 718</span>
+              <span dir="ltr">70 773 067</span>
             </a>
 
             {/* Language Switcher Component (EN / AR with RTL class support) */}
@@ -421,9 +421,9 @@ export const Navbar: React.FC = () => {
           </div>
 
           <div className="pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B] flex items-center justify-between text-xs text-[#64748B] dark:text-slate-400">
-            <a href="tel:03986718" className="flex items-center gap-1.5 text-[#007AFF] font-bold">
+            <a href="tel:70773067" className="flex items-center gap-1.5 text-[#007AFF] font-bold">
               <Phone className="w-3.5 h-3.5 shrink-0" />
-              <span dir="ltr">03 986 718</span>
+              <span dir="ltr">70 773 067</span>
             </a>
             <button
               onClick={() => {

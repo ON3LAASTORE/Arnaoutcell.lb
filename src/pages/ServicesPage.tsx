@@ -79,20 +79,20 @@ export const ServicesPage: React.FC = () => {
 
           <div className="flex items-center gap-3">
             <a
-              href="tel:03986718"
+              href="tel:70773067"
               className="px-5 py-2.5 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white font-bold text-xs flex items-center gap-1.5 transition-colors shadow-xs"
             >
               <Phone className="w-4 h-4" />
-              <span>03 986 718</span>
+              <span>70 773 067</span>
             </a>
             <a
-              href="https://wa.me/9613986718?text=Hello%20ON%20AlAA%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20Whish%20%26%20Touch%20services"
+              href="https://wa.me/96170773067?text=Hello%20ON%20AlAA%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20Whish%20%26%20Touch%20services"
               target="_blank"
               rel="noopener noreferrer"
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white font-black text-xs flex items-center gap-2 transition-all shadow-md shadow-emerald-700/30 active:scale-95 group"
             >
               <WhatsApp3DIcon size={18} />
-              <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (03986718)' : 'Inquire / Order on WhatsApp (03986718)'}</span>
+              <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (70773067)' : 'Inquire / Order on WhatsApp (70773067)'}</span>
             </a>
           </div>
         </div>
@@ -163,23 +163,23 @@ export const ServicesPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Direct Line for Touch Store: 03 986 718 */}
+            {/* Direct Line for Touch Store: 70 773 067 */}
             <div className="pt-4 border-t border-[#DCE5F0] flex flex-wrap items-center justify-between gap-2 text-xs">
               <span className="text-[#64748B] font-semibold">{lang === 'ar' ? 'الخط المباشر لخدمات الخطوط:' : 'Touch Store Direct Line:'}</span>
               <div className="flex items-center gap-2">
                 <a
-                  href="tel:03986718"
+                  href="tel:70773067"
                   className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold flex items-center gap-1.5 transition-colors"
                 >
                   <Phone className="w-3.5 h-3.5 text-emerald-700" />
-                  <span>03 986 718</span>
+                  <span>70 773 067</span>
                 </a>
                 <a
-                  href="https://wa.me/9613986718?text=Hello%20ON%20AlAA%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20Touch%20telecom%20services"
+                  href="https://wa.me/96170773067?text=Hello%20ON%20AlAA%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20Touch%20telecom%20services"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold flex items-center gap-1 transition-all"
-                  title="WhatsApp: 03 986 718"
+                  title="WhatsApp: 70 773 067"
                 >
                   <WhatsApp3DIcon size={16} />
                   <span>واتساب</span>
@@ -320,14 +320,14 @@ export const ServicesPage: React.FC = () => {
             </div>
             <div className="flex items-center gap-2.5 shrink-0">
               <a
-                href="tel:03986718"
+                href="tel:70773067"
                 className="px-4 py-2 rounded-xl bg-white dark:bg-[#0E1726] hover:bg-slate-50 border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] text-xs font-bold flex items-center gap-1.5 transition-colors"
               >
                 <Phone className="w-3.5 h-3.5 text-[#007AFF]" />
-                <span dir="ltr">03 986 718</span>
+                <span dir="ltr">70 773 067</span>
               </a>
               <a
-                href="https://wa.me/9613986718?text=Hello%20ON%20AlAA%20STORE%2C%20I%20have%20a%20question%20regarding%20delivery%2C%20payment%2C%20or%20warranty."
+                href="https://wa.me/96170773067?text=Hello%20ON%20AlAA%20STORE%2C%20I%20have%20a%20question%20regarding%20delivery%2C%20payment%2C%20or%20warranty."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center gap-2 shadow-sm transition-colors"

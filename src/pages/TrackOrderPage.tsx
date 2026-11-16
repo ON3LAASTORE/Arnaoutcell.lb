@@ -252,11 +252,11 @@ export const TrackOrderPage: React.FC = () => {
                 {/* Help button */}
                 <div className="text-center pt-2">
                   <a
-                    href="tel:03986718"
+                    href="tel:70773067"
                     className="inline-flex items-center gap-2 text-xs text-[#007AFF] hover:underline font-semibold"
                   >
                     <Phone className="w-3.5 h-3.5" />
-                    <span>{lang === 'ar' ? 'هل تحتاج لمساعدة بخصوص طلبك؟ اتصل بنا: 03 986 718' : 'Need help with this order? Call us: 03 986 718'}</span>
+                    <span>{lang === 'ar' ? 'هل تحتاج لمساعدة بخصوص طلبك؟ اتصل بنا: 70 773 067' : 'Need help with this order? Call us: 70 773 067'}</span>
                   </a>
                 </div>
               </div>
@@ -269,7 +269,7 @@ export const TrackOrderPage: React.FC = () => {
                 <p className="text-xs text-[#64748B] max-w-sm mx-auto">
                   {lang === 'ar'
                     ? `يرجى التحقق من رقم الطلب (مثال: OAA-2027-1001) أو التواصل مع خدمة عملاء ${storeSettings.storeNameAr || 'ON AlAA STORE'}.`
-                    : `Please verify your Order ID or contact ${storeSettings.storeName || 'ON AlAA STORE'} support on ${storeSettings.phone || '03 986 718'}.`}
+                    : `Please verify your Order ID or contact ${storeSettings.storeName || 'ON AlAA STORE'} support on ${storeSettings.phone || '70 773 067'}.`}
                 </p>
               </div>
             )}

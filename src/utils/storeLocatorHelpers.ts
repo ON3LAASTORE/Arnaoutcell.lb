@@ -4,7 +4,7 @@
  * Target Store:
  * ON AlAA STORE — Online Store based in Chouf, Lebanon
  * Delivery Coverage: Available to All Lebanon
- * Phone / WhatsApp: 03986718 (+961 3 986 718)
+ * Phone / WhatsApp: 70773067 (+961 70 773 067)
  * Schedule: 10:00 AM – 1:00 AM Daily (15 Hours)
  */
 
@@ -48,12 +48,12 @@ export const CHOUF_STORE_DATA: StoreLocationData = {
   cityAr: 'قضاء الشوف، جبل لبنان',
   landmarkEn: 'Online Hub based in Chouf • Express Delivery to All Lebanon',
   landmarkAr: 'مركز المبيعات الإلكترونية بالشوف • توصيل سريع لكافة الأراضي اللبنانية',
-  phone: '03986718',
-  phoneFormatted: '03 986 718',
-  internationalPhone: '+961 3 986718',
-  whatsapp: '9613986718',
+  phone: '70773067',
+  phoneFormatted: '70 773 067',
+  internationalPhone: '+961 70 773067',
+  whatsapp: '96170773067',
   plusCode: 'Chouf, Lebanon',
-  plusCodeUrl: 'https://wa.me/9613986718',
+  plusCodeUrl: 'https://wa.me/96170773067',
   operatingDuration: 'Open Daily (10:00 AM – 1:00 AM)',
   operatingDurationEn: 'Online Orders & Support: 10:00 AM – 1:00 AM Daily',
   operatingDurationAr: 'الطلبات أونلاين والدعم: 10:00 صباحاً – 1:00 بعد منتصف الليل يومياً',
@@ -61,9 +61,9 @@ export const CHOUF_STORE_DATA: StoreLocationData = {
   openingHoursAr: '10:00 صباحاً – 1:00 بعد منتصف الليل (طلبات أونلاين وتوصيل لجميع مناطق لبنان)',
   latitude: 33.6967,
   longitude: 35.5817,
-  googleMapsUrl: 'https://wa.me/9613986718',
-  googleDirectionsUrl: 'https://wa.me/9613986718',
-  appleMapsUrl: 'https://wa.me/9613986718',
+  googleMapsUrl: 'https://wa.me/96170773067',
+  googleDirectionsUrl: 'https://wa.me/96170773067',
+  appleMapsUrl: 'https://wa.me/96170773067',
 };
 
 // Aliased for seamless compatibility across existing components
@@ -80,13 +80,13 @@ export function buildGoogleMapsUrl(query: string): string {
  * Generates direct Live Route navigation URL using Plus Code or coordinates
  */
 export function buildLiveRouteUrl(destination = 'Chouf, Lebanon'): string {
-  return `https://wa.me/9613986718`;
+  return `https://wa.me/96170773067`;
 }
 
 /**
  * Generates pre-filled WhatsApp location request / pin URL
  */
-export function buildWhatsAppLocationUrl(phone = '9613986718', isArabic = false): string {
+export function buildWhatsAppLocationUrl(phone = '96170773067', isArabic = false): string {
   const cleanPhone = phone.replace(/\D/g, '');
   const text = isArabic
     ? 'مرحباً متجر ON AlAA! أود الاستفسار عن خدمة التوصيل لموقعي في لبنان (متجركم الإلكتروني بالشوف).'
@@ -95,10 +95,10 @@ export function buildWhatsAppLocationUrl(phone = '9613986718', isArabic = false)
 }
 
 /**
- * Builds "Send to phone 03986718" intent URLs for WhatsApp or SMS
+ * Builds "Send to phone 70773067" intent URLs for WhatsApp or SMS
  */
 export function buildSendToPhoneUrl(
-  phoneNumber = '03986718',
+  phoneNumber = '70773067',
   type: 'whatsapp' | 'sms' = 'whatsapp',
   isArabic = false
 ): string {
@@ -106,8 +106,8 @@ export function buildSendToPhoneUrl(
   const targetNumber = cleanNumber.startsWith('961') ? cleanNumber : `961${cleanNumber.startsWith('0') ? cleanNumber.slice(1) : cleanNumber}`;
   
   const bodyText = isArabic
-    ? `📍 متجر ON AlAA الإلكتروني:\n• مقرنا: الشوف، جبل لبنان\n• التوصيل: متاح لجميع المناطق اللبنانية\n• دوام الطلبات والدعم: 10:00 ص – 1:00 ص يومياً\n• هاتف / واتساب: 03986718 (9613986718+)\n• رابط التواصل والطلب: https://wa.me/9613986718`
-    : `📍 ON AlAA STORE — Online Store:\n• Based in: Chouf, Mount Lebanon\n• Delivery: Available to All Lebanon\n• Orders & Support: 10:00 AM – 1:00 AM Daily\n• Phone / WhatsApp: 03986718 (+961 3 986718)\n• Chat & Order: https://wa.me/9613986718`;
+    ? `📍 متجر ON AlAA الإلكتروني:\n• مقرنا: الشوف، جبل لبنان\n• التوصيل: متاح لجميع المناطق اللبنانية\n• دوام الطلبات والدعم: 10:00 ص – 1:00 ص يومياً\n• هاتف / واتساب: 70773067 (96170773067+)\n• رابط التواصل والطلب: https://wa.me/96170773067`
+    : `📍 ON AlAA STORE — Online Store:\n• Based in: Chouf, Mount Lebanon\n• Delivery: Available to All Lebanon\n• Orders & Support: 10:00 AM – 1:00 AM Daily\n• Phone / WhatsApp: 70773067 (+961 70 773067)\n• Chat & Order: https://wa.me/96170773067`;
 
   if (type === 'sms') {
     return `sms:+${targetNumber}?body=${encodeURIComponent(bodyText)}`;
@@ -130,24 +130,24 @@ export function buildLocationShareData(isArabic = false): {
     : 'ON AlAA STORE — Online Store based in Chouf, Lebanon';
 
   const text = isArabic
-    ? `متجر ON AlAA الإلكتروني - مقرنا في الشوف • التوصيل متاح لجميع مناطق لبنان • هاتف وواتساب: 03986718`
-    : `ON AlAA STORE — Online Store based in Chouf, Lebanon • Delivery Available to All Lebanon • Phone & WhatsApp: 03986718`;
+    ? `متجر ON AlAA الإلكتروني - مقرنا في الشوف • التوصيل متاح لجميع مناطق لبنان • هاتف وواتساب: 70773067`
+    : `ON AlAA STORE — Online Store based in Chouf, Lebanon • Delivery Available to All Lebanon • Phone & WhatsApp: 70773067`;
 
-  const url = 'https://wa.me/9613986718';
+  const url = 'https://wa.me/96170773067';
 
   const fullMessage = isArabic
     ? `📍 ${title}\n` +
       `📌 المقر: الشوف، جبل لبنان\n` +
       `🚚 التوصيل: متاح لجميع المناطق اللبنانية\n` +
       `⏰ الدوام: خدمة العملاء والطلبات من 10:00 ص إلى 1:00 ص يومياً\n` +
-      `📞 هاتف: 03986718 (+961 3 986718)\n` +
-      `📲 واتساب مباشر: https://wa.me/9613986718`
+      `📞 هاتف: 70773067 (+961 70 773067)\n` +
+      `📲 واتساب مباشر: https://wa.me/96170773067`
     : `📍 ${title}\n` +
       `📌 Hub: Chouf, Mount Lebanon\n` +
       `🚚 Delivery: Available to All Lebanon\n` +
       `⏰ Hours: Customer Support & Orders: 10:00 AM – 1:00 AM Daily\n` +
-      `📞 Phone: 03986718 (+961 3 986718)\n` +
-      `📲 WhatsApp Direct: https://wa.me/9613986718`;
+      `📞 Phone: 70773067 (+961 70 773067)\n` +
+      `📲 WhatsApp Direct: https://wa.me/96170773067`;
 
   return { title, text, url, fullMessage };
 }

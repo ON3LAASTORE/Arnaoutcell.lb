@@ -158,24 +158,24 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({ isOpen, 
             </div>
 
             <a
-              href="https://wa.me/9613986718"
+              href="https://wa.me/96170773067"
               target="_blank"
               rel="noopener noreferrer"
               className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center justify-center gap-2 cursor-pointer shadow-xs transition-all active:scale-95"
             >
               <WhatsApp3DIcon size={18} />
-              <span>{isArabic ? 'واتساب 03986718' : 'WhatsApp 03986718'}</span>
+              <span>{isArabic ? 'واتساب 70773067' : 'WhatsApp 70773067'}</span>
             </a>
           </div>
 
           {/* Primary Quick Actions */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <a
-              href="tel:03986718"
+              href="tel:70773067"
               className="p-3.5 rounded-2xl bg-[#007AFF] hover:bg-[#0066D6] text-white flex flex-col items-center text-center gap-1.5 shadow-md shadow-[#007AFF]/25 transition-all group active:scale-95 cursor-pointer"
             >
               <Phone className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              <span className="text-xs font-black">{isArabic ? 'اتصال مباشر: 03986718' : 'Direct Call: 03986718'}</span>
+              <span className="text-xs font-black">{isArabic ? 'اتصال مباشر: 70773067' : 'Direct Call: 70773067'}</span>
               <span className="text-[10px] text-blue-100">{isArabic ? 'خدمة العملاء والطلبات' : 'Orders & Support'}</span>
             </a>
 
@@ -219,7 +219,7 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({ isOpen, 
             <form onSubmit={handleSendToCustomPhone} className="flex gap-2">
               <input
                 type="tel"
-                placeholder={isArabic ? 'أدخل رقم الهاتف (مثال: 03986718)' : 'Enter phone number (e.g. 03986718)'}
+                placeholder={isArabic ? 'أدخل رقم الهاتف (مثال: 70773067)' : 'Enter phone number (e.g. 70773067)'}
                 value={customPhone}
                 onChange={(e) => setCustomPhone(e.target.value)}
                 className="flex-1 px-3.5 py-2 text-xs rounded-xl bg-white dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-white focus:outline-none focus:border-[#007AFF]"

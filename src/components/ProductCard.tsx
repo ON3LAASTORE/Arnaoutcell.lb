@@ -490,7 +490,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           >
             <WhatsApp3DIcon size={17} />
             <span className="truncate">
-              {lang === 'ar' ? 'واتساب 03986718' : 'WhatsApp 03986718'}
+              {lang === 'ar' ? 'واتساب 70773067' : 'WhatsApp 70773067'}
             </span>
           </button>
         </div>

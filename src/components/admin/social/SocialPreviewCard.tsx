@@ -317,7 +317,7 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
         {/* Inline Order Button */}
         <button className="w-full py-2 rounded-xl bg-[#2AABEE] hover:bg-[#229ED9] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs">
           <Send className="w-3.5 h-3.5" />
-          <span>Order via WhatsApp (03 986 718)</span>
+          <span>Order via WhatsApp (70 773 067)</span>
         </button>
       </div>
     );

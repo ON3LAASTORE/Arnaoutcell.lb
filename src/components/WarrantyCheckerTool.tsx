@@ -62,8 +62,8 @@ export const WarrantyCheckerTool: React.FC = () => {
       console.warn('Warranty check notice:', err);
       setLookupError(
         lang === 'ar'
-          ? 'تعذر إتمام الفحص حالياً. يرجى المحاولة مرة أخرى أو التواصل عبر واتساب \u206603 986 718\u2069.'
-          : 'Unable to complete the check right now. Please try again or contact support on 03 986 718.'
+          ? 'تعذر إتمام الفحص حالياً. يرجى المحاولة مرة أخرى أو التواصل عبر واتساب \u206670 773 067\u2069.'
+          : 'Unable to complete the check right now. Please try again or contact support on 70 773 067.'
       );
       setResult(null);
       setHasSearched(true);
@@ -836,14 +836,14 @@ export const WarrantyCheckerTool: React.FC = () => {
                           })()}
                           <div className="flex items-center gap-2 shrink-0">
                             <a
-                              href="tel:03986718"
+                              href="tel:70773067"
                               className="px-3 py-1.5 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] font-bold flex items-center gap-1.5 hover:border-[#007AFF] transition-colors whitespace-nowrap"
                             >
                               <Phone className="w-3.5 h-3.5 text-[#007AFF]" />
-                              <span dir="ltr">03 986 718</span>
+                              <span dir="ltr">70 773 067</span>
                             </a>
                             <a
-                              href={`https://wa.me/9613986718?text=${whatsappMessage}`}
+                              href={`https://wa.me/96170773067?text=${whatsappMessage}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold flex items-center gap-1.5 transition-colors shadow-xs whitespace-nowrap"
@@ -881,18 +881,18 @@ export const WarrantyCheckerTool: React.FC = () => {
                 </h3>
                 <p className="text-xs text-[#64748B] dark:text-slate-400 max-w-md mx-auto leading-relaxed">
                   {lang === 'ar'
-                    ? 'يرجى التأكد من إدخال رقم الطلب (مثل OAA-2027-1001) أو الباركود / SKU الصحيح، أو التواصل مباشرة مع فريق ON AlAA STORE في الشوف عبر واتساب \u206603 986 718\u2069.'
-                    : 'Please verify your Order ID (e.g. OAA-2027-1001) or product Barcode / SKU, or contact our Chouf support team on WhatsApp at 03 986 718 with your invoice.'}
+                    ? 'يرجى التأكد من إدخال رقم الطلب (مثل OAA-2027-1001) أو الباركود / SKU الصحيح، أو التواصل مباشرة مع فريق ON AlAA STORE في الشوف عبر واتساب \u206670 773 067\u2069.'
+                    : 'Please verify your Order ID (e.g. OAA-2027-1001) or product Barcode / SKU, or contact our Chouf support team on WhatsApp at 70 773 067 with your invoice.'}
                 </p>
                 <div className="pt-1 flex justify-center">
                   <a
-                    href="https://wa.me/9613986718?text=Hello%20ON%20AlAA%20STORE%2C%20I%20would%20like%20help%20checking%20my%20device%20warranty."
+                    href="https://wa.me/96170773067?text=Hello%20ON%20AlAA%20STORE%2C%20I%20would%20like%20help%20checking%20my%20device%20warranty."
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-2 transition-colors"
                   >
                     <WhatsApp3DIcon size={16} />
-                    <span>{lang === 'ar' ? 'تحقق عبر واتساب (03986718)' : 'Verify via WhatsApp (03986718)'}</span>
+                    <span>{lang === 'ar' ? 'تحقق عبر واتساب (70773067)' : 'Verify via WhatsApp (70773067)'}</span>
                   </a>
                 </div>
               </div>

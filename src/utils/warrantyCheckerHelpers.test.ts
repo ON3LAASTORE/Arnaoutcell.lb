@@ -245,7 +245,7 @@ test('sanitizeWarrantyTerms normalizes legacy store names and contacts to ON AlA
   );
   assert.equal(
     sanitizeWarrantyTerms('M. ARNAOUT CELL in Saida - call 03099889'),
-    'ON AlAA STORE in Chouf - call 03 986 718'
+    'ON AlAA STORE in Chouf - call 70 773 067'
   );
   assert.equal(sanitizeWarrantyTerms('', 'Default ON AlAA STORE terms.'), 'Default ON AlAA STORE terms.');
 });

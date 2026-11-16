@@ -7,8 +7,8 @@ import {
 } from '../types/socialMarketing';
 import { DEFAULT_FULL_RES_FALLBACK_IMAGE, resolveFullResolutionImageUrl } from './imageResolutionHelpers';
 
-export const STORE_PHONE_DISPLAY = '03 986 718';
-export const STORE_PHONE_INTL = '9613986718';
+export const STORE_PHONE_DISPLAY = '70 773 067';
+export const STORE_PHONE_INTL = '96170773067';
 export const STORE_LOCATION_CHOUF_EN = 'Online Store — Based in Chouf, Delivery to All Lebanon';
 export const STORE_LOCATION_CHOUF_AR = 'متجر إلكتروني — الشوف، توصيل متاح لجميع مناطق لبنان';
 export const STORE_LOCATION_SAIDA_EN = STORE_LOCATION_CHOUF_EN;
@@ -607,7 +607,7 @@ export async function renderSocialMarketingGraphic(
 
   ctx.font = `bold ${Math.round(width * 0.03)}px sans-serif`;
   ctx.fillStyle = '#FFFFFF';
-  ctx.fillText('Order via WhatsApp: 03 986 718', pad + width * 0.04, barY + barHeight * 0.45);
+  ctx.fillText('Order via WhatsApp: 70 773 067', pad + width * 0.04, barY + barHeight * 0.45);
 
   ctx.font = `normal ${Math.round(width * 0.02)}px sans-serif`;
   ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';

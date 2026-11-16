@@ -109,14 +109,14 @@ test('compactStoreSettingsPayload offloads oversized inline data URLs while pres
     ...INITIAL_STORE_SETTINGS,
     storeName: 'ON AlAA STORE',
     logoUrl: hugeDataUrl,
-    phone: '03986718',
+    phone: '70773067',
   };
 
   const { compacted, offloadedLogoDataUrl } = compactStoreSettingsPayload(input);
   assert.equal(offloadedLogoDataUrl, hugeDataUrl);
   assert.equal(compacted.logoUrl, '/on-alaa-store-profile.png');
   assert.equal(compacted.storeName, 'ON AlAA STORE');
-  assert.equal(compacted.phone, '03986718');
+  assert.equal(compacted.phone, '70773067');
 });
 
 test('compactProductsForStorage strips huge inline data URLs cleanly', () => {

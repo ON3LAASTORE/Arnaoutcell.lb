@@ -124,19 +124,19 @@ export const ServiceSection: React.FC = () => {
 
                 <div className="flex items-center gap-2">
                   <a
-                    href="tel:03986718"
+                    href="tel:70773067"
                     className="px-3 py-1.5 rounded-xl border font-bold text-xs flex items-center gap-1.5 transition-colors cursor-pointer bg-[#F5F8FC] dark:bg-[#111A2E] hover:bg-[#EAF3FF] border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC]"
-                    title="ON AlAA STORE Hotline: 03 986 718"
+                    title="ON AlAA STORE Hotline: 70 773 067"
                   >
                     <Phone className="w-3.5 h-3.5 text-[#007AFF]" />
-                    <span dir="ltr">03 986 718</span>
+                    <span dir="ltr">70 773 067</span>
                   </a>
                   <a
-                    href="https://wa.me/9613986718?text=Hello%20ON%20AlAA%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20your%20services"
+                    href="https://wa.me/96170773067?text=Hello%20ON%20AlAA%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20your%20services"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 font-bold text-xs flex items-center gap-1 transition-all"
-                    title="WhatsApp: 03 986 718"
+                    title="WhatsApp: 70 773 067"
                   >
                     <WhatsApp3DIcon size={16} />
                     <span className="text-[11px]">WhatsApp</span>
@@ -162,13 +162,13 @@ export const ServiceSection: React.FC = () => {
 
           <div className="flex items-center gap-3 flex-shrink-0">
             <a
-              href="https://wa.me/9613986718?text=Hello%20ON%20AlAA%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20store%20services"
+              href="https://wa.me/96170773067?text=Hello%20ON%20AlAA%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20store%20services"
               target="_blank"
               rel="noopener noreferrer"
               className="px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white text-xs font-black shadow-md shadow-emerald-700/30 transition-all flex items-center gap-2.5 cursor-pointer group active:scale-95"
             >
               <WhatsApp3DIcon size={20} />
-              <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (03986718)' : 'Inquire / Order on WhatsApp (03986718)'}</span>
+              <span>{lang === 'ar' ? 'استفسار / طلب عبر واتساب (70773067)' : 'Inquire / Order on WhatsApp (70773067)'}</span>
             </a>
 
             <button

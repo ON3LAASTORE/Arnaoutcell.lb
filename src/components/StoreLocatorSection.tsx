@@ -30,8 +30,8 @@ export const StoreLocatorSection: React.FC = () => {
 
   const [copiedShareLink, setCopiedShareLink] = useState(false);
 
-  const phone = storeSettings.phone || '03986718';
-  const whatsappPhone = storeSettings.whatsapp || '9613986718';
+  const phone = storeSettings.phone || '70773067';
+  const whatsappPhone = storeSettings.whatsapp || '96170773067';
 
   const handleShareLocation = async () => {
     const shareData = buildLocationShareData(isArabic);
@@ -185,12 +185,12 @@ export const StoreLocatorSection: React.FC = () => {
                     <span className="text-[10px] text-[#64748B] dark:text-slate-400 block font-semibold">
                       {isArabic ? 'اتصال مباشر:' : 'Direct Call:'}
                     </span>
-                    <span dir="ltr" className="text-xs font-black inline-block">03 986 718</span>
+                    <span dir="ltr" className="text-xs font-black inline-block">70 773 067</span>
                   </div>
                 </a>
 
                 <a
-                  href={`https://wa.me/9613986718`}
+                  href={`https://wa.me/96170773067`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 hover:border-emerald-500 text-emerald-900 dark:text-emerald-200 flex items-center gap-3 transition-colors shadow-xs"
@@ -202,7 +202,7 @@ export const StoreLocatorSection: React.FC = () => {
                     <span className="text-[10px] text-emerald-600 dark:text-emerald-400 block font-semibold">
                       {isArabic ? 'محادثة واتساب:' : 'WhatsApp:'}
                     </span>
-                    <span dir="ltr" className="text-xs font-black inline-block">03 986 718</span>
+                    <span dir="ltr" className="text-xs font-black inline-block">70 773 067</span>
                   </div>
                 </a>
               </div>
@@ -210,13 +210,13 @@ export const StoreLocatorSection: React.FC = () => {
               {/* Primary User Actions */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                 <a
-                  href={`https://wa.me/9613986718`}
+                  href={`https://wa.me/96170773067`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-4 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center justify-center gap-2 shadow-sm shadow-emerald-600/30 transition-all cursor-pointer active:scale-95"
                 >
                   <Send className="w-4 h-4" />
-                  <span>{isArabic ? 'طلب فوري عبر واتساب 03986718' : 'Order via WhatsApp 03986718'}</span>
+                  <span>{isArabic ? 'طلب فوري عبر واتساب 70773067' : 'Order via WhatsApp 70773067'}</span>
                 </a>
 
                 <button
@@ -354,13 +354,13 @@ export const StoreLocatorSection: React.FC = () => {
                 </div>
 
                 <a
-                  href="https://wa.me/9613986718"
+                  href="https://wa.me/96170773067"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto px-6 py-3 rounded-2xl bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-black flex items-center justify-center gap-2 shadow-md shadow-[#007AFF]/25 transition-all cursor-pointer active:scale-95"
                 >
                   <WhatsApp3DIcon size={18} />
-                  <span>{isArabic ? 'طلب توصيل عبر واتساب (03986718)' : 'Order Delivery on WhatsApp (03986718)'}</span>
+                  <span>{isArabic ? 'طلب توصيل عبر واتساب (70773067)' : 'Order Delivery on WhatsApp (70773067)'}</span>
                 </a>
               </div>
             </div>

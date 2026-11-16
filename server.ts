@@ -1195,7 +1195,7 @@ async function startServer() {
             formData.append('reply_markup', JSON.stringify({
               inline_keyboard: [
                 [
-                  { text: '💬 Order via WhatsApp (03986718)', url: 'https://wa.me/9613986718' },
+                  { text: '💬 Order via WhatsApp (70773067)', url: 'https://wa.me/96170773067' },
                   { text: '🌐 View on Store', url: productUrl || 'https://onalaastore.com' }
                 ]
               ]

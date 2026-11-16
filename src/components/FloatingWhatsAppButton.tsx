@@ -42,7 +42,7 @@ export const FloatingWhatsAppButton: React.FC = () => {
   };
 
   const handleWhatsAppClick = () => {
-    const phone = storeSettings.whatsapp || '9613986718';
+    const phone = storeSettings.whatsapp || '96170773067';
     const text = encodeURIComponent(
       lang === 'ar'
         ? `مرحباً متجر ON AlAA! أنا أتواصل معكم من المتجر الإلكتروني بخصوص استفسار / طلب أجهزة وعروض.`
@@ -97,8 +97,8 @@ export const FloatingWhatsAppButton: React.FC = () => {
 
             <p className="text-xs font-bold text-[#172033] dark:text-[#F8FAFC] leading-snug">
               {lang === 'ar'
-                ? 'استفسار أو طلب فوري عبر واتساب 03986718'
-                : 'Inquire or Order on WhatsApp (03986718)'}
+                ? 'استفسار أو طلب فوري عبر واتساب 70773067'
+                : 'Inquire or Order on WhatsApp (70773067)'}
             </p>
 
             <div className="mt-2 flex items-center justify-between gap-3 text-[10px] text-slate-500 dark:text-slate-400 pt-1.5 border-t border-slate-100 dark:border-slate-800">
@@ -106,7 +106,7 @@ export const FloatingWhatsAppButton: React.FC = () => {
                 <Sparkles className="w-3 h-3 shrink-0" />
                 <span>{lang === 'ar' ? 'الشوف • التوصيل لجميع مناطق لبنان' : 'Chouf Hub • All Lebanon Delivery'}</span>
               </span>
-              <span dir="ltr" className="font-mono font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">03 986 718</span>
+              <span dir="ltr" className="font-mono font-bold text-slate-700 dark:text-slate-300 whitespace-nowrap shrink-0">70 773 067</span>
             </div>
           </motion.div>
         )}

@@ -154,11 +154,11 @@ export const ContactPage: React.FC = () => {
                     {isArabic ? 'الهاتف المباشر:' : 'Direct Phone:'}
                   </span>
                   <a
-                    href="tel:03986718"
+                    href="tel:70773067"
                     dir="ltr"
                     className="inline-block text-base font-black text-[#172033] dark:text-white hover:text-[#007AFF] transition-colors"
                   >
-                    03 986 718
+                    70 773 067
                   </a>
                 </div>
               </div>
@@ -173,13 +173,13 @@ export const ContactPage: React.FC = () => {
                     {isArabic ? 'خدمة واتساب الرسمية للطلب والاستفسار:' : 'Official WhatsApp Inquiries & Orders:'}
                   </span>
                   <a
-                    href="https://wa.me/9613986718"
+                    href="https://wa.me/96170773067"
                     target="_blank"
                     rel="noopener noreferrer"
                     dir="ltr"
                     className="inline-block text-sm font-bold text-[#16A34A] hover:underline"
                   >
-                    https://wa.me/9613986718 (03 986 718)
+                    https://wa.me/96170773067 (70 773 067)
                   </a>
                 </div>
               </div>
@@ -223,13 +223,13 @@ export const ContactPage: React.FC = () => {
               {/* Action Buttons: WhatsApp & Share */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B]">
                 <a
-                  href={buildSendToPhoneUrl('03986718', 'whatsapp', isArabic)}
+                  href={buildSendToPhoneUrl('70773067', 'whatsapp', isArabic)}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
                 >
                   <WhatsApp3DIcon size={16} />
-                  <span>{isArabic ? 'محادثة واتساب 03986718' : 'WhatsApp 03986718'}</span>
+                  <span>{isArabic ? 'محادثة واتساب 70773067' : 'WhatsApp 70773067'}</span>
                 </a>
 
                 <button
@@ -291,7 +291,7 @@ export const ContactPage: React.FC = () => {
                   <span>{isArabic ? 'كفالة رسمية معتمدة' : 'Official Warranty Guaranteed'}</span>
                 </div>
                 <a
-                  href="https://wa.me/9613986718"
+                  href="https://wa.me/96170773067"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-3 py-1.5 rounded-xl bg-[#007AFF] text-white text-[11px] font-bold flex items-center gap-1"
@@ -357,7 +357,7 @@ export const ContactPage: React.FC = () => {
                     <input
                       type="tel"
                       required
-                      placeholder="03 986 718 / 70 xxx xxx"
+                      placeholder="70 773 067 / 03 xxx xxx"
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="w-full bg-[#FFFFFF] dark:bg-[#162038] border border-[#DCE5F0] dark:border-[#1E293B] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] dark:text-white focus:outline-none focus:border-[#007AFF] font-mono"

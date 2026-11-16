@@ -84,7 +84,7 @@ export const ProductCompareModal: React.FC = () => {
   };
 
   const handleWhatsAppOrder = (product: Product) => {
-    const phone = storeSettings.whatsapp || '9613986718';
+    const phone = storeSettings.whatsapp || '96170773067';
     const text = encodeURIComponent(
       isArabic
         ? `مرحباً متجر ON AlAA! أود طلب هذا الجهاز بعد مقارنة المواصفات:\n- الجهاز: ${product.nameAr || product.name}\n- السعر: $${product.price} USD\n- الكود: ${product.id}\nالرجاء تأكيد التوفر والتوصيل في لبنان.`
@@ -94,7 +94,7 @@ export const ProductCompareModal: React.FC = () => {
   };
 
   const handleShareComparison = () => {
-    const phone = storeSettings.whatsapp || '9613986718';
+    const phone = storeSettings.whatsapp || '96170773067';
     const names = compareList.map((p) => p.name).join(' vs ');
     const text = encodeURIComponent(
       isArabic

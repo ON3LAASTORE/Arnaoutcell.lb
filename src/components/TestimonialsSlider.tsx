@@ -308,7 +308,7 @@ export const TestimonialsSlider: React.FC = () => {
               </button>
 
               <a
-                href={`https://wa.me/9613986718?text=${encodeURIComponent(
+                href={`https://wa.me/96170773067?text=${encodeURIComponent(
                   isArabic
                     ? 'مرحباً ON AlAA STORE! أود مشاركة تقييمي وتجربتي مع الشراء والأجهزة.'
                     : 'Hello ON AlAA STORE! I want to share my customer review and feedback.'
@@ -318,7 +318,7 @@ export const TestimonialsSlider: React.FC = () => {
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 text-xs sm:text-sm font-bold transition-all cursor-pointer"
               >
                 <WhatsApp3DIcon size={18} />
-                <span>{isArabic ? 'إرسال رأيك عبر واتساب (03986718)' : 'Send Feedback via WhatsApp'}</span>
+                <span>{isArabic ? 'إرسال رأيك عبر واتساب (70773067)' : 'Send Feedback via WhatsApp'}</span>
               </a>
             </div>
           </div>
@@ -422,7 +422,7 @@ export const TestimonialsSlider: React.FC = () => {
         ========================================================================== */}
         <div className="flex items-center justify-between gap-4 mt-8 pt-4">
           <a
-            href={`https://wa.me/9613986718?text=${encodeURIComponent(
+            href={`https://wa.me/96170773067?text=${encodeURIComponent(
               isArabic
                 ? 'مرحباً ON AlAA STORE! أود مشاركة تقييمي وتجربتي مع الشراء والأجهزة.'
                 : 'Hello ON AlAA STORE! I want to share my customer review and feedback.'

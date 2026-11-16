@@ -930,8 +930,8 @@ export const INITIAL_STORE_SETTINGS: StoreSettings = {
   tagline: 'Online Store in Chouf • Delivery to All Lebanon',
   taglineAr: 'متجر إلكتروني مقره الشوف • التوصيل لجميع مناطق لبنان',
   logoUrl: '/on-alaa-store-profile.png',
-  phone: '03986718',
-  whatsapp: '9613986718', // formatted for wa.me link
+  phone: '70773067',
+  whatsapp: '96170773067', // formatted for wa.me link
   locationEn: 'Online Store — Based in Chouf • Delivery Available to All Lebanon',
   locationAr: 'متجر إلكتروني — مقره الشوف • التوصيل متاح لجميع مناطق لبنان',
   openingHoursEn: 'Online Orders: 24/7 | Customer Support & Delivery: 10:00 AM – 1:00 AM',
@@ -948,8 +948,8 @@ export const INITIAL_STORE_SETTINGS: StoreSettings = {
   },
   announcementBar: {
     enabled: true,
-    textEn: '⚡ ON AlAA STORE — ONLINE TECH STORE BASED IN CHOUF | DELIVERY AVAILABLE TO ALL LEBANON | WHATSAPP: 03986718',
-    textAr: '⚡ متجر ON AlAA — متجر إلكتروني مقره الشوف | التوصيل متاح لجميع مناطق لبنان | واتساب: 03986718',
+    textEn: '⚡ ON AlAA STORE — ONLINE TECH STORE BASED IN CHOUF | DELIVERY AVAILABLE TO ALL LEBANON | WHATSAPP: 70773067',
+    textAr: '⚡ متجر ON AlAA — متجر إلكتروني مقره الشوف | التوصيل متاح لجميع مناطق لبنان | واتساب: 70773067',
     bgColor: '#007AFF',
     textColor: '#FFFFFF',
     linkUrl: '#products-section',

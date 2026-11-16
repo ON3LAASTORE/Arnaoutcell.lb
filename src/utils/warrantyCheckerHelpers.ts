@@ -116,7 +116,7 @@ export function sanitizeWarrantyTerms(rawTerms?: unknown, fallbackTerms?: string
     .replace(/\bARNAOUT\s*STORE\b/gi, 'ON AlAA STORE')
     .replace(/\bON\s*3LAA\s*STORE\b/gi, 'ON AlAA STORE')
     .replace(/\bSaida\b/gi, 'Chouf')
-    .replace(/\b03[\s-]?099[\s-]?889\b|\b81[\s-]?900[\s-]?916\b/g, '03 986 718');
+    .replace(/\b03[\s-]?099[\s-]?889\b|\b81[\s-]?900[\s-]?916\b|\b03[\s-]?986[\s-]?718\b/g, '70 773 067');
 }
 
 /**

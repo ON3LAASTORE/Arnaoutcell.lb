@@ -42,8 +42,8 @@ const mockSettings: StoreSettings = {
   storeName: 'ON AlAA STORE',
   tagline: 'Your Home in Electronics 🏠',
   taglineAr: 'بيتك في عالم الإلكترونيات 🏠',
-  phone: '03 986 718',
-  whatsapp: '9613986718',
+  phone: '70 773 067',
+  whatsapp: '96170773067',
   locationEn: 'Online Store — Based in Chouf, Delivery Available to All Lebanon',
   locationAr: 'متجر إلكتروني — مقرنا في الشوف، التوصيل متاح لجميع مناطق لبنان',
   openingHoursEn: 'Monday – Sunday: 10:00 AM – 1:00 AM',
@@ -72,7 +72,7 @@ test('generateSocialCaptions creates complete English and Arabic copy with real 
   assert.ok(captionEn.includes('12 Months'));
   assert.ok(captionEn.includes('Chouf'));
   assert.ok(captionEn.includes('All Lebanon'));
-  assert.ok(captionEn.includes('https://wa.me/9613986718'));
+  assert.ok(captionEn.includes('https://wa.me/96170773067'));
   assert.ok(captionEn.includes('prod-oppo-reno16-test'));
 
   // Arabic Caption checks
@@ -80,7 +80,7 @@ test('generateSocialCaptions creates complete English and Arabic copy with real 
   assert.ok(captionAr.includes('$739'));
   assert.ok(captionAr.includes('12 شهراً') || captionAr.includes('12'));
   assert.ok(captionAr.includes('الشوف'));
-  assert.ok(captionAr.includes('https://wa.me/9613986718'));
+  assert.ok(captionAr.includes('https://wa.me/96170773067'));
 
   // Bilingual checks
   assert.ok(bilingual.includes('Cash Price'));
@@ -104,7 +104,7 @@ test('generatePlatformSpecificText applies platform-specific rules', () => {
 
   // WhatsApp status should be punchy
   const statusText = generatePlatformSpecificText('whatsapp_status', post, mockSettings);
-  assert.equal(STORE_PHONE_INTL, '9613986718');
+  assert.equal(STORE_PHONE_INTL, '96170773067');
   assert.ok(statusText.includes(STORE_PHONE_DISPLAY));
 
   // X (Twitter) must be within 280 character limit

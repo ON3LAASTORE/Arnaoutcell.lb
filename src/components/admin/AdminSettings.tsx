@@ -108,8 +108,8 @@ export const AdminSettings: React.FC = () => {
   const [timezone, setTimezone] = useState(initialSchedule.timezone || 'Asia/Beirut');
 
   // General Store Info State
-  const [phone, setPhone] = useState(storeSettings.phone || '03 986 718');
-  const [whatsapp, setWhatsapp] = useState(storeSettings.whatsapp || '9613986718');
+  const [phone, setPhone] = useState(storeSettings.phone || '70 773 067');
+  const [whatsapp, setWhatsapp] = useState(storeSettings.whatsapp || '96170773067');
   const [locationEn, setLocationEn] = useState(storeSettings.locationEn || '');
   const [locationAr, setLocationAr] = useState(storeSettings.locationAr || '');
   const [zones, setZones] = useState(storeSettings.deliveryZones || []);
@@ -908,7 +908,7 @@ export const AdminSettings: React.FC = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono font-bold"
-                  placeholder="03 986 718"
+                  placeholder="70 773 067"
                 />
               </div>
 
@@ -921,7 +921,7 @@ export const AdminSettings: React.FC = () => {
                   value={whatsapp}
                   onChange={(e) => setWhatsapp(e.target.value)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono font-bold"
-                  placeholder="9613986718"
+                  placeholder="96170773067"
                 />
               </div>
 

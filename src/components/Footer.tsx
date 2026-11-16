@@ -91,13 +91,13 @@ export const Footer: React.FC = () => {
             {/* Contact & Location details */}
             <div className="space-y-2 pt-1 text-xs">
               <a
-                href="tel:03986718"
+                href="tel:70773067"
                 className="flex items-center gap-2.5 text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors font-bold"
               >
                 <div className="w-7 h-7 rounded-lg bg-[#EAF3FF] dark:bg-[#1E293B] flex items-center justify-center text-[#007AFF] flex-shrink-0">
                   <Phone className="w-3.5 h-3.5" />
                 </div>
-                <span dir="ltr">03 986 718</span>
+                <span dir="ltr">70 773 067</span>
               </a>
 
               <div className="flex items-start gap-2.5 text-[#172033] dark:text-[#F8FAFC]">
@@ -135,13 +135,13 @@ export const Footer: React.FC = () => {
             {/* Quick Actions Bar: WhatsApp & Share */}
             <div className="flex flex-wrap items-center gap-2 pt-2">
               <a
-                href={buildSendToPhoneUrl('03986718', 'whatsapp', lang === 'ar')}
+                href={buildSendToPhoneUrl('70773067', 'whatsapp', lang === 'ar')}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-xs transition-colors cursor-pointer"
               >
                 <WhatsApp3DIcon size={14} />
-                <span>{lang === 'ar' ? 'طلب فوري عبر واتساب' : 'WhatsApp Order (03986718)'}</span>
+                <span>{lang === 'ar' ? 'طلب فوري عبر واتساب' : 'WhatsApp Order (70773067)'}</span>
               </a>
 
               <button
@@ -278,8 +278,8 @@ export const Footer: React.FC = () => {
         <div className="pt-8 border-t border-[#DCE5F0] dark:border-[#1E293B] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#64748B] dark:text-slate-400">
           <p>
             {lang === 'ar'
-              ? `© 2027 ${storeSettings.storeNameAr || 'أون علاء ستور'} (${storeSettings.storeName || 'ON AlAA STORE'}). متجر إلكتروني مقره الشوف، لبنان. التوصيل متاح لجميع مناطق لبنان. هاتف: ${storeSettings.phone || '03986718'}.`
-              : `© 2027 ${storeSettings.storeName || 'ON AlAA STORE'}. Online Store based in Chouf, Lebanon. Delivery Available to All Lebanon. Phone: ${storeSettings.phone || '03986718'}. All rights reserved.`}
+              ? `© 2027 ${storeSettings.storeNameAr || 'أون علاء ستور'} (${storeSettings.storeName || 'ON AlAA STORE'}). متجر إلكتروني مقره الشوف، لبنان. التوصيل متاح لجميع مناطق لبنان. هاتف: ${storeSettings.phone || '70773067'}.`
+              : `© 2027 ${storeSettings.storeName || 'ON AlAA STORE'}. Online Store based in Chouf, Lebanon. Delivery Available to All Lebanon. Phone: ${storeSettings.phone || '70773067'}. All rights reserved.`}
           </p>
 
           <div className="flex items-center gap-4">

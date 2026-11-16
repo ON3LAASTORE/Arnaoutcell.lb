@@ -62,11 +62,11 @@ export const AnnouncementBar: React.FC = () => {
         {/* Right: Phone & Services */}
         <div className="hidden lg:flex items-center gap-3 flex-shrink-0 text-xs">
           <a
-            href={`tel:${(storeSettings.phone || '03 986 718').replace(/\s+/g, '')}`}
+            href={`tel:${(storeSettings.phone || '70 773 067').replace(/\s+/g, '')}`}
             className="flex items-center gap-1.5 hover:text-white transition-colors bg-black/20 px-2.5 py-1 rounded-full border border-white/10"
           >
             <Phone className="w-3.5 h-3.5 text-white" />
-            <span className="font-bold">{storeSettings.phone || '03 986 718'}</span>
+            <span className="font-bold">{storeSettings.phone || '70 773 067'}</span>
           </a>
           <button
             onClick={() => setCurrentView('services')}

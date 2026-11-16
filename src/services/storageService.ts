@@ -687,11 +687,11 @@ export function getStoreSettings(): StoreSettings {
     if (!merged.locationAr || merged.locationAr.includes('صيدا') || merged.locationAr.includes('H97G+W2P')) {
       merged.locationAr = INITIAL_STORE_SETTINGS.locationAr;
     }
-    if (!merged.phone || merged.phone.includes('81900916') || merged.phone.includes('03099889') || merged.phone.includes('70773067') || merged.phone.includes('70 773') || merged.phone.includes('81 900')) {
-      merged.phone = '03986718';
+    if (!merged.phone || merged.phone.includes('81900916') || merged.phone.includes('03099889') || merged.phone.includes('03986718') || merged.phone.includes('03 986') || merged.phone.includes('3986718') || merged.phone.includes('81 900')) {
+      merged.phone = '70773067';
     }
-    if (!merged.whatsapp || merged.whatsapp.includes('81900916') || merged.whatsapp.includes('03099889') || merged.whatsapp.includes('70773067')) {
-      merged.whatsapp = '9613986718';
+    if (!merged.whatsapp || merged.whatsapp.includes('81900916') || merged.whatsapp.includes('03099889') || merged.whatsapp.includes('9613986718') || merged.whatsapp.includes('03986718')) {
+      merged.whatsapp = '96170773067';
     }
     if (!merged.tagline || merged.tagline.includes('Saida') || merged.tagline.includes('صيدا') || merged.tagline.includes('🚚')) {
       merged.tagline = INITIAL_STORE_SETTINGS.tagline;

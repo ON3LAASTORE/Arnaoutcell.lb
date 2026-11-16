@@ -77,9 +77,9 @@ export const SERVICES_FAQS: ServicesFaqItem[] = [
     questionEn: 'What is excluded from warranty and how do I request support?',
     questionAr: 'ما الحالات غير المشمولة بالكفالة وكيف أطلب الصيانة أو الاستبدال؟',
     answerEn:
-      'Warranty does not cover physical breakage from drops or impacts, liquid damage on non-waterproof devices, or repairs performed by unauthorized third-party workshops. For fast warranty or return assistance within 3 days on unopened items, contact our Chouf support team on 03 986 718 or WhatsApp with your invoice.',
+      'Warranty does not cover physical breakage from drops or impacts, liquid damage on non-waterproof devices, or repairs performed by unauthorized third-party workshops. For fast warranty or return assistance within 3 days on unopened items, contact our Chouf support team on 70 773 067 or WhatsApp with your invoice.',
     answerAr:
-      'لا تشمل الكفالة الكسور الناتجة عن السقوط أو الصدمات، أو تلف السوائل، أو الصيانة في مراكز غير معتمدة. لطلب دعم الكفالة أو استبدال المنتجات غير المفتوحة خلال 3 أيام، تواصلوا معنا عبر الهاتف أو واتساب على الرقم \u206603 986 718\u2069 مع الفاتورة الرسمية.',
+      'لا تشمل الكفالة الكسور الناتجة عن السقوط أو الصدمات، أو تلف السوائل، أو الصيانة في مراكز غير معتمدة. لطلب دعم الكفالة أو استبدال المنتجات غير المفتوحة خلال 3 أيام، تواصلوا معنا عبر الهاتف أو واتساب على الرقم \u206670 773 067\u2069 مع الفاتورة الرسمية.',
   },
 ];
 

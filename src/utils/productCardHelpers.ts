@@ -81,7 +81,7 @@ export function buildProductWhatsAppUrl(
   storeWhatsapp: string | undefined,
   lang: Language
 ): string {
-  const cleanPhone = (storeWhatsapp || '9613986718').replace(/[^\d]/g, '') || '9613986718';
+  const cleanPhone = (storeWhatsapp || '96170773067').replace(/[^\d]/g, '') || '96170773067';
   const title = lang === 'ar' ? product.nameAr || product.name : product.name;
   const formattedPrice = formatUsdAmount(product.price);
 

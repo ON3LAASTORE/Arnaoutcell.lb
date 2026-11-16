@@ -156,7 +156,7 @@ export function buildRestockNotificationEmail(params: {
 
     return {
       subject: `توفر من جديد: ${title} — ${storeName}`,
-      text: `مرحباً،\n\nيسعدنا إبلاغك بأن المنتج "${title}" أصبح متوفراً الآن في ${storeName} بسعر ${priceLabel}.\nاطلبه الآن قبل نفاد الكمية: ${storeUrl}\nللاستفسار السريع: 03 986 718`,
+      text: `مرحباً،\n\nيسعدنا إبلاغك بأن المنتج "${title}" أصبح متوفراً الآن في ${storeName} بسعر ${priceLabel}.\nاطلبه الآن قبل نفاد الكمية: ${storeUrl}\nللاستفسار السريع: 70 773 067`,
       html: `<div dir="rtl" style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:16px;background:#ffffff;color:#172033;">
   <p style="font-size:12px;font-weight:700;color:#007AFF;margin:0 0 8px;">${safeStore}</p>
   <h2 style="margin:0 0 12px;font-size:20px;">المنتج الذي تنتظره توفر الآن!</h2>
@@ -173,7 +173,7 @@ export function buildRestockNotificationEmail(params: {
 
   return {
     subject: `Back in Stock: ${title} — ${storeName}`,
-    text: `Good news!\n\n"${title}" is back in stock at ${storeName} for ${priceLabel} with official warranty and delivery across all Lebanon.\nShop now before this batch sells out: ${storeUrl}\nQuestions? Call or WhatsApp 03 986 718.`,
+    text: `Good news!\n\n"${title}" is back in stock at ${storeName} for ${priceLabel} with official warranty and delivery across all Lebanon.\nShop now before this batch sells out: ${storeUrl}\nQuestions? Call or WhatsApp 70 773 067.`,
     html: `<div dir="ltr" style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;padding:24px;border:1px solid #e2e8f0;border-radius:16px;background:#ffffff;color:#172033;">
   <p style="font-size:12px;font-weight:700;color:#007AFF;margin:0 0 8px;">${safeStore}</p>
   <h2 style="margin:0 0 12px;font-size:20px;">Back in Stock & Ready to Ship</h2>
