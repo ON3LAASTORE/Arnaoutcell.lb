@@ -1,4 +1,5 @@
 import { Product, Language } from '../types';
+import { computeProductPricingMetrics } from './productCardHelpers';
 
 export interface ProductBadge {
   id: 'discount' | 'new' | 'bestseller' | 'low_stock' | 'out_of_stock';
@@ -76,16 +77,27 @@ export function getLowStockLabel(
  * Computes all active badge overlays for a product in priority display order.
  */
 export function getProductBadges(
-  product: Pick<Product, 'discountPercentage' | 'isNewArrival' | 'isBestSeller' | 'stock' | 'lowStockThreshold'>,
+  product: Pick<
+    Product,
+    'price' | 'originalPrice' | 'discountPercentage' | 'isNewArrival' | 'isBestSeller' | 'stock' | 'lowStockThreshold'
+  > | Pick<Product, 'discountPercentage' | 'isNewArrival' | 'isBestSeller' | 'stock' | 'lowStockThreshold'>,
   lang: Language
 ): ProductBadge[] {
   const badges: ProductBadge[] = [];
 
+  const priceFields = product as Pick<Product, 'price' | 'originalPrice' | 'discountPercentage'>;
+  const computedDiscount =
+    typeof priceFields.price === 'number' && typeof priceFields.originalPrice === 'number'
+      ? computeProductPricingMetrics(priceFields).discountPercent
+      : typeof product.discountPercentage === 'number' && product.discountPercentage > 0
+      ? Math.round(product.discountPercentage)
+      : 0;
+
   // 1. Discount badge (if discounted)
-  if (product.discountPercentage && product.discountPercentage > 0) {
+  if (computedDiscount > 0) {
     badges.push({
       id: 'discount',
-      label: `-${product.discountPercentage}% OFF`,
+      label: `-${computedDiscount}% OFF`,
       type: 'danger',
     });
   }

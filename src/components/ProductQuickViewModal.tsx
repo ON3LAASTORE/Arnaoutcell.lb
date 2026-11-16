@@ -34,6 +34,7 @@ import { WhatsApp3DIcon, Cart3DIcon, Zap3DIcon, Orbit3DIcon } from './icons/Thre
 import { LazyImage } from './LazyImage';
 import { openExternalUrl } from '../utils/navigation';
 import { getProductBadges, hasProductDiscount } from '../utils/productBadgeHelpers';
+import { NotifyMeControl } from './NotifyMeControl';
 
 export const ProductQuickViewModal: React.FC = () => {
   const {
@@ -868,6 +869,10 @@ export const ProductQuickViewModal: React.FC = () => {
                   <span>{lang === 'ar' ? 'شراء فوري مباشر ⚡' : 'Direct Order ⚡'}</span>
                 </button>
               </div>
+
+              {isOutOfStock && (
+                <NotifyMeControl product={product} lang={lang} variant="panel" />
+              )}
 
               {/* WhatsApp Fast Inquiry Button with Real 3D Icon */}
               <button

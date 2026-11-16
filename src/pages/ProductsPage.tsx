@@ -488,11 +488,11 @@ export const ProductsPage: React.FC = () => {
 
             {filteredProducts.length > 0 ? (
               <div
-                className={`grid ${
+                className={
                   viewMode === 'grid'
-                    ? 'grid-cols-2 sm:grid-cols-2 xl:grid-cols-3 gap-2.5 sm:gap-5'
-                    : 'grid-cols-1 gap-4'
-                }`}
+                    ? 'oaa-product-grid'
+                    : 'grid grid-cols-1 gap-4'
+                }
               >
                 {filteredProducts.map((product) => (
                   <ProductCard

@@ -81,7 +81,7 @@ export const MobileBottomNav: React.FC = () => {
 
                 {item.badge !== null && item.badge !== undefined && (
                   <span
-                    className={`absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-black flex items-center justify-center shadow-xs ${item.badgeColor}`}
+                    className={`absolute -top-2 -right-3 min-w-[16px] h-4 px-1 rounded-full text-[9px] font-black flex items-center justify-center shadow-xs ${item.badgeColor}`}
                   >
                     {item.badge}
                   </span>

@@ -1,36 +1,32 @@
 import React from 'react';
 import { HeroSection } from '../components/HeroSection';
 import { DeferredSection } from '../components/DeferredSection';
+import { ChunkErrorBoundary } from '../components/ChunkErrorBoundary';
 import { ReactBitsBackground } from '../components/animations/ReactBitsBackground';
+import { safeLazy } from '../utils/lazyImportHelpers';
 
 // Lazy-load all below-the-fold sections so initial page load only parses & hydrates the above-the-fold LCP shell
-const SpecialOffersColumn = React.lazy(() =>
-  import('../components/SpecialOffersColumn').then((m) => ({ default: m.SpecialOffersColumn }))
+const SpecialOffersColumn = safeLazy(
+  () => import('../components/SpecialOffersColumn'),
+  'SpecialOffersColumn'
 );
-const RecentlyViewedSection = React.lazy(() =>
-  import('../components/RecentlyViewedSection').then((m) => ({ default: m.RecentlyViewedSection }))
+const RecentlyViewedSection = safeLazy(
+  () => import('../components/RecentlyViewedSection'),
+  'RecentlyViewedSection'
 );
-const CategoryGrid = React.lazy(() =>
-  import('../components/CategoryGrid').then((m) => ({ default: m.CategoryGrid }))
+const CategoryGrid = safeLazy(() => import('../components/CategoryGrid'), 'CategoryGrid');
+const BrandCarousel = safeLazy(() => import('../components/BrandCarousel'), 'BrandCarousel');
+const VideoShowcase = safeLazy(() => import('../components/VideoShowcase'), 'VideoShowcase');
+const TestimonialsSlider = safeLazy(
+  () => import('../components/TestimonialsSlider'),
+  'TestimonialsSlider'
 );
-const BrandCarousel = React.lazy(() =>
-  import('../components/BrandCarousel').then((m) => ({ default: m.BrandCarousel }))
+const StoreLocatorSection = safeLazy(
+  () => import('../components/StoreLocatorSection'),
+  'StoreLocatorSection'
 );
-const VideoShowcase = React.lazy(() =>
-  import('../components/VideoShowcase').then((m) => ({ default: m.VideoShowcase }))
-);
-const TestimonialsSlider = React.lazy(() =>
-  import('../components/TestimonialsSlider').then((m) => ({ default: m.TestimonialsSlider }))
-);
-const StoreLocatorSection = React.lazy(() =>
-  import('../components/StoreLocatorSection').then((m) => ({ default: m.StoreLocatorSection }))
-);
-const ServiceSection = React.lazy(() =>
-  import('../components/ServiceSection').then((m) => ({ default: m.ServiceSection }))
-);
-const CustomerTrust = React.lazy(() =>
-  import('../components/CustomerTrust').then((m) => ({ default: m.CustomerTrust }))
-);
+const ServiceSection = safeLazy(() => import('../components/ServiceSection'), 'ServiceSection');
+const CustomerTrust = safeLazy(() => import('../components/CustomerTrust'), 'CustomerTrust');
 
 const OffersSkeleton: React.FC = () => (
   <div
@@ -56,9 +52,11 @@ export const HomePage: React.FC = () => {
     <ReactBitsBackground variant="combined" className="min-h-[100dvh]">
       <HeroSection />
 
-      <React.Suspense fallback={<OffersSkeleton />}>
-        <SpecialOffersColumn />
-      </React.Suspense>
+      <ChunkErrorBoundary label="special-offers">
+        <React.Suspense fallback={<OffersSkeleton />}>
+          <SpecialOffersColumn />
+        </React.Suspense>
+      </ChunkErrorBoundary>
 
       <DeferredSection minHeight={355}>
         <RecentlyViewedSection />

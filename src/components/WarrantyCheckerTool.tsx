@@ -21,9 +21,12 @@ import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import { LazyImage } from './LazyImage';
 import { lookupWarrantyInFirestore } from '../services/warrantyFirestoreService';
 import { parseScannedWarrantyCode } from '../utils/qrPayloadParser';
+import { ChunkErrorBoundary } from './ChunkErrorBoundary';
+import { safeLazy } from '../utils/lazyImportHelpers';
 
-const WarrantyQrScannerModal = React.lazy(() =>
-  import('./WarrantyQrScannerModal').then((m) => ({ default: m.WarrantyQrScannerModal }))
+const WarrantyQrScannerModal = safeLazy(
+  () => import('./WarrantyQrScannerModal'),
+  'WarrantyQrScannerModal'
 );
 import {
   SAMPLE_WARRANTY_LOOKUPS,
@@ -899,14 +902,16 @@ export const WarrantyCheckerTool: React.FC = () => {
       </div>
 
       {isScannerOpen && (
-        <React.Suspense fallback={null}>
-          <WarrantyQrScannerModal
-            isOpen={isScannerOpen}
-            onClose={() => setIsScannerOpen(false)}
-            onDetected={handleQrDetected}
-            lang={lang}
-          />
-        </React.Suspense>
+        <ChunkErrorBoundary label="qr-scanner">
+          <React.Suspense fallback={null}>
+            <WarrantyQrScannerModal
+              isOpen={isScannerOpen}
+              onClose={() => setIsScannerOpen(false)}
+              onDetected={handleQrDetected}
+              lang={lang}
+            />
+          </React.Suspense>
+        </ChunkErrorBoundary>
       )}
     </section>
   );

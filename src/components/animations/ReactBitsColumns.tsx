@@ -22,17 +22,17 @@ export const ReactBitsColumns: React.FC<ReactBitsColumnsProps> = ({
 
   const gridColsClass =
     columns === 1
-      ? 'grid-cols-1'
+      ? 'grid grid-cols-1 gap-5 md:gap-6'
       : columns === 2
-      ? 'grid-cols-1 md:grid-cols-2'
+      ? 'grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6'
       : columns === 4
-      ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
-      : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3';
+      ? 'oaa-product-grid'
+      : 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 md:gap-6';
 
   return (
     <div
       ref={containerRef}
-      className={`grid gap-5 md:gap-6 relative ${gridColsClass} ${className}`}
+      className={`relative ${gridColsClass} ${className}`}
     >
       {React.Children.map(children, (child, index) => {
         const delay = calculateStaggerDelay(index, 0.04, staggerInterval);

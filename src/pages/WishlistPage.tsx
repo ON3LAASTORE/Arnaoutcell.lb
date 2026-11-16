@@ -24,7 +24,7 @@ export const WishlistPage: React.FC = () => {
         </div>
 
         {favoritedProducts.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="oaa-product-grid">
             {favoritedProducts.map((product) => (
               <ProductCard key={product.id} product={product} layout="grid" />
             ))}

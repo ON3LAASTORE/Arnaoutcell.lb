@@ -8,3 +8,4 @@ coverage/
 !.env.example
 .admin_credentials.json
 .social_credentials.json
+.restock_notifications.json

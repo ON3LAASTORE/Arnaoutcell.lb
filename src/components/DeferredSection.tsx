@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { observeElementInViewport } from '../utils/lazyLoadingHelpers';
+import { ChunkErrorBoundary } from './ChunkErrorBoundary';
 
 export interface DeferredSectionProps {
   children: React.ReactNode;
@@ -72,9 +73,11 @@ export const DeferredSection: React.FC<DeferredSectionProps> = ({
       }}
     >
       {shouldRender ? (
-        <React.Suspense fallback={<SectionFallbackSkeleton minHeight={normalizedMinHeight} />}>
-          {children}
-        </React.Suspense>
+        <ChunkErrorBoundary label={sectionId || 'deferred-section'}>
+          <React.Suspense fallback={<SectionFallbackSkeleton minHeight={normalizedMinHeight} />}>
+            {children}
+          </React.Suspense>
+        </ChunkErrorBoundary>
       ) : (
         <SectionFallbackSkeleton minHeight={normalizedMinHeight} />
       )}

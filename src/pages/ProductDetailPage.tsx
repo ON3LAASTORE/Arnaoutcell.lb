@@ -24,6 +24,7 @@ import { openExternalUrl } from '../utils/navigation';
 import { getProductBadges, hasProductDiscount } from '../utils/productBadgeHelpers';
 import { addProductReview } from '../services/storageService';
 import { resolveFullResolutionImageUrl } from '../utils/imageResolutionHelpers';
+import { NotifyMeControl } from '../components/NotifyMeControl';
 
 export const ProductDetailPage: React.FC = () => {
   const {
@@ -504,6 +505,10 @@ export const ProductDetailPage: React.FC = () => {
                 </button>
               </div>
 
+              {isOutOfStock && (
+                <NotifyMeControl product={product} lang={lang} variant="panel" />
+              )}
+
               {/* WhatsApp direct inquiry button with Real 3D WhatsApp Icon */}
               <button
                 onClick={handleWhatsAppInquiry}
@@ -714,9 +719,9 @@ export const ProductDetailPage: React.FC = () => {
 
           {/* Related Products Carousel */}
           {relatedProducts.length > 0 && (
-            <div className="pt-10 border-t border-[#DCE5F0]">
-              <h3 className="text-xl font-bold text-[#172033] mb-6">{t.relatedProducts}</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            <div className="pt-10 border-t border-[#DCE5F0] dark:border-[#1E293B]">
+              <h3 className="text-xl font-bold text-[#172033] dark:text-[#F8FAFC] mb-6">{t.relatedProducts}</h3>
+              <div className="oaa-product-grid">
                 {relatedProducts.map((p) => (
                   <ProductCard key={p.id} product={p} layout="grid" />
                 ))}

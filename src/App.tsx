@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ShopProvider, useShop } from './context/ShopContext';
 import { AdminProvider } from './context/AdminContext';
 import { AnnouncementBar } from './components/AnnouncementBar';
@@ -6,77 +6,64 @@ import { Navbar } from './components/Navbar';
 import { HomePage } from './pages/HomePage';
 import { SEOHead } from './components/SEOHead';
 import { DeferredSection } from './components/DeferredSection';
+import { ChunkErrorBoundary } from './components/ChunkErrorBoundary';
+import { safeLazy } from './utils/lazyImportHelpers';
 import { getDirectionTransitionClass } from './utils/languageToggleHelpers';
 
+const EmptyOverlayFallback: React.FC<any> = () => null;
+
 // Lazy-loaded chrome, overlays, animations, and secondary pages (eliminates render-blocking JS from initial bundle)
-const Footer = React.lazy(() =>
-  import('./components/Footer').then((m) => ({ default: m.Footer }))
+const Footer = safeLazy(() => import('./components/Footer'), 'Footer');
+const MobileBottomNav = safeLazy(() => import('./components/MobileBottomNav'), 'MobileBottomNav', {
+  fallbackComponent: EmptyOverlayFallback,
+});
+const CartDrawer = safeLazy(() => import('./components/CartDrawer'), 'CartDrawer');
+const CompareFloatingBar = safeLazy(
+  () => import('./components/CompareFloatingBar'),
+  'CompareFloatingBar',
+  { fallbackComponent: EmptyOverlayFallback }
 );
-const MobileBottomNav = React.lazy(() =>
-  import('./components/MobileBottomNav').then((m) => ({ default: m.MobileBottomNav }))
+const FloatingWhatsAppButton = safeLazy(
+  () => import('./components/FloatingWhatsAppButton'),
+  'FloatingWhatsAppButton',
+  { fallbackComponent: EmptyOverlayFallback }
 );
-const CartDrawer = React.lazy(() =>
-  import('./components/CartDrawer').then((m) => ({ default: m.CartDrawer }))
+const GsapScrollLines = safeLazy(
+  () => import('./components/animations/GsapScrollLines'),
+  'GsapScrollLines',
+  { fallbackComponent: EmptyOverlayFallback }
 );
-const CompareFloatingBar = React.lazy(() =>
-  import('./components/CompareFloatingBar').then((m) => ({ default: m.CompareFloatingBar }))
+const SpecialOffersColumn = safeLazy(
+  () => import('./components/SpecialOffersColumn'),
+  'SpecialOffersColumn'
 );
-const FloatingWhatsAppButton = React.lazy(() =>
-  import('./components/FloatingWhatsAppButton').then((m) => ({ default: m.FloatingWhatsAppButton }))
+const AdminPage = safeLazy(() => import('./pages/AdminPage'), 'AdminPage');
+const ProductsPage = safeLazy(() => import('./pages/ProductsPage'), 'ProductsPage');
+const ProductDetailPage = safeLazy(
+  () => import('./pages/ProductDetailPage'),
+  'ProductDetailPage'
 );
-const GsapScrollLines = React.lazy(() =>
-  import('./components/animations/GsapScrollLines').then((m) => ({ default: m.GsapScrollLines }))
+const CategoriesPage = safeLazy(() => import('./pages/CategoriesPage'), 'CategoriesPage');
+const BrandsPage = safeLazy(() => import('./pages/BrandsPage'), 'BrandsPage');
+const VideosPage = safeLazy(() => import('./pages/VideosPage'), 'VideosPage');
+const CartPage = safeLazy(() => import('./pages/CartPage'), 'CartPage');
+const CheckoutPage = safeLazy(() => import('./pages/CheckoutPage'), 'CheckoutPage');
+const OrderConfirmationPage = safeLazy(
+  () => import('./pages/OrderConfirmationPage'),
+  'OrderConfirmationPage'
 );
-const SpecialOffersColumn = React.lazy(() =>
-  import('./components/SpecialOffersColumn').then((m) => ({ default: m.SpecialOffersColumn }))
+const TrackOrderPage = safeLazy(() => import('./pages/TrackOrderPage'), 'TrackOrderPage');
+const WishlistPage = safeLazy(() => import('./pages/WishlistPage'), 'WishlistPage');
+const ServicesPage = safeLazy(() => import('./pages/ServicesPage'), 'ServicesPage');
+const ContactPage = safeLazy(() => import('./pages/ContactPage'), 'ContactPage');
+const PoliciesPage = safeLazy(() => import('./pages/PoliciesPage'), 'PoliciesPage');
+const ProductCompareModal = safeLazy(
+  () => import('./components/ProductCompareModal'),
+  'ProductCompareModal'
 );
-const AdminPage = React.lazy(() =>
-  import('./pages/AdminPage').then((m) => ({ default: m.AdminPage }))
-);
-const ProductsPage = React.lazy(() =>
-  import('./pages/ProductsPage').then((m) => ({ default: m.ProductsPage }))
-);
-const ProductDetailPage = React.lazy(() =>
-  import('./pages/ProductDetailPage').then((m) => ({ default: m.ProductDetailPage }))
-);
-const CategoriesPage = React.lazy(() =>
-  import('./pages/CategoriesPage').then((m) => ({ default: m.CategoriesPage }))
-);
-const BrandsPage = React.lazy(() =>
-  import('./pages/BrandsPage').then((m) => ({ default: m.BrandsPage }))
-);
-const VideosPage = React.lazy(() =>
-  import('./pages/VideosPage').then((m) => ({ default: m.VideosPage }))
-);
-const CartPage = React.lazy(() =>
-  import('./pages/CartPage').then((m) => ({ default: m.CartPage }))
-);
-const CheckoutPage = React.lazy(() =>
-  import('./pages/CheckoutPage').then((m) => ({ default: m.CheckoutPage }))
-);
-const OrderConfirmationPage = React.lazy(() =>
-  import('./pages/OrderConfirmationPage').then((m) => ({ default: m.OrderConfirmationPage }))
-);
-const TrackOrderPage = React.lazy(() =>
-  import('./pages/TrackOrderPage').then((m) => ({ default: m.TrackOrderPage }))
-);
-const WishlistPage = React.lazy(() =>
-  import('./pages/WishlistPage').then((m) => ({ default: m.WishlistPage }))
-);
-const ServicesPage = React.lazy(() =>
-  import('./pages/ServicesPage').then((m) => ({ default: m.ServicesPage }))
-);
-const ContactPage = React.lazy(() =>
-  import('./pages/ContactPage').then((m) => ({ default: m.ContactPage }))
-);
-const PoliciesPage = React.lazy(() =>
-  import('./pages/PoliciesPage').then((m) => ({ default: m.PoliciesPage }))
-);
-const ProductCompareModal = React.lazy(() =>
-  import('./components/ProductCompareModal').then((m) => ({ default: m.ProductCompareModal }))
-);
-const ProductQuickViewModal = React.lazy(() =>
-  import('./components/ProductQuickViewModal').then((m) => ({ default: m.ProductQuickViewModal }))
+const ProductQuickViewModal = safeLazy(
+  () => import('./components/ProductQuickViewModal'),
+  'ProductQuickViewModal'
 );
 
 const FastSpinner: React.FC = () => (
@@ -89,11 +76,39 @@ const AppContent: React.FC = () => {
   const { currentView, lang, isSwitchingLanguage, isCartOpen, compareList, quickViewProduct } = useShop();
   const dirClass = lang === 'ar' ? 'rtl' : 'ltr';
   const transitionClass = getDirectionTransitionClass(lang, isSwitchingLanguage);
+  const [mountScrollLines, setMountScrollLines] = useState(false);
 
   // Instant scroll-to-top on page or view transition
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, [currentView]);
+
+  // Defer decorative scroll-lines module load until after first paint settles
+  useEffect(() => {
+    let cancelled = false;
+    const schedule = () => {
+      if (!cancelled) setMountScrollLines(true);
+    };
+
+    const win = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+
+    if (typeof win.requestIdleCallback === 'function') {
+      const id = win.requestIdleCallback(schedule, { timeout: 600 });
+      return () => {
+        cancelled = true;
+        win.cancelIdleCallback?.(id);
+      };
+    }
+
+    const timer = window.setTimeout(schedule, 120);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, []);
 
   // If in admin view, AdminPage has its own dedicated dashboard shell
   if (currentView === 'admin') {
@@ -105,9 +120,11 @@ const AppContent: React.FC = () => {
         className={`${dirClass} ${transitionClass}`.trim()}
       >
         <SEOHead />
-        <React.Suspense fallback={<FastSpinner />}>
-          <AdminPage />
-        </React.Suspense>
+        <ChunkErrorBoundary resetKey={currentView} label="admin-page">
+          <React.Suspense fallback={<FastSpinner />}>
+            <AdminPage />
+          </React.Suspense>
+        </ChunkErrorBoundary>
       </div>
     );
   }
@@ -120,9 +137,13 @@ const AppContent: React.FC = () => {
       className={`${dirClass} ${transitionClass} flex flex-col min-h-[100dvh] w-full overflow-x-hidden bg-[#FFFFFF] dark:bg-[#0A0F1D] text-[#172033] dark:text-[#F8FAFC] selection:bg-[#007AFF] selection:text-white transition-colors duration-200`}
     >
       <SEOHead />
-      <React.Suspense fallback={null}>
-        <GsapScrollLines showTopIndicator={true} showVerticalGuideLines={true} />
-      </React.Suspense>
+      {mountScrollLines && (
+        <ChunkErrorBoundary silent label="scroll-lines">
+          <React.Suspense fallback={null}>
+            <GsapScrollLines showTopIndicator={true} showVerticalGuideLines={true} />
+          </React.Suspense>
+        </ChunkErrorBoundary>
+      )}
       <AnnouncementBar />
       <Navbar />
 
@@ -130,26 +151,28 @@ const AppContent: React.FC = () => {
         {currentView === 'home' ? (
           <HomePage />
         ) : (
-          <React.Suspense fallback={<FastSpinner />}>
-            {currentView === 'products' && <ProductsPage />}
-            {currentView === 'product-detail' && <ProductDetailPage />}
-            {currentView === 'categories' && <CategoriesPage />}
-            {currentView === 'brands' && <BrandsPage />}
-            {currentView === 'offers' && (
-              <div className="py-8">
-                <SpecialOffersColumn />
-              </div>
-            )}
-            {currentView === 'videos' && <VideosPage />}
-            {currentView === 'cart' && <CartPage />}
-            {currentView === 'checkout' && <CheckoutPage />}
-            {currentView === 'order-confirmation' && <OrderConfirmationPage />}
-            {currentView === 'track-order' && <TrackOrderPage />}
-            {currentView === 'wishlist' && <WishlistPage />}
-            {currentView === 'services' && <ServicesPage />}
-            {currentView === 'contact' && <ContactPage />}
-            {currentView.startsWith('policy') && <PoliciesPage initialTab={currentView} />}
-          </React.Suspense>
+          <ChunkErrorBoundary resetKey={currentView} label={`route-${currentView}`}>
+            <React.Suspense fallback={<FastSpinner />}>
+              {currentView === 'products' && <ProductsPage />}
+              {currentView === 'product-detail' && <ProductDetailPage />}
+              {currentView === 'categories' && <CategoriesPage />}
+              {currentView === 'brands' && <BrandsPage />}
+              {currentView === 'offers' && (
+                <div className="py-8">
+                  <SpecialOffersColumn />
+                </div>
+              )}
+              {currentView === 'videos' && <VideosPage />}
+              {currentView === 'cart' && <CartPage />}
+              {currentView === 'checkout' && <CheckoutPage />}
+              {currentView === 'order-confirmation' && <OrderConfirmationPage />}
+              {currentView === 'track-order' && <TrackOrderPage />}
+              {currentView === 'wishlist' && <WishlistPage />}
+              {currentView === 'services' && <ServicesPage />}
+              {currentView === 'contact' && <ContactPage />}
+              {currentView.startsWith('policy') && <PoliciesPage initialTab={currentView} />}
+            </React.Suspense>
+          </ChunkErrorBoundary>
         )}
       </main>
 
@@ -157,14 +180,16 @@ const AppContent: React.FC = () => {
         <Footer />
       </DeferredSection>
 
-      <React.Suspense fallback={null}>
-        <MobileBottomNav />
-        {isCartOpen && <CartDrawer />}
-        {quickViewProduct && <ProductQuickViewModal />}
-        {compareList.length > 0 && <CompareFloatingBar />}
-        {compareList.length > 0 && <ProductCompareModal />}
-        <FloatingWhatsAppButton />
-      </React.Suspense>
+      <ChunkErrorBoundary silent label="overlays">
+        <React.Suspense fallback={null}>
+          <MobileBottomNav />
+          {isCartOpen && <CartDrawer />}
+          {quickViewProduct && <ProductQuickViewModal />}
+          {compareList.length > 0 && <CompareFloatingBar />}
+          {compareList.length > 0 && <ProductCompareModal />}
+          <FloatingWhatsAppButton />
+        </React.Suspense>
+      </ChunkErrorBoundary>
     </div>
   );
 };
