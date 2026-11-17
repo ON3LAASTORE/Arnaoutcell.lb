@@ -341,9 +341,18 @@ export async function trackSearchQuery(params: {
     if (event.selectedEntityTitle) {
       firestorePayload.selectedEntityTitle = event.selectedEntityTitle;
     }
-    Promise.all([import('../firebase'), import('firebase/firestore')])
-      .then(([{ db }, { doc, setDoc }]) => {
-        setDoc(doc(db, 'search_analytics', event.id), firestorePayload).catch(() => {});
+    Promise.all([
+      import('../firebase'),
+      import('firebase/firestore'),
+      import('../utils/firestoreQuotaHelpers'),
+    ])
+      .then(([{ db }, { doc, setDoc }, quota]) => {
+        if (quota.isFirestoreInQuotaCooldown()) return;
+        setDoc(doc(db, 'search_analytics', event.id), firestorePayload).catch((err) => {
+          if (quota.isFirestoreQuotaExceededError(err)) {
+            quota.markFirestoreQuotaExceeded();
+          }
+        });
       })
       .catch(() => {});
   }

@@ -18,6 +18,11 @@ import {
   normalizeLookupQuery,
   sanitizeWarrantyTerms,
 } from '../utils/warrantyCheckerHelpers';
+import {
+  isFirestoreInQuotaCooldown,
+  isFirestoreQuotaExceededError,
+  markFirestoreQuotaExceeded,
+} from '../utils/firestoreQuotaHelpers';
 
 const FIRESTORE_QUERY_TIMEOUT_MS = 4500;
 
@@ -88,9 +93,13 @@ async function resolveProductsForOrder(
   const catalog = [...fallbackProducts];
   let enrichedFromFirestore = false;
 
+  if (isFirestoreInQuotaCooldown()) {
+    return { catalog, enrichedFromFirestore };
+  }
+
   await Promise.all(
     order.items.map(async (item) => {
-      if (!item.productId || !isValidFirestoreDocId(item.productId)) return;
+      if (!item.productId || !isValidFirestoreDocId(item.productId) || isFirestoreInQuotaCooldown()) return;
       try {
         const snap = await withTimeout(getDoc(doc(db, 'products', item.productId)));
         if (snap.exists()) {
@@ -109,6 +118,10 @@ async function resolveProductsForOrder(
           }
         }
       } catch (error) {
+        if (isFirestoreQuotaExceededError(error)) {
+          markFirestoreQuotaExceeded();
+          return;
+        }
         if (isPermissionDeniedError(error)) {
           try {
             handleFirestoreError(error, OperationType.GET, `products/${item.productId}`);
@@ -147,14 +160,17 @@ export async function lookupWarrantyInFirestore(
     // Also check if Firestore has newer order status updates for this Order ID
     let latestOrder = localOrderMatch;
     let orderFromFirestore = false;
-    if (isValidFirestoreDocId(upperQuery)) {
+    if (isValidFirestoreDocId(upperQuery) && !isFirestoreInQuotaCooldown()) {
       try {
         const orderSnap = await withTimeout(getDoc(doc(db, 'orders', upperQuery)));
         if (orderSnap.exists()) {
           latestOrder = orderSnap.data() as Order;
           orderFromFirestore = true;
         }
-      } catch {
+      } catch (error) {
+        if (isFirestoreQuotaExceededError(error)) {
+          markFirestoreQuotaExceeded();
+        }
         // Non-existent order doc in Firestore rules evaluates resource.data.id == orderId -> ignore cleanly
       }
     }
@@ -171,7 +187,7 @@ export async function lookupWarrantyInFirestore(
   }
 
   // 2. Direct Firestore Order lookup (/orders/{orderId}) for orders created on other devices
-  if (isValidFirestoreDocId(upperQuery) && /^(OAA|ARN|ORD)-/i.test(upperQuery)) {
+  if (isValidFirestoreDocId(upperQuery) && /^(OAA|ARN|ORD)-/i.test(upperQuery) && !isFirestoreInQuotaCooldown()) {
     try {
       const orderSnap = await withTimeout(getDoc(doc(db, 'orders', upperQuery)));
       if (orderSnap.exists()) {
@@ -179,7 +195,10 @@ export async function lookupWarrantyInFirestore(
         const { catalog } = await resolveProductsForOrder(orderData, fallbackProducts);
         return evaluateOrderWarranty(orderData, catalog, 'firestore', nowDate);
       }
-    } catch {
+    } catch (error) {
+      if (isFirestoreQuotaExceededError(error)) {
+        markFirestoreQuotaExceeded();
+      }
       // Note: existing firestore.rules returns permission-denied when resource == null on /orders/{orderId};
       // fall through cleanly to product barcode/SKU lookups rather than failing the search.
     }
@@ -187,7 +206,8 @@ export async function lookupWarrantyInFirestore(
 
   // 3. Query Firestore `/products` collection by barcode ("Barcode or serial identifier")
   const productsCol = collection(db, 'products');
-  try {
+  if (!isFirestoreInQuotaCooldown()) {
+    try {
     const barcodeSnap = await withTimeout(
       getDocs(query(productsCol, where('barcode', '==', normalized), limit(1)))
     );
@@ -252,13 +272,16 @@ export async function lookupWarrantyInFirestore(
       }
     }
   } catch (error) {
-    if (isPermissionDeniedError(error)) {
+    if (isFirestoreQuotaExceededError(error)) {
+      markFirestoreQuotaExceeded();
+    } else if (isPermissionDeniedError(error)) {
       try {
         handleFirestoreError(error, OperationType.GET, 'products');
       } catch {
         // Fall back to synced product catalog below
       }
     }
+  }
   }
 
   // 6. Offline / unseeded catalog fallback across synced products

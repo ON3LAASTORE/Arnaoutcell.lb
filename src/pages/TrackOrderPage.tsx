@@ -12,6 +12,11 @@ import {
 } from 'lucide-react';
 import { db } from '../firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import {
+  isFirestoreInQuotaCooldown,
+  isFirestoreQuotaExceededError,
+  markFirestoreQuotaExceeded,
+} from '../utils/firestoreQuotaHelpers';
 
 const STATUS_STEPS: { status: OrderStatus; labelEn: string; labelAr: string; descEn: string; descAr: string }[] = [
   { status: 'new', labelEn: 'New Order', labelAr: 'تم استلام الطلب', descEn: 'Order placed online', descAr: 'تم تسجيل الطلب في النظام' },
@@ -39,7 +44,7 @@ export const TrackOrderPage: React.FC = () => {
       (o) => o.id.toUpperCase() === cleanId || o.customer.phone.includes(orderQuery.trim())
     );
 
-    if (!found) {
+    if (!found && !isFirestoreInQuotaCooldown()) {
       setIsSearching(true);
       try {
         const snap = await getDoc(doc(db, 'orders', cleanId));
@@ -47,6 +52,9 @@ export const TrackOrderPage: React.FC = () => {
           found = snap.data() as Order;
         }
       } catch (err) {
+        if (isFirestoreQuotaExceededError(err)) {
+          markFirestoreQuotaExceeded();
+        }
         console.warn('Firestore tracking query:', err);
       } finally {
         setIsSearching(false);

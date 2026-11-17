@@ -5,6 +5,12 @@ import {
   isValidEmailFormat,
   normalizeEmail,
 } from '../utils/newsletterHelpers';
+import {
+  isFirestoreInQuotaCooldown,
+  isFirestorePermissionError,
+  isFirestoreQuotaExceededError,
+  markFirestoreQuotaExceeded,
+} from '../utils/firestoreQuotaHelpers';
 
 export {
   buildSubscriberPayload,
@@ -64,12 +70,13 @@ export async function subscribeToNewsletter(
 
   const subscriberData = buildSubscriberPayload(cleanEmail, lang, source);
 
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && !isFirestoreInQuotaCooldown()) {
     try {
       await setDoc(doc(db, 'newsletter_subscribers', subscriberData.id), subscriberData);
     } catch (err) {
-      const msg = err instanceof Error ? err.message.toLowerCase() : String(err).toLowerCase();
-      if (msg.includes('permission') || msg.includes('missing or insufficient permissions')) {
+      if (isFirestoreQuotaExceededError(err)) {
+        markFirestoreQuotaExceeded();
+      } else if (isFirestorePermissionError(err)) {
         handleFirestoreError(err, OperationType.WRITE, `newsletter_subscribers/${subscriberData.id}`);
       }
       console.warn('Firestore newsletter subscription sync deferred:', err);

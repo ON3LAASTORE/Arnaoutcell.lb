@@ -1,13 +1,28 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useShop } from '../context/ShopContext';
 import { ShieldCheck, ArrowRight } from 'lucide-react';
-import { LazyImage } from './LazyImage';
+import { buildBrandShowcaseBanners } from '../utils/brandShowcaseHelpers';
+import { BrandBannerCard } from './BrandBannerCard';
 
 export const BrandCarousel: React.FC = () => {
-  const { lang, brands, selectBrand, setCurrentView } = useShop();
+  const { lang, brands, products, selectBrand, setCurrentView } = useShop();
+
+  const showcaseItems = useMemo(
+    () =>
+      buildBrandShowcaseBanners(brands, products, {
+        featuredOnly: true,
+        limit: 8,
+        visualsPerBrand: 3,
+        lang,
+      }),
+    [brands, products, lang]
+  );
 
   return (
-    <section className="py-14 md:py-20 bg-[#F5F8FC] dark:bg-[#0A0F1D] border-b border-[#DCE5F0] dark:border-[#1E293B] transition-colors duration-200">
+    <section
+      id="brand-showcase-section"
+      className="py-14 md:py-20 bg-[#F5F8FC] dark:bg-[#0A0F1D] border-b border-[#DCE5F0] dark:border-[#1E293B] transition-colors duration-200"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
           <div>
@@ -26,44 +41,32 @@ export const BrandCarousel: React.FC = () => {
           </div>
 
           <button
+            type="button"
             onClick={() => {
               setCurrentView('brands');
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
             className="text-xs font-bold text-[#007AFF] hover:text-[#0066D6] dark:text-[#38BDF8] dark:hover:text-sky-300 flex items-center gap-1 transition-colors cursor-pointer self-start sm:self-auto"
           >
-            <span>{lang === 'ar' ? 'عرض كافة الماركات' : 'View Full Brand Directory'}</span>
+            <span>
+              {lang === 'ar'
+                ? `عرض كافة الماركات (${brands.length})`
+                : `View All ${brands.length} Brands`}
+            </span>
             <ArrowRight className="w-3.5 h-3.5 rtl:rotate-180" />
           </button>
         </div>
 
-        {/* Brand Cards Grid */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3 sm:gap-4">
-          {brands.map((brand) => (
-            <div
-              key={brand.id}
-              onClick={() => selectBrand(brand.name)}
-              className="group p-3 sm:p-4 rounded-xl bg-white dark:bg-[#111A2E] hover:bg-[#F5F8FC] dark:hover:bg-[#162038] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] dark:hover:border-[#38BDF8] flex flex-col items-center justify-center text-center cursor-pointer transition-all duration-300 hover:scale-105 shadow-xs hover:shadow-[0_4px_16px_-2px_rgba(0,122,255,0.12)]"
-            >
-              <div className="w-12 h-12 rounded-full overflow-hidden bg-[#F5F8FC] dark:bg-[#0A0F1D] border border-[#DCE5F0] dark:border-[#1E293B] mb-2 p-1 flex items-center justify-center group-hover:border-[#007AFF] transition-colors">
-                <LazyImage
-                  src={brand.logo}
-                  alt={`${brand.name} official electronics brand at ON AlAA STORE Lebanon`}
-                  width={48}
-                  height={48}
-                  wrapperClassName="w-full h-full rounded-full"
-                  className="w-full h-full object-cover rounded-full"
-                />
-              </div>
-              <span className="font-bold text-xs text-[#172033] dark:text-[#F8FAFC] group-hover:text-[#007AFF] dark:group-hover:text-[#38BDF8] transition-colors truncate max-w-full">
-                {brand.name}
-              </span>
-              {brand.productCount ? (
-                <span className="text-[10px] text-[#64748B] dark:text-slate-400 mt-0.5">
-                  {brand.productCount} {lang === 'ar' ? 'منتج' : 'items'}
-                </span>
-              ) : null}
-            </div>
+        {/* 2-Column Spacious Horizontal Brand Showcase Grid */}
+        <div className="oaa-brand-grid">
+          {showcaseItems.map((item, idx) => (
+            <BrandBannerCard
+              key={item.brand.id}
+              item={item}
+              onSelect={selectBrand}
+              priority={idx < 4}
+              lang={lang}
+            />
           ))}
         </div>
       </div>

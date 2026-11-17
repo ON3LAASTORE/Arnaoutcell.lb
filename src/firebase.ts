@@ -14,6 +14,12 @@ import {
   Firestore,
 } from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
+import {
+  clearFirestoreQuotaCooldown,
+  isFirestoreInQuotaCooldown,
+  isFirestoreQuotaExceededError,
+  markFirestoreQuotaExceeded,
+} from './utils/firestoreQuotaHelpers';
 
 const app = initializeApp(firebaseConfig);
 
@@ -111,6 +117,7 @@ if (typeof window !== 'undefined') {
  * Proactively forces Firestore to reconnect to the cloud database.
  */
 export async function reconnectFirestore(): Promise<boolean> {
+  clearFirestoreQuotaCooldown();
   try {
     await enableNetwork(db);
     isOnlineState = true;
@@ -177,23 +184,24 @@ export function handleFirestoreError(
   throw new Error(JSON.stringify(errInfo));
 }
 
-// Resilient connection check on boot
+// On-demand connection check (does not auto-fire on every boot to preserve free-tier daily read quota)
 export async function testConnection(): Promise<boolean> {
+  if (isFirestoreInQuotaCooldown()) {
+    return false;
+  }
   try {
     await getDocFromServer(doc(db, 'test', 'connection'));
     return true;
   } catch (error) {
+    if (isFirestoreQuotaExceededError(error)) {
+      markFirestoreQuotaExceeded();
+      console.warn('Firestore daily read quota reached; continuing in resilient local cache mode.');
+      return false;
+    }
     if (error instanceof Error && (error.message.includes('the client is offline') || error.message.includes('unavailable'))) {
       console.warn('Firestore offline notice: running with resilient local store & auto-reconnect enabled.');
     }
     return false;
   }
-}
-
-// Run non-blocking connection verification
-if (typeof window !== 'undefined') {
-  setTimeout(() => {
-    testConnection().catch(() => {});
-  }, 100);
 }
 

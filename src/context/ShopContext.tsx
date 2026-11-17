@@ -42,6 +42,7 @@ import {
   persistStoredLanguage,
   syncLanguageSettingImmediately,
 } from '../utils/languageToggleHelpers';
+import { ProductCollectionPreset } from '../utils/navbarMenuHelpers';
 
 interface ShopContextType {
   lang: Language;
@@ -90,6 +91,8 @@ interface ShopContextType {
   selectCategory: (slug: string | null) => void;
   selectedBrandName: string | null;
   selectBrand: (brandName: string | null) => void;
+  productCollectionPreset: ProductCollectionPreset;
+  setProductCollectionPreset: (preset: ProductCollectionPreset) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 
@@ -169,6 +172,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
   const [selectedBrandName, setSelectedBrandName] = useState<string | null>(null);
+  const [productCollectionPreset, setProductCollectionPreset] = useState<ProductCollectionPreset>('all');
   const [searchQuery, setSearchQuery] = useState<string>('');
 
   // Cart & Wishlist
@@ -492,6 +496,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const selectCategory = (slug: string | null) => {
     setSelectedCategorySlug(slug);
     setSelectedBrandName(null);
+    setProductCollectionPreset('all');
     if (slug) {
       setSearchQuery('');
     }
@@ -502,6 +507,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const selectBrand = (brandName: string | null) => {
     setSelectedBrandName(brandName);
     setSelectedCategorySlug(null);
+    setProductCollectionPreset('all');
     if (brandName) {
       setSearchQuery('');
     }
@@ -594,6 +600,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         selectCategory,
         selectedBrandName,
         selectBrand,
+        productCollectionPreset,
+        setProductCollectionPreset,
         searchQuery,
         setSearchQuery,
         quickViewProduct,

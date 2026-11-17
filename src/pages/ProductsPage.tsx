@@ -32,6 +32,8 @@ export const ProductsPage: React.FC = () => {
     selectCategory,
     selectedBrandName,
     selectBrand,
+    productCollectionPreset,
+    setProductCollectionPreset,
     searchQuery,
     setSearchQuery,
     compareList,
@@ -127,10 +129,16 @@ export const ProductsPage: React.FC = () => {
         // Offers filter
         if (onlyOffers && !p.isSpecialOffer) return false;
 
+        // Collection preset filter (New Arrivals / Best Sellers)
+        if (productCollectionPreset === 'new' && !p.isNewArrival) return false;
+        if (productCollectionPreset === 'bestseller' && !p.isBestSeller) return false;
+
         return true;
       });
 
-    return sortProducts(filtered, sortOption);
+    const effectiveSort =
+      productCollectionPreset === 'new' && sortOption === 'recommended' ? 'newest' : sortOption;
+    return sortProducts(filtered, effectiveSort);
   }, [
     products,
     categories,
@@ -143,12 +151,14 @@ export const ProductsPage: React.FC = () => {
     selectedBudgetTiers,
     onlyInStock,
     onlyOffers,
+    productCollectionPreset,
     sortOption,
   ]);
 
   const clearAllFilters = () => {
     selectCategory(null);
     selectBrand(null);
+    setProductCollectionPreset('all');
     setSearchQuery('');
     setPriceMin(0);
     setPriceMax(3000);
@@ -162,6 +172,7 @@ export const ProductsPage: React.FC = () => {
     Boolean(selectedCategorySlug) ||
     Boolean(selectedBrandName) ||
     Boolean(searchQuery.trim()) ||
+    productCollectionPreset !== 'all' ||
     priceMin > 0 ||
     priceMax < 3000 ||
     selectedBudgetTiers.length > 0 ||

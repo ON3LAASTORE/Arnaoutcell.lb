@@ -16,6 +16,12 @@ import {
   didProductRestock,
   StockNotificationRecord,
 } from '../utils/stockNotificationHelpers';
+import {
+  isFirestoreInQuotaCooldown,
+  isFirestorePermissionError,
+  isFirestoreQuotaExceededError,
+  markFirestoreQuotaExceeded,
+} from '../utils/firestoreQuotaHelpers';
 
 export type { StockNotificationRecord, StockNotificationStatus } from '../utils/stockNotificationHelpers';
 export {
@@ -163,12 +169,13 @@ export async function subscribeToStockNotification(params: {
   }
 
   // 3. Persist strictly validated document to Cloud Firestore
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && !isFirestoreInQuotaCooldown()) {
     try {
       await setDoc(doc(db, COLLECTION_NAME, payload.id), payload);
     } catch (error) {
-      const msg = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-      if (msg.includes('permission') || msg.includes('missing or insufficient permissions')) {
+      if (isFirestoreQuotaExceededError(error)) {
+        markFirestoreQuotaExceeded();
+      } else if (isFirestorePermissionError(error)) {
         handleFirestoreError(error, OperationType.WRITE, `${COLLECTION_NAME}/${payload.id}`);
       }
       console.warn('Firestore stock notification sync deferred:', error);
@@ -225,7 +232,7 @@ export async function fetchStockNotificationsOverview(): Promise<{
   }
 
   // Firestore query when Firebase Admin session is active
-  if (typeof window !== 'undefined' && auth.currentUser) {
+  if (typeof window !== 'undefined' && auth.currentUser && !isFirestoreInQuotaCooldown()) {
     try {
       const snapshot = await getDocs(collection(db, COLLECTION_NAME));
       snapshot.forEach((docSnap) => {
@@ -235,8 +242,9 @@ export async function fetchStockNotificationsOverview(): Promise<{
         }
       });
     } catch (error) {
-      const msg = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-      if (msg.includes('permission') || msg.includes('missing or insufficient permissions')) {
+      if (isFirestoreQuotaExceededError(error)) {
+        markFirestoreQuotaExceeded();
+      } else if (isFirestorePermissionError(error)) {
         try {
           handleFirestoreError(error, OperationType.LIST, COLLECTION_NAME);
         } catch {
@@ -267,7 +275,7 @@ export async function dispatchAutomatedRestockUpdates(
   );
 
   let pendingFromFirestore: StockNotificationRecord[] = [];
-  if (typeof window !== 'undefined' && auth.currentUser) {
+  if (typeof window !== 'undefined' && auth.currentUser && !isFirestoreInQuotaCooldown()) {
     try {
       const q = query(
         collection(db, COLLECTION_NAME),
@@ -279,8 +287,9 @@ export async function dispatchAutomatedRestockUpdates(
         pendingFromFirestore.push(docSnap.data() as StockNotificationRecord);
       });
     } catch (error) {
-      const msg = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-      if (msg.includes('permission') || msg.includes('missing or insufficient permissions')) {
+      if (isFirestoreQuotaExceededError(error)) {
+        markFirestoreQuotaExceeded();
+      } else if (isFirestorePermissionError(error)) {
         try {
           handleFirestoreError(error, OperationType.LIST, COLLECTION_NAME);
         } catch {
@@ -330,16 +339,25 @@ export async function dispatchAutomatedRestockUpdates(
   }
 
   // Update Firestore statuses to 'notified' when signed into Firebase Admin
-  if (typeof window !== 'undefined' && auth.currentUser && combinedPending.size > 0) {
+  if (
+    typeof window !== 'undefined' &&
+    auth.currentUser &&
+    combinedPending.size > 0 &&
+    !isFirestoreInQuotaCooldown()
+  ) {
     for (const record of combinedPending.values()) {
+      if (isFirestoreInQuotaCooldown()) break;
       try {
         await updateDoc(doc(db, COLLECTION_NAME, record.id), {
           status: 'notified',
           notifiedAt,
         });
       } catch (error) {
-        const msg = error instanceof Error ? error.message.toLowerCase() : String(error).toLowerCase();
-        if (msg.includes('permission') || msg.includes('missing or insufficient permissions')) {
+        if (isFirestoreQuotaExceededError(error)) {
+          markFirestoreQuotaExceeded();
+          break;
+        }
+        if (isFirestorePermissionError(error)) {
           try {
             handleFirestoreError(error, OperationType.UPDATE, `${COLLECTION_NAME}/${record.id}`);
           } catch {

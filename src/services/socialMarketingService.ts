@@ -1,9 +1,14 @@
 import { MarketingPost, SocialAccountConfig, SocialPlatform, SocialPublishResult } from '../types/socialMarketing';
-import { db, handleFirestoreError, OperationType } from '../firebase';
-import { collection, doc, setDoc, deleteDoc, getDocs, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase';
+import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { openExternalUrl } from '../utils/navigation';
 import { safeStorageSetItem } from '../utils/storageQuotaHelpers';
 import { resolveFullResolutionImageUrl } from '../utils/imageResolutionHelpers';
+import {
+  isFirestoreInQuotaCooldown,
+  isFirestoreQuotaExceededError,
+  markFirestoreQuotaExceeded,
+} from '../utils/firestoreQuotaHelpers';
 
 const STORAGE_KEYS = {
   POSTS: 'arnaout_social_posts_v2',
@@ -202,7 +207,7 @@ export async function persistMarketingPost(post: MarketingPost): Promise<Marketi
   saveMarketingPosts(posts);
 
   // Sync to Firestore in background
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && !isFirestoreInQuotaCooldown()) {
     try {
       const docRef = doc(db, 'social_posts', post.id);
       const cleanPayload = {
@@ -227,7 +232,11 @@ export async function persistMarketingPost(post: MarketingPost): Promise<Marketi
       };
       await setDoc(docRef, cleanPayload, { merge: true });
     } catch (err) {
-      console.warn('Firestore social_posts sync notice (using offline cache):', err);
+      if (isFirestoreQuotaExceededError(err)) {
+        markFirestoreQuotaExceeded();
+      } else {
+        console.warn('Firestore social_posts sync notice (using offline cache):', err);
+      }
     }
   }
 
@@ -241,12 +250,16 @@ export async function deleteMarketingPost(postId: string): Promise<void> {
   const posts = getSavedMarketingPosts().filter((p) => p.id !== postId);
   saveMarketingPosts(posts);
 
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && !isFirestoreInQuotaCooldown()) {
     try {
       const docRef = doc(db, 'social_posts', postId);
       await deleteDoc(docRef);
     } catch (err) {
-      console.warn('Firestore social_posts delete notice:', err);
+      if (isFirestoreQuotaExceededError(err)) {
+        markFirestoreQuotaExceeded();
+      } else {
+        console.warn('Firestore social_posts delete notice:', err);
+      }
     }
   }
 }

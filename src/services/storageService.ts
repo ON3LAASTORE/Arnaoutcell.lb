@@ -23,6 +23,11 @@ import {
 } from '../utils/storageQuotaHelpers';
 import { optimizeUploadedImage } from '../utils/imageCompression';
 import { resolveFullResolutionImageUrl } from '../utils/imageResolutionHelpers';
+import {
+  isFirestoreInQuotaCooldown,
+  isFirestoreQuotaExceededError,
+  markFirestoreQuotaExceeded,
+} from '../utils/firestoreQuotaHelpers';
 
 const memoryStorageFallback = new Map<string, string>();
 
@@ -576,7 +581,7 @@ export function createOrder(orderData: Omit<Order, 'id' | 'orderDate' | 'statusH
   saveOrders(orders);
 
   // Sync to Firestore in background
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && !isFirestoreInQuotaCooldown()) {
     setDoc(doc(db, 'orders', newOrder.id), {
           id: newOrder.id,
           customer: newOrder.customer,
@@ -588,7 +593,13 @@ export function createOrder(orderData: Omit<Order, 'id' | 'orderDate' | 'statusH
           status: newOrder.status,
           orderDate: newOrder.orderDate,
           statusHistory: newOrder.statusHistory,
-        }).catch((err) => console.warn('Firestore order sync:', err));
+        }).catch((err) => {
+          if (isFirestoreQuotaExceededError(err)) {
+            markFirestoreQuotaExceeded();
+            return;
+          }
+          console.warn('Firestore order sync:', err);
+        });
   }
 
   return newOrder;
@@ -653,11 +664,17 @@ export function updateOrderStatus(orderId: string, newStatus: OrderStatus, note?
   saveOrders(orders);
 
   // Sync to Firestore in background
-  if (typeof window !== 'undefined') {
+  if (typeof window !== 'undefined' && !isFirestoreInQuotaCooldown()) {
     updateDoc(doc(db, 'orders', orderId), {
       status: newStatus,
       statusHistory: currentOrder.statusHistory,
-    }).catch((err) => console.warn('Firestore status update:', err));
+    }).catch((err) => {
+      if (isFirestoreQuotaExceededError(err)) {
+        markFirestoreQuotaExceeded();
+        return;
+      }
+      console.warn('Firestore status update:', err);
+    });
   }
 
   return currentOrder;

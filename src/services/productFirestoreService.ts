@@ -13,8 +13,60 @@ import {
   DEFAULT_FULL_RES_FALLBACK_IMAGE,
   resolveFullResolutionImageUrl,
 } from '../utils/imageResolutionHelpers';
+import {
+  classifyFirestoreError,
+  isFirestoreInQuotaCooldown,
+  isFirestoreQuotaExceededError,
+  markFirestoreQuotaExceeded,
+} from '../utils/firestoreQuotaHelpers';
 
 const PRODUCTS_COLLECTION = 'products';
+
+export interface ProductSyncMetadata {
+  fromCache: boolean;
+  hasPendingWrites: boolean;
+  isConnecting: boolean;
+  hasServerError: boolean;
+  isQuotaLimited: boolean;
+  lastSyncedAt: Date | null;
+}
+
+let currentSyncMeta: ProductSyncMetadata = {
+  fromCache: isFirestoreInQuotaCooldown(),
+  hasPendingWrites: false,
+  isConnecting: false,
+  hasServerError: false,
+  isQuotaLimited: isFirestoreInQuotaCooldown(),
+  lastSyncedAt: null,
+};
+
+const syncMetaListeners = new Set<(meta: ProductSyncMetadata) => void>();
+let seedingPromise: Promise<void> | null = null;
+
+function updateSyncMeta(patch: Partial<ProductSyncMetadata>): void {
+  currentSyncMeta = { ...currentSyncMeta, ...patch };
+  syncMetaListeners.forEach((listener) => {
+    try {
+      listener(currentSyncMeta);
+    } catch {
+      // Ignore individual subscriber callback errors
+    }
+  });
+}
+
+export function getProductSyncMeta(): ProductSyncMetadata {
+  return currentSyncMeta;
+}
+
+export function subscribeToProductSyncMeta(
+  listener: (meta: ProductSyncMetadata) => void
+): () => void {
+  syncMetaListeners.add(listener);
+  listener(currentSyncMeta);
+  return () => {
+    syncMetaListeners.delete(listener);
+  };
+}
 
 /**
  * Strips undefined properties to ensure Firestore compatibility.
@@ -82,12 +134,21 @@ function cleanProductForFirestore(product: Product): Record<string, unknown> {
  * Changes become instantly available to anyone opening the link.
  */
 export async function persistProductToCloud(product: Product): Promise<void> {
+  if (isFirestoreInQuotaCooldown()) {
+    return;
+  }
   const docRef = doc(db, PRODUCTS_COLLECTION, product.id);
   const payload = cleanProductForFirestore(product);
 
   try {
     await setDoc(docRef, payload, { merge: true });
   } catch (error) {
+    if (isFirestoreQuotaExceededError(error)) {
+      markFirestoreQuotaExceeded();
+      updateSyncMeta({ fromCache: true, isQuotaLimited: true, hasServerError: false });
+      console.warn('Firestore write deferred due to daily quota limit; product saved locally.');
+      return;
+    }
     handleFirestoreError(error, OperationType.WRITE, `${PRODUCTS_COLLECTION}/${product.id}`);
   }
 }
@@ -96,10 +157,19 @@ export async function persistProductToCloud(product: Product): Promise<void> {
  * Deletes a product from the cloud Firestore database.
  */
 export async function removeProductFromCloud(productId: string): Promise<void> {
+  if (isFirestoreInQuotaCooldown()) {
+    return;
+  }
   const docRef = doc(db, PRODUCTS_COLLECTION, productId);
   try {
     await deleteDoc(docRef);
   } catch (error) {
+    if (isFirestoreQuotaExceededError(error)) {
+      markFirestoreQuotaExceeded();
+      updateSyncMeta({ fromCache: true, isQuotaLimited: true, hasServerError: false });
+      console.warn('Firestore delete deferred due to daily quota limit; removed locally.');
+      return;
+    }
     handleFirestoreError(error, OperationType.DELETE, `${PRODUCTS_COLLECTION}/${productId}`);
   }
 }
@@ -112,14 +182,43 @@ export function subscribeToLiveProducts(
   onUpdate: (products: Product[]) => void,
   onSeedNeeded?: () => void
 ): () => void {
-  const colRef = collection(db, PRODUCTS_COLLECTION);
+  if (isFirestoreInQuotaCooldown()) {
+    updateSyncMeta({
+      fromCache: true,
+      hasPendingWrites: false,
+      isConnecting: false,
+      hasServerError: false,
+      isQuotaLimited: true,
+    });
+    return () => {};
+  }
 
-  const unsubscribe = onSnapshot(
+  const colRef = collection(db, PRODUCTS_COLLECTION);
+  updateSyncMeta({ isConnecting: true, hasServerError: false });
+
+  let isDisposed = false;
+  let unsubscribeFn: (() => void) | null = null;
+
+  unsubscribeFn = onSnapshot(
     colRef,
     { includeMetadataChanges: true },
     (snapshot) => {
+      if (isDisposed) return;
+
+      const isFromCache = snapshot.metadata.fromCache;
+      const pendingWrites = snapshot.metadata.hasPendingWrites;
+
+      updateSyncMeta({
+        fromCache: isFromCache,
+        hasPendingWrites: pendingWrites,
+        isConnecting: false,
+        hasServerError: false,
+        isQuotaLimited: false,
+        ...(isFromCache ? {} : { lastSyncedAt: new Date() }),
+      });
+
       if (snapshot.empty) {
-        if (onSeedNeeded) {
+        if (!isFromCache && !isFirestoreInQuotaCooldown() && onSeedNeeded) {
           onSeedNeeded();
         }
         return;
@@ -176,36 +275,102 @@ export function subscribeToLiveProducts(
       onUpdate(mergedList);
     },
     (error) => {
-      const errMsg = error instanceof Error ? error.message : String(error);
-      const isNetworkIssue = errMsg.includes('offline') || errMsg.includes('unavailable') || errMsg.includes('transport');
-      if (isNetworkIssue) {
-        console.warn('Real-time products subscription offline/reconnecting (using local fallback cache).');
-      } else {
-        try {
-          handleFirestoreError(error, OperationType.LIST, PRODUCTS_COLLECTION);
-        } catch {
-          // Graceful fallback to local cache
+      if (isDisposed) return;
+
+      const category = classifyFirestoreError(error);
+      if (category === 'quota') {
+        markFirestoreQuotaExceeded();
+        updateSyncMeta({
+          fromCache: true,
+          hasPendingWrites: false,
+          isConnecting: false,
+          hasServerError: false,
+          isQuotaLimited: true,
+        });
+        console.warn('Firestore daily read quota reached; using local storefront catalog cache.');
+        if (unsubscribeFn) {
+          try {
+            unsubscribeFn();
+          } catch {
+            // Ignore teardown notice
+          }
+          unsubscribeFn = null;
         }
+        return;
       }
+
+      if (category === 'network') {
+        updateSyncMeta({
+          fromCache: true,
+          hasPendingWrites: false,
+          isConnecting: false,
+          hasServerError: false,
+        });
+        console.warn('Real-time products subscription offline/reconnecting (using local fallback cache).');
+        return;
+      }
+
+      if (category === 'permission') {
+        updateSyncMeta({
+          fromCache: true,
+          hasPendingWrites: false,
+          isConnecting: false,
+          hasServerError: true,
+        });
+        handleFirestoreError(error, OperationType.LIST, PRODUCTS_COLLECTION);
+        return;
+      }
+
+      updateSyncMeta({
+        fromCache: true,
+        hasPendingWrites: false,
+        isConnecting: false,
+        hasServerError: false,
+      });
+      console.warn('Products subscription notice (using local fallback cache):', error);
     }
   );
 
-  return unsubscribe;
+  return () => {
+    isDisposed = true;
+    if (unsubscribeFn) {
+      unsubscribeFn();
+      unsubscribeFn = null;
+    }
+  };
 }
 
 /**
  * Seeds the cloud database with initial catalog products if empty.
  */
 export async function seedInitialProductsToCloud(): Promise<void> {
-  const colRef = collection(db, PRODUCTS_COLLECTION);
-  try {
-    const existing = await getDocs(colRef);
-    if (!existing.empty) return;
-
-    for (const prod of INITIAL_PRODUCTS) {
-      await persistProductToCloud(prod);
-    }
-  } catch (error) {
-    console.warn('Initial cloud product seeding skipped:', error);
+  if (isFirestoreInQuotaCooldown()) {
+    return;
   }
+  if (seedingPromise) {
+    return seedingPromise;
+  }
+
+  seedingPromise = (async () => {
+    const colRef = collection(db, PRODUCTS_COLLECTION);
+    try {
+      const existing = await getDocs(colRef);
+      if (!existing.empty) return;
+
+      for (const prod of INITIAL_PRODUCTS) {
+        if (isFirestoreInQuotaCooldown()) break;
+        await persistProductToCloud(prod);
+      }
+    } catch (error) {
+      if (isFirestoreQuotaExceededError(error)) {
+        markFirestoreQuotaExceeded();
+        updateSyncMeta({ fromCache: true, isQuotaLimited: true, hasServerError: false });
+      }
+      console.warn('Initial cloud product seeding skipped:', error);
+    } finally {
+      seedingPromise = null;
+    }
+  })();
+
+  return seedingPromise;
 }
