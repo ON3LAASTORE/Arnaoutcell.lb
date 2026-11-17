@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   normalizeEmail,
   isValidEmailFormat,
+  validateNewsletterEmail,
   sanitizeSubscriberId,
   buildSubscriberPayload,
   formatNewsletterWelcome,
@@ -27,7 +28,25 @@ test('isValidEmailFormat rejects invalid and oversized formats', () => {
   assert.equal(isValidEmailFormat('user@.com'), false);
   assert.equal(isValidEmailFormat('@domain.com'), false);
   assert.equal(isValidEmailFormat('   '), false);
+  assert.equal(isValidEmailFormat('user..name@example.com'), false);
+  assert.equal(isValidEmailFormat('.user@example.com'), false);
+  assert.equal(isValidEmailFormat('user@domain.c'), false);
+  assert.equal(isValidEmailFormat('user name@example.com'), false);
   assert.equal(isValidEmailFormat(`${'a'.repeat(120)}@example.com`), false);
+});
+
+test('validateNewsletterEmail provides clear empty and malformed validation feedback', () => {
+  const emptyRes = validateNewsletterEmail('   ');
+  assert.equal(emptyRes.valid, false);
+  assert.equal(Boolean(emptyRes.errorEn && emptyRes.errorAr), true);
+
+  const invalidRes = validateNewsletterEmail('invalid@domain');
+  assert.equal(invalidRes.valid, false);
+  assert.match(invalidRes.errorEn || '', /valid email/i);
+
+  const validRes = validateNewsletterEmail('  Client@Chouf.LB ');
+  assert.equal(validRes.valid, true);
+  assert.equal(validRes.normalizedEmail, 'client@chouf.lb');
 });
 
 test('sanitizeSubscriberId formats safe Firestore document IDs bounded to 128 chars', () => {

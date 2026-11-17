@@ -16,7 +16,7 @@ export interface BrandShowcaseBannerItem {
 
 export const BRAND_SHOWCASE_FALLBACK_VISUALS: Record<string, string[]> = {
   apple: [
-    'https://images.unsplash.com/photo-1695048133142-1a20484d2569',
+    'https://images.unsplash.com/photo-1592750475338-74b7b21085ab',
     'https://images.unsplash.com/photo-1517336714731-489689fd1ca8',
     'https://images.unsplash.com/photo-1546868871-7041f2a55e12',
   ],

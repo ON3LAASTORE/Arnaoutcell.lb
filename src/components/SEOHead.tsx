@@ -97,7 +97,7 @@ export const SEOHead: React.FC = () => {
       case 'cart':
       case 'checkout':
         pageTitle = `Secure Fresh Cash Checkout | ${storeName}`;
-        metaDescription = `Complete your electronics purchase with Cash on Delivery (COD), Whish Money, or OMT. Dispatched from Chouf with delivery available to all Lebanon.`;
+        metaDescription = `Complete your electronics purchase with Cash on Delivery (COD) or Whish Money. Dispatched from Chouf with delivery available to all Lebanon.`;
         canonicalUrl = `${window.location.origin}/#/checkout`;
         break;
 
@@ -221,7 +221,7 @@ export const SEOHead: React.FC = () => {
             closes: storeSettings.openingSchedule?.closeTime || '01:00',
           },
         ],
-        paymentAccepted: 'Cash on Delivery, Whish Money, OMT, Western Union',
+        paymentAccepted: 'Cash on Delivery, Whish Money',
         currenciesAccepted: 'USD, LBP',
       };
     }

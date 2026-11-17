@@ -610,7 +610,7 @@ export const TestimonialsSlider: React.FC = () => {
                       type="text"
                       value={productPurchased}
                       onChange={(e) => setProductPurchased(e.target.value)}
-                      placeholder={isArabic ? 'مثال: iPhone 16 Pro Max أو خدمة OMT' : 'e.g. iPhone 16 Pro Max or OMT Service'}
+                      placeholder={isArabic ? 'مثال: iPhone 16 Pro Max أو خدمة ويش موني' : 'e.g. iPhone 16 Pro Max or Whish Service'}
                       className="w-full bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] rounded-xl px-3 py-2 text-xs text-[#172033] dark:text-white focus:outline-none focus:border-[#007AFF]"
                     />
                   </div>

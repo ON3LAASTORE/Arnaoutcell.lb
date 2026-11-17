@@ -6,6 +6,9 @@ import {
   recordRecentlyViewedId,
   parseStoredRecentlyViewedIds,
   resolveRecentlyViewedProducts,
+  filterRecentlyViewedProducts,
+  computeCarouselScrollOffset,
+  getCarouselScrollState,
 } from './recentlyViewedHelpers';
 
 const makeProduct = (id: string, isPublished = true): Product => ({
@@ -79,3 +82,67 @@ test('resolveRecentlyViewedProducts filters missing/unpublished items and preser
     ['p4', 'p1', 'p3']
   );
 });
+
+test('filterRecentlyViewedProducts excludes the active product detail item without mutating input', () => {
+  const items = [makeProduct('p3'), makeProduct('p2'), makeProduct('p1')];
+  const filtered = filterRecentlyViewedProducts(items, 'p2');
+  assert.deepEqual(
+    filtered.map((p) => p.id),
+    ['p3', 'p1']
+  );
+  assert.equal(items.length, 3);
+  assert.deepEqual(
+    filterRecentlyViewedProducts(items, null).map((p) => p.id),
+    ['p3', 'p2', 'p1']
+  );
+});
+
+test('localStorage serialization round-trip preserves order and excludes active PDP product', () => {
+  const catalog = [makeProduct('p1'), makeProduct('p2'), makeProduct('p3')];
+  let ids: string[] = [];
+  ids = recordRecentlyViewedId(ids, 'p1');
+  ids = recordRecentlyViewedId(ids, 'p2');
+  ids = recordRecentlyViewedId(ids, 'p3');
+
+  const serialized = JSON.stringify(ids);
+  const rehydratedIds = parseStoredRecentlyViewedIds(serialized);
+  const resolved = resolveRecentlyViewedProducts(rehydratedIds, catalog);
+  const carouselItems = filterRecentlyViewedProducts(resolved, 'p3');
+
+  assert.deepEqual(
+    carouselItems.map((p) => p.id),
+    ['p2', 'p1']
+  );
+});
+
+test('computeCarouselScrollOffset respects LTR and RTL scroll direction with minimum step', () => {
+  assert.equal(computeCarouselScrollOffset(1000, 'next', false), 780);
+  assert.equal(computeCarouselScrollOffset(1000, 'prev', false), -780);
+  assert.equal(computeCarouselScrollOffset(1000, 'next', true), -780);
+  assert.equal(computeCarouselScrollOffset(1000, 'prev', true), 780);
+  assert.equal(computeCarouselScrollOffset(200, 'next', false), 260);
+});
+
+test('getCarouselScrollState accurately reports scroll boundaries in LTR and RTL', () => {
+  assert.deepEqual(getCarouselScrollState(0, 1000, 1000), {
+    canScrollPrev: false,
+    canScrollNext: false,
+    isScrollable: false,
+  });
+  assert.deepEqual(getCarouselScrollState(0, 800, 1400), {
+    canScrollPrev: false,
+    canScrollNext: true,
+    isScrollable: true,
+  });
+  assert.deepEqual(getCarouselScrollState(250, 800, 1400), {
+    canScrollPrev: true,
+    canScrollNext: true,
+    isScrollable: true,
+  });
+  assert.deepEqual(getCarouselScrollState(-600, 800, 1400), {
+    canScrollPrev: true,
+    canScrollNext: false,
+    isScrollable: true,
+  });
+});
+

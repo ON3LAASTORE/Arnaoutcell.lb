@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useShop } from '../context/ShopContext';
-import { ShieldCheck, Truck, RotateCcw, FileText } from 'lucide-react';
+import { ShieldCheck, Truck, RotateCcw, FileText, Lock } from 'lucide-react';
 
 interface PoliciesPageProps {
   initialTab?: string;
@@ -9,6 +9,10 @@ interface PoliciesPageProps {
 export const PoliciesPage: React.FC<PoliciesPageProps> = ({ initialTab = 'delivery' }) => {
   const { lang, storeSettings } = useShop();
   const [activeTab, setActiveTab] = useState(initialTab.replace('policy-', ''));
+
+  useEffect(() => {
+    setActiveTab(initialTab.replace('policy-', ''));
+  }, [initialTab]);
 
   return (
     <div className="py-12 md:py-20 bg-white dark:bg-[#0A0F1D] min-h-[100dvh] w-full transition-colors duration-200">
@@ -77,6 +81,18 @@ export const PoliciesPage: React.FC<PoliciesPageProps> = ({ initialTab = 'delive
           >
             <FileText className="w-3.5 h-3.5" />
             <span>{lang === 'ar' ? 'الشروط والأحكام' : 'Terms & Conditions'}</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('privacy')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all cursor-pointer ${
+              activeTab === 'privacy'
+                ? 'bg-[#007AFF] text-white shadow-xs shadow-[#007AFF]/20'
+                : 'bg-[#F5F8FC] text-[#64748B] hover:text-[#172033] border border-[#DCE5F0]'
+            }`}
+          >
+            <Lock className="w-3.5 h-3.5" />
+            <span>{lang === 'ar' ? 'سياسة الخصوصية' : 'Privacy Policy'}</span>
           </button>
         </div>
 
@@ -181,8 +197,27 @@ export const PoliciesPage: React.FC<PoliciesPageProps> = ({ initialTab = 'delive
               </p>
               <p>
                 {lang === 'ar'
-                  ? 'تخضع خدمات ويسترن يونيون و OMT للقوانين المصرفية المعمول بها في الجمهورية اللبنانية ويتوجب إبراز بطاقة الهوية الرسمية.'
-                  : 'Financial services via Western Union and OMT comply strictly with regulatory guidelines set by Banque du Liban.'}
+                  ? 'تخضع خدمات المحفظة الرقمية والتحويل عبر ويش موني (Whish Money) للقوانين المعمول بها في الجمهورية اللبنانية.'
+                  : 'Digital wallet transfers via Whish Money comply strictly with applicable financial regulations in Lebanon.'}
+              </p>
+            </div>
+          )}
+
+          {activeTab === 'privacy' && (
+            <div className="space-y-4">
+              <h2 className="text-lg font-bold text-[#172033] flex items-center gap-2">
+                <Lock className="w-5 h-5 text-[#007AFF]" />
+                <span>{lang === 'ar' ? 'سياسة الخصوصية وحماية البيانات' : 'Privacy Policy & Data Protection'}</span>
+              </h2>
+              <p>
+                {lang === 'ar'
+                  ? `يحترم متجر ${storeSettings.storeNameAr || 'ON AlAA STORE'} خصوصية عملائه في الشوف وكافة المناطق اللبنانية. تُستخدم معلومات التواصل والعنوان حصرياً لتأكيد الطلبات، التوصيل، وتفعيل الضمان الرسمي.`
+                  : `${storeSettings.storeName || 'ON AlAA STORE'} respects customer privacy across Chouf and all Lebanon. Contact details and delivery addresses are collected solely to confirm orders, coordinate courier delivery, and register product warranty coverage.`}
+              </p>
+              <p>
+                {lang === 'ar'
+                  ? 'لا يتم بيع أو مشاركة بيانات العملاء مع أي أطراف تسويقية خارجية، وتُحفظ بيانات السجل السريع محلياً على جهازك لراحتك.'
+                  : 'We never sell or share customer information with third-party advertisers. Quick search history is stored locally on your device for convenience and can be cleared anytime.'}
               </p>
             </div>
           )}

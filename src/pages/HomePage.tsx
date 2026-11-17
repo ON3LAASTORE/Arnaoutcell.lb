@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { HeroSection } from '../components/HeroSection';
 import { DeferredSection } from '../components/DeferredSection';
 import { ChunkErrorBoundary } from '../components/ChunkErrorBoundary';
 import { ReactBitsBackground } from '../components/animations/ReactBitsBackground';
 import { safeLazy } from '../utils/lazyImportHelpers';
+import { useShop } from '../context/ShopContext';
+import { fetchDynamicCategories } from '../services/categoryFirestoreService';
+import { Category } from '../types';
 
 // Lazy-load all below-the-fold sections so initial page load only parses & hydrates the above-the-fold LCP shell
 const SpecialOffersColumn = safeLazy(
@@ -48,6 +51,72 @@ const OffersSkeleton: React.FC = () => (
 );
 
 export const HomePage: React.FC = () => {
+  const {
+    categories: liveCategories,
+    products,
+    categoriesLoading,
+    categoriesError,
+    refreshCategories,
+    selectCategory,
+  } = useShop();
+
+  const [fetchedCategories, setFetchedCategories] = useState<Category[]>(liveCategories);
+  const [isFetchingCategories, setIsFetchingCategories] = useState<boolean>(
+    categoriesLoading && liveCategories.length === 0
+  );
+  const [categoryError, setCategoryError] = useState<string | null>(categoriesError);
+
+  const loadCategories = useCallback(async () => {
+    setIsFetchingCategories(true);
+    setCategoryError(null);
+    try {
+      const result = await fetchDynamicCategories();
+      if (result.length > 0) {
+        setFetchedCategories(result);
+      }
+      await refreshCategories();
+    } catch (err) {
+      setCategoryError(err instanceof Error ? err.message : 'Unable to fetch categories.');
+    } finally {
+      setIsFetchingCategories(false);
+    }
+  }, [refreshCategories]);
+
+  useEffect(() => {
+    let active = true;
+    setIsFetchingCategories(true);
+    fetchDynamicCategories()
+      .then((result) => {
+        if (!active) return;
+        if (result.length > 0) {
+          setFetchedCategories(result);
+        }
+        setCategoryError(null);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setCategoryError(err instanceof Error ? err.message : 'Unable to fetch categories.');
+      })
+      .finally(() => {
+        if (active) {
+          setIsFetchingCategories(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  // Keep synchronized with real-time ShopContext category subscription updates
+  useEffect(() => {
+    if (liveCategories.length > 0) {
+      setFetchedCategories(liveCategories);
+    }
+  }, [liveCategories]);
+
+  const resolvedCategories = fetchedCategories.length > 0 ? fetchedCategories : liveCategories;
+
   return (
     <ReactBitsBackground variant="combined" className="min-h-[100dvh]">
       <HeroSection />
@@ -62,8 +131,15 @@ export const HomePage: React.FC = () => {
         <RecentlyViewedSection />
       </DeferredSection>
 
-      <DeferredSection minHeight={597}>
-        <CategoryGrid />
+      <DeferredSection minHeight={1060}>
+        <CategoryGrid
+          categories={resolvedCategories}
+          products={products}
+          isLoading={isFetchingCategories && resolvedCategories.length === 0}
+          error={categoryError || categoriesError}
+          onRetry={loadCategories}
+          onSelectCategory={selectCategory}
+        />
       </DeferredSection>
 
       <DeferredSection minHeight={827}>

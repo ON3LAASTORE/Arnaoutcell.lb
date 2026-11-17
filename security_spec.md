@@ -8,6 +8,7 @@
 4. **Admin Protection**: Admin records in `/admins/{adminUid}` can only be read by authenticated staff and can never be written or created by unauthenticated or non-admin clients (preventing self-promotion).
 5. **Search Analytics**: Anonymous or client queries may write search events if conforming to payload size limits (terms <= 200 chars), but can only be read/analyzed by authenticated admins.
 6. **Stock Notifications PII Isolation**: Out-of-stock alert requests in `/stock_notifications/{notificationId}` contain customer email addresses (`email`), target `productId`, and `status` (`pending` or `notified`). Only authenticated admins may `get`, `list`, `delete`, or transition `status` to `notified`. Public/anonymous users may only `create` valid requests with `status == 'pending'` and strict field allowlists (`hasAll`/`hasOnly`), or refresh their own `pending` metadata without mutating `email`, `productId`, or `status`.
+7. **Dynamic Categories Integrity**: Storefront category records in `/categories/{categoryId}` contain zero PII, allow public read/list for homepage/navigation rendering, and enforce `isValidId` plus `isValidCategory` (`hasAll`/`hasOnly`, bounded strings/displayOrder, and bounded `subcategories` arrays) on every write.
 
 ---
 

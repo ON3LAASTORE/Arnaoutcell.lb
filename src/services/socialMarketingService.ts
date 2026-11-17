@@ -150,7 +150,7 @@ export const INITIAL_MARKETING_POSTS: MarketingPost[] = [
     productPrice: 1249,
     originalPrice: 1399,
     discountPercentage: 11,
-    productImage: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569',
+    productImage: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab',
     aspectRatio: '9:16',
     templateStyle: 'modern_dark',
     captionEn: '✨ Apple iPhone 16 Pro Max in Desert Titanium!\n\nPowered by A18 Pro chip with Apple Intelligence. Available online today at ON AlAA STORE (Chouf).\n\n💰 Best Cash USD Price: $1,249\n🛡️ 12 Months Official Warranty\n🚚 Delivery Available to All Lebanon\n\nWhatsApp: https://wa.me/96170773067 (70 773 067)\n#ONAlAASTORE #iPhone16ProMax #AppleLebanon #Chouf',

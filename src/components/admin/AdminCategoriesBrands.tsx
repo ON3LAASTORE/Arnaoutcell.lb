@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useShop } from '../../context/ShopContext';
-import { saveCategories, saveBrands, readFileAsDataUrl } from '../../services/storageService';
+import { upsertCategory, deleteCategory, saveBrands, readFileAsDataUrl } from '../../services/storageService';
 import { Category, Brand } from '../../types';
 import { Plus, Trash2, Upload } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
@@ -41,8 +41,7 @@ export const AdminCategoriesBrands: React.FC = () => {
       subcategories: subcats,
     };
 
-    const updated = [...categories, newCat];
-    saveCategories(updated);
+    upsertCategory(newCat);
     refreshData();
     setNewCatName('');
     setNewCatNameAr('');
@@ -53,8 +52,7 @@ export const AdminCategoriesBrands: React.FC = () => {
 
   const handleDeleteCategory = (catId: string, name: string) => {
     if (window.confirm(`Delete category "${name}"?`)) {
-      const updated = categories.filter((c) => c.id !== catId);
-      saveCategories(updated);
+      deleteCategory(catId);
       refreshData();
     }
   };

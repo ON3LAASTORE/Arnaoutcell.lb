@@ -1,300 +1,174 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useShop } from '../context/ShopContext';
-import {
-  Phone,
-  MapPin,
-  Clock,
-  MessageSquare,
-  ShieldCheck,
-  CreditCard,
-  Smartphone,
-  Navigation,
-  Share2,
-  Compass,
-  Check,
-} from 'lucide-react';
-import { WhatsApp3DIcon } from './icons/ThreeDIcons';
+import { Phone, MapPin, ShieldCheck, ChevronRight } from 'lucide-react';
 import { StoreLogo } from './StoreLogo';
 import { NewsletterFooterSection } from './NewsletterFooterSection';
-import { TrustBadgesFooterSection } from './TrustBadgesFooterSection';
-import { StoreStatusBadge } from './StoreStatusBadge';
 import {
-  SAIDA_STORE_DATA,
-  buildSendToPhoneUrl,
-  buildLocationShareData,
-} from '../utils/storeLocatorHelpers';
+  getFooterPhones,
+  getFooterLocations,
+  getFooterPolicyLinks,
+  getFooterOpeningHours,
+} from '../utils/footerContentHelpers';
 
 export const Footer: React.FC = () => {
-  const { lang, t, storeSettings, setCurrentView, selectCategory, selectBrand, categories, brands } = useShop();
-  const [copiedShare, setCopiedShare] = useState(false);
+  const { lang, t, storeSettings, setCurrentView } = useShop();
+  const isArabic = lang === 'ar';
 
-  const handleShare = async () => {
-    const shareData = buildLocationShareData(lang === 'ar');
-    if (typeof navigator !== 'undefined' && navigator.share) {
-      try {
-        await navigator.share({
-          title: shareData.title,
-          text: shareData.text,
-          url: shareData.url,
-        });
-        return;
-      } catch {
-        // fallback
-      }
-    }
-    try {
-      await navigator.clipboard.writeText(shareData.fullMessage);
-      setCopiedShare(true);
-      setTimeout(() => setCopiedShare(false), 2200);
-    } catch {
-      // fallback
-    }
-  };
+  const phones = getFooterPhones();
+  const locations = getFooterLocations(lang);
+  const policyLinks = getFooterPolicyLinks(lang);
+  const openingHours = getFooterOpeningHours(lang);
 
-  const handlePolicyClick = (policyType: string) => {
-    setCurrentView(`policy-${policyType}`);
+  const handleNavigate = (targetView: string) => {
+    setCurrentView(targetView);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   return (
-    <footer className="bg-white dark:bg-[#070B14] border-t border-[#DCE5F0] dark:border-[#1E293B] text-[#64748B] dark:text-slate-400 text-xs pt-16 pb-12 relative overflow-hidden transition-colors duration-200">
+    <footer
+      data-testid="site-footer"
+      dir={isArabic ? 'rtl' : 'ltr'}
+      className="bg-[#161A1D] text-[#9CA3AF] pt-[60px] pb-28 md:pb-[40px] border-t border-white/[0.08]"
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Newsletter Subscription Banner */}
+        {/* Newsletter Subscription Bar */}
         <NewsletterFooterSection />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-10 mb-12">
-          {/* Col 1: Brand Info & Location */}
-          <div className="lg:col-span-2 space-y-4">
+        {/* 3-Column Reference Footer Architecture */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10 lg:gap-12 items-start">
+          {/* Column 1 (Left): Brand Logo, Call to Action, Phone Numbers & Locations */}
+          <div className="space-y-5">
             <StoreLogo
               size="md"
-              onClick={() => {
-                setCurrentView('home');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              inverted={true}
+              onClick={() => handleNavigate('home')}
             />
 
-            <p className="text-[#64748B] dark:text-slate-300 text-xs leading-relaxed max-w-sm">
-              {lang === 'ar'
-                ? 'متجر إلكتروني مقره الشوف، وجهتكم الرائدة في كافة مناطق لبنان لأحدث الهواتف الذكية، أجهزة اللابتوب، الملحقات والحلول التقنية المعتمدة بكفالة رسمية.'
-                : "Online Tech Store based in Chouf with fast delivery available to all Lebanon. Flagship smartphones, high-performance laptops, accessories, and certified warranty."}
+            <div className="space-y-3.5 pt-1">
+              <h3 className="text-base font-bold text-white tracking-tight">
+                {isArabic ? 'هل لديك استفسار؟ اتصل بنا الآن!' : 'Got Questions? Call us now!'}
+              </h3>
+
+              {/* Two Distinct Telephone Lines */}
+              <div className="space-y-2.5">
+                {phones.map((phone) => (
+                  <a
+                    key={phone.telHref}
+                    href={phone.telHref}
+                    className="flex items-center gap-3 text-white hover:text-[#38BDF8] transition-colors group w-fit"
+                  >
+                    <span className="w-8 h-8 rounded-lg bg-white/[0.06] border border-white/[0.08] group-hover:border-[#38BDF8]/50 flex items-center justify-center text-[#38BDF8] shrink-0 transition-colors">
+                      <Phone className="w-4 h-4" aria-hidden="true" />
+                    </span>
+                    <span dir="ltr" className="text-[15px] font-semibold tabular-nums tracking-wide">
+                      {phone.display}
+                    </span>
+                  </a>
+                ))}
+              </div>
+
+              {/* Two Physical Store / Service Location Lines */}
+              <div className="space-y-2.5 pt-1">
+                {locations.map((loc) => (
+                  <div
+                    key={loc.text}
+                    className="flex items-start gap-3 text-[13.5px] leading-relaxed text-[#CBD5E1]"
+                  >
+                    <span className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-[#9CA3AF] shrink-0 mt-0.5">
+                      <MapPin className="w-4 h-4" aria-hidden="true" />
+                    </span>
+                    <span className="pt-1 text-[#9CA3AF]">{loc.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Column 2 (Middle): Quick Links & Policies Stack */}
+          <nav
+            aria-label={isArabic ? 'روابط سريعة والسياسات' : 'Quick Links and Policies'}
+            className="w-full"
+          >
+            <ul className="divide-y divide-white/[0.08] border-b border-white/[0.08]">
+              {policyLinks.map((link) => (
+                <li key={link.id}>
+                  <button
+                    type="button"
+                    onClick={() => handleNavigate(link.targetView)}
+                    className="w-full py-3.5 text-sm font-medium text-[#D1D5DB] hover:text-white transition-colors flex items-center justify-between gap-3 text-left rtl:text-right cursor-pointer group"
+                  >
+                    <span className="group-hover:translate-x-0.5 rtl:group-hover:-translate-x-0.5 transition-transform">
+                      {link.label}
+                    </span>
+                    <ChevronRight
+                      className="w-4 h-4 text-[#6B7280] group-hover:text-[#38BDF8] transition-colors shrink-0 rtl:rotate-180"
+                      aria-hidden="true"
+                    />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+
+          {/* Column 3 (Right): Physical Store Opening Hours */}
+          <div className="md:col-span-2 lg:col-span-1">
+            <h3 className="text-base font-bold text-white tracking-tight mb-1.5">
+              {isArabic ? 'ساعات عمل المتجر الفعلي' : 'Physical Store Opening Hours'}
+            </h3>
+            <p className="text-[13.5px] text-[#9CA3AF] mb-5">
+              {isArabic
+                ? 'يسعدنا دائماً خدمتكم واستقبالكم في متجرنا'
+                : 'We will be glad to serve you at our Shop'}
             </p>
 
-            {/* Dynamic Real-time Open/Closed Status Indicator */}
-            <div className="pt-1">
-              <StoreStatusBadge
-                schedule={storeSettings.openingSchedule}
-                isArabic={lang === 'ar'}
-                variant="pill"
-              />
-            </div>
-
-            {/* Contact & Location details */}
-            <div className="space-y-2 pt-1 text-xs">
-              <a
-                href="tel:70773067"
-                className="flex items-center gap-2.5 text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors font-bold"
-              >
-                <div className="w-7 h-7 rounded-lg bg-[#EAF3FF] dark:bg-[#1E293B] flex items-center justify-center text-[#007AFF] flex-shrink-0">
-                  <Phone className="w-3.5 h-3.5" />
-                </div>
-                <span dir="ltr">70 773 067</span>
-              </a>
-
-              <div className="flex items-start gap-2.5 text-[#172033] dark:text-[#F8FAFC]">
-                <div className="w-7 h-7 rounded-lg bg-[#EAF3FF] dark:bg-[#1E293B] flex items-center justify-center text-[#007AFF] flex-shrink-0 mt-0.5">
-                  <MapPin className="w-3.5 h-3.5" />
-                </div>
-                <div className="space-y-0.5">
-                  <span className="font-bold block">
-                    {lang === 'ar' ? SAIDA_STORE_DATA.nameAr : SAIDA_STORE_DATA.name}
+            <ul className="divide-y divide-white/[0.08] border-t border-b border-white/[0.08]">
+              {openingHours.map((row) => (
+                <li
+                  key={row.dayLabel}
+                  className="py-3.5 flex items-center justify-between gap-4 text-[13.5px]"
+                >
+                  <span className="font-semibold text-white whitespace-nowrap shrink-0">
+                    {row.dayLabel}:
                   </span>
-                  <div className="flex items-center gap-2 text-[11px] text-[#007AFF] dark:text-[#38BDF8]">
-                    <span className="font-mono font-bold bg-[#EAF3FF] dark:bg-[#1E293B] px-1.5 py-0.5 rounded">
-                      {SAIDA_STORE_DATA.plusCode}
-                    </span>
-                    <span>• {lang === 'ar' ? 'الشوف • التوصيل متاح لجميع مناطق لبنان' : 'Chouf • Delivery Available to All Lebanon'}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-2.5 text-[#64748B] dark:text-slate-400">
-                <div className="w-7 h-7 rounded-lg bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Clock className="w-3.5 h-3.5" />
-                </div>
-                <div className="space-y-0.5">
-                  <span className="font-bold text-[#172033] dark:text-[#F8FAFC] block">
-                    {lang === 'ar' ? 'طلبات أونلاين 24/7 (الدعم: 10:00 ص – 1:00 ص)' : 'ONLINE ORDERS 24/7 (SUPPORT: 10:00 AM – 1:00 AM)'}
-                  </span>
-                  <span className="text-[11px] text-[#64748B] dark:text-slate-400 block">
-                    {lang === 'ar' ? SAIDA_STORE_DATA.openingHoursAr : SAIDA_STORE_DATA.openingHoursEn}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Actions Bar: WhatsApp & Share */}
-            <div className="flex flex-wrap items-center gap-2 pt-2">
-              <a
-                href={buildSendToPhoneUrl('70773067', 'whatsapp', lang === 'ar')}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-xs transition-colors cursor-pointer"
-              >
-                <WhatsApp3DIcon size={14} />
-                <span>{lang === 'ar' ? 'طلب فوري عبر واتساب' : 'WhatsApp Order (70773067)'}</span>
-              </a>
-
-              <button
-                onClick={handleShare}
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F1F5F9] dark:bg-[#1E293B] hover:bg-slate-200 text-[#172033] dark:text-white text-[11px] font-bold transition-colors cursor-pointer"
-              >
-                {copiedShare ? <Check className="w-3 h-3 text-emerald-500" /> : <Share2 className="w-3 h-3 text-[#007AFF]" />}
-                <span>{copiedShare ? (lang === 'ar' ? 'تم النسخ!' : 'Copied!') : (lang === 'ar' ? 'مشاركة' : 'Share')}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Col 2: Popular Categories */}
-          <div>
-            <h4 className="font-bold text-[#172033] dark:text-[#F8FAFC] uppercase tracking-wider text-xs mb-4 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#007AFF]" />
-              <span>{t.allCategories}</span>
-            </h4>
-            <ul className="space-y-2">
-              {categories.slice(0, 7).map((cat) => (
-                <li key={cat.id}>
-                  <button
-                    onClick={() => selectCategory(cat.slug)}
-                    className="hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors cursor-pointer text-left rtl:text-right"
+                  <span
+                    dir={row.isSpecial ? (isArabic ? 'rtl' : 'ltr') : 'ltr'}
+                    className={`tabular-nums text-right rtl:text-left ${
+                      row.isSpecial ? 'text-[#38BDF8] font-medium' : 'text-[#D1D5DB]'
+                    }`}
                   >
-                    {lang === 'ar' ? cat.nameAr : cat.name}
-                  </button>
+                    {row.hoursLabel}
+                  </span>
                 </li>
               ))}
-              <li>
-                <button
-                  onClick={() => setCurrentView('categories')}
-                  className="text-[#007AFF] dark:text-[#38BDF8] hover:underline font-semibold"
-                >
-                  {lang === 'ar' ? 'عرض كافة الأقسام الـ 35 ←' : 'Browse All 35 Departments →'}
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 3: Top Brands */}
-          <div>
-            <h4 className="font-bold text-[#172033] dark:text-[#F8FAFC] uppercase tracking-wider text-xs mb-4 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#007AFF]" />
-              <span>{t.brands}</span>
-            </h4>
-            <ul className="space-y-2">
-              {brands.slice(0, 7).map((b) => (
-                <li key={b.id}>
-                  <button
-                    onClick={() => selectBrand(b.name)}
-                    className="hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors cursor-pointer text-left rtl:text-right"
-                  >
-                    {b.name}
-                  </button>
-                </li>
-              ))}
-              <li>
-                <button
-                  onClick={() => setCurrentView('brands')}
-                  className="text-[#007AFF] dark:text-[#38BDF8] hover:underline font-semibold"
-                >
-                  {lang === 'ar' ? 'دليل الماركات الكامل ←' : 'All Tech Brands →'}
-                </button>
-              </li>
-            </ul>
-          </div>
-
-          {/* Col 4: Store Services & Policies */}
-          <div>
-            <h4 className="font-bold text-[#172033] dark:text-[#F8FAFC] uppercase tracking-wider text-xs mb-4 flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#007AFF]" />
-              <span>{lang === 'ar' ? 'الخدمات والسياسات' : 'Services & Policies'}</span>
-            </h4>
-            <ul className="space-y-2">
-              <li>
-                <button
-                  onClick={() => setCurrentView('services')}
-                  className="text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] hover:underline font-semibold flex items-center gap-1"
-                >
-                  <CreditCard className="w-3.5 h-3.5 text-[#007AFF]" />
-                  <span>{lang === 'ar' ? 'ويش موني (Whish Money)' : 'Whish Money Hub'}</span>
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => setCurrentView('services')}
-                  className="text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] hover:underline font-semibold flex items-center gap-1"
-                >
-                  <Smartphone className="w-3.5 h-3.5 text-[#007AFF]" />
-                  <span>{lang === 'ar' ? 'خدمات الاتصالات والدعم' : 'Touch & Tech Support'}</span>
-                </button>
-              </li>
-              <li className="pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B]">
-                <button
-                  onClick={() => handlePolicyClick('delivery')}
-                  className="hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors"
-                >
-                  {lang === 'ar' ? 'سياسة التوصيل في لبنان' : 'Lebanon Delivery Policy'}
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => handlePolicyClick('warranty')}
-                  className="hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors"
-                >
-                  {lang === 'ar' ? 'شروط الكفالة الرسمية' : 'Official Warranty Terms'}
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => handlePolicyClick('returns')}
-                  className="hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors"
-                >
-                  {lang === 'ar' ? 'الاسترجاع والاستبدال' : 'Returns & Exchange'}
-                </button>
-              </li>
-              <li>
-                <button
-                  onClick={() => handlePolicyClick('terms')}
-                  className="hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors"
-                >
-                  {lang === 'ar' ? 'الشروط والأحكام' : 'Terms & Conditions'}
-                </button>
-              </li>
             </ul>
           </div>
         </div>
 
-        {/* Trust Badges: Verified Payment Methods & Customer Protection */}
-        <TrustBadgesFooterSection />
-
-        {/* Bottom Bar */}
-        <div className="pt-8 border-t border-[#DCE5F0] dark:border-[#1E293B] flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#64748B] dark:text-slate-400">
-          <p>
-            {lang === 'ar'
-              ? `© 2027 ${storeSettings.storeNameAr || 'أون علاء ستور'} (${storeSettings.storeName || 'ON AlAA STORE'}). متجر إلكتروني مقره الشوف، لبنان. التوصيل متاح لجميع مناطق لبنان. هاتف: ${storeSettings.phone || '70773067'}.`
-              : `© 2027 ${storeSettings.storeName || 'ON AlAA STORE'}. Online Store based in Chouf, Lebanon. Delivery Available to All Lebanon. Phone: ${storeSettings.phone || '70773067'}. All rights reserved.`}
+        {/* Bottom Copyright & Utility Strip */}
+        <div className="mt-10 pt-6 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#9CA3AF]">
+          <p className="text-center sm:text-left rtl:sm:text-right">
+            {isArabic
+              ? `© 2027 ${storeSettings.storeNameAr || 'أون علاء ستور'} (${storeSettings.storeName || 'ON AlAA STORE'}). جميع الحقوق محفوظة.`
+              : `© 2027 ${storeSettings.storeName || 'ON AlAA STORE'}. Chouf, Lebanon. All rights reserved.`}
           </p>
 
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setCurrentView('track-order')}
-              className="text-[#007AFF] hover:underline"
+              type="button"
+              onClick={() => handleNavigate('track-order')}
+              className="text-[#CBD5E1] hover:text-white transition-colors cursor-pointer"
             >
               {t.trackOrder}
             </button>
-            <span>•</span>
+            <span aria-hidden="true" className="text-white/20">
+              |
+            </span>
             <button
-              onClick={() => setCurrentView('admin')}
-              className="text-[#64748B] hover:text-[#007AFF] flex items-center gap-1"
+              type="button"
+              onClick={() => handleNavigate('admin')}
+              className="text-[#9CA3AF] hover:text-white inline-flex items-center gap-1.5 transition-colors cursor-pointer"
             >
-              <ShieldCheck className="w-3.5 h-3.5 text-[#007AFF]" />
+              <ShieldCheck className="w-3.5 h-3.5 text-[#38BDF8]" aria-hidden="true" />
               <span>{t.adminPortal}</span>
             </button>
           </div>

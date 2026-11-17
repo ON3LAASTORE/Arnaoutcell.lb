@@ -1,4 +1,4 @@
-export type PaymentBadgeId = 'omt' | 'whish' | 'western_union' | 'cod';
+export type PaymentBadgeId = 'whish' | 'cod';
 
 export interface TrustPaymentBadge {
   id: PaymentBadgeId;
@@ -29,22 +29,10 @@ export function getFooterTrustBadges(lang: 'en' | 'ar'): TrustBadgesSectionConte
       ],
       badges: [
         {
-          id: 'omt',
-          name: 'OMT',
-          label: 'تحويل عبر OMT',
-          description: 'تحويل مالي محلي معتمد',
-        },
-        {
           id: 'whish',
           name: 'Whish Money',
           label: 'ويش موني (Whish)',
           description: 'تحويل فوري عبر المحفظة',
-        },
-        {
-          id: 'western_union',
-          name: 'Western Union',
-          label: 'ويسترن يونيون',
-          description: 'حوالات محلية ودولية',
         },
         {
           id: 'cod',
@@ -67,22 +55,10 @@ export function getFooterTrustBadges(lang: 'en' | 'ar'): TrustBadgesSectionConte
     ],
     badges: [
       {
-        id: 'omt',
-        name: 'OMT',
-        label: 'OMT Transfer',
-        description: 'Local money transfer',
-      },
-      {
         id: 'whish',
         name: 'Whish Money',
         label: 'Whish Money',
         description: 'Instant wallet transfer',
-      },
-      {
-        id: 'western_union',
-        name: 'Western Union',
-        label: 'Western Union',
-        description: 'Local & global payouts',
       },
       {
         id: 'cod',

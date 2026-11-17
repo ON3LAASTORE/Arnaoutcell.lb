@@ -11,12 +11,60 @@ export function normalizeEmail(email: string): string {
   return email.trim().toLowerCase();
 }
 
+export interface NewsletterValidationResult {
+  valid: boolean;
+  normalizedEmail: string;
+  errorEn?: string;
+  errorAr?: string;
+}
+
 export function isValidEmailFormat(email: string): boolean {
   if (!email || typeof email !== 'string') return false;
   const trimmed = email.trim();
-  // Standard RFC 5322 compatible email pattern
-  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+$/;
-  return emailRegex.test(trimmed) && trimmed.length >= 3 && trimmed.length <= 128;
+  if (trimmed.length < 3 || trimmed.length > 128) return false;
+  if (trimmed.includes('..') || /\s/.test(trimmed)) return false;
+
+  const atIndex = trimmed.indexOf('@');
+  if (atIndex <= 0 || atIndex !== trimmed.lastIndexOf('@')) return false;
+
+  const localPart = trimmed.slice(0, atIndex);
+  const domainPart = trimmed.slice(atIndex + 1);
+
+  if (localPart.startsWith('.') || localPart.endsWith('.')) return false;
+  if (domainPart.startsWith('.') || domainPart.endsWith('.') || domainPart.startsWith('-') || domainPart.endsWith('-')) {
+    return false;
+  }
+
+  // Standard RFC-compatible email pattern with at least 2-char TLD
+  const emailRegex = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(trimmed);
+}
+
+export function validateNewsletterEmail(email: string): NewsletterValidationResult {
+  const normalizedEmail = normalizeEmail(email);
+
+  if (!normalizedEmail) {
+    return {
+      valid: false,
+      normalizedEmail,
+      errorEn: 'Please enter your email address.',
+      errorAr: 'يرجى إدخال بريدك الإلكتروني.',
+    };
+  }
+
+  if (!isValidEmailFormat(normalizedEmail)) {
+    return {
+      valid: false,
+      normalizedEmail,
+      errorEn: 'Please enter a valid email address (e.g. name@domain.com).',
+      errorAr: 'يرجى إدخال بريد إلكتروني صحيح (مثال: name@domain.com).',
+    };
+  }
+
+  return {
+    valid: true,
+    normalizedEmail,
+  };
 }
 
 export function sanitizeSubscriberId(email: string): string {

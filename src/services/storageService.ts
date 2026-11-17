@@ -11,6 +11,10 @@ import {
   persistProductToCloud,
   removeProductFromCloud,
 } from './productFirestoreService';
+import {
+  persistCategoryToCloud,
+  removeCategoryFromCloud,
+} from './categoryFirestoreService';
 import { db } from '../firebase';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { resolveStoreLogoUrl } from '../utils/storeSettingsHelpers';
@@ -132,7 +136,7 @@ export function initStorage(): void {
             brand: 'Apple',
             price: 1249,
             quantity: 1,
-            image: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569',
+            image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab',
             color: 'Desert Titanium',
           },
         ],
@@ -467,6 +471,28 @@ export function saveCategories(categories: Category[]): void {
   setStorageItem(KEYS.CATEGORIES, JSON.stringify(categories));
 }
 
+export function upsertCategory(category: Category): void {
+  const categories = getCategories();
+  const idx = categories.findIndex((c) => c.id === category.id);
+  if (idx > -1) {
+    categories[idx] = category;
+  } else {
+    categories.push(category);
+  }
+  saveCategories(categories);
+  persistCategoryToCloud(category).catch((err) => {
+    console.warn('Live category cloud save notice:', err);
+  });
+}
+
+export function deleteCategory(categoryId: string): void {
+  const categories = getCategories().filter((c) => c.id !== categoryId);
+  saveCategories(categories);
+  removeCategoryFromCloud(categoryId).catch((err) => {
+    console.warn('Live category deletion notice:', err);
+  });
+}
+
 // Brands
 export function getBrands(): Brand[] {
   try {
@@ -589,7 +615,7 @@ export function createOrder(orderData: Omit<Order, 'id' | 'orderDate' | 'statusH
           subtotal: newOrder.subtotal,
           deliveryFee: newOrder.deliveryFee || 0,
           total: newOrder.total,
-          paymentMethod: newOrder.paymentMethod === 'cod' ? 'cod' : newOrder.paymentMethod === 'whish_money' ? 'whish_money' : 'omt_western_union',
+          paymentMethod: newOrder.paymentMethod === 'cod' ? 'cod' : newOrder.paymentMethod === 'whish_money' ? 'whish_money' : 'store_pickup',
           status: newOrder.status,
           orderDate: newOrder.orderDate,
           statusHistory: newOrder.statusHistory,

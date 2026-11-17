@@ -7,9 +7,7 @@ import {
   Package,
   AlertTriangle,
   TrendingUp,
-  ArrowUpRight,
   Search,
-  Activity,
   Trash2,
   RefreshCw,
 } from 'lucide-react';
@@ -19,9 +17,7 @@ import {
   SearchAnalyticsSummary,
 } from '../../services/searchAnalyticsService';
 
-export const AdminOverview: React.FC<{ onNavigateTab?: (tab: string) => void }> = ({
-  onNavigateTab,
-}) => {
+export const AdminOverview: React.FC = () => {
   const { lang, products, storeSettings } = useShop();
   const orders = getOrders();
 
@@ -36,7 +32,6 @@ export const AdminOverview: React.FC<{ onNavigateTab?: (tab: string) => void }> 
   const pendingOrders = orders.filter(
     (o) => o.status === 'new' || o.status === 'confirmed' || o.status === 'preparing'
   );
-  const deliveredOrders = orders.filter((o) => o.status === 'delivered');
   const lowStockProducts = products.filter(
     (p) => p.stock > 0 && p.stock <= (p.lowStockThreshold || 3)
   );
@@ -170,86 +165,52 @@ export const AdminOverview: React.FC<{ onNavigateTab?: (tab: string) => void }> 
         </div>
       </div>
 
-      {/* Mid Section: Recent Orders & Best Sellers */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Recent Orders Table */}
-        <div className="lg:col-span-8 p-6 rounded-3xl bg-white border border-[#DCE5F0] shadow-sm space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#DCE5F0]">
-            <h3 className="font-bold text-[#172033] text-sm">
-              {lang === 'ar' ? 'أحدث الطلبات الواردة' : 'Recent Customer Orders'}
-            </h3>
-            {onNavigateTab && (
-              <button
-                onClick={() => onNavigateTab('orders')}
-                className="text-xs text-[#007AFF] hover:underline flex items-center gap-1 cursor-pointer font-semibold"
-              >
-                <span>{lang === 'ar' ? 'عرض الكل' : 'View All'}</span>
-                <ArrowUpRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
+      {/* Custom Section Anchor Container — insert a new section or component here */}
+      <section
+        id="admin-overview-custom-slot"
+        data-slot="custom-overview-section"
+        aria-label={lang === 'ar' ? 'قسم لوحة التحكم المخصص' : 'Custom Overview Section'}
+        className="w-full empty:hidden"
+      >
+        {/* Ready-to-use section wrapper:
+        <div className="p-6 rounded-3xl bg-white border border-[#DCE5F0] shadow-sm space-y-4">
+          // New section content
+        </div>
+        */}
+      </section>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left rtl:text-right text-xs">
-              <thead className="bg-[#F5F8FC] text-[#64748B] uppercase tracking-wider text-[10px]">
-                <tr>
-                  <th className="py-2.5 px-3">Order ID</th>
-                  <th className="py-2.5 px-3">Customer</th>
-                  <th className="py-2.5 px-3">Area</th>
-                  <th className="py-2.5 px-3">Total</th>
-                  <th className="py-2.5 px-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#DCE5F0] text-[#172033]">
-                {orders.slice(0, 5).map((ord) => (
-                  <tr key={ord.id} className="hover:bg-[#F5F8FC] transition-colors">
-                    <td className="py-3 px-3 font-mono font-bold text-[#007AFF]">{ord.id}</td>
-                    <td className="py-3 px-3">
-                      <div className="font-bold text-[#172033]">{ord.customer.fullName}</div>
-                      <div className="text-[10px] text-[#64748B]">{ord.customer.phone}</div>
-                    </td>
-                    <td className="py-3 px-3 text-[#64748B] truncate max-w-[140px]">{ord.customer.cityArea}</td>
-                    <td className="py-3 px-3 font-black text-[#172033] font-mono">${ord.total}</td>
-                    <td className="py-3 px-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#EAF3FF] text-[#007AFF] border border-[#BAE6FD]">
-                        {ord.status.replace(/_/g, ' ')}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+      {/* Best Sellers */}
+      <div className="p-6 rounded-3xl bg-white border border-[#DCE5F0] shadow-sm space-y-4">
+        <div className="flex items-center justify-between pb-3 border-b border-[#DCE5F0]">
+          <h3 className="font-bold text-[#172033] text-sm">
+            {lang === 'ar' ? 'الأكثر مبيعاً' : 'Best Sellers'}
+          </h3>
+          <TrendingUp className="w-4 h-4 text-[#007AFF]" />
         </div>
 
-        {/* Best Sellers */}
-        <div className="lg:col-span-4 p-6 rounded-3xl bg-white border border-[#DCE5F0] shadow-sm space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#DCE5F0]">
-            <h3 className="font-bold text-[#172033] text-sm">
-              {lang === 'ar' ? 'الأكثر مبيعاً' : 'Best Sellers'}
-            </h3>
-            <TrendingUp className="w-4 h-4 text-[#007AFF]" />
-          </div>
-
-          <div className="space-y-3">
-            {bestSellers.length > 0 ? (
-              bestSellers.map((bs, i) => (
-                <div key={i} className="flex items-center justify-between gap-3 text-xs p-2.5 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0]">
-                  <div className="min-w-0">
-                    <p className="font-bold text-[#172033] truncate">{bs.product.productName}</p>
-                    <span className="text-[10px] text-[#64748B]">
-                      {bs.count} {lang === 'ar' ? 'قطع مباعة' : 'units sold'}
-                    </span>
-                  </div>
-                  <span className="font-black text-[#007AFF] font-mono flex-shrink-0">
-                    ${bs.totalRev}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {bestSellers.length > 0 ? (
+            bestSellers.map((bs, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between gap-3 text-xs p-3 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0]"
+              >
+                <div className="min-w-0">
+                  <p className="font-bold text-[#172033] truncate">{bs.product.productName}</p>
+                  <span className="text-[10px] text-[#64748B]">
+                    {bs.count} {lang === 'ar' ? 'قطع مباعة' : 'units sold'}
                   </span>
                 </div>
-              ))
-            ) : (
-              <p className="text-xs text-[#64748B] py-4 text-center">No sales records yet</p>
-            )}
-          </div>
+                <span className="font-black text-[#007AFF] font-mono flex-shrink-0">
+                  ${bs.totalRev}
+                </span>
+              </div>
+            ))
+          ) : (
+            <p className="col-span-full text-xs text-[#64748B] py-4 text-center">
+              No sales records yet
+            </p>
+          )}
         </div>
       </div>
 

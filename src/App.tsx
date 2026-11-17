@@ -176,7 +176,7 @@ const AppContent: React.FC = () => {
         )}
       </main>
 
-      <DeferredSection minHeight={1058} rootMargin="1200px 0px">
+      <DeferredSection minHeight={400} rootMargin="1200px 0px">
         <Footer />
       </DeferredSection>
 

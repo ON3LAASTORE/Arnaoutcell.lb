@@ -78,3 +78,72 @@ export function resolveRecentlyViewedProducts(
   }
   return resolved;
 }
+
+/**
+ * Excludes the currently open product (if any) from the recently viewed list
+ * without mutating the source array.
+ */
+export function filterRecentlyViewedProducts(
+  products: readonly Product[],
+  excludeProductId?: string | null
+): Product[] {
+  const normalizedExclude = typeof excludeProductId === 'string' ? excludeProductId.trim() : '';
+  if (!normalizedExclude) {
+    return [...products];
+  }
+  return products.filter((product) => product.id !== normalizedExclude);
+}
+
+/**
+ * Computes horizontal scrollBy offset for prev/next carousel controls,
+ * inverting the sign cleanly when rendering in RTL layout.
+ */
+export function computeCarouselScrollOffset(
+  clientWidth: number,
+  direction: 'prev' | 'next',
+  isRtl = false
+): number {
+  const safeWidth = Number.isFinite(clientWidth) && clientWidth > 0 ? clientWidth : 320;
+  const step = Math.max(260, Math.round(safeWidth * 0.78));
+  const logicalSign = direction === 'next' ? 1 : -1;
+  const directionalSign = isRtl ? -logicalSign : logicalSign;
+  return step * directionalSign;
+}
+
+export interface CarouselScrollState {
+  canScrollPrev: boolean;
+  canScrollNext: boolean;
+  isScrollable: boolean;
+}
+
+/**
+ * Computes carousel navigation boundary states using absolute scrollLeft
+ * so both LTR (positive scrollLeft) and RTL (negative scrollLeft) work identically.
+ */
+export function getCarouselScrollState(
+  scrollLeft: number,
+  clientWidth: number,
+  scrollWidth: number
+): CarouselScrollState {
+  if (
+    !Number.isFinite(scrollLeft) ||
+    !Number.isFinite(clientWidth) ||
+    !Number.isFinite(scrollWidth) ||
+    clientWidth <= 0 ||
+    scrollWidth <= clientWidth + 2
+  ) {
+    return {
+      canScrollPrev: false,
+      canScrollNext: false,
+      isScrollable: false,
+    };
+  }
+
+  const absOffset = Math.abs(scrollLeft);
+  return {
+    canScrollPrev: absOffset > 2,
+    canScrollNext: absOffset + clientWidth < scrollWidth - 2,
+    isScrollable: true,
+  };
+}
+

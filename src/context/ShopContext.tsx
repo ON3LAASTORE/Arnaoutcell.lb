@@ -20,11 +20,17 @@ import {
   getStoreSettings,
   createOrder as createOrderStorage,
   saveProducts,
+  saveCategories,
 } from '../services/storageService';
 import {
   subscribeToLiveProducts,
   seedInitialProductsToCloud,
 } from '../services/productFirestoreService';
+import {
+  fetchDynamicCategories,
+  subscribeToLiveCategories,
+  seedInitialCategoriesToCloud,
+} from '../services/categoryFirestoreService';
 import { validateAddToCompare, toggleCompareList } from '../utils/compareHelpers';
 import {
   RECENTLY_VIEWED_STORAGE_KEY,
@@ -51,6 +57,9 @@ interface ShopContextType {
   t: typeof translations.en;
   products: Product[];
   categories: Category[];
+  categoriesLoading: boolean;
+  categoriesError: string | null;
+  refreshCategories: () => Promise<void>;
   brands: Brand[];
   marketingVideos: MarketingVideo[];
   storeSettings: StoreSettings;
@@ -163,6 +172,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState<boolean>(true);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [marketingVideos, setMarketingVideos] = useState<MarketingVideo[]>([]);
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(() => getStoreSettings());
@@ -266,13 +277,30 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return compareList.some((p) => p.id === productId);
   };
 
-  // Initialize data on mount and subscribe to real-time live product updates
+  const refreshCategories = async () => {
+    setCategoriesLoading(true);
+    setCategoriesError(null);
+    try {
+      const liveCategories = await fetchDynamicCategories();
+      if (liveCategories.length > 0) {
+        setCategories(liveCategories);
+        saveCategories(liveCategories);
+      }
+    } catch (err) {
+      setCategoriesError(err instanceof Error ? err.message : 'Unable to load categories.');
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
+
+  // Initialize data on mount and subscribe to real-time live product and category updates
   useEffect(() => {
     initStorage();
     refreshData();
+    void refreshCategories();
 
-    // Attach real-time cloud listener for live updates across all devices
-    const unsubscribe = subscribeToLiveProducts(
+    // Attach real-time cloud listeners for live updates across all devices
+    const unsubscribeProducts = subscribeToLiveProducts(
       (liveProducts) => {
         if (liveProducts && liveProducts.length > 0) {
           setProducts(liveProducts);
@@ -285,8 +313,23 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     );
 
+    const unsubscribeCategories = subscribeToLiveCategories(
+      (liveCategories) => {
+        if (liveCategories && liveCategories.length > 0) {
+          setCategories(liveCategories);
+          saveCategories(liveCategories);
+          setCategoriesLoading(false);
+          setCategoriesError(null);
+        }
+      },
+      () => {
+        seedInitialCategoriesToCloud().catch(console.error);
+      }
+    );
+
     return () => {
-      unsubscribe();
+      unsubscribeProducts();
+      unsubscribeCategories();
     };
   }, []);
 
@@ -339,7 +382,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [recentlyViewedIds]);
 
   const recordProductView = (productId: string) => {
-    setRecentlyViewedIds((prev) => recordRecentlyViewedId(prev, productId));
+    const normalized = typeof productId === 'string' ? productId.trim() : '';
+    if (!normalized) return;
+    setRecentlyViewedIds((prev) => (prev[0] === normalized ? prev : recordRecentlyViewedId(prev, normalized)));
   };
 
   const removeFromRecentlyViewed = (productId: string) => {
@@ -568,6 +613,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         t,
         products,
         categories,
+        categoriesLoading,
+        categoriesError,
+        refreshCategories,
         brands,
         marketingVideos,
         storeSettings,

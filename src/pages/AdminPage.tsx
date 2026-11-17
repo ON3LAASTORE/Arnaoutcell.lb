@@ -47,7 +47,7 @@ export const AdminPage: React.FC = () => {
     <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
       <ChunkErrorBoundary resetKey={activeTab} label={`admin-${activeTab}`}>
         <React.Suspense fallback={<AdminTabSpinner />}>
-          {activeTab === 'overview' && <AdminOverview onNavigateTab={setActiveTab} />}
+          {activeTab === 'overview' && <AdminOverview />}
           {activeTab === 'products' && <AdminProducts onShareProduct={handleShareProduct} />}
           {activeTab === 'social_marketing' && (
             <AdminSocialMarketing initialProductId={targetProductId} />

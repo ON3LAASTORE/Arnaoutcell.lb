@@ -1403,5 +1403,89 @@
       transform: none !important;
     }
   }
+
+  /* ==========================================================================
+     CATEGORY SHOWCASE DATA GRID DESIGN SYSTEM (.oaa-category-grid / .oaa-category-card)
+     ========================================================================== */
+  .oaa-category-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 24px;
+    align-items: stretch;
+  }
+
+  @media (min-width: 768px) {
+    .oaa-category-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .oaa-category-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    min-height: 260px;
+    border-radius: var(--card-radius);
+    overflow: hidden;
+    background-color: #0f172a;
+    border: 1px solid var(--card-border);
+    box-shadow: var(--card-shadow);
+    cursor: pointer;
+    transition:
+      transform 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+      box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+      border-color 0.25s ease;
+  }
+
+  @media (min-width: 640px) {
+    .oaa-category-card {
+      min-height: 300px;
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .oaa-category-card {
+      min-height: 320px;
+    }
+  }
+
+  .oaa-category-card:hover {
+    border-color: var(--card-border-hover);
+    box-shadow: var(--card-shadow-hover);
+  }
+
+  .oaa-category-card-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: transform;
+  }
+
+  .oaa-category-card:hover .oaa-category-card-img {
+    transform: scale(1.05);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .oaa-category-card,
+    .oaa-category-card-img {
+      transition: none !important;
+      transform: none !important;
+    }
+  }
+
+  .oaa-carousel-track {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .oaa-carousel-track::-webkit-scrollbar {
+    display: none;
+  }
 }
+
 

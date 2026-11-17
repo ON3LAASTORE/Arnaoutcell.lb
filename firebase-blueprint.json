@@ -258,6 +258,66 @@
       },
       "required": ["id", "name", "brand", "category", "sku", "price", "stock", "images", "description", "isPublished"]
     },
+    "Category": {
+      "title": "Category",
+      "description": "Dynamic storefront product department/category with bilingual titles, slug, display order, theme image, and subcategories",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique category identifier",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "name": {
+          "type": "string",
+          "description": "English category name",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "nameAr": {
+          "type": "string",
+          "description": "Arabic category name",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "slug": {
+          "type": "string",
+          "description": "URL-friendly category slug",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "iconName": {
+          "type": "string",
+          "description": "Lucide icon identifier",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "image": {
+          "type": "string",
+          "description": "Optional custom banner image URL",
+          "maxLength": 1024
+        },
+        "description": {
+          "type": "string",
+          "description": "Optional category subtitle or description",
+          "maxLength": 512
+        },
+        "featured": {
+          "type": "boolean",
+          "description": "Whether category is highlighted in featured home showcase"
+        },
+        "displayOrder": {
+          "type": "number",
+          "description": "Sort order index in storefront grids"
+        },
+        "subcategories": {
+          "type": "array",
+          "description": "List of subcategory labels"
+        }
+      },
+      "required": ["id", "name", "nameAr", "slug", "iconName", "displayOrder"]
+    },
     "NewsletterSubscriber": {
       "title": "NewsletterSubscriber",
       "description": "Customer email subscription for tech updates and promotional marketing",
@@ -505,6 +565,12 @@
         "$ref": "Product"
       },
       "description": "Store electronics inventory catalog documents synced live across clients"
+    },
+    "/categories/{categoryId}": {
+      "schema": {
+        "$ref": "Category"
+      },
+      "description": "Dynamic product departments and categories rendered on HomePage and Shop filters"
     },
     "/newsletter_subscribers/{subscriberId}": {
       "schema": {

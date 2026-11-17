@@ -368,31 +368,6 @@ export const CheckoutPage: React.FC = () => {
                     </div>
                   </label>
 
-                  {/* OMT */}
-                  <label
-                    className={`flex items-start gap-3 p-3.5 rounded-2xl border transition-all cursor-pointer ${
-                      paymentMethod === 'omt_western_union'
-                        ? 'bg-[#EAF3FF] dark:bg-[#1E293B] border-[#007AFF] text-[#172033] dark:text-[#F8FAFC]'
-                        : 'bg-[#F5F8FC] dark:bg-[#111A2E] border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] hover:border-[#007AFF]'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="payment"
-                      value="omt_western_union"
-                      checked={paymentMethod === 'omt_western_union'}
-                      onChange={() => setPaymentMethod('omt_western_union')}
-                      className="mt-1 accent-[#007AFF]"
-                    />
-                    <div>
-                      <span className="text-xs font-bold block">{t.omtTransfer}</span>
-                      <span className="text-[11px] text-[#64748B] dark:text-slate-400 block mt-0.5">
-                        {lang === 'ar'
-                          ? 'إرسال حوالة OMT Intra أو ويسترن يونيون وتزويدنا برقم الإيصال MTCN.'
-                          : 'Send an OMT Intra / Western Union remittance with MTCN tracking.'}
-                      </span>
-                    </div>
-                  </label>
                 </div>
               </div>
             </div>

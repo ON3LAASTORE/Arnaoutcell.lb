@@ -51,29 +51,29 @@ export const CustomerTrust: React.FC = () => {
   ];
 
   return (
-    <section className="py-16 md:py-20 bg-white border-b border-[#DCE5F0]">
+    <section className="py-16 md:py-20 bg-white dark:bg-[#0A0F1D] border-b border-[#DCE5F0] dark:border-[#1E293B] transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {trustPoints.map((item, idx) => (
             <div
               key={idx}
-              className="p-6 rounded-2xl bg-white border border-[#DCE5F0] hover:border-[#007AFF] shadow-xs hover:shadow-[0_4px_16px_-2px_rgba(0,122,255,0.1)] transition-all flex flex-col justify-between"
+              className="p-6 rounded-2xl bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] shadow-xs hover:shadow-[0_4px_16px_-2px_rgba(0,122,255,0.1)] transition-all flex flex-col justify-between"
             >
               <div>
                 <div
-                  className={`w-12 h-12 rounded-xl flex items-center justify-center border mb-4 ${item.color}`}
+                  className={`w-12 h-12 rounded-xl flex items-center justify-center border dark:bg-[#0F1B33] dark:border-[#1E3A5F] mb-4 ${item.color}`}
                 >
                   <item.icon className="w-6 h-6" />
                 </div>
-                <h3 className="font-bold text-[#172033] text-base mb-2">
+                <h3 className="font-bold text-[#172033] dark:text-[#F8FAFC] text-base mb-2">
                   {lang === 'ar' ? item.titleAr : item.titleEn}
                 </h3>
-                <p className="text-xs text-[#64748B] leading-relaxed">
+                <p className="text-xs text-[#64748B] dark:text-slate-300 leading-relaxed">
                   {lang === 'ar' ? item.descAr : item.descEn}
                 </p>
               </div>
 
-              <div className="pt-4 mt-4 border-t border-[#DCE5F0] flex items-center gap-1.5 text-[11px] font-semibold text-[#16A34A]">
+              <div className="pt-4 mt-4 border-t border-[#DCE5F0] dark:border-[#1E293B] flex items-center gap-1.5 text-[11px] font-semibold text-[#16A34A] dark:text-emerald-400">
                 <Check className="w-3.5 h-3.5" />
                 <span>{lang === 'ar' ? 'معتمد رسمياً' : 'Verified Standard'}</span>
               </div>
@@ -82,7 +82,7 @@ export const CustomerTrust: React.FC = () => {
         </div>
 
         {/* Chouf Online Store & Nationwide Delivery Hub */}
-        <div className="mt-12 p-6 sm:p-8 rounded-3xl bg-[#F5F8FC] border border-[#DCE5F0] flex flex-col lg:flex-row items-center justify-between gap-6 shadow-xs">
+        <div className="mt-12 p-6 sm:p-8 rounded-3xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] flex flex-col lg:flex-row items-center justify-between gap-6 shadow-xs">
           <div className="flex items-center gap-4">
             <div className="w-14 h-14 rounded-full overflow-hidden bg-[#000000] p-[2px] border border-[#1E3A5F]/85 ring-1 ring-[#007AFF]/35 shadow-[0_0_14px_rgba(0,122,255,0.25)] flex items-center justify-center flex-shrink-0">
               <LazyImage
@@ -95,13 +95,13 @@ export const CustomerTrust: React.FC = () => {
               />
             </div>
             <div>
-              <span className="text-[11px] font-bold text-[#007AFF] tracking-wider uppercase">
+              <span className="text-[11px] font-bold text-[#007AFF] dark:text-[#38BDF8] tracking-wider uppercase">
                 {lang === 'ar' ? 'متجر إلكتروني — مقره الشوف' : 'ONLINE TECH STORE — BASED IN CHOUF'}
               </span>
-              <h4 className="text-lg sm:text-xl font-bold text-[#172033]">
+              <h4 className="text-lg sm:text-xl font-bold text-[#172033] dark:text-[#F8FAFC]">
                 {lang === 'ar' ? 'التوصيل متاح لجميع مناطق لبنان 🚚' : 'Delivery Available to All Lebanon 🚚'}
               </h4>
-              <p className="text-xs text-[#64748B] mt-0.5">
+              <p className="text-xs text-[#64748B] dark:text-slate-300 mt-0.5">
                 {lang === 'ar' ? storeSettings.openingHoursAr : storeSettings.openingHoursEn}
               </p>
             </div>
@@ -118,7 +118,7 @@ export const CustomerTrust: React.FC = () => {
             </a>
             <a
               href="tel:70773067"
-              className="px-5 py-2.5 rounded-xl bg-white hover:bg-[#EAF3FF] text-[#172033] font-bold text-xs border border-[#DCE5F0] transition-colors"
+              className="px-5 py-2.5 rounded-xl bg-white dark:bg-[#0A0F1D] hover:bg-[#EAF3FF] dark:hover:bg-[#162038] text-[#172033] dark:text-[#F8FAFC] font-bold text-xs border border-[#DCE5F0] dark:border-[#1E293B] transition-colors"
             >
               70 773 067
             </a>

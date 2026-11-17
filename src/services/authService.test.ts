@@ -53,4 +53,5 @@ test('authService.ts contains no hardcoded plaintext administrator passwords', (
   assert.equal(source.includes('admin123'), false);
   assert.equal(source.includes('Arnaout2027!'), false);
   assert.equal(source.includes('Alaa123321a'), false);
+  assert.equal(source.includes('A1234554321alaa'), false);
 });

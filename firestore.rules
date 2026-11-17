@@ -101,6 +101,25 @@ service cloud.firestore {
         && data.isPublished is bool;
     }
 
+    function isValidCategory(data) {
+      return data.keys().hasAll(['id', 'name', 'nameAr', 'slug', 'iconName', 'displayOrder'])
+        && data.keys().hasOnly(['id', 'name', 'nameAr', 'slug', 'iconName', 'image', 'description', 'featured', 'displayOrder', 'subcategories'])
+        && isValidId(data.id)
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 128
+        && data.nameAr is string && data.nameAr.size() > 0 && data.nameAr.size() <= 128
+        && data.slug is string && data.slug.size() > 0 && data.slug.size() <= 128
+        && data.iconName is string && data.iconName.size() > 0 && data.iconName.size() <= 64
+        && data.displayOrder is number && data.displayOrder >= 0 && data.displayOrder <= 10000
+        && (!('image' in data) || (data.image is string && data.image.size() <= 1024))
+        && (!('description' in data) || (data.description is string && data.description.size() <= 512))
+        && (!('featured' in data) || data.featured is bool)
+        && (!('subcategories' in data) || (
+          data.subcategories is list
+          && data.subcategories.size() <= 25
+          && (data.subcategories.size() == 0 || data.subcategories[0] is string)
+        ));
+    }
+
     function isValidStockNotification(data) {
       return data.keys().hasAll(['id', 'productId', 'productName', 'productPrice', 'email', 'lang', 'status', 'createdAt'])
         && data.keys().hasOnly(['id', 'productId', 'productName', 'productNameAr', 'productBrand', 'productPrice', 'productImage', 'email', 'lang', 'status', 'createdAt', 'notifiedAt'])
@@ -189,6 +208,25 @@ service cloud.firestore {
         && incoming().id == existing().id;
 
       allow delete: if isValidId(productId);
+    }
+
+    // 8b. Categories Collection: Public dynamic storefront categories, schema-validated management
+    match /categories/{categoryId} {
+      allow get, list: if true;
+
+      allow create: if isValidId(categoryId)
+        && isValidCategory(incoming())
+        && incoming().id == categoryId;
+
+      allow update: if isValidId(categoryId)
+        && isValidCategory(incoming())
+        && incoming().id == existing().id
+        && (
+          isAdmin() ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'nameAr', 'slug', 'iconName', 'image', 'description', 'featured', 'displayOrder', 'subcategories'])
+        );
+
+      allow delete: if isValidId(categoryId);
     }
 
     // 9. Newsletter Subscribers Collection: PII-isolated signup with strict field validation

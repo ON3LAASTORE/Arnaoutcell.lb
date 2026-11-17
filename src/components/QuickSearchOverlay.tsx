@@ -18,6 +18,8 @@ import {
   AlertTriangle,
   Smartphone,
   SlidersHorizontal,
+  Mic,
+  Square,
 } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 import {
@@ -35,6 +37,13 @@ import {
   clearSearchHistory,
   getPopularSearchKeywords,
 } from '../utils/quickSearchOverlayHelpers';
+import {
+  getSpeechRecognitionConstructor,
+  getVoiceRecognitionLang,
+  extractTranscriptFromEvent,
+  mapVoiceSearchError,
+  SpeechRecognitionInstanceLike,
+} from '../utils/voiceSearchHelpers';
 import { trackSearchQuery } from '../services/searchAnalyticsService';
 import { Product } from '../types';
 
@@ -68,16 +77,47 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
   const [filterMode, setFilterMode] = useState<SearchFilterMode>('all');
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [searchHistory, setSearchHistory] = useState<string[]>(() => getSearchHistory());
+  const [isListening, setIsListening] = useState(false);
+  const [voiceInterim, setVoiceInterim] = useState('');
+  const [voiceError, setVoiceError] = useState<string | null>(null);
 
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<SpeechRecognitionInstanceLike | null>(null);
 
-  // Refresh history & auto-focus input whenever overlay opens
+  const stopVoiceRecognition = useCallback((abort = false) => {
+    const rec = recognitionRef.current;
+    recognitionRef.current = null;
+    if (rec) {
+      rec.onstart = null;
+      rec.onresult = null;
+      rec.onerror = null;
+      rec.onend = null;
+      try {
+        if (abort) {
+          rec.abort();
+        } else {
+          rec.stop();
+        }
+      } catch {
+        // Ignore already-stopped recognition errors
+      }
+    }
+    setIsListening(false);
+    setVoiceInterim('');
+  }, []);
+
+  // Refresh history & auto-focus input whenever overlay opens; clean up voice listener on close
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) {
+      stopVoiceRecognition(true);
+      setVoiceError(null);
+      return;
+    }
 
     setSearchHistory(getSearchHistory());
     setSelectedIndex(-1);
+    setVoiceError(null);
 
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -89,6 +129,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
         e.preventDefault();
+        stopVoiceRecognition(true);
         onClose();
       }
     };
@@ -98,8 +139,9 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
       window.clearTimeout(focusTimer);
       window.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = prevOverflow;
+      stopVoiceRecognition(true);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, stopVoiceRecognition]);
 
   useEffect(() => {
     setSelectedIndex(-1);
@@ -341,6 +383,70 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
     setSearchHistory(clearSearchHistory());
   };
 
+  const handleToggleVoiceSearch = () => {
+    setVoiceError(null);
+
+    if (isListening) {
+      stopVoiceRecognition(false);
+      return;
+    }
+
+    const RecognitionCtor = getSpeechRecognitionConstructor();
+    if (!RecognitionCtor) {
+      setVoiceError(mapVoiceSearchError('unsupported', lang));
+      return;
+    }
+
+    try {
+      const recognition = new RecognitionCtor();
+      recognition.lang = getVoiceRecognitionLang(lang);
+      recognition.interimResults = true;
+      recognition.continuous = false;
+      recognition.maxAlternatives = 1;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        setVoiceInterim('');
+        setVoiceError(null);
+      };
+
+      recognition.onresult = (event) => {
+        const extracted = extractTranscriptFromEvent(event);
+        if (!extracted.transcript) return;
+
+        setVoiceInterim(extracted.interimTranscript);
+        setQuery(extracted.transcript);
+
+        if (extracted.hasFinal) {
+          setVoiceInterim('');
+          setQuery(extracted.finalTranscript || extracted.transcript);
+          inputRef.current?.focus();
+        }
+      };
+
+      recognition.onerror = (event) => {
+        const mapped = mapVoiceSearchError(event.error, lang);
+        if (mapped) {
+          setVoiceError(mapped);
+        }
+        stopVoiceRecognition(true);
+      };
+
+      recognition.onend = () => {
+        recognitionRef.current = null;
+        setIsListening(false);
+        setVoiceInterim('');
+      };
+
+      recognitionRef.current = recognition;
+      setIsListening(true);
+      recognition.start();
+    } catch {
+      stopVoiceRecognition(true);
+      setVoiceError(mapVoiceSearchError('default', lang));
+    }
+  };
+
   if (!isOpen || typeof document === 'undefined') return null;
 
   return createPortal(
@@ -396,20 +502,33 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
 
         {/* Full-Width Search Input Form */}
         <form onSubmit={handleSubmit} className="mb-4">
-          <div className="relative flex items-center bg-[#F8FAFC] dark:bg-[#10182B] border border-[#DCE5F0] dark:border-[#1E293B] focus-within:bg-white dark:focus-within:bg-[#131F36] focus-within:border-[#0070F3] focus-within:ring-4 focus-within:ring-[#0070F3]/12 rounded-2xl transition-all shadow-sm">
+          <div
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 bg-[#F8FAFC] dark:bg-[#10182B] border rounded-2xl transition-all shadow-sm ${
+              isListening
+                ? 'border-rose-500 ring-4 ring-rose-500/15 bg-white dark:bg-[#131F36]'
+                : 'border-[#DCE5F0] dark:border-[#1E293B] focus-within:bg-white dark:focus-within:bg-[#131F36] focus-within:border-[#0070F3] focus-within:ring-4 focus-within:ring-[#0070F3]/12'
+            }`}
+          >
             <Search
-              className="w-5 h-5 text-[#0070F3] dark:text-[#38BDF8] absolute left-4 rtl:left-auto rtl:right-4 pointer-events-none"
+              className="w-5 h-5 text-[#0070F3] dark:text-[#38BDF8] shrink-0 pointer-events-none"
               aria-hidden="true"
             />
             <input
               ref={inputRef}
               type="search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                if (voiceError) setVoiceError(null);
+              }}
               onKeyDown={handleInputKeyDown}
               data-testid="quick-search-input"
               placeholder={
-                filterMode === 'brand'
+                isListening
+                  ? isArabic
+                    ? 'جاري الاستماع... انطق اسم المنتج'
+                    : 'Listening... Speak product name'
+                  : filterMode === 'brand'
                   ? isArabic
                     ? 'ابحث بالماركة (Apple, Samsung...)'
                     : 'Search by brand (Apple, Samsung...)'
@@ -426,9 +545,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                   : 'Search products, brands, categories...'
               }
               aria-label={t.searchPlaceholder || 'Search products by name, brand, or category'}
-              className={`w-full bg-transparent text-[#0F172A] dark:text-white placeholder-[#64748B] dark:placeholder-slate-400 text-[13px] sm:text-base font-medium py-3.5 sm:py-4 pl-10 sm:pl-12 rtl:pl-0 rtl:pr-10 rtl:sm:pr-12 focus:outline-none [&::-webkit-search-cancel-button]:hidden ${
-                query ? 'pr-28 sm:pr-36 rtl:pl-28 rtl:sm:pl-36' : 'pr-21 sm:pr-28 rtl:pl-21 rtl:sm:pl-28'
-              }`}
+              className="flex-1 min-w-0 bg-transparent text-[#0F172A] dark:text-white placeholder-[#64748B] dark:placeholder-slate-400 text-[13px] sm:text-base font-medium py-3.5 sm:py-4 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
             />
 
             {query && (
@@ -440,19 +557,114 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                   inputRef.current?.focus();
                 }}
                 aria-label={isArabic ? 'مسح نص البحث' : 'Clear search input'}
-                className="absolute right-22 sm:right-26 rtl:right-auto rtl:left-22 rtl:sm:left-26 p-1.5 rounded-lg text-[#64748B] hover:text-[#0F172A] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F172A] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             )}
 
+            {/* Voice-to-Text Microphone Trigger */}
+            <button
+              type="button"
+              onClick={handleToggleVoiceSearch}
+              data-testid="quick-search-voice-btn"
+              aria-pressed={isListening}
+              aria-label={
+                isListening
+                  ? isArabic
+                    ? 'إيقاف البحث الصوتي'
+                    : 'Stop voice search'
+                  : isArabic
+                  ? 'البحث الصوتي عن منتج'
+                  : 'Search by voice'
+              }
+              title={
+                isListening
+                  ? isArabic
+                    ? 'إيقاف الاستماع'
+                    : 'Stop listening'
+                  : isArabic
+                  ? 'تحدث للبحث عن منتج'
+                  : 'Speak product name to search'
+              }
+              className={`relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl border transition-all cursor-pointer shrink-0 ${
+                isListening
+                  ? 'bg-rose-500 border-rose-500 text-white shadow-sm shadow-rose-500/30'
+                  : 'bg-white dark:bg-[#162038] border-[#DCE5F0] dark:border-[#1E293B] text-[#475569] dark:text-slate-300 hover:text-[#0070F3] dark:hover:text-[#38BDF8] hover:border-[#0070F3]'
+              }`}
+            >
+              {isListening && (
+                <span
+                  aria-hidden="true"
+                  className="absolute inset-0 rounded-xl bg-rose-500/40 animate-ping"
+                />
+              )}
+              {isListening ? (
+                <Square className="w-3.5 h-3.5 relative z-10 fill-current" />
+              ) : (
+                <Mic className="w-4 h-4 relative z-10" />
+              )}
+            </button>
+
             <button
               type="submit"
-              className="absolute right-2 rtl:right-auto rtl:left-2 bg-[#0070F3] hover:bg-[#0051D5] active:scale-[0.98] text-white text-xs sm:text-sm font-bold px-4 py-2 sm:py-2.5 rounded-xl transition-all cursor-pointer shadow-xs whitespace-nowrap shrink-0"
+              className="bg-[#0070F3] hover:bg-[#0051D5] active:scale-[0.98] text-white text-xs sm:text-sm font-bold px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all cursor-pointer shadow-xs whitespace-nowrap shrink-0"
             >
               {isArabic ? 'بحث' : 'Search'}
             </button>
           </div>
+
+          {/* Live Voice Listening Status Strip */}
+          {isListening && (
+            <div
+              role="status"
+              aria-live="polite"
+              data-testid="quick-search-voice-status"
+              className="mt-2.5 px-3.5 py-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/35 border border-rose-200 dark:border-rose-800/60 flex items-center justify-between gap-3"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
+                <span className="text-xs sm:text-[13px] font-semibold text-rose-700 dark:text-rose-300 truncate">
+                  {voiceInterim
+                    ? `"${voiceInterim}"`
+                    : isArabic
+                    ? 'جاري الاستماع... تحدث باسم المنتج أو الماركة'
+                    : 'Listening... Speak a product name, brand, or category'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => stopVoiceRecognition(false)}
+                className="text-xs font-bold text-rose-700 dark:text-rose-300 hover:underline cursor-pointer whitespace-nowrap shrink-0"
+              >
+                {isArabic ? 'إيقاف' : 'Stop'}
+              </button>
+            </div>
+          )}
+
+          {/* Recoverable Voice Notice / Permission Error */}
+          {voiceError && !isListening && (
+            <div
+              role="alert"
+              data-testid="quick-search-voice-error"
+              className="mt-2.5 px-3.5 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/35 border border-amber-200 dark:border-amber-800/60 flex items-center justify-between gap-3"
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                <span className="text-xs sm:text-[13px] font-medium text-amber-800 dark:text-amber-200">
+                  {voiceError}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVoiceError(null)}
+                aria-label={isArabic ? 'إغلاق التنبيه' : 'Dismiss voice notice'}
+                className="p-1 text-amber-700 dark:text-amber-300 hover:text-amber-900 cursor-pointer shrink-0"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
         </form>
 
         {/* Search Scope Selector Tabs */}

@@ -9,6 +9,7 @@ interface StoreLogoProps {
   className?: string;
   onClick?: () => void;
   adminMode?: boolean;
+  inverted?: boolean;
 }
 
 export const StoreLogo: React.FC<StoreLogoProps> = ({
@@ -17,6 +18,7 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
   className = '',
   onClick,
   adminMode = false,
+  inverted = false,
 }) => {
   const { storeSettings, lang } = useShop();
 
@@ -91,7 +93,9 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
 
         <div className="leading-tight min-w-0">
           <span
-            className={`font-black tracking-tight text-[#172033] dark:text-[#F8FAFC] block whitespace-nowrap truncate group-hover:text-[#007AFF] transition-colors ${sizeClasses.title}`}
+            className={`font-black tracking-tight block whitespace-nowrap truncate group-hover:text-[#007AFF] transition-colors ${
+              inverted ? 'text-white' : 'text-[#172033] dark:text-[#F8FAFC]'
+            } ${sizeClasses.title}`}
           >
             {firstWord} <span className="text-[#007AFF]">{restWords}</span>
               {adminMode && (
@@ -102,7 +106,9 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
             </span>
             {showTagline && tagline && (
               <span
-                className={`text-[#64748B] dark:text-slate-400 font-medium block truncate max-w-[115px] sm:max-w-[290px] lg:max-w-[340px] ${sizeClasses.tagline}`}
+                className={`font-medium block truncate max-w-[115px] sm:max-w-[290px] lg:max-w-[340px] ${
+                  inverted ? 'text-[#9CA3AF]' : 'text-[#64748B] dark:text-slate-400'
+                } ${sizeClasses.tagline}`}
               >
                 {tagline}
               </span>

@@ -2,13 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { getFooterTrustBadges } from './trustBadgesHelpers';
 
-test('getFooterTrustBadges returns all required payment methods in English', () => {
+test('getFooterTrustBadges returns Whish Money and COD payment methods in English', () => {
   const content = getFooterTrustBadges('en');
   assert.equal(content.heading, 'Trusted & Secure Payments');
-  assert.equal(content.badges.length, 4);
+  assert.equal(content.badges.length, 2);
 
   const ids = content.badges.map((b) => b.id);
-  assert.deepEqual(ids, ['omt', 'whish', 'western_union', 'cod']);
+  assert.deepEqual(ids, ['whish', 'cod']);
 
   content.badges.forEach((badge) => {
     assert.ok(badge.name.length > 0);
@@ -18,13 +18,13 @@ test('getFooterTrustBadges returns all required payment methods in English', () 
   assert.equal(content.assuranceItems.length, 3);
 });
 
-test('getFooterTrustBadges returns complete Arabic localization for RTL footer', () => {
+test('getFooterTrustBadges returns complete Arabic localization for RTL badges', () => {
   const content = getFooterTrustBadges('ar');
   assert.equal(content.heading, 'وسائل دفع موثوقة وآمنة');
-  assert.equal(content.badges.length, 4);
+  assert.equal(content.badges.length, 2);
 
   const ids = content.badges.map((b) => b.id);
-  assert.deepEqual(ids, ['omt', 'whish', 'western_union', 'cod']);
+  assert.deepEqual(ids, ['whish', 'cod']);
 
   content.badges.forEach((badge) => {
     assert.ok(badge.label.length > 0);

@@ -25,6 +25,7 @@ import { getProductBadges, hasProductDiscount } from '../utils/productBadgeHelpe
 import { addProductReview } from '../services/storageService';
 import { resolveFullResolutionImageUrl } from '../utils/imageResolutionHelpers';
 import { NotifyMeControl } from '../components/NotifyMeControl';
+import { RecentlyViewedCarousel } from '../components/RecentlyViewedCarousel';
 
 export const ProductDetailPage: React.FC = () => {
   const {
@@ -41,6 +42,7 @@ export const ProductDetailPage: React.FC = () => {
     addToCompare,
     removeFromCompare,
     setIsCompareModalOpen,
+    recordProductView,
   } = useShop();
 
   const product = products.find((p) => p.id === selectedProductId) || products[0];
@@ -61,13 +63,16 @@ export const ProductDetailPage: React.FC = () => {
   const [newReviewComment, setNewReviewComment] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
-  // Synchronize variant, color, and image when viewing a different product
+  // Synchronize variant, color, and image when viewing a different product and persist to recently viewed
   React.useEffect(() => {
     setActiveImageIndex(0);
     setSelectedColor(product?.colors?.[0]);
     setSelectedVariant(product?.variants?.[0]);
     setQuantity(1);
     setReviewSubmitted(false);
+    if (product?.id) {
+      recordProductView(product.id);
+    }
   }, [product?.id]);
 
   if (!product) return null;
@@ -717,7 +722,7 @@ export const ProductDetailPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Related Products Carousel */}
+          {/* Related Products */}
           {relatedProducts.length > 0 && (
             <div className="pt-10 border-t border-[#DCE5F0] dark:border-[#1E293B]">
               <h3 className="text-xl font-bold text-[#172033] dark:text-[#F8FAFC] mb-6">{t.relatedProducts}</h3>
@@ -728,6 +733,9 @@ export const ProductDetailPage: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Recently Viewed Products Carousel (persisted via localStorage) */}
+          <RecentlyViewedCarousel excludeProductId={product.id} />
         </div>
       </div>
     </div>

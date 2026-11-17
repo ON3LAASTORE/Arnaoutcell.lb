@@ -1,37 +1,40 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useShop } from '../context/ShopContext';
 import {
   ShoppingCart,
-  Heart,
   Menu,
   X,
-  Flame,
+  ChevronDown,
+  Search,
+  Heart,
+  Sun,
+  Moon,
   ShieldCheck,
   MapPin,
   Phone,
+  Flame,
   Video,
-  ChevronDown,
-  Sun,
-  Moon,
-  Search,
+  Mic,
 } from 'lucide-react';
 import { StoreLogo } from './StoreLogo';
 import { QuickSearchOverlay } from './QuickSearchOverlay';
-import { WhatsApp3DIcon } from './icons/ThreeDIcons';
-import { ConnectivityIndicator } from './ConnectivityIndicator';
-import { LanguageToggle } from './LanguageToggle';
+import { LazyImage } from './LazyImage';
+import { trackSearchQuery } from '../services/searchAnalyticsService';
+import { addSearchHistoryTerm } from '../utils/quickSearchOverlayHelpers';
 import {
-  getHamburgerMenuItems,
-  HamburgerMenuItem,
-  isHamburgerMenuItemActive,
-} from '../utils/navbarMenuHelpers';
+  getHeaderSubNavLinks,
+  isHeaderSubNavActive,
+  filterHeaderSearchProducts,
+  SubNavLinkItem,
+} from '../utils/headerSearchHelpers';
+import { getHamburgerMenuItems, HamburgerMenuItem } from '../utils/navbarMenuHelpers';
 
 export const Navbar: React.FC = () => {
   const {
     lang,
     t,
+    setLang,
     cartCount,
-    cartSubtotal,
     setIsCartOpen,
     wishlist,
     currentView,
@@ -40,23 +43,44 @@ export const Navbar: React.FC = () => {
     selectBrand,
     productCollectionPreset,
     setProductCollectionPreset,
+    setSearchQuery,
     categories,
+    products,
+    viewProductDetail,
     isDarkMode,
     toggleDarkMode,
   } = useShop();
 
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [desktopMenuOpen, setDesktopMenuOpen] = useState(false);
-  const [categoriesDropdownOpen, setCategoriesDropdownOpen] = useState(false);
-  const [quickSearchOpen, setQuickSearchOpen] = useState(false);
+  const toggleLanguage = () => setLang(lang === 'ar' ? 'en' : 'ar');
 
-  const hamburgerMenuRef = useRef<HTMLDivElement>(null);
+  const isArabic = lang === 'ar';
+
+  const [selectedCategorySlug, setSelectedCategorySlug] = useState<string>('all');
+  const [headerQuery, setHeaderQuery] = useState<string>('');
+  const [searchDropdownOpen, setSearchDropdownOpen] = useState<boolean>(false);
+  const [categoriesDropdownOpen, setCategoriesDropdownOpen] = useState<boolean>(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
+  const [quickSearchOpen, setQuickSearchOpen] = useState<boolean>(false);
+
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const categoriesDropdownRef = useRef<HTMLDivElement>(null);
 
-  const menuItems = getHamburgerMenuItems(lang);
+  const subNavLinks = useMemo(() => getHeaderSubNavLinks(lang), [lang]);
+  const mobileDrawerItems = useMemo(() => getHamburgerMenuItems(lang), [lang]);
 
-  const handleNavigateItem = useCallback(
-    (item: HamburgerMenuItem, closeMobile = false) => {
+  const liveSearchResults = useMemo(() => {
+    if (!headerQuery.trim()) return [];
+    return filterHeaderSearchProducts(
+      products,
+      categories,
+      headerQuery,
+      selectedCategorySlug
+    ).slice(0, 6);
+  }, [products, categories, headerQuery, selectedCategorySlug]);
+
+  const handleNavigateSubLink = useCallback(
+    (item: SubNavLinkItem) => {
       if (item.view === 'products') {
         selectCategory(null);
         selectBrand(null);
@@ -65,43 +89,75 @@ export const Navbar: React.FC = () => {
         setProductCollectionPreset('all');
         setCurrentView(item.view);
       }
-
-      setDesktopMenuOpen(false);
       setCategoriesDropdownOpen(false);
-      if (closeMobile) {
-        setMobileMenuOpen(false);
-      }
+      setSearchDropdownOpen(false);
+      setMobileMenuOpen(false);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     [selectCategory, selectBrand, setProductCollectionPreset, setCurrentView]
   );
 
-  // Close desktop hamburger dropdown and categories dropdown on outside click or Escape key
-  useEffect(() => {
-    if (!desktopMenuOpen && !categoriesDropdownOpen) return;
+  const handleNavigateMobileItem = useCallback(
+    (item: HamburgerMenuItem) => {
+      if (item.view === 'products') {
+        selectCategory(null);
+        selectBrand(null);
+        setProductCollectionPreset(item.filterPreset || 'all');
+      } else {
+        setProductCollectionPreset('all');
+        setCurrentView(item.view);
+      }
+      setMobileMenuOpen(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    },
+    [selectCategory, selectBrand, setProductCollectionPreset, setCurrentView]
+  );
 
+  const handleHeaderSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = headerQuery.trim();
+
+    if (trimmed) {
+      addSearchHistoryTerm(trimmed);
+      trackSearchQuery({
+        term: trimmed,
+        source: 'desktop_input_submit',
+        categoryMatchesCount: selectedCategorySlug !== 'all' ? 1 : 0,
+        productMatchesCount: liveSearchResults.length,
+      });
+    }
+
+    if (selectedCategorySlug && selectedCategorySlug !== 'all') {
+      selectCategory(selectedCategorySlug);
+    } else {
+      selectCategory(null);
+    }
+
+    selectBrand(null);
+    setSearchQuery(trimmed);
+    setCurrentView('products');
+    setSearchDropdownOpen(false);
+    setMobileMenuOpen(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Close dropdowns on outside click or Escape
+  useEffect(() => {
     const handleMouseDown = (event: MouseEvent) => {
       const target = event.target as Node;
-      if (
-        desktopMenuOpen &&
-        hamburgerMenuRef.current &&
-        !hamburgerMenuRef.current.contains(target)
-      ) {
-        setDesktopMenuOpen(false);
+      if (searchContainerRef.current && !searchContainerRef.current.contains(target)) {
+        setSearchDropdownOpen(false);
       }
-      if (
-        categoriesDropdownOpen &&
-        categoriesDropdownRef.current &&
-        !categoriesDropdownRef.current.contains(target)
-      ) {
+      if (categoriesDropdownRef.current && !categoriesDropdownRef.current.contains(target)) {
         setCategoriesDropdownOpen(false);
       }
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setDesktopMenuOpen(false);
+        setSearchDropdownOpen(false);
         setCategoriesDropdownOpen(false);
+        setMobileMenuOpen(false);
       }
     };
 
@@ -111,9 +167,9 @@ export const Navbar: React.FC = () => {
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [desktopMenuOpen, categoriesDropdownOpen]);
+  }, []);
 
-  // Global keyboard shortcut ('/' or Cmd/Ctrl+K) opens full-screen Quick Search overlay
+  // Keyboard shortcut ('/' or Cmd/Ctrl+K) focuses search or opens Quick Search
   useEffect(() => {
     const handleQuickSearchShortcut = (event: KeyboardEvent) => {
       const activeTag = document.activeElement?.tagName;
@@ -124,10 +180,12 @@ export const Navbar: React.FC = () => {
         activeTag !== 'SELECT'
       ) {
         event.preventDefault();
-        setDesktopMenuOpen(false);
-        setCategoriesDropdownOpen(false);
-        setMobileMenuOpen(false);
-        setQuickSearchOpen(true);
+        if (window.innerWidth >= 768 && searchInputRef.current) {
+          searchInputRef.current.focus();
+          setSearchDropdownOpen(true);
+        } else {
+          setQuickSearchOpen(true);
+        }
       }
     };
 
@@ -141,152 +199,188 @@ export const Navbar: React.FC = () => {
         paddingLeft: 'max(env(safe-area-inset-left, 0px), 0px)',
         paddingRight: 'max(env(safe-area-inset-right, 0px), 0px)',
       }}
-      className="sticky top-0 z-40 w-full max-w-full overflow-x-clip bg-white/95 dark:bg-[#0A0F1D]/95 backdrop-blur-xl border-b border-[#DCE5F0] dark:border-[#1E293B] shadow-[0_2px_15px_-3px_rgba(0,122,255,0.06)] dark:shadow-[0_2px_20px_-3px_rgba(0,0,0,0.6)] transition-colors duration-200"
+      className="relative md:sticky md:top-0 z-40 w-full max-w-full bg-[#161A1D] text-white border-b border-white/[0.08] shadow-[0_8px_28px_rgba(0,0,0,0.28)]"
     >
-      {/* Main Bar */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20 gap-1.5 sm:gap-4">
-          {/* Logo */}
+      {/* Top Main Header Row */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between gap-4 lg:gap-8 py-3.5 sm:py-4">
+          {/* Left Side: Brand Logo & Name */}
           <StoreLogo
             size="md"
+            inverted={true}
+            showTagline={false}
             onClick={() => {
               setProductCollectionPreset('all');
               setCurrentView('home');
+              setMobileMenuOpen(false);
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
           />
 
-          {/* Minimalist Spacer & Quick Actions */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-            {/* Minimalist Quick Search Icon Trigger */}
-            <button
-              type="button"
-              onClick={() => {
-                setDesktopMenuOpen(false);
-                setCategoriesDropdownOpen(false);
-                setMobileMenuOpen(false);
-                setQuickSearchOpen(true);
-              }}
-              data-testid="navbar-quick-search-btn"
-              aria-label={lang === 'ar' ? 'فتح البحث السريع' : 'Open quick search'}
-              aria-expanded={quickSearchOpen}
-              aria-haspopup="dialog"
-              title={lang === 'ar' ? 'البحث السريع (/)' : 'Quick Search (/)'}
-              className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#0070F3] text-[#172033] dark:text-[#F8FAFC] hover:text-[#0070F3] dark:hover:text-[#38BDF8] transition-all duration-150 active:scale-90 cursor-pointer group shadow-xs shrink-0"
+          {/* Center: Advanced E-Commerce Search Bar (Desktop & Tablet) */}
+          <div
+            ref={searchContainerRef}
+            className="hidden md:block flex-1 max-w-2xl relative"
+          >
+            <form
+              onSubmit={handleHeaderSearchSubmit}
+              role="search"
+              aria-label={isArabic ? 'البحث في المتجر' : 'Store product search'}
+              className="flex items-stretch w-full h-11 rounded-[10px] overflow-hidden bg-white shadow-sm ring-1 ring-white/10 focus-within:ring-2 focus-within:ring-[#00BAF2] transition-shadow"
             >
-              <Search className="w-4 h-4 sm:w-[18px] sm:h-[18px] group-hover:scale-110 transition-transform" />
-            </button>
+              {/* Left Category Dropdown Selector */}
+              <div className="relative flex items-center bg-[#F1F5F9] border-r rtl:border-r-0 rtl:border-l border-slate-200 shrink-0">
+                <select
+                  value={selectedCategorySlug}
+                  onChange={(e) => setSelectedCategorySlug(e.target.value)}
+                  aria-label={isArabic ? 'اختر القسم للبحث' : 'Select category filter'}
+                  className="appearance-none bg-transparent text-[#334155] text-[13px] font-medium pl-3.5 pr-8 rtl:pl-8 rtl:pr-3.5 h-full cursor-pointer focus:outline-none max-w-[190px] truncate"
+                >
+                  <option value="all">
+                    {isArabic ? 'البحث في جميع الأقسام' : 'Search all categories'}
+                  </option>
+                  {categories.map((cat) => (
+                    <option key={cat.id} value={cat.slug}>
+                      {isArabic ? cat.nameAr : cat.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  className="w-3.5 h-3.5 text-slate-500 pointer-events-none absolute right-2.5 rtl:right-auto rtl:left-2.5"
+                  aria-hidden="true"
+                />
+              </div>
 
-            {/* Real-time Firebase Firestore Sync & Connectivity Indicator */}
-            <ConnectivityIndicator
-              lang={lang}
-              isCompact={false}
-              className="hidden md:inline-flex shrink-0"
-            />
-            <ConnectivityIndicator
-              lang={lang}
-              isCompact={true}
-              className="md:hidden inline-flex shrink-0"
-            />
+              {/* Center Input Field */}
+              <div className="relative flex-1 flex items-center min-w-0 bg-white">
+                <input
+                  ref={searchInputRef}
+                  type="search"
+                  value={headerQuery}
+                  onChange={(e) => {
+                    setHeaderQuery(e.target.value);
+                    setSearchDropdownOpen(true);
+                  }}
+                  onFocus={() => {
+                    if (headerQuery.trim()) setSearchDropdownOpen(true);
+                  }}
+                  placeholder={isArabic ? 'عمّ تبحث اليوم؟' : 'What are you looking for?'}
+                  aria-label={isArabic ? 'عمّ تبحث اليوم؟' : 'What are you looking for?'}
+                  className="w-full h-full px-4 pr-10 rtl:pl-10 rtl:pr-4 bg-white text-[#0F172A] placeholder-slate-400 text-sm focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+                />
+                {/* Quick Search / Voice Search Trigger */}
+                <button
+                  type="button"
+                  onClick={() => setQuickSearchOpen(true)}
+                  aria-label={isArabic ? 'البحث الصوتي والسريع' : 'Open voice and quick search'}
+                  title={isArabic ? 'البحث الصوتي والسريع' : 'Voice & Quick Search'}
+                  className="absolute right-2 rtl:right-auto rtl:left-2 p-1.5 rounded-md text-slate-400 hover:text-[#00BAF2] hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <Mic className="w-4 h-4" />
+                </button>
+              </div>
 
-            {/* WhatsApp 3D direct link */}
-            <a
-              href="https://wa.me/96170773067"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-bold transition-all group hover:shadow-sm whitespace-nowrap shrink-0"
-              title="WhatsApp: 70 773 067"
-            >
-              <WhatsApp3DIcon size={18} />
-              <span dir="ltr">70 773 067</span>
-            </a>
+              {/* Right Action Button: Cyan/Teal Search Button */}
+              <button
+                type="submit"
+                aria-label={isArabic ? 'بحث' : 'Search'}
+                className="px-5 bg-[#00BAF2] hover:bg-[#00A2D4] text-white flex items-center justify-center transition-colors duration-150 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              >
+                <Search className="w-5 h-5 stroke-[2.25]" />
+              </button>
+            </form>
 
-            {/* Call button (redundant with WhatsApp 70 773 067 below 2xl) */}
-            <a
-              href="tel:70773067"
-              className="hidden 2xl:flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-[#172033] dark:text-[#F8FAFC] text-xs font-semibold transition-all group whitespace-nowrap shrink-0"
-            >
-              <Phone className="w-3.5 h-3.5 text-[#007AFF] group-hover:scale-110 transition-transform shrink-0" />
-              <span dir="ltr">70 773 067</span>
-            </a>
+            {/* Live Search Results Dropdown */}
+            {searchDropdownOpen && headerQuery.trim().length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#0E1726] border border-slate-200 dark:border-slate-700 rounded-xl shadow-2xl overflow-hidden z-50 text-slate-900 dark:text-slate-100">
+                {liveSearchResults.length > 0 ? (
+                  <div className="divide-y divide-slate-100 dark:divide-slate-800 max-h-80 overflow-y-auto">
+                    {liveSearchResults.map((product) => (
+                      <button
+                        key={product.id}
+                        type="button"
+                        onClick={() => {
+                          viewProductDetail(product.id);
+                          setSearchDropdownOpen(false);
+                          setHeaderQuery('');
+                        }}
+                        className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-[#162038] text-left rtl:text-right transition-colors cursor-pointer"
+                      >
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-[#111A2E] overflow-hidden shrink-0 flex items-center justify-center">
+                          {product.images?.[0] ? (
+                            <LazyImage
+                              src={product.images[0]}
+                              alt={product.name}
+                              width={40}
+                              height={40}
+                              priority={true}
+                              wrapperClassName="w-full h-full"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Search className="w-4 h-4 text-slate-400" />
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-semibold text-slate-900 dark:text-white truncate">
+                            {isArabic ? product.nameAr || product.name : product.name}
+                          </p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                            {product.brand} · {product.category}
+                          </p>
+                        </div>
+                        <span className="text-sm font-bold text-[#0070F3] dark:text-[#38BDF8] tabular-nums shrink-0">
+                          ${product.price}
+                        </span>
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={(e) => handleHeaderSearchSubmit(e as unknown as React.FormEvent)}
+                      className="w-full px-4 py-2.5 text-center text-xs font-semibold text-[#0070F3] dark:text-[#38BDF8] bg-slate-50 dark:bg-[#111A2E] hover:bg-slate-100 dark:hover:bg-[#162038] transition-colors cursor-pointer"
+                    >
+                      {isArabic
+                        ? `عرض جميع النتائج لـ "${headerQuery.trim()}"`
+                        : `View all results for "${headerQuery.trim()}"`}
+                    </button>
+                  </div>
+                ) : (
+                  <div className="p-5 text-center text-xs text-slate-500 dark:text-slate-400">
+                    {isArabic
+                      ? `لا توجد منتجات مطابقة لـ "${headerQuery.trim()}"`
+                      : `No matching products found for "${headerQuery.trim()}"`}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
 
-            {/* Language Switcher Component (EN / AR with RTL class support) */}
-            <LanguageToggle variant="compact" />
-
-            {/* Global Dark Mode Theme Toggle */}
-            <button
-              type="button"
-              onClick={toggleDarkMode}
-              className="flex items-center justify-center p-2 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-[#172033] dark:text-[#F8FAFC] transition-transform duration-100 active:scale-90 cursor-pointer group shadow-xs shrink-0"
-              title={
-                isDarkMode
-                  ? lang === 'ar'
-                    ? 'التبديل إلى الوضع الفاتح'
-                    : 'Switch to Light Mode'
-                  : lang === 'ar'
-                  ? 'التبديل إلى الوضع الداكن'
-                  : 'Switch to Dark Mode'
-              }
-              aria-label={isDarkMode ? t.lightMode : t.darkMode}
-            >
-              {isDarkMode ? (
-                <Sun className="w-4 h-4 text-amber-400 group-hover:rotate-90 group-hover:scale-110 transition-all duration-300 fill-amber-400/20" />
-              ) : (
-                <Moon className="w-4 h-4 text-[#007AFF] group-hover:-rotate-12 group-hover:scale-110 transition-all duration-300 fill-[#007AFF]/20" />
-              )}
-            </button>
-
-            {/* Wishlist */}
-            <button
-              type="button"
-              onClick={() => setCurrentView('wishlist')}
-              className="hidden sm:flex relative p-2 rounded-xl text-[#64748B] dark:text-slate-300 hover:text-[#007AFF] dark:hover:text-[#38BDF8] hover:bg-[#EAF3FF]/50 dark:hover:bg-[#111A2E] transition-transform duration-100 active:scale-90 cursor-pointer shrink-0"
-              title={t.wishlist}
-              aria-label="Wishlist"
-            >
-              <Heart className="w-5 h-5" />
-              {wishlist.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#DC2626] text-white font-bold text-[10px] w-4 h-4 rounded-full flex items-center justify-center">
-                  {wishlist.length}
-                </span>
-              )}
-            </button>
-
-            {/* Cart Trigger */}
+          {/* Right Side: Streamlined Actions (Minimal Cart + Mobile Menu Trigger) */}
+          <div className="flex items-center gap-3 shrink-0">
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
-              className="flex items-center gap-1.5 sm:gap-2 px-3 py-1.5 sm:py-2 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs sm:text-sm font-semibold shadow-md shadow-[#007AFF]/25 transition-transform duration-100 active:scale-90 cursor-pointer whitespace-nowrap shrink-0"
-              aria-label="Shopping Cart"
+              data-testid="header-cart-button"
+              aria-label={isArabic ? `سلة التسوق (${cartCount})` : `Shopping Cart (${cartCount})`}
+              className="group relative flex items-center gap-2.5 px-3 py-2 rounded-lg text-white hover:bg-white/[0.08] transition-colors cursor-pointer whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00BAF2]"
             >
-              <div className="relative">
-                <ShoppingCart className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
-                {cartCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-white text-[#007AFF] font-black text-[10px] w-4 h-4 rounded-full flex items-center justify-center shadow-xs">
-                    {cartCount}
-                  </span>
-                )}
+              <div className="relative flex items-center justify-center">
+                <ShoppingCart className="w-5 h-5 text-white group-hover:text-[#00BAF2] transition-colors" />
+                <span
+                  data-testid="header-cart-count"
+                  className="ml-2 rtl:ml-0 rtl:mr-2 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-[#00BAF2] text-[#0B1117] text-[11px] font-bold tabular-nums leading-none"
+                >
+                  {cartCount}
+                </span>
               </div>
-              <span className="hidden sm:inline font-bold">${cartSubtotal}</span>
             </button>
 
-            {/* Admin Portal Shortcut */}
+            {/* Mobile Hamburger Menu Button */}
             <button
               type="button"
-              onClick={() => setCurrentView('admin')}
-              className="hidden lg:flex p-2 rounded-xl text-[#64748B] dark:text-slate-300 hover:text-[#007AFF] dark:hover:text-[#38BDF8] hover:bg-[#EAF3FF] dark:hover:bg-[#111A2E] border border-transparent hover:border-[#BAE6FD] dark:hover:border-slate-700 transition-transform duration-100 active:scale-90 cursor-pointer"
-              title={t.adminPortal}
-              aria-label="Admin Portal"
-            >
-              <ShieldCheck className="w-5 h-5" />
-            </button>
-
-            {/* Mobile Hamburger Button */}
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-xl text-[#64748B] dark:text-slate-300 hover:text-[#172033] dark:hover:text-white hover:bg-[#F5F8FC] dark:hover:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] transition-transform duration-100 active:scale-90 cursor-pointer"
-              aria-label="Toggle menu"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              className="md:hidden p-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/[0.08] border border-white/10 transition-colors cursor-pointer"
+              aria-label={isArabic ? 'فتح القائمة' : 'Toggle navigation menu'}
               aria-expanded={mobileMenuOpen}
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -294,384 +388,263 @@ export const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* Desktop Minimal Secondary Navigation Bar */}
-        <nav
-          aria-label={lang === 'ar' ? 'التنقل الرئيسي' : 'Main Navigation'}
-          className="hidden md:flex items-center justify-between py-2.5 border-t border-[#DCE5F0] dark:border-[#1E293B]"
-        >
-          {/* Left Side: Consolidated Hamburger Trigger + Categories Dropdown */}
-          <div className="flex items-center gap-3">
-            {/* Hamburger Trigger & Consolidated Navigation Dropdown */}
-            <div ref={hamburgerMenuRef} className="relative">
-              <button
-                type="button"
-                onClick={() => {
-                  setDesktopMenuOpen((prev) => !prev);
-                  setCategoriesDropdownOpen(false);
-                }}
-                aria-label={
-                  desktopMenuOpen
-                    ? lang === 'ar'
-                      ? 'إغلاق قائمة التنقل'
-                      : 'Close navigation menu'
-                    : lang === 'ar'
-                    ? 'فتح قائمة التنقل'
-                    : 'Open navigation menu'
-                }
-                aria-expanded={desktopMenuOpen}
-                aria-haspopup="menu"
-                className={`group flex items-center justify-center w-9 h-9 rounded-[10px] border transition-all duration-200 ease-out cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#0070F3] ${
-                  desktopMenuOpen
-                    ? 'bg-[#F1F5F9] dark:bg-[#1A253C] border-[#CBD5E1] dark:border-slate-600 text-[#0F172A] dark:text-white shadow-xs'
-                    : 'bg-white dark:bg-[#111A2E] border-[#E5E7EB] dark:border-[#1E293B] text-[#1E293B] dark:text-slate-200 hover:bg-[#F1F5F9] dark:hover:bg-[#1A253C] hover:border-[#CBD5E1]'
-                }`}
-              >
-                {/* Animated 3-bar hamburger morphing smoothly into an X close icon */}
-                <span className="relative w-4 h-3.5 flex flex-col justify-between items-center pointer-events-none">
-                  <span
-                    className={`block w-4 h-[1.75px] rounded-full bg-current transform transition-all duration-200 ease-out origin-center ${
-                      desktopMenuOpen ? 'translate-y-[6px] rotate-45' : ''
-                    }`}
-                  />
-                  <span
-                    className={`block w-4 h-[1.75px] rounded-full bg-current transform transition-all duration-200 ease-out ${
-                      desktopMenuOpen ? 'opacity-0 scale-x-0' : 'opacity-100 scale-x-100'
-                    }`}
-                  />
-                  <span
-                    className={`block w-4 h-[1.75px] rounded-full bg-current transform transition-all duration-200 ease-out origin-center ${
-                      desktopMenuOpen ? '-translate-y-[6px] -rotate-45' : ''
-                    }`}
-                  />
-                </span>
-              </button>
-
-              {/* Consolidated Dropdown Drawer Panel */}
-              <div
-                role="menu"
-                aria-label={lang === 'ar' ? 'قائمة التنقل السريع' : 'Navigation Menu'}
-                aria-hidden={!desktopMenuOpen}
-                className={`absolute top-full mt-2.5 left-0 rtl:left-auto rtl:right-0 w-72 bg-white dark:bg-[#0E1726] border border-[#E5E7EB] dark:border-[#1E293B] rounded-[14px] shadow-[0_10px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_14px_34px_rgba(0,0,0,0.55)] p-2 z-50 transition-all duration-200 ease-out origin-top-left rtl:origin-top-right ${
-                  desktopMenuOpen
-                    ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto visible'
-                    : 'opacity-0 -translate-y-1.5 scale-[0.98] pointer-events-none invisible'
-                }`}
-              >
-                <div className="flex flex-col gap-0.5">
-                  {menuItems.map((item) => {
-                    const isActive = isHamburgerMenuItemActive(
-                      item,
-                      currentView,
-                      productCollectionPreset
-                    );
-                    const isSpecialOffer = Boolean(item.isHighlighted);
-
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        role="menuitem"
-                        tabIndex={desktopMenuOpen ? 0 : -1}
-                        onClick={() => handleNavigateItem(item)}
-                        className={`w-full flex items-center justify-between gap-2.5 px-4 py-3 rounded-[10px] text-[14.5px] leading-snug transition-all duration-200 ease-out cursor-pointer text-left rtl:text-right focus-visible:outline-2 focus-visible:outline-[#0070F3] ${
-                          isSpecialOffer
-                            ? isActive
-                              ? 'bg-[#EFF6FF] dark:bg-[#162742] text-[#0070F3] dark:text-[#38BDF8] font-semibold'
-                              : 'text-[#0070F3] dark:text-[#38BDF8] font-semibold hover:bg-[#F1F5F9] dark:hover:bg-[#1A253C]'
-                            : isActive
-                            ? 'bg-[#F1F5F9] dark:bg-[#1A253C] text-[#0070F3] dark:text-[#38BDF8] font-semibold'
-                            : 'text-[#1E293B] dark:text-slate-100 font-medium hover:bg-[#F1F5F9] dark:hover:bg-[#1A253C]'
-                        }`}
-                      >
-                        <span className="flex items-center gap-2.5 min-w-0">
-                          {item.iconType === 'flame' && (
-                            <Flame
-                              className="w-4 h-4 text-[#0070F3] dark:text-[#38BDF8] shrink-0"
-                              aria-hidden="true"
-                            />
-                          )}
-                          {item.iconType === 'video' && (
-                            <Video
-                              className="w-4 h-4 text-[#0070F3] dark:text-[#38BDF8] shrink-0"
-                              aria-hidden="true"
-                            />
-                          )}
-                          <span className="truncate">{item.label}</span>
-                        </span>
-                        <span
-                          className={`text-xs transition-transform duration-200 rtl:rotate-180 ${
-                            isSpecialOffer || isActive
-                              ? 'text-[#0070F3] dark:text-[#38BDF8]'
-                              : 'text-[#94A3B8]'
-                          }`}
-                          aria-hidden="true"
-                        >
-                          →
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {/* Drawer Footer: Store Location */}
-                <div className="mt-1.5 pt-1.5 border-t border-[#E5E7EB] dark:border-[#1E293B]">
-                  <button
-                    type="button"
-                    role="menuitem"
-                    tabIndex={desktopMenuOpen ? 0 : -1}
-                    onClick={() => {
-                      setProductCollectionPreset('all');
-                      setCurrentView('contact');
-                      setDesktopMenuOpen(false);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-2.5 rounded-[10px] text-[13px] font-medium text-[#64748B] dark:text-slate-400 hover:bg-[#F1F5F9] dark:hover:bg-[#1A253C] hover:text-[#1E293B] dark:hover:text-slate-200 transition-all duration-200 ease-out cursor-pointer text-left rtl:text-right"
-                  >
-                    <MapPin className="w-3.5 h-3.5 text-[#0070F3] shrink-0" aria-hidden="true" />
-                    <span className="truncate">{t.saidaStore}</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            {/* Categories Dropdown */}
-            <div
-              ref={categoriesDropdownRef}
-              className="relative"
-              onMouseEnter={() => {
-                setCategoriesDropdownOpen(true);
-                setDesktopMenuOpen(false);
-              }}
-              onMouseLeave={() => setCategoriesDropdownOpen(false)}
-            >
-              <button
-                type="button"
-                onClick={() => {
-                  setCurrentView('categories');
-                  setCategoriesDropdownOpen(false);
-                  setDesktopMenuOpen(false);
-                }}
-                aria-expanded={categoriesDropdownOpen}
-                aria-haspopup="menu"
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-[10px] text-[13.5px] font-semibold text-[#172033] dark:text-[#F8FAFC] hover:text-[#0070F3] dark:hover:text-[#38BDF8] hover:bg-[#F1F5F9] dark:hover:bg-[#1A253C] transition-colors cursor-pointer whitespace-nowrap shrink-0"
-              >
-                <span>{t.allCategories}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-[#0070F3]" />
-              </button>
-
-              {categoriesDropdownOpen && (
-                <div className="absolute top-full left-0 rtl:left-auto rtl:right-0 w-72 bg-white dark:bg-[#0E1726] border border-[#E5E7EB] dark:border-[#1E293B] rounded-[14px] shadow-[0_10px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_14px_34px_rgba(0,0,0,0.55)] p-3 z-50 grid grid-cols-1 gap-1">
-                  <div className="px-3 py-1.5 text-[11px] font-bold text-[#0070F3] uppercase tracking-wider border-b border-[#DCE5F0] dark:border-[#1E293B] mb-1 flex justify-between bg-[#F5F8FC] dark:bg-[#111A2E] rounded-lg">
-                    <span>{lang === 'ar' ? 'الأقسام الرئيسية' : 'Popular Departments'}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setCurrentView('categories');
-                        setCategoriesDropdownOpen(false);
-                      }}
-                      className="text-[#64748B] dark:text-slate-400 hover:text-[#0070F3] dark:hover:text-[#38BDF8] underline text-[10px] cursor-pointer"
-                    >
-                      {lang === 'ar' ? 'عرض الكل' : 'View All'}
-                    </button>
-                  </div>
-                  {categories.slice(0, 10).map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => {
-                        selectCategory(cat.slug);
-                        setCategoriesDropdownOpen(false);
-                      }}
-                      className="w-full text-left rtl:text-right px-3 py-2 rounded-[10px] text-[#1E293B] dark:text-slate-200 hover:bg-[#F1F5F9] dark:hover:bg-[#1A253C] hover:text-[#0070F3] dark:hover:text-[#38BDF8] text-[13px] font-medium transition-colors cursor-pointer flex items-center justify-between"
-                    >
-                      <span>{lang === 'ar' ? cat.nameAr : cat.name}</span>
-                      <span className="text-[10px] text-[#64748B] dark:text-slate-500 rtl:rotate-180">→</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Side: Store Location Tag */}
-          <button
-            type="button"
-            onClick={() => {
-              setProductCollectionPreset('all');
-              setCurrentView('contact');
-              setDesktopMenuOpen(false);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="flex items-center gap-1.5 text-xs font-semibold text-[#64748B] dark:text-slate-400 hover:text-[#0070F3] dark:hover:text-[#38BDF8] cursor-pointer transition-colors whitespace-nowrap shrink-0"
+        {/* Mobile Search Bar Row */}
+        <div className="md:hidden pb-3.5">
+          <form
+            onSubmit={handleHeaderSearchSubmit}
+            role="search"
+            aria-label={isArabic ? 'البحث في المتجر' : 'Mobile product search'}
+            className="flex items-stretch w-full h-10 rounded-[10px] overflow-hidden bg-white shadow-sm"
           >
-            <MapPin className="w-3.5 h-3.5 text-[#0070F3] shrink-0" />
-            <span className="truncate max-w-xs">{t.saidaStore}</span>
-          </button>
-        </nav>
+            <input
+              type="search"
+              value={headerQuery}
+              onChange={(e) => setHeaderQuery(e.target.value)}
+              placeholder={isArabic ? 'عمّ تبحث اليوم؟' : 'What are you looking for?'}
+              aria-label={isArabic ? 'عمّ تبحث اليوم؟' : 'What are you looking for?'}
+              className="flex-1 min-w-0 px-3.5 bg-white text-[#0F172A] placeholder-slate-400 text-xs focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+            />
+            <button
+              type="button"
+              onClick={() => setQuickSearchOpen(true)}
+              aria-label={isArabic ? 'البحث الصوتي' : 'Voice search'}
+              className="px-2.5 bg-white text-slate-400 hover:text-[#00BAF2] transition-colors cursor-pointer"
+            >
+              <Mic className="w-4 h-4" />
+            </button>
+            <button
+              type="submit"
+              aria-label={isArabic ? 'بحث' : 'Search'}
+              className="px-4 bg-[#00BAF2] hover:bg-[#00A2D4] text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            >
+              <Search className="w-4 h-4 stroke-[2.25]" />
+            </button>
+          </form>
+        </div>
       </div>
 
-      {/* Mobile Menu Drawer */}
+      {/* Sub-Navbar / Horizontal Navigation Links (Desktop) */}
+      <nav
+        aria-label={isArabic ? 'التنقل الرئيسي' : 'Main Navigation'}
+        className="hidden md:block border-t border-white/[0.08] bg-[#161A1D]"
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-11 gap-6">
+            {/* Primary Horizontal Nav Links */}
+            <div className="flex items-center gap-7 min-w-0">
+              {subNavLinks.map((item) => {
+                const isActive = isHeaderSubNavActive(item, currentView, productCollectionPreset);
+
+                if (item.hasCategoriesDropdown) {
+                  return (
+                    <div
+                      key={item.id}
+                      ref={categoriesDropdownRef}
+                      className="relative shrink-0"
+                      onMouseEnter={() => setCategoriesDropdownOpen(true)}
+                      onMouseLeave={() => setCategoriesDropdownOpen(false)}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => {
+                          handleNavigateSubLink(item);
+                        }}
+                        aria-expanded={categoriesDropdownOpen}
+                        aria-haspopup="menu"
+                        className={`inline-flex items-center gap-1 py-2 text-[13.5px] font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
+                          isActive
+                            ? 'text-[#00BAF2]'
+                            : 'text-[#CBD5E1] hover:text-white'
+                        }`}
+                      >
+                        <span>{item.label}</span>
+                        <ChevronDown className="w-3.5 h-3.5 opacity-80" />
+                      </button>
+
+                      {categoriesDropdownOpen && (
+                        <div className="absolute top-full left-0 rtl:left-auto rtl:right-0 w-72 bg-[#1E2328] border border-white/10 rounded-xl shadow-2xl p-2 z-50">
+                          <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-[#00BAF2] border-b border-white/[0.08] mb-1 flex items-center justify-between">
+                            <span>{isArabic ? 'الأقسام الرئيسية' : 'Departments'}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setCurrentView('categories');
+                                setCategoriesDropdownOpen(false);
+                              }}
+                              className="text-xs font-medium text-slate-300 hover:text-white underline cursor-pointer"
+                            >
+                              {isArabic ? 'عرض الكل' : 'View all'}
+                            </button>
+                          </div>
+                          <div className="grid grid-cols-1 gap-0.5 max-h-80 overflow-y-auto">
+                            {categories.slice(0, 10).map((cat) => (
+                              <button
+                                key={cat.id}
+                                type="button"
+                                onClick={() => {
+                                  selectCategory(cat.slug);
+                                  setCategoriesDropdownOpen(false);
+                                }}
+                                className="w-full text-left rtl:text-right px-3 py-2 rounded-lg text-[13px] font-medium text-slate-200 hover:bg-white/[0.08] hover:text-white transition-colors cursor-pointer flex items-center justify-between"
+                              >
+                                <span className="truncate">{isArabic ? cat.nameAr : cat.name}</span>
+                                <span className="text-[11px] text-slate-400 rtl:rotate-180">→</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleNavigateSubLink(item)}
+                    className={`py-2 text-[13.5px] font-medium transition-colors cursor-pointer whitespace-nowrap shrink-0 relative ${
+                      isActive
+                        ? 'text-[#00BAF2]'
+                        : item.isAccent
+                        ? 'text-[#38BDF8] hover:text-[#7DD3FC]'
+                        : 'text-[#CBD5E1] hover:text-white'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Clean Text Utility Links (No Pills) */}
+            <div className="flex items-center gap-5 shrink-0 text-[12.5px] font-medium text-[#9CA3AF]">
+              <button
+                type="button"
+                onClick={() => setCurrentView('wishlist')}
+                aria-label={t.wishlist}
+                title={t.wishlist}
+                className="inline-flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <Heart className="w-3.5 h-3.5" />
+                <span>{wishlist.length}</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleLanguage}
+                aria-label={isArabic ? 'Switch to English' : 'التبديل إلى العربية'}
+                className="hover:text-white transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              >
+                {isArabic ? 'EN' : 'عربي'}
+              </button>
+
+              <button
+                type="button"
+                onClick={toggleDarkMode}
+                aria-label={isDarkMode ? t.lightMode : t.darkMode}
+                title={isDarkMode ? t.lightMode : t.darkMode}
+                className="hover:text-white transition-colors cursor-pointer shrink-0"
+              >
+                {isDarkMode ? <Sun className="w-3.5 h-3.5 text-amber-400" /> : <Moon className="w-3.5 h-3.5" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCurrentView('admin')}
+                aria-label={t.adminPortal}
+                title={t.adminPortal}
+                className="hover:text-white transition-colors cursor-pointer shrink-0"
+              >
+                <ShieldCheck className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      </nav>
+
+      {/* Mobile Navigation Drawer */}
       {mobileMenuOpen && (
-        <div className="md:hidden w-full max-w-full overflow-hidden bg-white dark:bg-[#0A0F1D] border-b border-[#DCE5F0] dark:border-[#1E293B] px-3 sm:px-4 pt-3 pb-24 space-y-4 animate-in slide-in-from-top duration-200 shadow-lg">
-          {/* Mobile Drawer Store Profile Header */}
-          <div className="flex items-center justify-between gap-2 p-3 rounded-2xl bg-[#F5F8FC] dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] min-w-0">
-            <StoreLogo
-              size="md"
-              showTagline={true}
-              className="min-w-0 flex-1"
-              onClick={() => {
-                setProductCollectionPreset('all');
-                setCurrentView('home');
-                setMobileMenuOpen(false);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-            />
-            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#EAF3FF] dark:bg-[#132238] text-[#007AFF] dark:text-[#38BDF8] border border-[#BAE6FD] dark:border-[#1E3A5F] shrink-0">
-              {lang === 'ar' ? 'الشوف' : 'Chouf'}
-            </span>
-          </div>
-
-          {/* Quick Category Navigation Shortcuts */}
-          <div className="pt-1">
-            <button
-              type="button"
-              onClick={() => {
-                setCurrentView('categories');
-                setMobileMenuOpen(false);
-              }}
-              className="w-full flex items-center justify-between p-3 rounded-xl bg-[#007AFF]/10 text-[#007AFF] dark:text-[#38BDF8] font-bold text-xs cursor-pointer"
-            >
-              <span>{lang === 'ar' ? 'تصفح كافة الأقسام (35 قسماً)' : 'Browse All 35 Departments'}</span>
-              <span className="rtl:rotate-180">→</span>
-            </button>
-          </div>
-
-          {/* Mobile Language Switcher (English / Arabic RTL) */}
-          <LanguageToggle variant="full" />
-
-          {/* Mobile Theme Toggle Banner */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B]">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 rounded-lg bg-white dark:bg-[#1E293B] border border-[#DCE5F0] dark:border-slate-700 shadow-xs">
-                {isDarkMode ? (
-                  <Sun className="w-4 h-4 text-amber-400 fill-amber-400/20" />
-                ) : (
-                  <Moon className="w-4 h-4 text-[#007AFF] fill-[#007AFF]/20" />
-                )}
-              </div>
-              <div>
-                <div className="text-xs font-bold text-[#172033] dark:text-[#F8FAFC]">
-                  {isDarkMode ? t.darkMode : t.lightMode}
-                </div>
-                <div className="text-[10px] text-[#64748B] dark:text-slate-400">
-                  {lang === 'ar' ? 'المظهر الليلي المريح للعين' : 'Sleek OLED dark experience'}
-                </div>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={toggleDarkMode}
-              className="px-3 py-1.5 rounded-lg bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold transition-colors cursor-pointer shadow-xs"
-            >
-              {isDarkMode
-                ? lang === 'ar'
-                  ? 'تفعيل الفاتح'
-                  : 'Light Mode'
-                : lang === 'ar'
-                ? 'تفعيل الداكن'
-                : 'Dark Mode'}
-            </button>
-          </div>
-
-          {/* Mobile Cloud Synchronization Status */}
-          <div className="flex items-center justify-between p-3 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B]">
-            <div className="text-xs font-bold text-[#172033] dark:text-[#F8FAFC]">
-              {lang === 'ar' ? 'حالة المزامنة السحابية' : 'Cloud Sync Status'}
-            </div>
-            <ConnectivityIndicator lang={lang} isCompact={false} />
-          </div>
-
-          {/* Mobile Vertical Navigation Links */}
-          <div className="bg-white dark:bg-[#0E1726] border border-[#E5E7EB] dark:border-[#1E293B] rounded-[14px] p-1.5 flex flex-col gap-0.5">
-            {menuItems.map((item) => {
+        <div className="md:hidden w-full bg-[#161A1D] border-t border-white/[0.08] px-4 pt-3 pb-24 space-y-3 shadow-xl">
+          <div className="flex flex-col gap-0.5">
+            {mobileDrawerItems.map((item) => {
               const isSpecialOffer = Boolean(item.isHighlighted);
               return (
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => handleNavigateItem(item, true)}
-                  className={`w-full flex items-center justify-between px-4 py-3 rounded-[10px] text-sm transition-colors cursor-pointer text-left rtl:text-right ${
+                  onClick={() => handleNavigateMobileItem(item)}
+                  className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-sm transition-colors cursor-pointer text-left rtl:text-right ${
                     isSpecialOffer
-                      ? 'text-[#0070F3] dark:text-[#38BDF8] font-semibold bg-[#EFF6FF]/60 dark:bg-[#162742]/50 hover:bg-[#F1F5F9] dark:hover:bg-[#1A253C]'
-                      : 'text-[#1E293B] dark:text-slate-100 font-medium hover:bg-[#F1F5F9] dark:hover:bg-[#1A253C]'
+                      ? 'text-[#38BDF8] font-semibold bg-white/[0.05] hover:bg-white/[0.08]'
+                      : 'text-slate-200 font-medium hover:bg-white/[0.08] hover:text-white'
                   }`}
                 >
                   <span className="flex items-center gap-2.5">
-                    {item.iconType === 'flame' && (
-                      <Flame className="w-4 h-4 text-[#0070F3] dark:text-[#38BDF8] shrink-0" />
-                    )}
-                    {item.iconType === 'video' && (
-                      <Video className="w-4 h-4 text-[#0070F3] dark:text-[#38BDF8] shrink-0" />
-                    )}
+                    {item.iconType === 'flame' && <Flame className="w-4 h-4 text-[#00BAF2] shrink-0" />}
+                    {item.iconType === 'video' && <Video className="w-4 h-4 text-[#00BAF2] shrink-0" />}
                     <span>{item.label}</span>
                   </span>
-                  <span className="text-xs text-[#94A3B8] rtl:rotate-180">→</span>
+                  <span className="text-xs text-slate-400 rtl:rotate-180">→</span>
                 </button>
               );
             })}
-            <button
-              type="button"
-              onClick={() => {
-                setCurrentView('wishlist');
-                setMobileMenuOpen(false);
-              }}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-[10px] text-sm text-[#1E293B] dark:text-slate-100 font-medium hover:bg-[#F1F5F9] dark:hover:bg-[#1A253C] cursor-pointer"
+          </div>
+
+          <div className="pt-3 border-t border-white/[0.08] flex flex-wrap items-center justify-between gap-3 text-xs text-slate-300">
+            <a
+              href="tel:70773067"
+              className="inline-flex items-center gap-1.5 text-[#00BAF2] font-semibold"
             >
-              <span className="flex items-center gap-2.5">
-                <Heart className="w-4 h-4 text-[#DC2626] shrink-0" />
-                <span>{t.wishlist}</span>
-              </span>
-              {wishlist.length > 0 && (
-                <span className="bg-[#DC2626] text-white font-bold text-[10px] px-1.5 py-0.5 rounded-full">
-                  {wishlist.length}
-                </span>
-              )}
-            </button>
-            <div className="mt-1 pt-1 border-t border-[#E5E7EB] dark:border-[#1E293B]">
+              <Phone className="w-3.5 h-3.5 shrink-0" />
+              <span dir="ltr">70 773 067</span>
+            </a>
+
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={toggleLanguage}
+                className="text-slate-200 hover:text-white font-semibold cursor-pointer"
+              >
+                {isArabic ? 'English' : 'العربية'}
+              </button>
+              <button
+                type="button"
+                onClick={toggleDarkMode}
+                aria-label={isDarkMode ? t.lightMode : t.darkMode}
+                className="text-slate-200 hover:text-white cursor-pointer"
+              >
+                {isDarkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
+              </button>
               <button
                 type="button"
                 onClick={() => {
-                  setCurrentView('contact');
+                  setCurrentView('admin');
                   setMobileMenuOpen(false);
                 }}
-                className="w-full flex items-center gap-2 px-4 py-2.5 rounded-[10px] text-xs font-medium text-[#64748B] dark:text-slate-400 hover:bg-[#F1F5F9] dark:hover:bg-[#1A253C] cursor-pointer"
+                className="text-slate-300 hover:text-white inline-flex items-center gap-1 cursor-pointer"
               >
-                <MapPin className="w-3.5 h-3.5 text-[#0070F3] shrink-0" />
-                <span>{t.saidaStore}</span>
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>{t.adminPortal}</span>
               </button>
             </div>
           </div>
 
-          <div className="pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B] flex items-center justify-between text-xs text-[#64748B] dark:text-slate-400">
-            <a href="tel:70773067" className="flex items-center gap-1.5 text-[#007AFF] font-bold">
-              <Phone className="w-3.5 h-3.5 shrink-0" />
-              <span dir="ltr">70 773 067</span>
-            </a>
-            <button
-              type="button"
-              onClick={() => {
-                setCurrentView('admin');
-                setMobileMenuOpen(false);
-              }}
-              className="text-[#64748B] dark:text-slate-400 hover:text-[#007AFF] dark:hover:text-[#38BDF8] flex items-center gap-1 cursor-pointer"
-            >
-              <ShieldCheck className="w-3.5 h-3.5" />
-              <span>{t.adminPortal}</span>
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() => {
+              setCurrentView('contact');
+              setMobileMenuOpen(false);
+            }}
+            className="w-full flex items-center gap-2 pt-2 text-xs text-slate-400 hover:text-white cursor-pointer"
+          >
+            <MapPin className="w-3.5 h-3.5 text-[#00BAF2] shrink-0" />
+            <span>{t.saidaStore}</span>
+          </button>
         </div>
       )}
-      {/* Full-Screen Quick Search Overlay */}
+
+      {/* Full-Screen Voice & Quick Search Overlay */}
       <QuickSearchOverlay
         isOpen={quickSearchOpen}
         onClose={() => setQuickSearchOpen(false)}

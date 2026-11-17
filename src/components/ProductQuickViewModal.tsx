@@ -569,7 +569,7 @@ export const ProductQuickViewModal: React.FC = () => {
                   <span className="font-bold text-[#172033] dark:text-[#F8FAFC] block">
                     {lang === 'ar' ? 'شحن فوري أو استلام' : 'Fast Courier / Pickup'}
                   </span>
-                  <span>{lang === 'ar' ? 'الدفع نقداً أو Whish' : 'COD / Whish / OMT'}</span>
+                  <span>{lang === 'ar' ? 'الدفع نقداً أو Whish' : 'COD / Whish Money'}</span>
                 </div>
               </div>
 

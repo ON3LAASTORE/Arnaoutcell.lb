@@ -123,8 +123,7 @@ export type OrderStatus =
 export type PaymentMethod =
   | 'cod' // Cash on Delivery (USD / LBP market rate)
   | 'store_pickup' // Arranged Express Dispatch / Pickup (Chouf Hub)
-  | 'whish_money' // Whish Money Transfer
-  | 'omt_western_union'; // OMT / Western Union Service
+  | 'whish_money'; // Whish Money Transfer
 
 export interface OrderItem {
   productId: string;

@@ -112,8 +112,8 @@ export function classifyUserIntent(term: string): UserIntentPattern {
     return 'brand_exploration';
   }
 
-  // Store services & money transfer
-  if (/omt|whish|western|touch|alfa|maintenance|repair|صيانة|تحويل|خدمات/i.test(t)) {
+  // Store services & telecom
+  if (/whish|touch|alfa|maintenance|repair|صيانة|تحويل|خدمات/i.test(t)) {
     return 'store_services';
   }
 
@@ -220,8 +220,8 @@ export const INITIAL_DEMO_SEARCH_EVENTS: SearchAnalyticsEvent[] = [
   },
   {
     id: 'srch_init_8',
-    term: 'OMT تحويل',
-    normalizedTerm: 'omt تحويل',
+    term: 'Whish Money تحويل',
+    normalizedTerm: 'whish money تحويل',
     timestamp: new Date(Date.now() - 3600000 * 9).toISOString(),
     source: 'desktop_input_submit',
     intentPattern: 'store_services',

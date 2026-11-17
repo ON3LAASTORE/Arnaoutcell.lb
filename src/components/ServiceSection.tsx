@@ -62,18 +62,18 @@ export const ServiceSection: React.FC = () => {
   ];
 
   return (
-    <section className="py-16 md:py-24 bg-[#F5F8FC] border-b border-[#DCE5F0] relative">
+    <section className="py-16 md:py-24 bg-[#F5F8FC] dark:bg-[#070C16] border-b border-[#DCE5F0] dark:border-[#1E293B] relative transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-14">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EAF3FF] border border-[#BAE6FD] text-[#007AFF] text-xs font-bold tracking-wider mb-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EAF3FF] dark:bg-[#0F1B33] border border-[#BAE6FD] dark:border-[#1E3A5F] text-[#007AFF] dark:text-[#38BDF8] text-xs font-bold tracking-wider mb-3">
             <CreditCard className="w-4 h-4" />
             <span>{lang === 'ar' ? 'خدمات المحفظة الرقمية والاتصالات' : 'DIGITAL WALLET & TELECOM SERVICES'}</span>
           </div>
-          <h2 className="text-2xl sm:text-4xl font-black text-[#172033] tracking-tight">
+          <h2 className="text-2xl sm:text-4xl font-black text-[#172033] dark:text-[#F8FAFC] tracking-tight">
             {lang === 'ar' ? 'كل ما تحتاجه في متجر واحد' : 'Your Complete Online Service Hub'}
           </h2>
-          <p className="text-[#64748B] text-sm sm:text-base mt-2">
+          <p className="text-[#64748B] dark:text-slate-300 text-sm sm:text-base mt-2">
             {lang === 'ar'
               ? 'إلى جانب أحدث الإلكترونيات والتوصيل لجميع مناطق لبنان من مقرنا في الشوف، نوفر خدمات ويش موني والاتصالات.'
               : 'Beyond electronics retail with delivery across all Lebanon from our Chouf hub, get Whish Money wallet support and Touch/Alfa telecom services.'}
@@ -85,30 +85,30 @@ export const ServiceSection: React.FC = () => {
           {services.map((svc) => (
             <div
               key={svc.id}
-              className="rounded-3xl p-6 sm:p-8 bg-white border border-[#DCE5F0] hover:border-[#007AFF] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgba(0,122,255,0.12)] shadow-xs flex flex-col justify-between"
+              className="rounded-3xl p-6 sm:p-8 bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] transition-all duration-300 hover:shadow-[0_8px_24px_-4px_rgba(0,122,255,0.12)] shadow-xs flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${svc.color}`}>
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border dark:bg-[#0F1B33] dark:border-[#1E3A5F] dark:text-[#38BDF8] ${svc.color}`}>
                     <svc.icon className="w-6 h-6" />
                   </div>
-                  <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-[#EAF3FF] text-[#007AFF] border border-[#BAE6FD] uppercase tracking-wider">
+                  <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-[#EAF3FF] dark:bg-[#0F1B33] text-[#007AFF] dark:text-[#38BDF8] border border-[#BAE6FD] dark:border-[#1E3A5F] uppercase tracking-wider">
                     {lang === 'ar' ? svc.badgeAr : svc.badge}
                   </span>
                 </div>
 
-                <h3 className="text-xl font-bold text-[#172033] mb-2">
+                <h3 className="text-xl font-bold text-[#172033] dark:text-[#F8FAFC] mb-2">
                   {lang === 'ar' ? svc.titleAr : svc.titleEn}
                 </h3>
-                <p className="text-sm text-[#64748B] leading-relaxed mb-5">
+                <p className="text-sm text-[#64748B] dark:text-slate-300 leading-relaxed mb-5">
                   {lang === 'ar' ? svc.descriptionAr : svc.descriptionEn}
                 </p>
 
                 {/* Bullet Points */}
                 <div className="space-y-2 mb-6">
                   {(lang === 'ar' ? svc.featuresAr : svc.featuresEn).map((feat, idx) => (
-                    <div key={idx} className="flex items-center gap-2 text-xs text-[#172033]">
-                      <CheckCircle className="w-4 h-4 text-[#007AFF] flex-shrink-0" />
+                    <div key={idx} className="flex items-center gap-2 text-xs text-[#172033] dark:text-slate-200">
+                      <CheckCircle className="w-4 h-4 text-[#007AFF] dark:text-[#38BDF8] flex-shrink-0" />
                       <span>{feat}</span>
                     </div>
                   ))}
@@ -116,9 +116,9 @@ export const ServiceSection: React.FC = () => {
               </div>
 
               {/* Chouf Online Hub Location & Contact CTA */}
-              <div className="pt-4 border-t border-[#DCE5F0] flex flex-wrap items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-1.5 text-[#64748B]">
-                  <MapPin className="w-3.5 h-3.5 text-[#007AFF] flex-shrink-0" />
+              <div className="pt-4 border-t border-[#DCE5F0] dark:border-[#1E293B] flex flex-wrap items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-1.5 text-[#64748B] dark:text-slate-300">
+                  <MapPin className="w-3.5 h-3.5 text-[#007AFF] dark:text-[#38BDF8] flex-shrink-0" />
                   <span>{lang === 'ar' ? 'الشوف • توصيل لكل لبنان' : 'Chouf Hub • All Lebanon'}</span>
                 </div>
 
@@ -148,19 +148,19 @@ export const ServiceSection: React.FC = () => {
         </div>
 
         {/* Bottom Banner with WhatsApp prompt */}
-        <div className="mt-12 rounded-3xl p-6 sm:p-8 bg-[#EAF3FF] border border-[#BAE6FD] flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="mt-12 rounded-3xl p-6 sm:p-8 bg-[#EAF3FF] dark:bg-[#111A2E] border border-[#BAE6FD] dark:border-[#1E3A5F] flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="space-y-1 text-center sm:text-left rtl:sm:text-right">
-            <h4 className="text-lg font-bold text-[#172033]">
+            <h4 className="text-lg font-bold text-[#172033] dark:text-[#F8FAFC]">
               {lang === 'ar' ? 'هل لديك أي استفسار حول خدمات ويش موني أو الاتصالات؟' : 'Questions regarding Whish Money or telecom services?'}
             </h4>
-            <p className="text-xs sm:text-sm text-[#64748B]">
+            <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-300">
               {lang === 'ar'
                 ? 'فريق ON AlAA STORE في الشوف جاهز لإرشادكم وتأكيد الطلبات مع توصيل لكافة مناطق لبنان.'
                 : 'Our Chouf-based online team is ready to assist customers across all Lebanon via WhatsApp or direct call.'}
             </p>
           </div>
 
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex flex-wrap items-center justify-center gap-3 flex-shrink-0">
             <a
               href="https://wa.me/96170773067?text=Hello%20ON%20AlAA%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20store%20services"
               target="_blank"
@@ -173,7 +173,7 @@ export const ServiceSection: React.FC = () => {
 
             <button
               onClick={() => setCurrentView('contact')}
-              className="px-4 py-3 rounded-xl bg-white hover:bg-[#F5F8FC] border border-[#DCE5F0] text-[#172033] text-xs font-bold transition-all cursor-pointer shadow-xs"
+              className="px-4 py-3 rounded-xl bg-white dark:bg-[#0A0F1D] hover:bg-[#F5F8FC] dark:hover:bg-[#162038] border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] text-xs font-bold transition-all cursor-pointer shadow-xs"
             >
               {lang === 'ar' ? 'التواصل ونطاق التوصيل' : 'Contact & Delivery Coverage'}
             </button>
