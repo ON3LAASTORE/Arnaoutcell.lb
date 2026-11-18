@@ -1,15 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { useAdmin } from '../../context/AdminContext';
-import { saveProduct } from '../../services/storageService';
+import { saveProduct, getOrders } from '../../services/storageService';
 import {
   fetchStockNotificationsOverview,
   maybeTriggerRestockNotifications,
   RestockDispatchLogEntry,
   StockNotificationRecord,
 } from '../../services/stockNotificationService';
+import { downloadInventoryCsvReport } from '../../services/csvReportService';
 import { Product } from '../../types';
-import { Warehouse, AlertTriangle, Search, BellRing, MailCheck, Send } from 'lucide-react';
+import { Warehouse, AlertTriangle, Search, BellRing, MailCheck, Download, Send } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
 
 export const AdminInventory: React.FC = () => {
@@ -76,6 +77,18 @@ export const AdminInventory: React.FC = () => {
   }, {});
   const totalPendingAlerts = subscriptions.filter((s) => s.status === 'pending').length;
 
+  const handleExportInventoryCsv = () => {
+    const scope =
+      selectedBrand === 'all' && !search.trim() ? 'Full Catalog' : 'Filtered View';
+    const filename = downloadInventoryCsvReport(filtered, getOrders(), scope);
+    setFeedback(
+      lang === 'ar'
+        ? `تم تصدير تقرير المخزون (${filtered.length} منتج) إلى ${filename}.`
+        : `Exported inventory CSV (${filtered.length} SKU row(s)) to ${filename}.`
+    );
+    setTimeout(() => setFeedback(''), 5000);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -109,6 +122,16 @@ export const AdminInventory: React.FC = () => {
               <span>{lowStockCount} {lang === 'ar' ? 'منتجات تحتاج لإعادة تزويد' : 'Products need Restock'}</span>
             </div>
           )}
+
+          <button
+            type="button"
+            data-testid="inventory-export-csv"
+            onClick={handleExportInventoryCsv}
+            className="px-3.5 py-2 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-sm shadow-[#007AFF]/20 transition-colors cursor-pointer whitespace-nowrap"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>{lang === 'ar' ? 'تصدير المخزون CSV' : 'Export Inventory CSV'}</span>
+          </button>
         </div>
       </div>
 

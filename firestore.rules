@@ -138,6 +138,26 @@ service cloud.firestore {
         && (!('notifiedAt' in data) || (data.notifiedAt is string && data.notifiedAt.size() <= 64));
     }
 
+    function isValidAdminActivityLog(data) {
+      return data.keys().hasAll(['id', 'action', 'titleEn', 'category', 'severity', 'actor', 'timestamp'])
+        && data.keys().hasOnly(['id', 'action', 'titleEn', 'titleAr', 'category', 'severity', 'target', 'details', 'actor', 'source', 'timestamp'])
+        && isValidId(data.id)
+        && data.action is string && data.action.size() > 0 && data.action.size() <= 80
+        && data.titleEn is string && data.titleEn.size() > 0 && data.titleEn.size() <= 200
+        && (!('titleAr' in data) || (data.titleAr is string && data.titleAr.size() <= 200))
+        && data.category in ['security', 'settings', 'catalog', 'orders', 'content']
+        && data.severity in ['info', 'warning', 'critical']
+        && (!('target' in data) || (data.target is string && data.target.size() <= 160))
+        && (!('details' in data) || (data.details is string && data.details.size() <= 480))
+        && data.actor is map
+        && data.actor.name is string && data.actor.name.size() > 0 && data.actor.name.size() <= 100
+        && data.actor.username is string && data.actor.username.size() > 0 && data.actor.username.size() <= 64
+        && data.actor.role in ['super_admin', 'product_manager', 'order_manager', 'inventory_manager', 'system']
+        && (!('email' in data.actor) || (data.actor.email is string && data.actor.email.size() <= 128))
+        && (!('source' in data) || data.source in ['server', 'client', 'firestore'])
+        && data.timestamp is string && data.timestamp.size() > 0 && data.timestamp.size() <= 64;
+    }
+
     // 4. Connection Test Document for getDocFromServer
     match /test/connection {
       allow read: if true;
@@ -287,6 +307,18 @@ service cloud.firestore {
         );
 
       allow delete: if isAdmin() && isValidId(notificationId);
+    }
+
+    // 13. Admin Activity Logs Collection: Immutable admin-only security & change audit log
+    match /admin_activity_logs/{logId} {
+      allow get, list: if isAdmin();
+
+      allow create: if isAdmin()
+        && isValidId(logId)
+        && isValidAdminActivityLog(incoming())
+        && incoming().id == logId;
+
+      allow update, delete: if false;
     }
   }
 }

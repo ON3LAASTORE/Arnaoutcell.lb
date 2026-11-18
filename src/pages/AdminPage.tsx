@@ -7,6 +7,7 @@ import { ChunkErrorBoundary } from '../components/ChunkErrorBoundary';
 import { safeLazy } from '../utils/lazyImportHelpers';
 
 // Code-split admin modules to prevent downloading entire admin suite on initial open
+const AdminStatistics = safeLazy(() => import('../components/admin/AdminStatistics'), 'AdminStatistics');
 const AdminProducts = safeLazy(() => import('../components/admin/AdminProducts'), 'AdminProducts');
 const AdminSocialMarketing = safeLazy(
   () => import('../components/admin/AdminSocialMarketing'),
@@ -21,6 +22,7 @@ const AdminCategoriesBrands = safeLazy(
 );
 const AdminContent = safeLazy(() => import('../components/admin/AdminContent'), 'AdminContent');
 const AdminCustomers = safeLazy(() => import('../components/admin/AdminCustomers'), 'AdminCustomers');
+const AdminActivityLog = safeLazy(() => import('../components/admin/AdminActivityLog'), 'AdminActivityLog');
 const AdminSettings = safeLazy(() => import('../components/admin/AdminSettings'), 'AdminSettings');
 
 const AdminTabSpinner: React.FC = () => (
@@ -48,6 +50,7 @@ export const AdminPage: React.FC = () => {
       <ChunkErrorBoundary resetKey={activeTab} label={`admin-${activeTab}`}>
         <React.Suspense fallback={<AdminTabSpinner />}>
           {activeTab === 'overview' && <AdminOverview />}
+          {activeTab === 'statistics' && <AdminStatistics />}
           {activeTab === 'products' && <AdminProducts onShareProduct={handleShareProduct} />}
           {activeTab === 'social_marketing' && (
             <AdminSocialMarketing initialProductId={targetProductId} />
@@ -58,7 +61,8 @@ export const AdminPage: React.FC = () => {
           {activeTab === 'categories' && <AdminCategoriesBrands />}
           {activeTab === 'content' && <AdminContent />}
           {activeTab === 'customers' && <AdminCustomers />}
-          {activeTab === 'settings' && <AdminSettings />}
+          {activeTab === 'activity_log' && <AdminActivityLog />}
+          {activeTab === 'settings' && <AdminSettings onNavigateTab={setActiveTab} />}
         </React.Suspense>
       </ChunkErrorBoundary>
     </AdminLayout>

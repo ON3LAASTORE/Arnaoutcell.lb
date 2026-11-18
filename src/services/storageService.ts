@@ -32,6 +32,7 @@ import {
   isFirestoreQuotaExceededError,
   markFirestoreQuotaExceeded,
 } from '../utils/firestoreQuotaHelpers';
+import { recordAdminActivity } from './activityLogService';
 
 const memoryStorageFallback = new Map<string, string>();
 
@@ -417,6 +418,7 @@ export function saveProducts(products: Product[]): void {
 export function saveProduct(product: Product): Product {
   const products = getProducts();
   const index = products.findIndex((p) => p.id === product.id);
+  const existing = index >= 0 ? products[index] : undefined;
   if (index >= 0) {
     products[index] = product;
   } else {
@@ -429,17 +431,63 @@ export function saveProduct(product: Product): Product {
     console.warn('Live product sync notice:', err);
   });
 
+  if (existing) {
+    const changes: string[] = [];
+    if (existing.price !== product.price) {
+      changes.push(`Price $${existing.price} -> $${product.price}`);
+    }
+    if (existing.stock !== product.stock) {
+      changes.push(`Stock ${existing.stock} -> ${product.stock}`);
+    }
+    if (existing.isPublished !== product.isPublished) {
+      changes.push(product.isPublished ? 'Published' : 'Unpublished');
+    }
+    recordAdminActivity({
+      action: 'product_updated',
+      titleEn: `Updated product: ${product.name}`,
+      titleAr: `تم تحديث المنتج: ${product.nameAr || product.name}`,
+      category: 'catalog',
+      severity: 'info',
+      target: `${product.name} (${product.id})`,
+      details: changes.length > 0 ? changes.join(' • ') : `Modified specifications/media for ${product.brand} item.`,
+    }).catch(() => {});
+  } else {
+    recordAdminActivity({
+      action: 'product_created',
+      titleEn: `Added new product: ${product.name}`,
+      titleAr: `تمت إضافة منتج جديد: ${product.nameAr || product.name}`,
+      category: 'catalog',
+      severity: 'info',
+      target: `${product.name} (${product.id})`,
+      details: `Brand: ${product.brand} • Category: ${product.category} • Price: $${product.price} • Stock: ${product.stock}`,
+    }).catch(() => {});
+  }
+
   return product;
 }
 
 export function deleteProduct(productId: string): void {
-  const products = getProducts().filter((p) => p.id !== productId);
+  const currentProducts = getProducts();
+  const deleted = currentProducts.find((p) => p.id === productId);
+  const products = currentProducts.filter((p) => p.id !== productId);
   saveProducts(products);
 
   // Automatically remove from Firebase Firestore live cloud database
   removeProductFromCloud(productId).catch((err) => {
     console.warn('Live product deletion notice:', err);
   });
+
+  recordAdminActivity({
+    action: 'product_deleted',
+    titleEn: `Deleted product: ${deleted?.name || productId}`,
+    titleAr: `تم حذف المنتج: ${deleted?.nameAr || deleted?.name || productId}`,
+    category: 'catalog',
+    severity: 'warning',
+    target: deleted ? `${deleted.name} (${productId})` : productId,
+    details: deleted
+      ? `Removed ${deleted.brand} item ($${deleted.price}) from storefront catalog.`
+      : 'Product removed from storefront catalog.',
+  }).catch(() => {});
 }
 
 // Categories
@@ -474,6 +522,7 @@ export function saveCategories(categories: Category[]): void {
 export function upsertCategory(category: Category): void {
   const categories = getCategories();
   const idx = categories.findIndex((c) => c.id === category.id);
+  const isUpdate = idx > -1;
   if (idx > -1) {
     categories[idx] = category;
   } else {
@@ -483,14 +532,36 @@ export function upsertCategory(category: Category): void {
   persistCategoryToCloud(category).catch((err) => {
     console.warn('Live category cloud save notice:', err);
   });
+
+  recordAdminActivity({
+    action: 'category_saved',
+    titleEn: isUpdate ? `Updated category: ${category.name}` : `Created category: ${category.name}`,
+    titleAr: isUpdate ? `تم تحديث القسم: ${category.nameAr}` : `تم إنشاء قسم جديد: ${category.nameAr}`,
+    category: 'catalog',
+    severity: 'info',
+    target: `${category.name} (${category.id})`,
+    details: `Display order #${category.displayOrder} • Subcategories: ${category.subcategories?.length || 0}`,
+  }).catch(() => {});
 }
 
 export function deleteCategory(categoryId: string): void {
-  const categories = getCategories().filter((c) => c.id !== categoryId);
+  const current = getCategories();
+  const removed = current.find((c) => c.id === categoryId);
+  const categories = current.filter((c) => c.id !== categoryId);
   saveCategories(categories);
   removeCategoryFromCloud(categoryId).catch((err) => {
     console.warn('Live category deletion notice:', err);
   });
+
+  recordAdminActivity({
+    action: 'category_deleted',
+    titleEn: `Deleted category: ${removed?.name || categoryId}`,
+    titleAr: `تم حذف القسم: ${removed?.nameAr || removed?.name || categoryId}`,
+    category: 'catalog',
+    severity: 'warning',
+    target: removed ? `${removed.name} (${categoryId})` : categoryId,
+    details: 'Category removed from catalog taxonomy.',
+  }).catch(() => {});
 }
 
 // Brands
@@ -517,7 +588,7 @@ export function getBrands(): Brand[] {
       }
     }
     if (changed) {
-      saveBrands(merged);
+      saveBrands(merged, false);
     }
     return merged;
   } catch {
@@ -525,8 +596,19 @@ export function getBrands(): Brand[] {
   }
 }
 
-export function saveBrands(brands: Brand[]): void {
+export function saveBrands(brands: Brand[], recordAudit: boolean = false): void {
   setStorageItem(KEYS.BRANDS, JSON.stringify(brands));
+  if (recordAudit) {
+    recordAdminActivity({
+      action: 'brands_updated',
+      titleEn: 'Updated authorized brands list',
+      titleAr: 'تم تحديث قائمة الماركات المعتمدة',
+      category: 'catalog',
+      severity: 'info',
+      target: `Brand Directory (${brands.length} brands)`,
+      details: 'Catalog brand entries or logos modified by administrator.',
+    }).catch(() => {});
+  }
 }
 
 // Marketing Videos
@@ -546,6 +628,15 @@ export function getMarketingVideos(): MarketingVideo[] {
 
 export function saveMarketingVideos(videos: MarketingVideo[]): void {
   setStorageItem(KEYS.VIDEOS, JSON.stringify(videos));
+  recordAdminActivity({
+    action: 'content_updated',
+    titleEn: 'Updated promotional video showcase',
+    titleAr: 'تم تحديث قائمة الفيديوهات الترويجية',
+    category: 'content',
+    severity: 'info',
+    target: `Marketing Videos (${videos.length} videos)`,
+    details: 'Video reels / featured storefront media list saved.',
+  }).catch(() => {});
 }
 
 // Orders & Inventory Logic
@@ -703,6 +794,18 @@ export function updateOrderStatus(orderId: string, newStatus: OrderStatus, note?
     });
   }
 
+  recordAdminActivity({
+    action: 'order_status_updated',
+    titleEn: `Order ${orderId} status: ${oldStatus} -> ${newStatus}`,
+    titleAr: `تحديث حالة الطلب ${orderId}: ${oldStatus} ← ${newStatus}`,
+    category: 'orders',
+    severity: newStatus === 'cancelled' || newStatus === 'returned' ? 'warning' : 'info',
+    target: `Order ${orderId}`,
+    details: note
+      ? `Customer: ${currentOrder.customer.fullName} • Note: ${note}`
+      : `Customer: ${currentOrder.customer.fullName} • Total: $${currentOrder.total}`,
+  }).catch(() => {});
+
   return currentOrder;
 }
 
@@ -781,21 +884,48 @@ export function getStoreSettings(): StoreSettings {
   }
 }
 
-export function saveStoreSettings(settings: StoreSettings): SafeStorageSetResult {
+export function saveStoreSettings(
+  settings: StoreSettings,
+  recordAudit: boolean = true
+): SafeStorageSetResult {
   const serialized = JSON.stringify(settings);
-  return setStorageItem(KEYS.SETTINGS, serialized, () => {
+  const result = setStorageItem(KEYS.SETTINGS, serialized, () => {
     // If localStorage quota is exceeded (e.g., due to a large inline base64 logo or hero image),
     // compact oversized inline blobs to default assets while preserving all text/schedule settings
     // and keeping the full version in the active session memory cache.
     const { compacted } = compactStoreSettingsPayload(settings, resolveStoreLogoUrl(undefined));
     return JSON.stringify(compacted);
   });
+
+  if (recordAudit) {
+    recordAdminActivity({
+      action: 'settings_updated',
+      titleEn: 'Updated store configuration & delivery settings',
+      titleAr: 'تم تحديث إعدادات المتجر والهوية والتوصيل',
+      category: 'settings',
+      severity: 'info',
+      target: settings.storeName || 'ON AlAA STORE',
+      details: `Phone: ${settings.phone || '—'} • Hours: ${settings.openingSchedule?.openTime || '10:00'}–${settings.openingSchedule?.closeTime || '01:00'} • Zones: ${settings.deliveryZones?.length || 0}`,
+    }).catch(() => {});
+  }
+
+  return result;
 }
 
 export function saveAnnouncementBar(bar: StoreSettings['announcementBar']): void {
   const settings = getStoreSettings();
   settings.announcementBar = bar;
-  saveStoreSettings(settings);
+  saveStoreSettings(settings, false);
+
+  recordAdminActivity({
+    action: 'content_updated',
+    titleEn: bar?.enabled ? 'Updated & enabled announcement bar' : 'Updated announcement bar (disabled)',
+    titleAr: 'تم تحديث شريط الإعلانات العلوي',
+    category: 'content',
+    severity: 'info',
+    target: 'Top Announcement Bar',
+    details: bar?.textEn || 'Announcement bar banner updated.',
+  }).catch(() => {});
 }
 
 // File / Image reading helper preserving original full 4K resolution without downscaling or lossy compression

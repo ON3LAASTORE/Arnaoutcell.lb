@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { getOrders, updateOrderStatus } from '../../services/storageService';
 import { Order, OrderStatus } from '../../types';
-import { Search, Printer, X } from 'lucide-react';
+import { downloadSalesOrdersCsvReport } from '../../services/csvReportService';
+import { Search, Printer, X, Download } from 'lucide-react';
 
 const ALL_STATUSES: OrderStatus[] = [
   'new',
@@ -46,6 +47,17 @@ export const AdminOrders: React.FC = () => {
     return matchStatus && matchSearch;
   });
 
+  const handleExportSalesCsv = () => {
+    const scope = statusFilter === 'all' && !search.trim() ? 'All Orders' : 'Filtered Orders';
+    const filename = downloadSalesOrdersCsvReport(filteredOrders, scope);
+    setStatusUpdateMsg(
+      lang === 'ar'
+        ? `تم تصدير تقرير المبيعات (${filteredOrders.length} طلب) إلى ${filename}.`
+        : `Exported sales CSV (${filteredOrders.length} order row(s)) to ${filename}.`
+    );
+    setTimeout(() => setStatusUpdateMsg(''), 5000);
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -61,9 +73,20 @@ export const AdminOrders: React.FC = () => {
           </p>
         </div>
 
-        <span className="text-xs font-bold text-[#007AFF] bg-[#EAF3FF] px-3 py-1.5 rounded-xl border border-[#BAE6FD] self-start sm:self-auto">
-          {filteredOrders.length} {lang === 'ar' ? 'طلبات مطابقة' : 'Orders'}
-        </span>
+        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+          <span className="text-xs font-bold text-[#007AFF] bg-[#EAF3FF] px-3 py-1.5 rounded-xl border border-[#BAE6FD]">
+            {filteredOrders.length} {lang === 'ar' ? 'طلبات مطابقة' : 'Orders'}
+          </span>
+          <button
+            type="button"
+            data-testid="orders-export-csv"
+            onClick={handleExportSalesCsv}
+            className="px-3.5 py-2 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold inline-flex items-center gap-1.5 shadow-sm shadow-[#007AFF]/20 transition-colors cursor-pointer whitespace-nowrap"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>{lang === 'ar' ? 'تصدير المبيعات CSV' : 'Export Sales CSV'}</span>
+          </button>
+        </div>
       </div>
 
       {statusUpdateMsg && (

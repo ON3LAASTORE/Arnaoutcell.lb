@@ -1,0 +1,404 @@
+[
+  {
+    "id": "audit-1795015581152-1vi5a2",
+    "action": "report_exported_sales",
+    "titleEn": "Sales & orders CSV report downloaded",
+    "titleAr": "تم تنزيل تقرير المبيعات والطلبات بصيغة CSV",
+    "category": "orders",
+    "severity": "info",
+    "target": "4 orders (All Orders)",
+    "details": "Exported on-alaa-store-sales-2026-11-18.csv for manual reporting.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-18T15:26:21.152Z"
+  },
+  {
+    "id": "audit-1795015578142-rusbb3",
+    "action": "report_exported_inventory",
+    "titleEn": "Inventory CSV report downloaded",
+    "titleAr": "تم تنزيل تقرير المخزون بصيغة CSV",
+    "category": "catalog",
+    "severity": "info",
+    "target": "20 products (Full Catalog)",
+    "details": "Exported on-alaa-store-inventory-2026-11-18.csv for manual reporting.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-18T15:26:18.142Z"
+  },
+  {
+    "id": "audit-1795015571170-cklqrf",
+    "action": "report_exported_combined",
+    "titleEn": "Combined inventory & sales CSV report downloaded",
+    "titleAr": "تم تنزيل التقرير الشامل للمخزون والمبيعات بصيغة CSV",
+    "category": "settings",
+    "severity": "info",
+    "target": "20 SKUs / 4 orders",
+    "details": "Exported on-alaa-store-inventory-and-sales-2026-11-18.csv containing executive summary, current stock, and sales ledger.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-18T15:26:11.170Z"
+  },
+  {
+    "id": "audit-1795015570436-uhlz0f",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-18T15:26:10.436Z"
+  },
+  {
+    "id": "audit-1795015505298-uudmqq",
+    "action": "report_exported_sales",
+    "titleEn": "Sales & orders CSV report downloaded",
+    "titleAr": "تم تنزيل تقرير المبيعات والطلبات بصيغة CSV",
+    "category": "orders",
+    "severity": "info",
+    "target": "4 orders (All Orders)",
+    "details": "Exported on-alaa-store-sales-2026-11-18.csv for manual reporting.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-18T15:25:05.297Z"
+  },
+  {
+    "id": "audit-1795015501890-vlef5k",
+    "action": "report_exported_inventory",
+    "titleEn": "Inventory CSV report downloaded",
+    "titleAr": "تم تنزيل تقرير المخزون بصيغة CSV",
+    "category": "catalog",
+    "severity": "info",
+    "target": "44 products (Full Catalog)",
+    "details": "Exported on-alaa-store-inventory-2026-11-18.csv for manual reporting.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-18T15:25:01.890Z"
+  },
+  {
+    "id": "audit-1795015495390-g1xc8j",
+    "action": "report_exported_combined",
+    "titleEn": "Combined inventory & sales CSV report downloaded",
+    "titleAr": "تم تنزيل التقرير الشامل للمخزون والمبيعات بصيغة CSV",
+    "category": "settings",
+    "severity": "info",
+    "target": "44 SKUs / 4 orders",
+    "details": "Exported on-alaa-store-inventory-and-sales-2026-11-18.csv containing executive summary, current stock, and sales ledger.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-18T15:24:55.390Z"
+  },
+  {
+    "id": "audit-1795015494739-etxswj",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-18T15:24:54.739Z"
+  },
+  {
+    "id": "audit-1795015460483-pi4v71",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-18T15:24:20.483Z"
+  },
+  {
+    "id": "audit-1795015454187-zafq2i",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (admin)",
+    "details": "Invalid administrator password submitted during authentication check.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-18T15:24:14.187Z"
+  },
+  {
+    "id": "audit-1795015433164-e03quc",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (admin)",
+    "details": "Invalid administrator password submitted during authentication check.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-18T15:23:53.164Z"
+  },
+  {
+    "id": "audit-1795011593532-6s6drg",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-18T14:19:53.532Z"
+  },
+  {
+    "id": "audit-1795011513789-7f4tqt",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-18T14:18:33.789Z"
+  },
+  {
+    "id": "audit-1795011446405-vjub1s",
+    "action": "product_created",
+    "titleEn": "Added new product: ACEFAST N8 NECK EARPHONES WIRELESS",
+    "titleAr": "تمت إضافة منتج جديد: ACEFAST N8 NECK EARPHONES WIRELESS",
+    "category": "catalog",
+    "severity": "info",
+    "target": "ACEFAST N8 NECK EARPHONES WIRELESS (prod-1795011446282)",
+    "details": "Brand: ACEFAST • Category: Earphones • Price: $19 • Stock: 10",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-18T14:17:26.405Z"
+  },
+  {
+    "id": "audit-1795011021696-ingemr",
+    "action": "auth_logout",
+    "titleEn": "Administrator signed out",
+    "titleAr": "تم تسجيل خروج المدير",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Admin portal session terminated by user.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-18T14:10:21.696Z"
+  },
+  {
+    "id": "audit-1795011005841-nqhv9i",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-18T14:10:05.841Z"
+  },
+  {
+    "id": "audit-1795010944822-n3unbp",
+    "action": "auth_session_timeout",
+    "titleEn": "Administrator session timed out due to inactivity",
+    "titleAr": "انتهت جلسة المدير تلقائياً بسبب عدم النشاط",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (admin)",
+    "details": "Automatic 15-minute inactivity auto-logout enforced.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-18T14:09:04.821Z"
+  },
+  {
+    "id": "audit-1795010909775-w6w1r4",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-18T14:08:29.775Z"
+  },
+  {
+    "id": "audit-1795009926948-ejc8mv",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-18T13:52:06.948Z"
+  },
+  {
+    "id": "audit-1795009918111-hdjysz",
+    "action": "auth_session_timeout",
+    "titleEn": "Administrator session timed out due to inactivity",
+    "titleAr": "انتهت جلسة المدير تلقائياً بسبب عدم النشاط",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (admin)",
+    "details": "Automatic 15-minute inactivity auto-logout enforced.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-18T13:51:58.111Z"
+  },
+  {
+    "id": "audit-1795009876072-z3qafj",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-18T13:51:16.072Z"
+  },
+  {
+    "id": "audit-1795009826819-uundvx",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-18T13:50:26.819Z"
+  },
+  {
+    "id": "audit-seed-pwd-1795009440605",
+    "action": "password_changed",
+    "titleEn": "Administrator password updated",
+    "titleAr": "تم تحديث كلمة مرور المدير",
+    "category": "security",
+    "severity": "critical",
+    "target": "Administrator Account (admin)",
+    "details": "Credential rotated and salted with bcrypt (cost factor 12). Plaintext never stored.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-18T13:44:00.605Z"
+  }
+]

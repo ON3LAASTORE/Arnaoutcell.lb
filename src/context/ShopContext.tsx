@@ -31,7 +31,12 @@ import {
   subscribeToLiveCategories,
   seedInitialCategoriesToCloud,
 } from '../services/categoryFirestoreService';
-import { validateAddToCompare, toggleCompareList } from '../utils/compareHelpers';
+import {
+  validateAddToCompare,
+  toggleCompareList,
+  assignCompareSlot,
+  swapComparePair as swapComparePairHelper,
+} from '../utils/compareHelpers';
 import {
   RECENTLY_VIEWED_STORAGE_KEY,
   recordRecentlyViewedId,
@@ -49,6 +54,7 @@ import {
   syncLanguageSettingImmediately,
 } from '../utils/languageToggleHelpers';
 import { ProductCollectionPreset } from '../utils/navbarMenuHelpers';
+import { extractResetTokenFromLocation } from '../services/authService';
 
 interface ShopContextType {
   lang: Language;
@@ -81,12 +87,15 @@ interface ShopContextType {
   toggleWishlist: (productId: string) => void;
   isInWishlist: (productId: string) => boolean;
 
-  // Compare Products (Max 3)
+  // Compare Products (Max 3, with dedicated 2-slot side-by-side actions)
   compareList: Product[];
   addToCompare: (product: Product) => { success: boolean; message?: string };
   removeFromCompare: (productId: string) => void;
   clearCompareList: () => void;
   toggleCompare: (product: Product) => void;
+  selectCompareSlot: (slotIndex: 0 | 1, product: Product) => void;
+  swapComparePair: () => void;
+  setComparePair: (pair: Product[]) => void;
   isInCompare: (productId: string) => boolean;
   isCompareModalOpen: boolean;
   setIsCompareModalOpen: (open: boolean) => void;
@@ -179,7 +188,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(() => getStoreSettings());
 
   // Views & Routing state
-  const [currentView, setCurrentView] = useState<string>('home');
+  const [currentView, setCurrentView] = useState<string>(() =>
+    extractResetTokenFromLocation() ? 'admin' : 'home'
+  );
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
   const [selectedBrandName, setSelectedBrandName] = useState<string | null>(null);
@@ -271,6 +282,18 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const toggleCompare = (product: Product) => {
     const res = toggleCompareList(compareList, product);
     setCompareList(res.updatedList);
+  };
+
+  const selectCompareSlot = (slotIndex: 0 | 1, product: Product) => {
+    setCompareList((prev) => assignCompareSlot(prev, slotIndex, product));
+  };
+
+  const swapComparePair = () => {
+    setCompareList((prev) => swapComparePairHelper(prev));
+  };
+
+  const setComparePair = (pair: Product[]) => {
+    setCompareList(pair.slice(0, 2));
   };
 
   const isInCompare = (productId: string) => {
@@ -637,6 +660,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         removeFromCompare,
         clearCompareList,
         toggleCompare,
+        selectCompareSlot,
+        swapComparePair,
+        setComparePair,
         isInCompare,
         isCompareModalOpen,
         setIsCompareModalOpen,

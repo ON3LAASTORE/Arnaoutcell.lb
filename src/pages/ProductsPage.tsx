@@ -239,20 +239,27 @@ export const ProductsPage: React.FC = () => {
             </div>
 
             {/* Compare Trigger Button */}
-            {compareList.length > 0 && (
-              <button
-                type="button"
-                onClick={() => setIsCompareModalOpen(true)}
-                className="px-3 py-1.5 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white font-black text-xs flex items-center gap-1.5 shadow-sm transition-all cursor-pointer active:scale-95"
-              >
-                <Scale className="w-3.5 h-3.5" />
-                <span>
-                  {lang === 'ar'
+            <button
+              type="button"
+              data-testid="products-compare-button"
+              onClick={() => setIsCompareModalOpen(true)}
+              className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                compareList.length > 0
+                  ? 'bg-[#007AFF] hover:bg-[#0066D6] text-white shadow-sm'
+                  : 'bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-slate-200 hover:border-[#007AFF]'
+              }`}
+            >
+              <Scale className="w-3.5 h-3.5 text-current" />
+              <span>
+                {compareList.length > 0
+                  ? lang === 'ar'
                     ? `المقارنة (${compareList.length})`
-                    : `Compare (${compareList.length})`}
-                </span>
-              </button>
-            )}
+                    : `Compare (${compareList.length})`
+                  : lang === 'ar'
+                  ? 'مقارنة منتجات'
+                  : 'Compare'}
+              </span>
+            </button>
 
             {/* Layout Toggle */}
             <div className="hidden sm:flex items-center bg-[#F5F8FC] border border-[#DCE5F0] rounded-xl p-1 gap-1">

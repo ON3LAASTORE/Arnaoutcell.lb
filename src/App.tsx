@@ -9,6 +9,7 @@ import { DeferredSection } from './components/DeferredSection';
 import { ChunkErrorBoundary } from './components/ChunkErrorBoundary';
 import { safeLazy } from './utils/lazyImportHelpers';
 import { getDirectionTransitionClass } from './utils/languageToggleHelpers';
+import { recordStorefrontTrafficEvent } from './services/trafficAnalyticsService';
 
 const EmptyOverlayFallback: React.FC<any> = () => null;
 
@@ -73,15 +74,32 @@ const FastSpinner: React.FC = () => (
 );
 
 const AppContent: React.FC = () => {
-  const { currentView, lang, isSwitchingLanguage, isCartOpen, compareList, quickViewProduct } = useShop();
+  const {
+    currentView,
+    lang,
+    isSwitchingLanguage,
+    isCartOpen,
+    compareList,
+    isCompareModalOpen,
+    quickViewProduct,
+  } = useShop();
   const dirClass = lang === 'ar' ? 'rtl' : 'ltr';
   const transitionClass = getDirectionTransitionClass(lang, isSwitchingLanguage);
   const [mountScrollLines, setMountScrollLines] = useState(false);
 
-  // Instant scroll-to-top on page or view transition
+  // Instant scroll-to-top and record storefront traffic on page or view transition
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
+    if (currentView !== 'admin') {
+      recordStorefrontTrafficEvent(currentView === 'product-detail' ? 'product_view' : 'page_view');
+    }
   }, [currentView]);
+
+  useEffect(() => {
+    if (quickViewProduct) {
+      recordStorefrontTrafficEvent('product_view');
+    }
+  }, [quickViewProduct]);
 
   // Defer decorative scroll-lines module load until after first paint settles
   useEffect(() => {
@@ -186,7 +204,7 @@ const AppContent: React.FC = () => {
           {isCartOpen && <CartDrawer />}
           {quickViewProduct && <ProductQuickViewModal />}
           {compareList.length > 0 && <CompareFloatingBar />}
-          {compareList.length > 0 && <ProductCompareModal />}
+          {isCompareModalOpen && <ProductCompareModal />}
           <FloatingWhatsAppButton />
         </React.Suspense>
       </ChunkErrorBoundary>

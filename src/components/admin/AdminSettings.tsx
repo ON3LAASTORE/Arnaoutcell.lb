@@ -31,6 +31,7 @@ import {
   Save,
   Globe,
   Download,
+  History,
 } from 'lucide-react';
 
 /**
@@ -65,7 +66,11 @@ function sanitizeSvg(svgContent: string): { safe: boolean; error?: string } {
   return { safe: true };
 }
 
-export const AdminSettings: React.FC = () => {
+interface AdminSettingsProps {
+  onNavigateTab?: (tab: string) => void;
+}
+
+export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) => {
   const { lang, storeSettings, refreshData } = useShop();
   const { user, changePassword, hasRole } = useAdmin();
 
@@ -994,7 +999,7 @@ export const AdminSettings: React.FC = () => {
             </div>
           ) : (
             <div className="bg-white border border-[#DCE5F0] rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-              <div className="flex items-start justify-between border-b border-[#DCE5F0] pb-4">
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 border-b border-[#DCE5F0] pb-4">
                 <div>
                   <h3 className="font-bold text-[#172033] text-base flex items-center gap-2">
                     <KeyRound className="w-5 h-5 text-[#007AFF]" />
@@ -1006,6 +1011,16 @@ export const AdminSettings: React.FC = () => {
                       : 'Set a new strong password. Your password is immediately encrypted using salted bcrypt hashing.'}
                   </p>
                 </div>
+                {onNavigateTab && (
+                  <button
+                    type="button"
+                    onClick={() => onNavigateTab('activity_log')}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#F5F8FC] hover:bg-[#EAF3FF] text-[#007AFF] border border-[#DCE5F0] text-xs font-bold transition-colors shrink-0 cursor-pointer"
+                  >
+                    <History className="w-3.5 h-3.5" />
+                    <span>{lang === 'ar' ? 'عرض سجل النشاط' : 'View Activity Log'}</span>
+                  </button>
+                )}
               </div>
 
               {securitySuccess && (

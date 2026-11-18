@@ -539,6 +539,71 @@
         }
       },
       "required": ["id", "productId", "productName", "productPrice", "email", "lang", "status", "createdAt"]
+    },
+    "AdminActivityLog": {
+      "title": "AdminActivityLog",
+      "description": "Immutable security and operational audit trail for sensitive administrator actions including password changes, settings updates, and catalog mutations",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique sanitized audit event identifier",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "action": {
+          "type": "string",
+          "description": "Normalized action code such as password_changed or settings_updated",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "titleEn": {
+          "type": "string",
+          "description": "Human-readable English summary of audited event",
+          "minLength": 1,
+          "maxLength": 200
+        },
+        "titleAr": {
+          "type": "string",
+          "description": "Human-readable Arabic summary of audited event",
+          "maxLength": 200
+        },
+        "category": {
+          "type": "string",
+          "description": "Audit domain category",
+          "enum": ["security", "settings", "catalog", "orders", "content"]
+        },
+        "severity": {
+          "type": "string",
+          "description": "Security impact severity level",
+          "enum": ["info", "warning", "critical"]
+        },
+        "target": {
+          "type": "string",
+          "description": "Affected resource identifier or name",
+          "maxLength": 160
+        },
+        "details": {
+          "type": "string",
+          "description": "Redacted context details of the sensitive change",
+          "maxLength": 480
+        },
+        "actor": {
+          "type": "object",
+          "description": "Administrator user identity metadata"
+        },
+        "source": {
+          "type": "string",
+          "description": "Event origin channel",
+          "enum": ["server", "client", "firestore"]
+        },
+        "timestamp": {
+          "type": "string",
+          "description": "ISO-8601 audit timestamp",
+          "maxLength": 64
+        }
+      },
+      "required": ["id", "action", "titleEn", "category", "severity", "actor", "timestamp"]
     }
   },
   "firestore": {
@@ -595,6 +660,12 @@
         "$ref": "StockNotification"
       },
       "description": "Out-of-stock product restock email subscriptions and automated dispatch status"
+    },
+    "/admin_activity_logs/{logId}": {
+      "schema": {
+        "$ref": "AdminActivityLog"
+      },
+      "description": "Immutable admin security and sensitive change audit trail restricted to verified administrators"
     }
   }
 }

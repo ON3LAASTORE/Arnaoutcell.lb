@@ -73,7 +73,7 @@ export const AdminCategoriesBrands: React.FC = () => {
     };
 
     const updated = [...brands, newBrand];
-    saveBrands(updated);
+    saveBrands(updated, true);
     refreshData();
     setNewBrandName('');
     setNewBrandLogo('');
@@ -93,7 +93,7 @@ export const AdminCategoriesBrands: React.FC = () => {
   const handleDeleteBrand = (brandId: string, name: string) => {
     if (window.confirm(`Delete brand "${name}"?`)) {
       const updated = brands.filter((b) => b.id !== brandId);
-      saveBrands(updated);
+      saveBrands(updated, true);
       refreshData();
     }
   };

@@ -13,6 +13,7 @@ import {
   Phone,
   Flame,
   Video,
+  Scale,
 } from 'lucide-react';
 import { StoreLogo } from './StoreLogo';
 import { GlobalSearch } from './GlobalSearch';
@@ -41,6 +42,8 @@ export const Navbar: React.FC = () => {
     categories,
     isDarkMode,
     toggleDarkMode,
+    compareList,
+    setIsCompareModalOpen,
   } = useShop();
 
   const toggleLanguage = () => setLang(lang === 'ar' ? 'en' : 'ar');
@@ -286,6 +289,25 @@ export const Navbar: React.FC = () => {
             <div className="flex items-center gap-5 shrink-0 text-[12.5px] font-medium text-[#9CA3AF]">
               <button
                 type="button"
+                data-testid="navbar-compare-button"
+                onClick={() => setIsCompareModalOpen(true)}
+                aria-label={
+                  isArabic
+                    ? `مقارنة المنتجات (${compareList.length})`
+                    : `Compare Products (${compareList.length})`
+                }
+                title={isArabic ? 'مقارنة المنتجات جنباً إلى جنب' : 'Compare Products Side-by-Side'}
+                className="inline-flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <Scale className="w-3.5 h-3.5 text-[#00BAF2]" />
+                <span>{isArabic ? 'مقارنة' : 'Compare'}</span>
+                {compareList.length > 0 && (
+                  <span className="tabular-nums text-[#00BAF2] font-bold">({compareList.length})</span>
+                )}
+              </button>
+
+              <button
+                type="button"
                 onClick={() => setCurrentView('wishlist')}
                 aria-label={t.wishlist}
                 title={t.wishlist}
@@ -366,6 +388,20 @@ export const Navbar: React.FC = () => {
             </a>
 
             <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCompareModalOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="text-[#00BAF2] hover:text-white font-semibold inline-flex items-center gap-1 cursor-pointer"
+              >
+                <Scale className="w-3.5 h-3.5" />
+                <span>
+                  {isArabic ? 'مقارنة' : 'Compare'}
+                  {compareList.length > 0 ? ` (${compareList.length})` : ''}
+                </span>
+              </button>
               <button
                 type="button"
                 onClick={toggleLanguage}

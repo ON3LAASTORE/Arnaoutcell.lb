@@ -10,12 +10,15 @@ import {
   Search,
   Trash2,
   RefreshCw,
+  Download,
+  CheckCircle2,
 } from 'lucide-react';
 import {
   getSearchAnalyticsSummary,
   clearSearchAnalytics,
   SearchAnalyticsSummary,
 } from '../../services/searchAnalyticsService';
+import { downloadCombinedInventoryAndSalesCsv } from '../../services/csvReportService';
 
 export const AdminOverview: React.FC = () => {
   const { lang, products, storeSettings } = useShop();
@@ -61,6 +64,7 @@ export const AdminOverview: React.FC = () => {
   const [searchSummary, setSearchSummary] = React.useState<SearchAnalyticsSummary>(() =>
     getSearchAnalyticsSummary(8)
   );
+  const [exportNotice, setExportNotice] = React.useState<string>('');
 
   const refreshSearchAnalytics = () => {
     setSearchSummary(getSearchAnalyticsSummary(8));
@@ -71,6 +75,16 @@ export const AdminOverview: React.FC = () => {
       clearSearchAnalytics();
       setSearchSummary(getSearchAnalyticsSummary(8));
     }
+  };
+
+  const handleDownloadCombinedReport = () => {
+    const filename = downloadCombinedInventoryAndSalesCsv(products, orders);
+    setExportNotice(
+      lang === 'ar'
+        ? `تم تنزيل تقرير المخزون والمبيعات الشامل (${filename}) بنجاح.`
+        : `Downloaded combined inventory & sales CSV report (${filename}).`
+    );
+    window.setTimeout(() => setExportNotice(''), 5000);
   };
 
   return (
@@ -88,11 +102,29 @@ export const AdminOverview: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-semibold text-[#007AFF] bg-[#EAF3FF] px-3 py-1.5 rounded-xl border border-[#BAE6FD] self-start sm:self-auto">
-          <span className="w-2 h-2 rounded-full bg-[#007AFF] animate-pulse"></span>
-          <span>Chouf Hub Live Sync</span>
-        </div>
+        <button
+          type="button"
+          data-testid="overview-export-combined-csv"
+          onClick={handleDownloadCombinedReport}
+          className="px-4 py-2.5 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold inline-flex items-center gap-2 shadow-sm shadow-[#007AFF]/20 transition-colors cursor-pointer self-start sm:self-auto whitespace-nowrap shrink-0"
+        >
+          <Download className="w-4 h-4" />
+          <span>
+            {lang === 'ar' ? 'تنزيل تقرير المخزون والمبيعات (CSV)' : 'Download Inventory & Sales CSV'}
+          </span>
+        </button>
       </div>
+
+      {exportNotice && (
+        <div
+          role="status"
+          data-testid="overview-export-notice"
+          className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[#16A34A] text-xs font-semibold flex items-center gap-2"
+        >
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>{exportNotice}</span>
+        </div>
+      )}
 
       {/* KPI Cards Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

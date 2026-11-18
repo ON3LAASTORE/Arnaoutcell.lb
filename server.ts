@@ -15,6 +15,27 @@ import {
   buildStockNotificationDocId,
   StockNotificationRecord,
 } from './src/utils/stockNotificationHelpers';
+import {
+  ActivityLogEntry,
+  CreateActivityLogInput,
+  filterActivityLogs,
+  mergeActivityLogs,
+  sanitizeActivityLogEntry,
+} from './src/utils/activityLogHelpers';
+import {
+  RESET_TOKEN_TTL_MINUTES,
+  buildAdminPasswordResetEmail,
+  buildAdminResetUrl,
+  consumeResetTokenAndRotatePassword,
+  createResetTokenRecord,
+  isAuthorizedRecoveryEmail,
+  isValidRecoveryEmailFormat,
+  loadResetTokenStore,
+  normalizeRecoveryEmail,
+  saveResetTokenStore,
+  sendResendPasswordResetEmail,
+  validateResetTokenRecord,
+} from './src/utils/passwordResetServerHelpers';
 
 // Load environment variables (override stale process values when .env is updated)
 dotenv.config({ override: true });
@@ -173,7 +194,94 @@ function savePublishLogs(logs: SocialPublishLog[]) {
 let publishLogs: SocialPublishLog[] = loadPublishLogs();
 
 const ADMIN_CREDENTIALS_FILE = path.resolve(__dirname, '.admin_credentials.json');
+const ADMIN_ACTIVITY_LOGS_FILE = path.resolve(__dirname, '.admin_activity_logs.json');
+const ADMIN_RESET_TOKENS_FILE = path.resolve(__dirname, '.admin_reset_tokens.json');
+const ADMIN_EMAIL_OUTBOX_FILE = path.resolve(__dirname, '.admin_email_outbox.json');
 const RESTOCK_STORE_FILE = path.resolve(__dirname, '.restock_notifications.json');
+const MAX_SERVER_ACTIVITY_LOGS = 1000;
+
+function loadAdminActivityLogs(): ActivityLogEntry[] {
+  try {
+    if (fs.existsSync(ADMIN_ACTIVITY_LOGS_FILE)) {
+      const parsed = JSON.parse(fs.readFileSync(ADMIN_ACTIVITY_LOGS_FILE, 'utf-8'));
+      if (Array.isArray(parsed)) {
+        return mergeActivityLogs(
+          parsed.map((item) => sanitizeActivityLogEntry(item)),
+          [],
+          MAX_SERVER_ACTIVITY_LOGS
+        );
+      }
+    }
+  } catch {
+    // Fallback to clean seed inspection
+  }
+
+  // Initial seed: if .admin_credentials.json already holds a rotated user credential,
+  // record its verified timestamp in the security audit trail on first boot.
+  const seeded: ActivityLogEntry[] = [];
+  try {
+    if (fs.existsSync(ADMIN_CREDENTIALS_FILE)) {
+      const credRaw = JSON.parse(fs.readFileSync(ADMIN_CREDENTIALS_FILE, 'utf-8')) as {
+        source?: string;
+        updatedAt?: string;
+        algorithm?: string;
+      };
+      if (credRaw?.source === 'user' && credRaw?.updatedAt) {
+        seeded.push(
+          sanitizeActivityLogEntry({
+            id: `audit-seed-pwd-${Date.parse(credRaw.updatedAt) || Date.now()}`,
+            action: 'password_changed',
+            titleEn: 'Administrator password updated',
+            titleAr: 'تم تحديث كلمة مرور المدير',
+            category: 'security',
+            severity: 'critical',
+            target: 'Administrator Account (admin)',
+            details: `Credential rotated and salted with ${credRaw.algorithm || 'bcrypt'} (cost factor 12). Plaintext never stored.`,
+            actor: {
+              name: '3Laa Hassan',
+              username: 'admin',
+              role: 'super_admin',
+              email: 'admin@arnaoutcell.com',
+            },
+            source: 'server',
+            timestamp: credRaw.updatedAt,
+          })
+        );
+      }
+    }
+  } catch {
+    // Ignore seed lookup errors
+  }
+
+  return seeded;
+}
+
+function saveAdminActivityLogs(logs: ActivityLogEntry[]): void {
+  try {
+    fs.writeFileSync(
+      ADMIN_ACTIVITY_LOGS_FILE,
+      JSON.stringify(logs.slice(0, MAX_SERVER_ACTIVITY_LOGS), null, 2),
+      'utf-8'
+    );
+  } catch (err) {
+    console.warn('Notice: could not persist admin activity logs store:', err);
+  }
+}
+
+let adminActivityLogs: ActivityLogEntry[] = loadAdminActivityLogs();
+if (adminActivityLogs.length > 0 && !fs.existsSync(ADMIN_ACTIVITY_LOGS_FILE)) {
+  saveAdminActivityLogs(adminActivityLogs);
+}
+
+function appendServerActivityLog(input: CreateActivityLogInput): ActivityLogEntry {
+  const entry = sanitizeActivityLogEntry({
+    ...input,
+    source: input.source || 'server',
+  });
+  adminActivityLogs = mergeActivityLogs([entry], adminActivityLogs, MAX_SERVER_ACTIVITY_LOGS);
+  saveAdminActivityLogs(adminActivityLogs);
+  return entry;
+}
 
 interface ServerRestockDispatchLog {
   id: string;
@@ -265,6 +373,12 @@ async function startServer() {
   app.post('/api/admin/auth/verify', async (req: Request, res: Response) => {
     try {
       const candidate = typeof req.body?.password === 'string' ? req.body.password : '';
+      const requestedUsername =
+        typeof req.body?.username === 'string' && req.body.username.trim()
+          ? req.body.username.trim().toLowerCase()
+          : 'admin';
+      const requestedRole = typeof req.body?.role === 'string' ? req.body.role : 'super_admin';
+
       if (!candidate) {
         res.status(400).json({ valid: false, error: 'Password is required.' });
         return;
@@ -275,6 +389,40 @@ async function startServer() {
         credentialsFilePath: ADMIN_CREDENTIALS_FILE,
         envAdminPassword: process.env.ADMIN_PASSWORD,
       });
+
+      if (valid) {
+        appendServerActivityLog({
+          action: 'auth_login_success',
+          titleEn: 'Administrator signed in',
+          titleAr: 'تم تسجيل دخول المدير بنجاح',
+          category: 'security',
+          severity: 'info',
+          target: `Admin Portal (${requestedUsername})`,
+          details: 'Verified bcrypt credential authentication succeeded.',
+          actor: {
+            name: requestedUsername === 'admin' ? '3Laa Hassan' : requestedUsername,
+            username: requestedUsername,
+            role: requestedRole as ActivityLogEntry['actor']['role'],
+          },
+          source: 'server',
+        });
+      } else {
+        appendServerActivityLog({
+          action: 'auth_login_failed',
+          titleEn: 'Failed administrator login attempt',
+          titleAr: 'محاولة تسجيل دخول فاشلة للمدير',
+          category: 'security',
+          severity: 'warning',
+          target: `Admin Portal (${requestedUsername})`,
+          details: 'Invalid administrator password submitted during authentication check.',
+          actor: {
+            name: requestedUsername === 'admin' ? '3Laa Hassan' : requestedUsername,
+            username: requestedUsername,
+            role: requestedRole as ActivityLogEntry['actor']['role'],
+          },
+          source: 'server',
+        });
+      }
 
       res.json({ valid });
     } catch {
@@ -287,6 +435,7 @@ async function startServer() {
       const currentPassword = typeof req.body?.currentPassword === 'string' ? req.body.currentPassword : '';
       const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
       const confirmPassword = typeof req.body?.confirmPassword === 'string' ? req.body.confirmPassword : '';
+      const actorMeta = req.body?.actor as Partial<ActivityLogEntry['actor']> | undefined;
 
       const result = await rotateServerAdminPassword({
         currentPassword,
@@ -296,6 +445,42 @@ async function startServer() {
         envAdminPassword: process.env.ADMIN_PASSWORD,
       });
 
+      if (result.success) {
+        appendServerActivityLog({
+          action: 'password_changed',
+          titleEn: 'Administrator password updated',
+          titleAr: 'تم تغيير كلمة مرور المدير',
+          category: 'security',
+          severity: 'critical',
+          target: `Administrator Account (${actorMeta?.username || 'admin'})`,
+          details: 'Administrator credential rotated via Settings → Security and re-hashed with bcrypt (12 rounds).',
+          actor: {
+            name: actorMeta?.name || '3Laa Hassan',
+            username: actorMeta?.username || 'admin',
+            role: actorMeta?.role || 'super_admin',
+            ...(actorMeta?.email ? { email: actorMeta.email } : {}),
+          },
+          source: 'server',
+        });
+      } else {
+        appendServerActivityLog({
+          action: 'password_change_failed',
+          titleEn: 'Failed password update attempt',
+          titleAr: 'فشل محاولة تحديث كلمة مرور المدير',
+          category: 'security',
+          severity: 'warning',
+          target: `Administrator Account (${actorMeta?.username || 'admin'})`,
+          details: result.messageEn || 'Password update rejected by security validation.',
+          actor: {
+            name: actorMeta?.name || '3Laa Hassan',
+            username: actorMeta?.username || 'admin',
+            role: actorMeta?.role || 'super_admin',
+            ...(actorMeta?.email ? { email: actorMeta.email } : {}),
+          },
+          source: 'server',
+        });
+      }
+
       res.status(result.success ? 200 : 400).json(result);
     } catch {
       res.status(500).json({
@@ -303,6 +488,332 @@ async function startServer() {
         messageEn: 'Failed to update administrator password.',
         messageAr: 'تعذر تحديث كلمة مرور المدير.',
       });
+    }
+  });
+
+  app.post('/api/admin/auth/forgot-password', async (req: Request, res: Response) => {
+    try {
+      const email = normalizeRecoveryEmail(req.body?.email);
+      const lang = req.body?.lang === 'ar' ? 'ar' : 'en';
+      const appOrigin =
+        typeof req.body?.appOrigin === 'string' && /^https?:\/\//i.test(req.body.appOrigin)
+          ? req.body.appOrigin
+          : undefined;
+
+      if (!email || !isValidRecoveryEmailFormat(email)) {
+        res.status(400).json({
+          success: false,
+          messageEn: 'Please enter a valid administrator email address.',
+          messageAr: 'يرجى إدخال عنوان بريد إلكتروني صحيح للمدير.',
+        });
+        return;
+      }
+
+      if (!isAuthorizedRecoveryEmail(email, process.env.ADMIN_RECOVERY_EMAIL)) {
+        appendServerActivityLog({
+          action: 'password_reset_denied',
+          titleEn: 'Password recovery denied for unrecognized email',
+          titleAr: 'رفض طلب استعادة كلمة المرور لبريد غير مصرح',
+          category: 'security',
+          severity: 'warning',
+          target: `Recovery Request (${email})`,
+          details: 'Password reset requested for an email not matching configured administrator recovery addresses.',
+          actor: {
+            name: 'Unauthenticated Caller',
+            username: email,
+            role: 'system',
+            email,
+          },
+          source: 'server',
+        });
+
+        res.json({
+          success: true,
+          deliveryChannel: 'none',
+          expiresMinutes: RESET_TOKEN_TTL_MINUTES,
+          messageEn:
+            'If this email is registered as an administrator recovery address, a one-time reset link has been sent.',
+          messageAr:
+            'إذا كان هذا البريد مسجلاً كعنوان استعادة للمدير، فقد تم إرسال رابط استعادة صالح لمرة واحدة.',
+        });
+        return;
+      }
+
+      const nowMs = Date.now();
+      const nowIso = new Date(nowMs).toISOString();
+      const existingTokens = loadResetTokenStore(ADMIN_RESET_TOKENS_FILE).map((rec) =>
+        !rec.usedAt && !rec.invalidatedAt ? { ...rec, invalidatedAt: nowIso } : rec
+      );
+
+      const { rawToken, record } = createResetTokenRecord({
+        email,
+        nowMs,
+        ttlMinutes: RESET_TOKEN_TTL_MINUTES,
+      });
+      saveResetTokenStore(ADMIN_RESET_TOKENS_FILE, [record, ...existingTokens], nowMs);
+
+      const baseUrl = process.env.APP_URL?.trim() || appOrigin || `http://localhost:${PORT}`;
+      const resetUrl = buildAdminResetUrl(baseUrl, rawToken);
+      const emailPayload = buildAdminPasswordResetEmail({
+        recipientEmail: email,
+        resetUrl,
+        rawToken,
+        expiresMinutes: RESET_TOKEN_TTL_MINUTES,
+        lang,
+        storeName: 'ON AlAA STORE',
+      });
+
+      const resendKey = process.env.RESEND_API_KEY?.trim();
+      const fromEmail =
+        process.env.RESEND_FROM_EMAIL?.trim() || 'ON AlAA STORE <alerts@onalaastore.com>';
+
+      if (resendKey) {
+        const sendResult = await sendResendPasswordResetEmail({
+          apiKey: resendKey,
+          from: fromEmail,
+          to: email,
+          subject: emailPayload.subject,
+          html: emailPayload.html,
+          text: emailPayload.text,
+        });
+
+        if (!sendResult.ok) {
+          appendServerActivityLog({
+            action: 'password_reset_failed',
+            titleEn: 'Resend password recovery delivery failed',
+            titleAr: 'فشل إرسال بريد استعادة كلمة المرور عبر Resend',
+            category: 'security',
+            severity: 'critical',
+            target: `Administrator Account (${email})`,
+            details: sendResult.error || 'Resend API rejected recovery email dispatch.',
+            actor: {
+              name: '3Laa Hassan',
+              username: 'admin',
+              role: 'super_admin',
+              email,
+            },
+            source: 'server',
+          });
+
+          res.status(502).json({
+            success: false,
+            messageEn:
+              sendResult.error ||
+              'Failed to send password recovery email via Resend. Check RESEND_API_KEY and sender domain.',
+            messageAr:
+              'تعذر إرسال بريد استعادة كلمة المرور عبر خدمة Resend. يرجى التحقق من إعدادات الإرسال.',
+          });
+          return;
+        }
+
+        appendServerActivityLog({
+          action: 'password_reset_requested',
+          titleEn: 'Administrator password recovery email sent via Resend',
+          titleAr: 'تم إرسال رابط استعادة كلمة مرور المدير عبر Resend',
+          category: 'security',
+          severity: 'warning',
+          target: `Administrator Account (${email})`,
+          details: `Single-use SHA-256 recovery token issued (${RESET_TOKEN_TTL_MINUTES}m TTL) and dispatched via Resend${sendResult.emailId ? ` (ID: ${sendResult.emailId})` : ''}.`,
+          actor: {
+            name: '3Laa Hassan',
+            username: 'admin',
+            role: 'super_admin',
+            email,
+          },
+          source: 'server',
+        });
+
+        res.json({
+          success: true,
+          deliveryChannel: 'resend',
+          expiresMinutes: RESET_TOKEN_TTL_MINUTES,
+          messageEn:
+            'A one-time password reset link has been sent to your administrator inbox via Resend. Check your email or enter the recovery token below.',
+          messageAr:
+            'تم إرسال رابط إعادة تعيين كلمة المرور الصالح لمرة واحدة إلى بريدك عبر Resend. تحقق من بريدك أو أدخل رمز الاستعادة أدناه.',
+        });
+        return;
+      }
+
+      // Local sandbox outbox staging when RESEND_API_KEY is not configured
+      try {
+        const existingOutbox = fs.existsSync(ADMIN_EMAIL_OUTBOX_FILE)
+          ? (JSON.parse(fs.readFileSync(ADMIN_EMAIL_OUTBOX_FILE, 'utf-8')) as unknown[])
+          : [];
+        const nextOutbox = [
+          {
+            id: record.id,
+            to: email,
+            from: fromEmail,
+            subject: emailPayload.subject,
+            text: emailPayload.text,
+            createdAt: nowIso,
+            expiresAt: record.expiresAt,
+            channel: 'local_outbox',
+          },
+          ...(Array.isArray(existingOutbox) ? existingOutbox : []),
+        ].slice(0, 25);
+        fs.writeFileSync(ADMIN_EMAIL_OUTBOX_FILE, JSON.stringify(nextOutbox, null, 2), 'utf-8');
+      } catch {
+        // Non-fatal outbox file error
+      }
+
+      appendServerActivityLog({
+        action: 'password_reset_requested',
+        titleEn: 'Administrator recovery token issued (Resend key unconfigured)',
+        titleAr: 'تم إصدار رمز استعادة كلمة المرور (بانتظار تفعيل مفتاح Resend)',
+        category: 'security',
+        severity: 'warning',
+        target: `Administrator Account (${email})`,
+        details: `Single-use SHA-256 recovery token generated (${RESET_TOKEN_TTL_MINUTES}m TTL) and staged in local server outbox because RESEND_API_KEY is unset.`,
+        actor: {
+          name: '3Laa Hassan',
+          username: 'admin',
+          role: 'super_admin',
+          email,
+        },
+        source: 'server',
+      });
+
+      res.json({
+        success: true,
+        deliveryChannel: 'local_outbox',
+        expiresMinutes: RESET_TOKEN_TTL_MINUTES,
+        messageEn:
+          'One-time recovery token generated cleanly. Note: RESEND_API_KEY is not set in server environment secrets, so the email payload was staged in the server outbox log.',
+        messageAr:
+          'تم إنشاء رمز الاستعادة المؤقت بنجاح. ملاحظة: لم يتم ضبط مفتاح RESEND_API_KEY في متغيرات الخادم، لذا تم حفظ رسالة البريد في سجل الإرسال المحلي.',
+      });
+    } catch {
+      res.status(500).json({
+        success: false,
+        messageEn: 'Failed to initiate administrator password recovery.',
+        messageAr: 'تعذر بدء عملية استعادة كلمة مرور المدير.',
+      });
+    }
+  });
+
+  app.post('/api/admin/auth/reset-password/verify-token', (req: Request, res: Response) => {
+    try {
+      const token = typeof req.body?.token === 'string' ? req.body.token : '';
+      const records = loadResetTokenStore(ADMIN_RESET_TOKENS_FILE);
+      const validation = validateResetTokenRecord(records, token);
+      res.json({
+        valid: validation.valid,
+        reason: validation.reason,
+        expiresAt: validation.record?.expiresAt,
+      });
+    } catch {
+      res.status(500).json({ valid: false, reason: 'server_error' });
+    }
+  });
+
+  app.post('/api/admin/auth/reset-password', async (req: Request, res: Response) => {
+    try {
+      const token = typeof req.body?.token === 'string' ? req.body.token : '';
+      const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
+      const confirmPassword =
+        typeof req.body?.confirmPassword === 'string' ? req.body.confirmPassword : '';
+
+      const result = await consumeResetTokenAndRotatePassword({
+        rawToken: token,
+        newPassword,
+        confirmPassword,
+        tokenFilePath: ADMIN_RESET_TOKENS_FILE,
+        credentialsFilePath: ADMIN_CREDENTIALS_FILE,
+      });
+
+      if (result.success) {
+        appendServerActivityLog({
+          action: 'password_reset_completed',
+          titleEn: 'Administrator password reset completed via recovery token',
+          titleAr: 'تمت إعادة تعيين كلمة مرور المدير باستخدام رمز الاستعادة',
+          category: 'security',
+          severity: 'critical',
+          target: `Administrator Account (${result.email || 'admin'})`,
+          details: 'One-time recovery token verified and consumed; administrator credential re-hashed with bcrypt (12 rounds).',
+          actor: {
+            name: '3Laa Hassan',
+            username: 'admin',
+            role: 'super_admin',
+            email: result.email || 'optimatech.lb@gmail.com',
+          },
+          source: 'server',
+        });
+      } else {
+        appendServerActivityLog({
+          action: 'password_reset_failed',
+          titleEn: 'Failed password reset token submission',
+          titleAr: 'فشل محاولة إعادة تعيين كلمة المرور برمز الاستعادة',
+          category: 'security',
+          severity: 'warning',
+          target: 'Administrator Recovery Token',
+          details: result.messageEn,
+          actor: {
+            name: '3Laa Hassan',
+            username: 'admin',
+            role: 'super_admin',
+          },
+          source: 'server',
+        });
+      }
+
+      res.status(result.success ? 200 : 400).json(result);
+    } catch {
+      res.status(500).json({
+        success: false,
+        messageEn: 'Failed to reset administrator password.',
+        messageAr: 'تعذر إعادة تعيين كلمة مرور المدير.',
+      });
+    }
+  });
+
+  // =========================================================================
+  // 0A. ADMIN SECURITY & SENSITIVE CHANGE ACTIVITY LOG ROUTES
+  // =========================================================================
+  app.get('/api/admin/activity-logs', (req: Request, res: Response) => {
+    try {
+      const limitParam = Math.min(MAX_SERVER_ACTIVITY_LOGS, Math.max(1, parseInt(String(req.query?.limit || '500'), 10) || 500));
+      const search = typeof req.query?.search === 'string' ? req.query.search : '';
+      const category = typeof req.query?.category === 'string' ? (req.query.category as ActivityLogEntry['category'] | 'all') : 'all';
+      const severity = typeof req.query?.severity === 'string' ? (req.query.severity as ActivityLogEntry['severity'] | 'all') : 'all';
+
+      const filtered = filterActivityLogs(adminActivityLogs, { search, category, severity }).slice(0, limitParam);
+      res.json({
+        success: true,
+        total: adminActivityLogs.length,
+        logs: filtered,
+      });
+    } catch {
+      res.status(500).json({ success: false, logs: [], error: 'Failed to load admin activity logs.' });
+    }
+  });
+
+  app.post('/api/admin/activity-logs', (req: Request, res: Response) => {
+    try {
+      const body = (req.body || {}) as Partial<CreateActivityLogInput>;
+      if (!body.action && !body.titleEn) {
+        res.status(400).json({ success: false, error: 'action or titleEn is required.' });
+        return;
+      }
+
+      const saved = appendServerActivityLog({
+        id: typeof body.id === 'string' ? body.id : undefined,
+        action: String(body.action || 'admin_event'),
+        titleEn: String(body.titleEn || body.action || 'Admin Event'),
+        titleAr: typeof body.titleAr === 'string' ? body.titleAr : undefined,
+        category: body.category || 'security',
+        severity: body.severity || 'info',
+        target: typeof body.target === 'string' ? body.target : undefined,
+        details: typeof body.details === 'string' ? body.details : undefined,
+        actor: body.actor,
+        source: body.source || 'client',
+        timestamp: typeof body.timestamp === 'string' ? body.timestamp : undefined,
+      });
+
+      res.status(201).json({ success: true, entry: saved });
+    } catch {
+      res.status(500).json({ success: false, error: 'Failed to record admin activity log.' });
     }
   });
 
