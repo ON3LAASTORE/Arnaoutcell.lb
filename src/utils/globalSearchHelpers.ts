@@ -406,3 +406,36 @@ export function getFilterModeLabels(lang: 'en' | 'ar') {
     { mode: 'category' as SearchFilterMode, label: 'By Category' },
   ];
 }
+
+/**
+ * Restricts a product list to a selected category slug ('all' returns full list).
+ */
+export function filterProductsByCategorySlug(
+  products: Product[],
+  categories: Category[],
+  selectedCategorySlug: string = 'all'
+): Product[] {
+  if (!selectedCategorySlug || selectedCategorySlug === 'all') {
+    return products;
+  }
+  const normalizedTarget = normalizeSearchTerm(selectedCategorySlug);
+  const matchedCat = categories.find(
+    (c) => normalizeSearchTerm(c.slug) === normalizedTarget || normalizeSearchTerm(c.name) === normalizedTarget
+  );
+  if (!matchedCat) {
+    return products.filter(
+      (p) => normalizeSearchTerm(p.category || '').replace(/[^a-z0-9]+/g, '-') === normalizedTarget
+    );
+  }
+  const catNameNorm = normalizeSearchTerm(matchedCat.name);
+  const catSlugNorm = normalizeSearchTerm(matchedCat.slug);
+  return products.filter((p) => {
+    const prodCatNorm = normalizeSearchTerm(p.category || '');
+    return (
+      prodCatNorm === catNameNorm ||
+      prodCatNorm === catSlugNorm ||
+      prodCatNorm.replace(/[^a-z0-9]+/g, '-') === catSlugNorm
+    );
+  });
+}
+

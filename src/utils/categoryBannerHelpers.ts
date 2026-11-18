@@ -118,8 +118,14 @@ const CURATED_BANNER_OVERRIDES: Record<string, CategoryBannerMetadata> = {
 
 export function sortDynamicCategories(categories: readonly Category[]): Category[] {
   return [...categories].sort((a, b) => {
-    const orderA = Number.isFinite(Number(a.displayOrder)) ? Number(a.displayOrder) : 999;
-    const orderB = Number.isFinite(Number(b.displayOrder)) ? Number(b.displayOrder) : 999;
+    const orderA =
+      typeof a.displayOrder === 'number' && Number.isFinite(a.displayOrder)
+        ? a.displayOrder
+        : 999;
+    const orderB =
+      typeof b.displayOrder === 'number' && Number.isFinite(b.displayOrder)
+        ? b.displayOrder
+        : 999;
     if (orderA !== orderB) return orderA - orderB;
     return a.name.localeCompare(b.name);
   });

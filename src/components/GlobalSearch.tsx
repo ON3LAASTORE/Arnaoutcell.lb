@@ -8,33 +8,41 @@ import {
   Folder,
   ArrowRight,
   ArrowLeft,
+  ChevronDown,
   ChevronRight,
   ChevronLeft,
   CheckCircle2,
   AlertTriangle,
   Smartphone,
   SlidersHorizontal,
+  Mic,
 } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 import {
   filterProductsGlobally,
+  filterProductsByCategorySlug,
   getUniqueMatchingBrands,
   getUniqueMatchingCategories,
   getFilterModeLabels,
   SearchFilterMode,
   MatchedCategoryInfo,
 } from '../utils/globalSearchHelpers';
+import { addSearchHistoryTerm } from '../utils/quickSearchOverlayHelpers';
 import { trackSearchQuery } from '../services/searchAnalyticsService';
 import { Product } from '../types';
 
 interface GlobalSearchProps {
   isMobile?: boolean;
+  variant?: 'default' | 'navbar';
+  onOpenQuickSearch?: () => void;
   onCloseMobileMenu?: () => void;
   className?: string;
 }
 
 export const GlobalSearch: React.FC<GlobalSearchProps> = ({
   isMobile = false,
+  variant = 'navbar',
+  onOpenQuickSearch,
   onCloseMobileMenu,
   className = '',
 }) => {
@@ -55,6 +63,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
   const ChevronIcon = isArabic ? ChevronLeft : ChevronRight;
 
+  const [selectedCategorySlug, setSelectedCategorySlug] = useState<string>('all');
   const [query, setQuery] = useState('');
   const [filterMode, setFilterMode] = useState<SearchFilterMode>('all');
   const [isOpen, setIsOpen] = useState(false);
@@ -63,28 +72,48 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  // Restrict products to selected navbar category if chosen
+  const scopedProducts = useMemo(() => {
+    return filterProductsByCategorySlug(products, categories, selectedCategorySlug);
+  }, [products, categories, selectedCategorySlug]);
+
+  const scopedBrands = useMemo(() => {
+    if (selectedCategorySlug === 'all') return brands;
+    const activeBrandNames = new Set(
+      scopedProducts
+        .filter((p) => p.isPublished !== false && p.brand)
+        .map((p) => p.brand.toLowerCase())
+    );
+    return brands.filter((b) => activeBrandNames.has(b.name.toLowerCase()));
+  }, [brands, scopedProducts, selectedCategorySlug]);
+
+  const scopedCategories = useMemo(() => {
+    if (selectedCategorySlug === 'all') return categories;
+    return categories.filter((c) => c.slug === selectedCategorySlug);
+  }, [categories, selectedCategorySlug]);
+
   // Compute matching categories, brands, and products
   const matchingCategories = useMemo(() => {
     if (filterMode === 'name' || filterMode === 'brand') return [];
-    return getUniqueMatchingCategories(products, categories, query).slice(0, 4);
-  }, [products, categories, query, filterMode]);
+    return getUniqueMatchingCategories(scopedProducts, scopedCategories, query).slice(0, 4);
+  }, [scopedProducts, scopedCategories, query, filterMode]);
 
   const matchingBrands = useMemo(() => {
     if (filterMode === 'name' || filterMode === 'category') return [];
-    return getUniqueMatchingBrands(products, brands, query).slice(0, 4);
-  }, [products, brands, query, filterMode]);
+    return getUniqueMatchingBrands(scopedProducts, scopedBrands, query).slice(0, 4);
+  }, [scopedProducts, scopedBrands, query, filterMode]);
 
   const matchingProducts = useMemo(() => {
-    return filterProductsGlobally(products, query, filterMode, categories).slice(0, 6);
-  }, [products, categories, query, filterMode]);
+    return filterProductsGlobally(scopedProducts, query, filterMode, categories).slice(0, 6);
+  }, [scopedProducts, categories, query, filterMode]);
 
   const totalInteractiveItems =
     matchingCategories.length + matchingBrands.length + matchingProducts.length;
 
-  // Reset keyboard selected index when query or filter mode changes
+  // Reset keyboard selected index when query, filter mode, or category scope changes
   useEffect(() => {
     setSelectedIndex(-1);
-  }, [query, filterMode]);
+  }, [query, filterMode, selectedCategorySlug]);
 
   // Click outside listener to dismiss dropdown
   useEffect(() => {
@@ -97,16 +126,21 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Keyboard shortcut listener: '/' or 'Cmd+K' / 'Ctrl+K' focuses search
+  // Keyboard shortcut listener: '/' or 'Cmd+K' / 'Ctrl+K' focuses visible search input
   useEffect(() => {
     function handleGlobalKeyDown(e: KeyboardEvent) {
+      const activeTag = document.activeElement?.tagName;
       if (
         (e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) &&
-        document.activeElement?.tagName !== 'INPUT' &&
-        document.activeElement?.tagName !== 'TEXTAREA'
+        activeTag !== 'INPUT' &&
+        activeTag !== 'TEXTAREA' &&
+        activeTag !== 'SELECT'
       ) {
+        if (!inputRef.current || inputRef.current.offsetParent === null) {
+          return;
+        }
         e.preventDefault();
-        inputRef.current?.focus();
+        inputRef.current.focus();
         setIsOpen(true);
       }
     }
@@ -122,6 +156,9 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
       categoryMatchesCount: matchingCategories.length,
       productMatchesCount: matchingProducts.length,
     });
+    if (query.trim()) {
+      addSearchHistoryTerm(query.trim());
+    }
     viewProductDetail(product.id);
     setIsOpen(false);
     setQuery('');
@@ -136,6 +173,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
       categoryMatchesCount: matchingCategories.length,
       productMatchesCount: matchingProducts.length,
     });
+    addSearchHistoryTerm(brandName);
     selectBrand(brandName);
     setCurrentView('products');
     setIsOpen(false);
@@ -151,6 +189,9 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
       categoryMatchesCount: matchingCategories.length,
       productMatchesCount: matchingProducts.length,
     });
+    if (query.trim()) {
+      addSearchHistoryTerm(query.trim());
+    }
     selectCategory(cat.slug);
     setCurrentView('products');
     setIsOpen(false);
@@ -178,7 +219,28 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
     }
 
     const trimmed = query.trim();
+
+    if (selectedCategorySlug && selectedCategorySlug !== 'all') {
+      if (trimmed) {
+        addSearchHistoryTerm(trimmed);
+        trackSearchQuery({
+          term: trimmed,
+          source: isMobile ? 'mobile_input_submit' : 'desktop_input_submit',
+          categoryMatchesCount: 1,
+          productMatchesCount: matchingProducts.length,
+        });
+      }
+      selectCategory(selectedCategorySlug);
+      setSearchQuery(trimmed);
+      setCurrentView('products');
+      setIsOpen(false);
+      if (onCloseMobileMenu) onCloseMobileMenu();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     if (trimmed) {
+      addSearchHistoryTerm(trimmed);
       trackSearchQuery({
         term: trimmed,
         source: isMobile ? 'mobile_input_submit' : 'desktop_input_submit',
@@ -212,12 +274,14 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
 
       setIsOpen(false);
       if (onCloseMobileMenu) onCloseMobileMenu();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
       selectCategory(null);
       setSearchQuery('');
       setCurrentView('products');
       setIsOpen(false);
       if (onCloseMobileMenu) onCloseMobileMenu();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
@@ -256,6 +320,33 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
     return brands.filter((b) => b.featured).slice(0, 6);
   }, [brands]);
 
+  const selectedCategoryRecord = useMemo(() => {
+    if (selectedCategorySlug === 'all') return null;
+    return categories.find((c) => c.slug === selectedCategorySlug) || null;
+  }, [categories, selectedCategorySlug]);
+
+  const placeholderText = useMemo(() => {
+    if (filterMode === 'brand') {
+      return isArabic
+        ? 'ابحث بالماركة (Apple, Samsung, Anker...)'
+        : 'Search by brand (Apple, Samsung, Anker...)';
+    }
+    if (filterMode === 'category') {
+      return isArabic
+        ? 'ابحث بالقسم (الهواتف، اللابتوب، الشواحن...)'
+        : 'Search by category (Phones, Laptops, Chargers...)';
+    }
+    if (filterMode === 'name') {
+      return isArabic
+        ? 'ابحث باسم المنتج أو الجهاز...'
+        : 'Search by product name...';
+    }
+    if (variant === 'navbar') {
+      return isArabic ? 'عمّ تبحث اليوم؟' : 'What are you looking for?';
+    }
+    return t.searchPlaceholder || 'Search by name, brand, or category...';
+  }, [filterMode, isArabic, variant, t.searchPlaceholder]);
+
   const hasQuery = query.trim().length > 0;
   const hasResults =
     matchingCategories.length > 0 || matchingBrands.length > 0 || matchingProducts.length > 0;
@@ -266,88 +357,260 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
       className={`relative ${className}`}
       data-testid={isMobile ? 'mobile-global-search-container' : 'global-search-container'}
     >
-      <form onSubmit={handleSubmitSearch} className="w-full">
-        <div className="relative flex items-center">
-          <input
-            ref={inputRef}
-            type="search"
-            value={query}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setIsOpen(true);
-            }}
-            onFocus={() => setIsOpen(true)}
-            onKeyDown={handleKeyDown}
-            placeholder={
-              filterMode === 'brand'
-                ? isArabic
-                  ? 'ابحث بالماركة (Apple, Samsung, Anker...)'
-                  : 'Search by brand (Apple, Samsung, Anker...)'
-                : filterMode === 'category'
-                ? isArabic
-                  ? 'ابحث بالقسم (الهواتف، اللابتوب، الشواحن...)'
-                  : 'Search by category (Phones, Laptops, Chargers...)'
-                : filterMode === 'name'
-                ? isArabic
-                  ? 'ابحث باسم المنتج أو الجهاز...'
-                  : 'Search by product name...'
-                : t.searchPlaceholder || 'Search by name, brand, or category...'
-            }
-            aria-label={t.searchPlaceholder || 'Search products by name, brand, or category'}
-            aria-expanded={isOpen}
-            role="combobox"
-            aria-autocomplete="list"
-            className={`w-full bg-[#F5F8FC] dark:bg-[#111A2E] text-[#172033] dark:text-[#F8FAFC] placeholder-[#64748B] dark:placeholder-slate-400 text-xs sm:text-sm rounded-full pl-9 rtl:pr-9 py-2 sm:py-2.5 border border-[#DCE5F0] dark:border-[#1E293B] focus:bg-white dark:focus:bg-[#162038] focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/20 transition-all shadow-xs [&::-webkit-search-cancel-button]:hidden ${
-              query ? 'pr-26 rtl:pl-26' : 'pr-20 rtl:pl-20'
-            }`}
-          />
-
-          {/* Left Search Icon */}
-          <Search className="w-4 h-4 text-[#64748B] dark:text-slate-400 absolute left-3 rtl:left-auto rtl:right-3 pointer-events-none" />
-
-          {/* Clear Button */}
-          {query && (
-            <button
-              type="button"
-              onClick={handleClear}
-              className="absolute right-19 rtl:right-auto rtl:left-19 p-1 text-[#64748B] hover:text-[#172033] dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
-              aria-label="Clear search"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-
-          {/* Submit Search Button */}
-          <button
-            type="submit"
-            className="absolute right-1.5 rtl:right-auto rtl:left-1.5 bg-[#007AFF] hover:bg-[#0066D6] active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-all cursor-pointer shadow-xs flex items-center gap-1 whitespace-nowrap shrink-0"
+      {variant === 'navbar' ? (
+        isMobile ? (
+          /* Mobile 96TECH-inspired Search Form */
+          <form
+            onSubmit={handleSubmitSearch}
+            role="search"
+            aria-label={isArabic ? 'البحث في المتجر' : 'Mobile product search'}
+            className="flex items-stretch w-full h-10 rounded-[10px] overflow-hidden bg-white shadow-sm focus-within:ring-2 focus-within:ring-[#00BAF2] transition-shadow"
           >
-            <span>{isArabic ? 'بحث' : 'Search'}</span>
-          </button>
-        </div>
-      </form>
+            <input
+              ref={inputRef}
+              type="search"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setIsOpen(true);
+              }}
+              onFocus={() => setIsOpen(true)}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholderText}
+              aria-label={placeholderText}
+              aria-expanded={isOpen}
+              role="combobox"
+              aria-autocomplete="list"
+              data-testid="mobile-global-search-input"
+              className="flex-1 min-w-0 px-3.5 bg-white text-[#0F172A] placeholder-slate-400 text-xs focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={handleClear}
+                data-testid="mobile-global-search-clear"
+                aria-label={isArabic ? 'مسح البحث' : 'Clear search'}
+                className="px-2 bg-white text-slate-400 hover:text-slate-700 transition-colors cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+            {onOpenQuickSearch && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  onOpenQuickSearch();
+                }}
+                aria-label={isArabic ? 'البحث الصوتي' : 'Voice search'}
+                className="px-2.5 bg-white text-slate-400 hover:text-[#00BAF2] transition-colors cursor-pointer"
+              >
+                <Mic className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              type="submit"
+              data-testid="mobile-global-search-submit"
+              aria-label={isArabic ? 'بحث' : 'Search'}
+              className="px-4 bg-[#00BAF2] hover:bg-[#00A2D4] text-white flex items-center justify-center transition-colors cursor-pointer shrink-0"
+            >
+              <Search className="w-4 h-4 stroke-[2.25]" />
+            </button>
+          </form>
+        ) : (
+          /* Desktop 96TECH-inspired Multi-Segment Header Search Bar */
+          <form
+            onSubmit={handleSubmitSearch}
+            role="search"
+            aria-label={isArabic ? 'البحث في المتجر' : 'Store product search'}
+            className="flex items-stretch w-full h-11 rounded-[10px] overflow-hidden bg-white shadow-sm ring-1 ring-white/10 focus-within:ring-2 focus-within:ring-[#00BAF2] transition-shadow"
+          >
+            {/* Left Category Dropdown Selector */}
+            <div className="relative flex items-center bg-[#F1F5F9] border-r rtl:border-r-0 rtl:border-l border-slate-200 shrink-0">
+              <select
+                value={selectedCategorySlug}
+                onChange={(e) => {
+                  setSelectedCategorySlug(e.target.value);
+                  if (query.trim()) setIsOpen(true);
+                }}
+                data-testid="global-search-category-select"
+                aria-label={isArabic ? 'اختر القسم للبحث' : 'Select category filter'}
+                className="appearance-none bg-transparent text-[#334155] text-[13px] font-medium pl-3.5 pr-8 rtl:pl-8 rtl:pr-3.5 h-full cursor-pointer focus:outline-none max-w-[190px] truncate"
+              >
+                <option value="all">
+                  {isArabic ? 'البحث في جميع الأقسام' : 'Search all categories'}
+                </option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.slug}>
+                    {isArabic ? cat.nameAr : cat.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                className="w-3.5 h-3.5 text-slate-500 pointer-events-none absolute right-2.5 rtl:right-auto rtl:left-2.5"
+                aria-hidden="true"
+              />
+            </div>
 
-      {/* Global Search Dropdown */}
+            {/* Center Input Field */}
+            <div className="relative flex-1 flex items-center min-w-0 bg-white">
+              <input
+                ref={inputRef}
+                type="search"
+                value={query}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setIsOpen(true);
+                }}
+                onFocus={() => setIsOpen(true)}
+                onKeyDown={handleKeyDown}
+                placeholder={placeholderText}
+                aria-label={placeholderText}
+                aria-expanded={isOpen}
+                role="combobox"
+                aria-autocomplete="list"
+                data-testid="global-search-input"
+                className={`w-full h-full px-4 ${
+                  query && onOpenQuickSearch
+                    ? 'pr-16 rtl:pl-16 rtl:pr-4'
+                    : query || onOpenQuickSearch
+                    ? 'pr-10 rtl:pl-10 rtl:pr-4'
+                    : 'pr-4'
+                } bg-white text-[#0F172A] placeholder-slate-400 text-sm focus:outline-none [&::-webkit-search-cancel-button]:hidden`}
+              />
+
+              {query && (
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  data-testid="global-search-clear"
+                  aria-label={isArabic ? 'مسح البحث' : 'Clear search'}
+                  className={`absolute ${
+                    onOpenQuickSearch
+                      ? 'right-9 rtl:right-auto rtl:left-9'
+                      : 'right-2 rtl:right-auto rtl:left-2'
+                  } p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer`}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+
+              {onOpenQuickSearch && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsOpen(false);
+                    onOpenQuickSearch();
+                  }}
+                  aria-label={isArabic ? 'البحث الصوتي والسريع' : 'Open voice and quick search'}
+                  title={isArabic ? 'البحث الصوتي والسريع' : 'Voice & Quick Search'}
+                  className="absolute right-2 rtl:right-auto rtl:left-2 p-1.5 rounded-md text-slate-400 hover:text-[#00BAF2] hover:bg-slate-100 transition-colors cursor-pointer"
+                >
+                  <Mic className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Right Action Button: Cyan/Teal Search Button */}
+            <button
+              type="submit"
+              data-testid="global-search-submit"
+              aria-label={isArabic ? 'بحث' : 'Search'}
+              className="px-5 bg-[#00BAF2] hover:bg-[#00A2D4] text-white flex items-center justify-center transition-colors duration-150 cursor-pointer shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <Search className="w-5 h-5 stroke-[2.25]" />
+            </button>
+          </form>
+        )
+      ) : (
+        /* Standalone Pill Search Variant */
+        <form onSubmit={handleSubmitSearch} className="w-full">
+          <div className="relative flex items-center">
+            <input
+              ref={inputRef}
+              type="search"
+              value={query}
+              onChange={(e) => {
+                setQuery(e.target.value);
+                setIsOpen(true);
+              }}
+              onFocus={() => setIsOpen(true)}
+              onKeyDown={handleKeyDown}
+              placeholder={placeholderText}
+              aria-label={t.searchPlaceholder || 'Search products by name, brand, or category'}
+              aria-expanded={isOpen}
+              role="combobox"
+              aria-autocomplete="list"
+              className={`w-full bg-[#F5F8FC] dark:bg-[#111A2E] text-[#172033] dark:text-[#F8FAFC] placeholder-[#64748B] dark:placeholder-slate-400 text-xs sm:text-sm rounded-full pl-9 rtl:pr-9 py-2 sm:py-2.5 border border-[#DCE5F0] dark:border-[#1E293B] focus:bg-white dark:focus:bg-[#162038] focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/20 transition-all shadow-xs [&::-webkit-search-cancel-button]:hidden ${
+                query ? 'pr-26 rtl:pl-26' : 'pr-20 rtl:pl-20'
+              }`}
+            />
+
+            <Search className="w-4 h-4 text-[#64748B] dark:text-slate-400 absolute left-3 rtl:left-auto rtl:right-3 pointer-events-none" />
+
+            {query && (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="absolute right-19 rtl:right-auto rtl:left-19 p-1 text-[#64748B] hover:text-[#172033] dark:hover:text-white rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            <button
+              type="submit"
+              className="absolute right-1.5 rtl:right-auto rtl:left-1.5 bg-[#007AFF] hover:bg-[#0066D6] active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-full transition-all cursor-pointer shadow-xs flex items-center gap-1 whitespace-nowrap shrink-0"
+            >
+              <span>{isArabic ? 'بحث' : 'Search'}</span>
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* Global Search Multi-Entity Dropdown */}
       {isOpen && (
         <div
           data-testid="global-search-dropdown"
-          className="absolute top-full left-0 rtl:left-auto rtl:right-0 w-full md:w-[460px] lg:w-[500px] max-w-[calc(100vw-1.5rem)] mt-2 bg-white dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150 backdrop-blur-xl"
+          className="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#0E1726] text-[#172033] dark:text-[#F8FAFC] border border-[#DCE5F0] dark:border-[#1E293B] rounded-2xl shadow-2xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150 backdrop-blur-xl"
         >
           {/* Header Bar with Scope Filter Controls (All / By Name / By Brand / By Category) */}
           <div className="p-2.5 border-b border-[#DCE5F0] dark:border-[#1E293B] bg-[#F5F8FC]/90 dark:bg-[#111A2E]/90 flex flex-wrap items-center justify-between gap-2">
-            <div className="flex items-center gap-1 text-[11px] font-bold text-[#64748B] dark:text-slate-400 whitespace-nowrap shrink-0">
-              <SlidersHorizontal className="w-3 h-3 text-[#007AFF]" />
-              <span>{isArabic ? 'بحث حسب:' : 'Search by:'}</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-1 text-[11px] font-bold text-[#64748B] dark:text-slate-400 whitespace-nowrap shrink-0">
+                <SlidersHorizontal className="w-3 h-3 text-[#007AFF]" />
+                <span>{isArabic ? 'بحث حسب:' : 'Search by:'}</span>
+              </div>
+
+              {selectedCategoryRecord && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedCategorySlug('all')}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#EAF3FF] dark:bg-[#1E293B] text-[#007AFF] dark:text-[#38BDF8] text-[11px] font-semibold cursor-pointer hover:bg-[#DCEAFE] dark:hover:bg-slate-700 transition-colors"
+                  title={isArabic ? 'إلغاء فلتر القسم' : 'Clear category scope'}
+                >
+                  <span>{isArabic ? selectedCategoryRecord.nameAr : selectedCategoryRecord.name}</span>
+                  <X className="w-3 h-3" />
+                </button>
+              )}
             </div>
 
             {/* Filter Mode Selector Tabs */}
-            <div className="flex items-center gap-1 bg-white dark:bg-[#0A0F1D] p-0.5 rounded-xl border border-[#DCE5F0] dark:border-[#1E293B] overflow-x-auto max-w-full">
+            <div
+              role="tablist"
+              aria-label={isArabic ? 'نطاق البحث' : 'Search scope'}
+              className="flex items-center gap-1 bg-white dark:bg-[#0A0F1D] p-0.5 rounded-xl border border-[#DCE5F0] dark:border-[#1E293B] overflow-x-auto max-w-full"
+            >
               {filterTabs.map((tab) => {
                 const isActive = filterMode === tab.mode;
                 return (
                   <button
                     key={tab.mode}
                     type="button"
+                    role="tab"
+                    aria-selected={isActive}
+                    data-testid={`global-search-mode-${tab.mode}`}
                     onClick={() => {
                       setFilterMode(tab.mode);
                       inputRef.current?.focus();
@@ -429,7 +692,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
             </div>
           ) : hasResults ? (
             /* Case 2: Matching Results Found */
-            <div className="max-h-[460px] overflow-y-auto divide-y divide-[#DCE5F0]/60 dark:divide-[#1E293B]/60">
+            <div className="max-h-[440px] overflow-y-auto divide-y divide-[#DCE5F0]/60 dark:divide-[#1E293B]/60">
               {/* SECTION 1: MATCHING CATEGORIES */}
               {matchingCategories.length > 0 && (
                 <div className="p-2 bg-[#F8FAFC]/60 dark:bg-[#111A2E]/60">

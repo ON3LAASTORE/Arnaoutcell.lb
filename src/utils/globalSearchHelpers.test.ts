@@ -7,6 +7,7 @@ import {
   getUniqueMatchingCategories,
   matchesProductSearchQuery,
   getFilterModeLabels,
+  filterProductsByCategorySlug,
 } from './globalSearchHelpers';
 import type { Product, Brand, Category } from '../types';
 
@@ -310,3 +311,15 @@ test('getFilterModeLabels returns English and Arabic configurations for all 4 se
   assert.equal(ar[2].label, 'بالماركة');
   assert.equal(ar[3].label, 'بالقسم');
 });
+
+test('filterProductsByCategorySlug scopes products to chosen category or returns full list for "all"', () => {
+  assert.equal(filterProductsByCategorySlug(mockProducts, mockCategories, 'all').length, mockProducts.length);
+  const audioOnly = filterProductsByCategorySlug(mockProducts, mockCategories, 'audio');
+  assert.equal(audioOnly.length, 1);
+  assert.equal(audioOnly[0].id, 'p5');
+
+  const chargersOnly = filterProductsByCategorySlug(mockProducts, mockCategories, 'chargers-power');
+  assert.equal(chargersOnly.length, 1);
+  assert.equal(chargersOnly[0].id, 'p3');
+});
+

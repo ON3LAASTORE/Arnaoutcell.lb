@@ -16,8 +16,8 @@ import {
   StockNotificationRecord,
 } from './src/utils/stockNotificationHelpers';
 
-// Load environment variables
-dotenv.config();
+// Load environment variables (override stale process values when .env is updated)
+dotenv.config({ override: true });
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
