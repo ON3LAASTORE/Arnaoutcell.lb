@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { useAdmin } from '../../context/AdminContext';
-import { Product, ProductSpec } from '../../types';
+import { Product, ProductSpec, ProductVariant } from '../../types';
 import { saveProduct, deleteProduct, readFileAsDataUrl } from '../../services/storageService';
 import { maybeTriggerRestockNotifications } from '../../services/stockNotificationService';
 import {
@@ -12,10 +12,20 @@ import {
   Upload,
   X,
   Share2,
+  RotateCcw,
+  Palette,
+  ImagePlus,
 } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
 import ProductImageUploader from './ProductImageUploader';
 import { DEFAULT_FULL_RES_FALLBACK_IMAGE, resolveFullResolutionImageUrl } from '../../utils/imageResolutionHelpers';
+import {
+  buildColorVariantConfigs,
+  ColorVariantConfig,
+  extractProductColorData,
+} from '../../utils/colorVariantHelpers';
+import { optimizeUploadedImage } from '../../utils/imageCompression';
+import { validateImageFile } from '../../utils/imageUploadHelpers';
 
 interface AdminProductsProps {
   onShareProduct?: (productId: string) => void;
@@ -58,8 +68,10 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
   const [formDesc, setFormDesc] = useState('');
   const [formDescAr, setFormDescAr] = useState('');
   const [formWarrantyMonths, setFormWarrantyMonths] = useState(12);
-  const [formColors, setFormColors] = useState<string[]>([]);
+  const [formColorVariants, setFormColorVariants] = useState<ColorVariantConfig[]>([]);
+  const [formExistingVariants, setFormExistingVariants] = useState<ProductVariant[]>([]);
   const [newColorInput, setNewColorInput] = useState('');
+  const [colorUploadError, setColorUploadError] = useState<string | null>(null);
   const [formSpecs, setFormSpecs] = useState<ProductSpec[]>([]);
   const [specLabel, setSpecLabel] = useState('');
   const [specValue, setSpecValue] = useState('');
@@ -87,7 +99,10 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormDesc('');
     setFormDescAr('');
     setFormWarrantyMonths(12);
-    setFormColors(['Black', 'Silver']);
+    setFormColorVariants([{ color: 'Black' }, { color: 'Silver' }]);
+    setFormExistingVariants([]);
+    setNewColorInput('');
+    setColorUploadError(null);
     setFormSpecs([
       { label: 'Storage', value: '128GB' },
       { label: 'RAM', value: '8GB' },
@@ -119,7 +134,10 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormDesc(p.description);
     setFormDescAr(p.descriptionAr || '');
     setFormWarrantyMonths(p.warrantyMonths);
-    setFormColors(p.colors || []);
+    setFormColorVariants(buildColorVariantConfigs(p));
+    setFormExistingVariants(Array.isArray(p.variants) ? p.variants : []);
+    setNewColorInput('');
+    setColorUploadError(null);
     setFormSpecs(p.specifications || []);
     setFormIsOffer(Boolean(p.isSpecialOffer));
     setFormIsFeatured(Boolean(p.isFeatured));
@@ -152,15 +170,57 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleAddColor = () => {
-    if (newColorInput.trim() && !formColors.includes(newColorInput.trim())) {
-      setFormColors((prev) => [...prev, newColorInput.trim()]);
+  const handleAddColor = (presetColor?: string) => {
+    const candidate = (presetColor ?? newColorInput).trim();
+    if (!candidate) return;
+    const exists = formColorVariants.some(
+      (row) => row.color.trim().toLowerCase() === candidate.toLowerCase()
+    );
+    if (!exists) {
+      setFormColorVariants((prev) => [...prev, { color: candidate }]);
+    }
+    if (!presetColor) {
       setNewColorInput('');
+    }
+    setColorUploadError(null);
+  };
+
+  const handleUpdateColorVariant = (index: number, patch: Partial<ColorVariantConfig>) => {
+    setFormColorVariants((prev) =>
+      prev.map((row, idx) => (idx === index ? { ...row, ...patch } : row))
+    );
+  };
+
+  const handleColorFileUpload = async (
+    index: number,
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      setColorUploadError(validation.error || 'Invalid image file.');
+      return;
+    }
+
+    setColorUploadError(null);
+    try {
+      const compactDataUrl = await optimizeUploadedImage(file, {
+        maxDimension: 1200,
+        maxDataUrlLength: 140_000,
+        initialQuality: 0.85,
+        preserveOriginal: false,
+      });
+      handleUpdateColorVariant(index, { image: compactDataUrl });
+    } catch {
+      setColorUploadError('Could not process color image file. Try a smaller PNG/JPEG.');
     }
   };
 
-  const handleRemoveColor = (col: string) => {
-    setFormColors((prev) => prev.filter((c) => c !== col));
+  const handleRemoveColor = (index: number) => {
+    setFormColorVariants((prev) => prev.filter((_, idx) => idx !== index));
   };
 
   const handleAddSpec = () => {
@@ -187,6 +247,16 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
         ? Math.round(((formOriginalPrice - formPrice) / formOriginalPrice) * 100)
         : 0;
 
+    const extractedColorData = extractProductColorData(
+      formColorVariants,
+      {
+        price: formPrice,
+        sku: formSku.trim(),
+        stock: formStock,
+      },
+      formExistingVariants
+    );
+
     const savedProduct: Product = {
       id: editingProduct ? editingProduct.id : `prod-${Date.now()}`,
       name: formName.trim(),
@@ -210,7 +280,9 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
       descriptionAr:
         formDescAr.trim() || 'جهاز أصلي مع كفالة متجر ON AlAA STORE الرسمية (الشوف) وتوصيل سريع متاح لجميع مناطق لبنان.',
       specifications: formSpecs,
-      colors: formColors,
+      colors: extractedColorData.colors,
+      colorImages: extractedColorData.colorImages,
+      variants: extractedColorData.variants,
       rating: editingProduct ? editingProduct.rating : 5.0,
       reviewCount: editingProduct ? editingProduct.reviewCount : 1,
       isSpecialOffer: formIsOffer,
@@ -285,6 +357,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
 
         <button
           onClick={openAddModal}
+          data-testid="admin-add-product-btn"
           className="px-4 py-2.5 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white font-bold text-xs flex items-center gap-2 cursor-pointer shadow-xs self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" />
@@ -479,6 +552,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                   <input
                     type="text"
                     required
+                    data-testid="admin-product-name-input"
                     value={formName}
                     onChange={(e) => setFormName(e.target.value)}
                     className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
@@ -644,6 +718,271 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                 </div>
               </div>
 
+              {/* Color Variants & Dedicated Per-Color Images */}
+              <div
+                className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] space-y-3.5"
+                data-testid="admin-color-variants-section"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Palette className="w-4 h-4 text-[#007AFF]" />
+                    <span className="text-xs font-bold text-[#172033]">
+                      {lang === 'ar'
+                        ? `متغيرات الألوان وصور كل لون (${formColorVariants.length})`
+                        : `Color Variants & Per-Color Images (${formColorVariants.length})`}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-[#64748B] font-medium">
+                    {lang === 'ar'
+                      ? 'صورة مخصصة لكل لون (تعود للصورة الرئيسية عند عدم التحديد)'
+                      : 'Assign an image per color (falls back to main image if empty)'}
+                  </span>
+                </div>
+
+                {/* Quick Titanium / Standard Presets + Custom Color Input */}
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {['Desert Titanium', 'Natural Titanium', 'White Titanium', 'Black Titanium'].map(
+                      (preset) => {
+                        const alreadyAdded = formColorVariants.some(
+                          (row) => row.color.trim().toLowerCase() === preset.toLowerCase()
+                        );
+                        return (
+                          <button
+                            key={preset}
+                            type="button"
+                            onClick={() => handleAddColor(preset)}
+                            disabled={alreadyAdded}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer ${
+                              alreadyAdded
+                                ? 'bg-[#EAF3FF] border-[#007AFF]/40 text-[#007AFF] opacity-60 cursor-default'
+                                : 'bg-white border-[#DCE5F0] text-[#475569] hover:border-[#007AFF] hover:text-[#007AFF]'
+                            }`}
+                          >
+                            + {preset}
+                          </button>
+                        );
+                      }
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      data-testid="admin-new-color-input"
+                      placeholder={
+                        lang === 'ar'
+                          ? 'اسم اللون (مثال: White Titanium, Black, Midnight)'
+                          : 'Add color name (e.g. White Titanium, Burgundy, Silver)'
+                      }
+                      value={newColorInput}
+                      onChange={(e) => setNewColorInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddColor();
+                        }
+                      }}
+                      className="flex-1 bg-white border border-[#DCE5F0] rounded-xl px-3 py-1.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
+                    />
+                    <button
+                      type="button"
+                      data-testid="admin-add-color-btn"
+                      onClick={() => handleAddColor()}
+                      className="px-3.5 py-1.5 bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold rounded-xl cursor-pointer transition-colors flex items-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>{lang === 'ar' ? 'إضافة لون' : 'Add Color'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {colorUploadError && (
+                  <div className="p-2.5 rounded-xl bg-red-50 border border-red-200 text-[#DC2626] text-[11px] font-semibold">
+                    {colorUploadError}
+                  </div>
+                )}
+
+                {formColorVariants.length > 0 ? (
+                  <div className="space-y-2.5 max-h-80 overflow-y-auto pr-0.5">
+                    {formColorVariants.map((row, idx) => {
+                      const previewSrc =
+                        row.image || formImages[0] || DEFAULT_FULL_RES_FALLBACK_IMAGE;
+                      const hasCustomImg = Boolean(row.image && row.image.trim());
+
+                      return (
+                        <div
+                          key={`${row.color}-${idx}`}
+                          data-testid={`admin-color-row-${idx}`}
+                          className="p-3 rounded-xl bg-white border border-[#DCE5F0] space-y-2.5 shadow-2xs"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                            {/* Per-Color Thumbnail Preview */}
+                            <div className="flex items-center gap-2.5 flex-shrink-0">
+                              <div className="w-12 h-12 rounded-xl border border-[#DCE5F0] bg-[#F8FAFC] overflow-hidden flex items-center justify-center p-1">
+                                <img
+                                  src={resolveFullResolutionImageUrl(previewSrc)}
+                                  alt={row.color || `Color ${idx + 1}`}
+                                  className="w-full h-full object-contain"
+                                />
+                              </div>
+                              <div className="sm:hidden">
+                                <span
+                                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    hasCustomImg
+                                      ? 'bg-emerald-50 text-[#16A34A] border border-emerald-200'
+                                      : 'bg-slate-100 text-[#64748B]'
+                                  }`}
+                                >
+                                  {hasCustomImg ? 'Dedicated Image' : 'Uses Main Image'}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Color Label & Per-Color Image URL + Upload */}
+                            <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
+                              <div className="sm:col-span-4">
+                                <input
+                                  type="text"
+                                  data-testid={`admin-color-label-${idx}`}
+                                  value={row.color}
+                                  onChange={(e) =>
+                                    handleUpdateColorVariant(idx, { color: e.target.value })
+                                  }
+                                  placeholder="Color name"
+                                  className="w-full bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2.5 py-1.5 text-xs font-bold text-[#172033] focus:outline-none focus:border-[#007AFF]"
+                                />
+                              </div>
+
+                              <div className="sm:col-span-8 flex items-center gap-1.5">
+                                <input
+                                  type="text"
+                                  data-testid={`admin-color-image-url-${idx}`}
+                                  value={row.image || ''}
+                                  onChange={(e) =>
+                                    handleUpdateColorVariant(idx, {
+                                      image: e.target.value,
+                                    })
+                                  }
+                                  placeholder={
+                                    lang === 'ar'
+                                      ? 'رابط صورة مخصصة لهذا اللون (اختياري)'
+                                      : 'Per-color image URL (optional, uses main image if blank)'
+                                  }
+                                  className="flex-1 bg-[#FFFFFF] border border-[#DCE5F0] rounded-lg px-2.5 py-1.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
+                                />
+
+                                <label
+                                  className="px-2.5 py-1.5 rounded-lg bg-[#EAF3FF] hover:bg-[#007AFF] text-[#007AFF] hover:text-white border border-[#BAE6FD] text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors flex-shrink-0"
+                                  title={lang === 'ar' ? 'رفع صورة لهذا اللون' : 'Upload image for this color'}
+                                >
+                                  <ImagePlus className="w-3.5 h-3.5" />
+                                  <span className="hidden md:inline">
+                                    {lang === 'ar' ? 'رفع' : 'Upload'}
+                                  </span>
+                                  <input
+                                    type="file"
+                                    accept="image/png, image/jpeg, image/webp"
+                                    className="hidden"
+                                    onChange={(e) => handleColorFileUpload(idx, e)}
+                                  />
+                                </label>
+
+                                {hasCustomImg && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleUpdateColorVariant(idx, { image: '' })}
+                                    className="p-1.5 rounded-lg bg-[#F5F8FC] hover:bg-slate-200 border border-[#DCE5F0] text-[#64748B] cursor-pointer"
+                                    title="Clear dedicated image (revert to main image)"
+                                  >
+                                    <RotateCcw className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveColor(idx)}
+                                  data-testid={`admin-remove-color-${idx}`}
+                                  className="p-1.5 rounded-lg bg-[#F5F8FC] hover:bg-red-50 border border-[#DCE5F0] text-[#64748B] hover:text-[#DC2626] cursor-pointer"
+                                  title="Remove color variant"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Optional Per-Color Variant Overrides: Price / SKU / Stock */}
+                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-1 border-t border-[#F1F5F9] items-center">
+                            <span
+                              className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold w-fit ${
+                                hasCustomImg
+                                  ? 'bg-emerald-50 text-[#16A34A] border border-emerald-200'
+                                  : 'bg-slate-100 text-[#64748B]'
+                              }`}
+                            >
+                              {hasCustomImg ? 'Custom Image' : 'Main Fallback'}
+                            </span>
+
+                            <div>
+                              <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                data-testid={`admin-color-price-${idx}`}
+                                value={row.price ?? ''}
+                                onChange={(e) =>
+                                  handleUpdateColorVariant(idx, {
+                                    price: e.target.value === '' ? undefined : Number(e.target.value),
+                                  })
+                                }
+                                placeholder={`Price ($${formPrice})`}
+                                className="w-full bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2 py-1 text-[11px] text-[#172033] font-mono focus:outline-none focus:border-[#007AFF]"
+                              />
+                            </div>
+
+                            <div>
+                              <input
+                                type="text"
+                                data-testid={`admin-color-sku-${idx}`}
+                                value={row.sku ?? ''}
+                                onChange={(e) =>
+                                  handleUpdateColorVariant(idx, { sku: e.target.value })
+                                }
+                                placeholder={`SKU (${formSku || 'auto'})`}
+                                className="w-full bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2 py-1 text-[11px] text-[#172033] font-mono focus:outline-none focus:border-[#007AFF]"
+                              />
+                            </div>
+
+                            <div>
+                              <input
+                                type="number"
+                                min="0"
+                                data-testid={`admin-color-stock-${idx}`}
+                                value={row.stock ?? ''}
+                                onChange={(e) =>
+                                  handleUpdateColorVariant(idx, {
+                                    stock: e.target.value === '' ? undefined : Number(e.target.value),
+                                  })
+                                }
+                                placeholder={`Stock (${formStock})`}
+                                className="w-full bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2 py-1 text-[11px] text-[#172033] font-mono focus:outline-none focus:border-[#007AFF]"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-[#64748B] text-center py-2">
+                    {lang === 'ar'
+                      ? 'لا توجد ألوان مضافة. أضف لوناً لربطه بصورة مخصصة.'
+                      : 'No color variants configured yet. Add a color above to assign its own image.'}
+                  </p>
+                )}
+              </div>
+
               {/* Technical Specifications Custom Builder */}
               <div className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] space-y-3">
                 <span className="text-xs font-bold text-[#172033] block">
@@ -756,6 +1095,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                 </button>
                 <button
                   type="submit"
+                  data-testid="admin-save-product-btn"
                   className="px-6 py-2.5 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-black shadow-xs cursor-pointer"
                 >
                   Save Product

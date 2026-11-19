@@ -42,9 +42,10 @@ export async function optimizeUploadedImage(
   options?: ImageCompressionOptions
 ): Promise<string> {
   const rawDataUrl = await readRawDataUrl(file);
-  const preserveOriginal = options?.preserveOriginal !== false;
+  const maxDataUrlLength = options?.maxDataUrlLength ?? 2_000_000;
+  const preserveOriginal = options?.preserveOriginal ?? (options?.maxDataUrlLength ? false : true);
 
-  // Preserve SVGs and original raster uploads untouched (no downscaling or compression)
+  // Preserve SVGs and explicitly preserved raw uploads untouched
   if (
     preserveOriginal ||
     file.type === 'image/svg+xml' ||
@@ -54,41 +55,92 @@ export async function optimizeUploadedImage(
     return rawDataUrl;
   }
 
-  const maxDimension = options?.maxDimension ?? FOUR_K_MAX_WIDTH;
-  const maxDataUrlLength = options?.maxDataUrlLength ?? 2_000_000;
-  const quality = options?.initialQuality ?? 1.0;
+  const initialMaxDim = options?.maxDimension ?? FOUR_K_MAX_WIDTH;
+  const initialQuality = options?.initialQuality ?? 0.86;
 
   try {
     const img = await loadImage(rawDataUrl);
-    const { width: targetWidth, height: targetHeight } = preserveDimensionsUpToFourK(
-      img.width || maxDimension,
-      img.height || maxDimension,
-      maxDimension,
-      maxDimension
-    );
+    const naturalW = img.width || initialMaxDim;
+    const naturalH = img.height || initialMaxDim;
 
-    if (targetWidth === img.width && targetHeight === img.height) {
+    // Fast path: already fits requested dimension ceiling AND byte budget
+    if (naturalW <= initialMaxDim && naturalH <= initialMaxDim && rawDataUrl.length <= maxDataUrlLength) {
       return rawDataUrl;
     }
 
-    const canvas = document.createElement('canvas');
-    canvas.width = targetWidth;
-    canvas.height = targetHeight;
+    const mime =
+      options?.preferPng
+        ? 'image/png'
+        : file.type === 'image/png' && rawDataUrl.length <= maxDataUrlLength
+        ? 'image/png'
+        : 'image/jpeg';
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return rawDataUrl;
+    const dimensionSteps = [
+      initialMaxDim,
+      Math.min(initialMaxDim, 1280),
+      Math.min(initialMaxDim, 960),
+      Math.min(initialMaxDim, 720),
+    ].filter((dim, idx, arr) => dim > 0 && arr.indexOf(dim) === idx);
 
-    ctx.imageSmoothingEnabled = true;
-    ctx.imageSmoothingQuality = 'high';
-    ctx.clearRect(0, 0, targetWidth, targetHeight);
-    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+    const qualitySteps = mime === 'image/png' ? [1.0] : [initialQuality, 0.78, 0.66, 0.54, 0.42];
 
-    const mime = options?.preferPng ? 'image/png' : file.type || 'image/png';
-    const encoded = mime === 'image/png' ? canvas.toDataURL('image/png') : canvas.toDataURL(mime, quality);
-    if (encoded.length <= maxDataUrlLength) {
-      return encoded;
+    let bestCandidate = rawDataUrl;
+
+    for (const dimLimit of dimensionSteps) {
+      const { width: targetWidth, height: targetHeight } = preserveDimensionsUpToFourK(
+        naturalW,
+        naturalH,
+        dimLimit,
+        dimLimit
+      );
+
+      const canvas = document.createElement('canvas');
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return bestCandidate;
+
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
+      if (mime === 'image/jpeg') {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, targetWidth, targetHeight);
+      } else {
+        ctx.clearRect(0, 0, targetWidth, targetHeight);
+      }
+      ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+      for (const q of qualitySteps) {
+        const encoded =
+          mime === 'image/png'
+            ? canvas.toDataURL('image/png')
+            : canvas.toDataURL(mime, q);
+
+        if (encoded.length < bestCandidate.length) {
+          bestCandidate = encoded;
+        }
+        if (encoded.length <= maxDataUrlLength) {
+          return encoded;
+        }
+      }
     }
-    return rawDataUrl;
+
+    // Final WebP fallback if JPEG still exceeded maxDataUrlLength
+    const { width: finalW, height: finalH } = preserveDimensionsUpToFourK(naturalW, naturalH, 720, 720);
+    const fallbackCanvas = document.createElement('canvas');
+    fallbackCanvas.width = finalW;
+    fallbackCanvas.height = finalH;
+    const fCtx = fallbackCanvas.getContext('2d');
+    if (fCtx) {
+      fCtx.drawImage(img, 0, 0, finalW, finalH);
+      const webpCandidate = fallbackCanvas.toDataURL('image/webp', 0.55);
+      if (webpCandidate.length < bestCandidate.length) {
+        bestCandidate = webpCandidate;
+      }
+    }
+
+    return bestCandidate;
   } catch {
     return rawDataUrl;
   }

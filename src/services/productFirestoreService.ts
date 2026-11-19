@@ -19,6 +19,12 @@ import {
   isFirestoreQuotaExceededError,
   markFirestoreQuotaExceeded,
 } from '../utils/firestoreQuotaHelpers';
+import {
+  enforceFirestoreProductPayloadLimit,
+  isFirestoreDocumentSizeError,
+  sanitizeColorImagesForFirestore,
+  sanitizeProductImagesForFirestore,
+} from '../utils/firestorePayloadHelpers';
 
 const PRODUCTS_COLLECTION = 'products';
 
@@ -109,6 +115,16 @@ function cleanProductForFirestore(product: Product): Record<string, unknown> {
   if (Array.isArray(product.colors)) {
     data.colors = product.colors;
   }
+  if (product.colorImages && typeof product.colorImages === 'object') {
+    const cleanColorImages: Record<string, string> = {};
+    for (const [colorName, imageUrl] of Object.entries(product.colorImages)) {
+      if (typeof imageUrl === 'string' && imageUrl.trim()) {
+        cleanColorImages[colorName.trim()] =
+          resolveFullResolutionImageUrl(imageUrl.trim()) || imageUrl.trim();
+      }
+    }
+    data.colorImages = cleanColorImages;
+  }
   if (Array.isArray(product.specifications)) {
     data.specifications = product.specifications.map((s) => ({
       label: s.label || '',
@@ -123,6 +139,8 @@ function cleanProductForFirestore(product: Product): Record<string, unknown> {
       price: Number(v.price) || 0,
       stock: Number(v.stock) || 0,
       sku: v.sku || '',
+      ...(v.color ? { color: v.color } : {}),
+      ...(v.image ? { image: resolveFullResolutionImageUrl(v.image) || v.image } : {}),
     }));
   }
 
@@ -131,14 +149,22 @@ function cleanProductForFirestore(product: Product): Record<string, unknown> {
 
 /**
  * Saves or updates a product in the cloud Firestore database.
- * Changes become instantly available to anyone opening the link.
+ * Enforces Firestore's < 1 MiB document size ceiling prior to writing so
+ * oversized inline Base64 images never trigger invalid-argument failures.
  */
 export async function persistProductToCloud(product: Product): Promise<void> {
   if (isFirestoreInQuotaCooldown()) {
     return;
   }
   const docRef = doc(db, PRODUCTS_COLLECTION, product.id);
-  const payload = cleanProductForFirestore(product);
+  const cleaned = cleanProductForFirestore(product);
+  const { payload, wasCompacted } = enforceFirestoreProductPayloadLimit(cleaned);
+
+  if (wasCompacted) {
+    console.warn(
+      `Compacted oversized media payload for products/${product.id} before Firestore write to stay below 1 MiB limit.`
+    );
+  }
 
   try {
     await setDoc(docRef, payload, { merge: true });
@@ -149,6 +175,34 @@ export async function persistProductToCloud(product: Product): Promise<void> {
       console.warn('Firestore write deferred due to daily quota limit; product saved locally.');
       return;
     }
+
+    if (isFirestoreDocumentSizeError(error)) {
+      const strippedImages = sanitizeProductImagesForFirestore(payload.images, {
+        stripAllDataUrls: true,
+      }).images;
+      const strippedColorImages = sanitizeColorImagesForFirestore(payload.colorImages, {
+        stripAllDataUrls: true,
+      }).colorImages;
+      const emergencyPayload = enforceFirestoreProductPayloadLimit(
+        { ...payload, images: strippedImages, colorImages: strippedColorImages },
+        450_000
+      ).payload;
+
+      try {
+        await setDoc(docRef, emergencyPayload, { merge: true });
+        console.warn(
+          `Retried products/${product.id} write with stripped inline blobs after Firestore 1 MiB size error.`
+        );
+        return;
+      } catch (retryError) {
+        console.warn(
+          `Firestore size limit fallback preserved local product products/${product.id}:`,
+          retryError
+        );
+        return;
+      }
+    }
+
     handleFirestoreError(error, OperationType.WRITE, `${PRODUCTS_COLLECTION}/${product.id}`);
   }
 }
@@ -249,6 +303,10 @@ export function subscribeToLiveProducts(
           descriptionAr: data.descriptionAr || '',
           specifications: Array.isArray(data.specifications) ? data.specifications : [],
           colors: Array.isArray(data.colors) ? data.colors : [],
+          colorImages:
+            data.colorImages && typeof data.colorImages === 'object'
+              ? sanitizeColorImagesForFirestore(data.colorImages).colorImages
+              : {},
           variants: Array.isArray(data.variants) ? data.variants : [],
           warrantyMonths: Number(data.warrantyMonths) || 12,
           warrantyTerms: data.warrantyTerms || undefined,

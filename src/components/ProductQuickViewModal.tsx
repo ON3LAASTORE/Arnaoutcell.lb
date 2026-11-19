@@ -35,6 +35,8 @@ import { LazyImage } from './LazyImage';
 import { openExternalUrl } from '../utils/navigation';
 import { getProductBadges, hasProductDiscount } from '../utils/productBadgeHelpers';
 import { NotifyMeControl } from './NotifyMeControl';
+import { findVariantForColor, resolveExplicitColorImage } from '../utils/colorVariantHelpers';
+import { resolveFullResolutionImageUrl } from '../utils/imageResolutionHelpers';
 
 export const ProductQuickViewModal: React.FC = () => {
   const {
@@ -54,6 +56,7 @@ export const ProductQuickViewModal: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'overview' | 'specs' | 'delivery' | 'reviews'>('overview');
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [activeColorImageOverride, setActiveColorImageOverride] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [selectedColor, setSelectedColor] = useState<string | undefined>(undefined);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(undefined);
@@ -73,9 +76,26 @@ export const ProductQuickViewModal: React.FC = () => {
   // Reset states when product changes
   useEffect(() => {
     if (quickViewProduct) {
-      setSelectedColor(quickViewProduct.colors?.[0]);
-      setSelectedVariant(quickViewProduct.variants?.[0]);
-      setSelectedImageIndex(0);
+      const initialColor = quickViewProduct.colors?.[0];
+      const initialColorImg = resolveExplicitColorImage(quickViewProduct, initialColor);
+      const nonColorVariant = quickViewProduct.variants?.find(
+        (v) => !v.id.startsWith('var-color-') && !v.color
+      );
+      const initialColorVariant = initialColor
+        ? findVariantForColor(quickViewProduct, initialColor)
+        : undefined;
+
+      setSelectedColor(initialColor);
+      setSelectedVariant(initialColorVariant || nonColorVariant || quickViewProduct.variants?.[0]);
+      setActiveColorImageOverride(initialColorImg || null);
+      if (initialColorImg && Array.isArray(quickViewProduct.images)) {
+        const matchedIdx = quickViewProduct.images.findIndex(
+          (img) => resolveFullResolutionImageUrl(img) === initialColorImg || img === initialColorImg
+        );
+        setSelectedImageIndex(matchedIdx >= 0 ? matchedIdx : 0);
+      } else {
+        setSelectedImageIndex(0);
+      }
       setQuantity(1);
       setActiveTab('overview');
       setRotateX(0);
@@ -125,13 +145,47 @@ export const ProductQuickViewModal: React.FC = () => {
   if (!quickViewProduct) return null;
 
   const product = quickViewProduct;
-  const isOutOfStock = product.stock <= 0;
-  const isLowStock = product.stock > 0 && product.stock <= (product.lowStockThreshold || 3);
+  const activeStock =
+    typeof selectedVariant?.stock === 'number' && Number.isFinite(selectedVariant.stock)
+      ? selectedVariant.stock
+      : product.stock;
+  const activeSku = selectedVariant?.sku || product.sku;
+  const isOutOfStock = activeStock <= 0;
+  const isLowStock = activeStock > 0 && activeStock <= (product.lowStockThreshold || 3);
   const activePrice = selectedVariant ? selectedVariant.price : product.price;
   const discountAmount = product.originalPrice > activePrice ? product.originalPrice - activePrice : 0;
   const images = product.images && product.images.length > 0 ? product.images : [
     'https://images.unsplash.com/photo-1598327105666-5b89351aff97'
   ];
+  const stageImageSrc = activeColorImageOverride || images[selectedImageIndex] || images[0];
+  const nonColorVariants = (product.variants || []).filter(
+    (v) => !v.id.startsWith('var-color-') && !v.color
+  );
+
+  const handleSelectColor = (color: string) => {
+    setSelectedColor(color);
+    const colorImg = resolveExplicitColorImage(product, color);
+    if (colorImg) {
+      const matchedIdx = images.findIndex(
+        (img) => resolveFullResolutionImageUrl(img) === colorImg || img === colorImg
+      );
+      setSelectedImageIndex(matchedIdx >= 0 ? matchedIdx : 0);
+      setActiveColorImageOverride(colorImg);
+    } else {
+      setActiveColorImageOverride(null);
+      setSelectedImageIndex(0);
+    }
+
+    const colorVariant = findVariantForColor(product, color);
+    if (colorVariant) {
+      setSelectedVariant(colorVariant);
+    } else if (
+      selectedVariant &&
+      (selectedVariant.id.startsWith('var-color-') || Boolean(selectedVariant.color))
+    ) {
+      setSelectedVariant(nonColorVariants[0]);
+    }
+  };
 
   // 3D Tilt handlers
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -211,7 +265,7 @@ export const ProductQuickViewModal: React.FC = () => {
     const storeName = storeSettings.storeName || 'ON AlAA STORE';
     const text = `*Inquiry: ${product.name}*\n` +
       `Price: $${activePrice} USD\n` +
-      `SKU: ${product.sku}\n` +
+      `SKU: ${activeSku}\n` +
       (selectedColor ? `Color: ${selectedColor}\n` : '') +
       `\nHello ${storeName}! Is this item available for fast dispatch to my area in Lebanon?`;
     openExternalUrl(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`);
@@ -308,8 +362,8 @@ export const ProductQuickViewModal: React.FC = () => {
                 <Sparkles className="w-3 h-3" />
                 {product.brand} • {product.category}
               </span>
-              <span className="text-[#64748B] dark:text-slate-400 font-mono text-[11px]">
-                SKU: {product.sku}
+              <span className="text-[#64748B] dark:text-slate-400 font-mono text-[11px]" data-testid="quickview-sku-label">
+                SKU: {activeSku}
               </span>
             </div>
 
@@ -395,9 +449,10 @@ export const ProductQuickViewModal: React.FC = () => {
 
                 {/* Main Product Image with 3D Depth */}
                 <LazyImage
-                  src={images[selectedImageIndex] || images[0]}
-                  alt={`${product.name} - ${product.brand} interactive 3D view at ON AlAA STORE Lebanon`}
+                  src={stageImageSrc}
+                  alt={`${product.name}${selectedColor ? ` (${selectedColor})` : ''} - ${product.brand} interactive 3D view at ON AlAA STORE Lebanon`}
                   priority={true}
+                  data-testid="quickview-main-image"
                   wrapperClassName="w-full h-full flex items-center justify-center"
                   style={{
                     transform: 'translateZ(40px)',
@@ -473,10 +528,11 @@ export const ProductQuickViewModal: React.FC = () => {
                       key={idx}
                       onClick={() => {
                         setSelectedImageIndex(idx);
+                        setActiveColorImageOverride(null);
                         handleReset3D();
                       }}
                       className={`relative w-14 h-14 rounded-xl overflow-hidden border-2 transition-all cursor-pointer flex-shrink-0 bg-white dark:bg-[#111A2E] ${
-                        selectedImageIndex === idx
+                        !activeColorImageOverride && selectedImageIndex === idx
                           ? 'border-[#007AFF] shadow-md scale-105'
                           : 'border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF]/50 opacity-70 hover:opacity-100'
                       }`}
@@ -533,12 +589,12 @@ export const ProductQuickViewModal: React.FC = () => {
                     ) : isLowStock ? (
                       <span className="text-amber-600 dark:text-amber-400 flex items-center gap-1">
                         <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
-                        {lang === 'ar' ? `باقي ${product.stock} قطع فقط!` : `Only ${product.stock} left in stock!`}
+                        {lang === 'ar' ? `باقي ${activeStock} قطع فقط!` : `Only ${activeStock} left in stock!`}
                       </span>
                     ) : (
                       <span className="text-[#16A34A] dark:text-emerald-400 flex items-center gap-1">
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        {lang === 'ar' ? `متوفر جاهز للشحن (${product.stock} قطع)` : `In Stock — Ready to Dispatch (${product.stock} units)`}
+                        {lang === 'ar' ? `متوفر جاهز للشحن (${activeStock} قطع)` : `In Stock — Ready to Dispatch (${activeStock} units)`}
                       </span>
                     )}
                   </div>
@@ -657,38 +713,59 @@ export const ProductQuickViewModal: React.FC = () => {
 
                     {/* Color Swatches */}
                     {product.colors && product.colors.length > 0 && (
-                      <div>
+                      <div data-testid="quickview-color-selector">
                         <span className="text-xs font-bold text-[#172033] dark:text-[#F8FAFC] block mb-1.5">
-                          {lang === 'ar' ? 'اختر اللون:' : 'Choose Color:'} {selectedColor && <span className="text-[#007AFF]">({selectedColor})</span>}
+                          {lang === 'ar' ? 'اختر اللون:' : 'Choose Color:'}{' '}
+                          {selectedColor && (
+                            <span className="text-[#007AFF]" data-testid="quickview-active-color-label">
+                              ({selectedColor})
+                            </span>
+                          )}
                         </span>
                         <div className="flex flex-wrap gap-2">
-                          {product.colors.map((color) => (
-                            <button
-                              key={color}
-                              onClick={() => setSelectedColor(color)}
-                              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
-                                selectedColor === color
-                                  ? 'bg-[#007AFF] border-[#007AFF] text-white shadow-xs'
-                                  : 'bg-[#F5F8FC] dark:bg-[#111A2E] border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] hover:border-[#007AFF]'
-                              }`}
-                            >
-                              {color}
-                            </button>
-                          ))}
+                          {product.colors.map((color) => {
+                            const dedicatedColorImage = resolveExplicitColorImage(product, color);
+                            const isColorActive = selectedColor === color;
+                            return (
+                              <button
+                                key={color}
+                                type="button"
+                                aria-pressed={isColorActive}
+                                data-testid={`quickview-color-btn-${color}`}
+                                onClick={() => handleSelectColor(color)}
+                                className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-none cursor-pointer inline-flex items-center gap-1.5 ${
+                                  isColorActive
+                                    ? 'bg-[#007AFF] border-[#007AFF] text-white shadow-xs'
+                                    : 'bg-[#F5F8FC] dark:bg-[#111A2E] border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] hover:border-[#007AFF]'
+                                }`}
+                              >
+                                {dedicatedColorImage && (
+                                  <img
+                                    src={dedicatedColorImage}
+                                    alt={color}
+                                    referrerPolicy="no-referrer"
+                                    className="w-4 h-4 rounded-full object-cover border border-white/60 flex-shrink-0"
+                                  />
+                                )}
+                                <span>{color}</span>
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
 
-                    {/* Variant Selector */}
-                    {product.variants && product.variants.length > 0 && (
+                    {/* Variant Selector (Non-Color Variants e.g. Storage Tiers) */}
+                    {nonColorVariants.length > 0 && (
                       <div>
                         <span className="text-xs font-bold text-[#172033] dark:text-[#F8FAFC] block mb-1.5">
                           {lang === 'ar' ? 'السعة أو الخيار:' : 'Storage / Variant:'}
                         </span>
                         <div className="flex flex-wrap gap-2">
-                          {product.variants.map((v) => (
+                          {nonColorVariants.map((v) => (
                             <button
                               key={v.id}
+                              type="button"
                               onClick={() => setSelectedVariant(v)}
                               className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                                 selectedVariant?.id === v.id
@@ -829,7 +906,7 @@ export const ProductQuickViewModal: React.FC = () => {
                     {quantity}
                   </span>
                   <button
-                    onClick={() => setQuantity((q) => Math.min(product.stock, q + 1))}
+                    onClick={() => setQuantity((q) => Math.min(Math.max(1, activeStock), q + 1))}
                     className="w-8 h-8 rounded-lg text-sm font-bold text-[#172033] dark:text-[#F8FAFC] hover:bg-white dark:hover:bg-[#1E293B] transition-colors flex items-center justify-center cursor-pointer"
                   >
                     +

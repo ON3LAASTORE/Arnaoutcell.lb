@@ -45,6 +45,10 @@ import {
 } from '../utils/recentlyViewedHelpers';
 import { safeStorageSetItem } from '../utils/storageQuotaHelpers';
 import {
+  parseStoredWishlistIds,
+  toggleWishlistProductId,
+} from '../utils/wishlistHelpers';
+import {
   LANGUAGE_STORAGE_KEY,
   DIRECTION_TRANSITION_DURATION_MS,
   applyDocumentLanguageDirection,
@@ -99,6 +103,8 @@ interface ShopContextType {
   isInCompare: (productId: string) => boolean;
   isCompareModalOpen: boolean;
   setIsCompareModalOpen: (open: boolean) => void;
+  isQrScannerOpen: boolean;
+  setIsQrScannerOpen: (open: boolean) => void;
 
   // Navigation & Filtering
   currentView: string;
@@ -213,8 +219,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [wishlist, setWishlist] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        const raw = localStorage.getItem('arnaout_wishlist');
-        return raw ? JSON.parse(raw) : [];
+        return parseStoredWishlistIds(localStorage.getItem('arnaout_wishlist'));
       } catch {
         return [];
       }
@@ -248,6 +253,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return [];
   });
   const [isCompareModalOpen, setIsCompareModalOpen] = useState<boolean>(false);
+  const [isQrScannerOpen, setIsQrScannerOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -321,6 +327,19 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initStorage();
     refreshData();
     void refreshCategories();
+
+    if (typeof window !== 'undefined') {
+      try {
+        const params = new URLSearchParams(window.location.search);
+        const deepLinkedProductId = params.get('product');
+        if (deepLinkedProductId && deepLinkedProductId.trim()) {
+          setSelectedProductId(deepLinkedProductId.trim());
+          setCurrentView('product-detail');
+        }
+      } catch {
+        // Ignore malformed URL query
+      }
+    }
 
     // Attach real-time cloud listeners for live updates across all devices
     const unsubscribeProducts = subscribeToLiveProducts(
@@ -540,9 +559,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, 0);
 
   const toggleWishlist = (productId: string) => {
-    setWishlist((prev) =>
-      prev.includes(productId) ? prev.filter((id) => id !== productId) : [...prev, productId]
-    );
+    setWishlist((prev) => toggleWishlistProductId(prev, productId));
   };
 
   const isInWishlist = (productId: string) => wishlist.includes(productId);
@@ -666,6 +683,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isInCompare,
         isCompareModalOpen,
         setIsCompareModalOpen,
+        isQrScannerOpen,
+        setIsQrScannerOpen,
         currentView,
         setCurrentView,
         selectedProductId,

@@ -16,6 +16,7 @@ import {
   Smartphone,
   SlidersHorizontal,
   Mic,
+  QrCode,
 } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 import {
@@ -57,6 +58,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
     viewProductDetail,
     setSearchQuery,
     setCurrentView,
+    setIsQrScannerOpen,
   } = useShop();
 
   const isArabic = lang === 'ar';
@@ -403,11 +405,25 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                   onOpenQuickSearch();
                 }}
                 aria-label={isArabic ? 'البحث الصوتي' : 'Voice search'}
-                className="px-2.5 bg-white text-slate-400 hover:text-[#00BAF2] transition-colors cursor-pointer"
+                className="px-2 bg-white text-slate-400 hover:text-[#00BAF2] transition-colors cursor-pointer"
               >
                 <Mic className="w-4 h-4" />
               </button>
             )}
+            <button
+              type="button"
+              onClick={() => {
+                setIsOpen(false);
+                if (onCloseMobileMenu) onCloseMobileMenu();
+                setIsQrScannerOpen(true);
+              }}
+              data-testid="mobile-global-search-qr-btn"
+              aria-label={isArabic ? 'مسح رمز QR للمنتج' : 'Scan Product QR Code'}
+              title={isArabic ? 'مسح رمز QR للمنتج' : 'Scan Product QR Code'}
+              className="px-2.5 bg-white text-slate-500 hover:text-[#00BAF2] transition-colors cursor-pointer"
+            >
+              <QrCode className="w-4 h-4" />
+            </button>
             <button
               type="submit"
               data-testid="mobile-global-search-submit"
@@ -472,10 +488,10 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                 data-testid="global-search-input"
                 className={`w-full h-full px-4 ${
                   query && onOpenQuickSearch
-                    ? 'pr-16 rtl:pl-16 rtl:pr-4'
+                    ? 'pr-24 rtl:pl-24 rtl:pr-4'
                     : query || onOpenQuickSearch
-                    ? 'pr-10 rtl:pl-10 rtl:pr-4'
-                    : 'pr-4'
+                    ? 'pr-18 rtl:pl-18 rtl:pr-4'
+                    : 'pr-10 rtl:pl-10 rtl:pr-4'
                 } bg-white text-[#0F172A] placeholder-slate-400 text-sm focus:outline-none [&::-webkit-search-cancel-button]:hidden`}
               />
 
@@ -487,8 +503,8 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                   aria-label={isArabic ? 'مسح البحث' : 'Clear search'}
                   className={`absolute ${
                     onOpenQuickSearch
-                      ? 'right-9 rtl:right-auto rtl:left-9'
-                      : 'right-2 rtl:right-auto rtl:left-2'
+                      ? 'right-17 rtl:right-auto rtl:left-17'
+                      : 'right-10 rtl:right-auto rtl:left-10'
                   } p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer`}
                 >
                   <X className="w-3.5 h-3.5" />
@@ -504,11 +520,25 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                   }}
                   aria-label={isArabic ? 'البحث الصوتي والسريع' : 'Open voice and quick search'}
                   title={isArabic ? 'البحث الصوتي والسريع' : 'Voice & Quick Search'}
-                  className="absolute right-2 rtl:right-auto rtl:left-2 p-1.5 rounded-md text-slate-400 hover:text-[#00BAF2] hover:bg-slate-100 transition-colors cursor-pointer"
+                  className="absolute right-9 rtl:right-auto rtl:left-9 p-1.5 rounded-md text-slate-400 hover:text-[#00BAF2] hover:bg-slate-100 transition-colors cursor-pointer"
                 >
                   <Mic className="w-4 h-4" />
                 </button>
               )}
+
+              <button
+                type="button"
+                onClick={() => {
+                  setIsOpen(false);
+                  setIsQrScannerOpen(true);
+                }}
+                data-testid="global-search-qr-btn"
+                aria-label={isArabic ? 'مسح رمز QR للمنتج' : 'Scan Product QR Code'}
+                title={isArabic ? 'مسح رمز QR للمنتج' : 'Scan Product QR Code'}
+                className="absolute right-2 rtl:right-auto rtl:left-2 p-1.5 rounded-md text-slate-500 hover:text-[#00BAF2] hover:bg-slate-100 transition-colors cursor-pointer"
+              >
+                <QrCode className="w-4 h-4" />
+              </button>
             </div>
 
             {/* Right Action Button: Cyan/Teal Search Button */}

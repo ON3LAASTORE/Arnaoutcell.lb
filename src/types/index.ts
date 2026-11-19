@@ -16,6 +16,8 @@ export interface ProductVariant {
   price: number;
   stock: number;
   sku: string;
+  color?: string;
+  image?: string;
 }
 
 export interface ProductSpec {
@@ -54,6 +56,7 @@ export interface Product {
   specifications: ProductSpec[];
   variants?: ProductVariant[];
   colors?: string[];
+  colorImages?: Record<string, string>;
   warrantyMonths: number;
   warrantyTerms?: string;
   isSpecialOffer?: boolean;
@@ -64,6 +67,7 @@ export interface Product {
   isPublished: boolean;
   rating: number;
   reviewCount: number;
+  soldCount?: number;
   reviews?: Review[];
   createdAt: string;
 }

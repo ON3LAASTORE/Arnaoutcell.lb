@@ -20,6 +20,7 @@ import {
   SlidersHorizontal,
   Mic,
   Square,
+  QrCode,
 } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 import {
@@ -67,6 +68,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
     viewProductDetail,
     setSearchQuery,
     setCurrentView,
+    setIsQrScannerOpen,
   } = useShop();
 
   const isArabic = lang === 'ar';
@@ -604,6 +606,21 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
               ) : (
                 <Mic className="w-4 h-4 relative z-10" />
               )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                stopVoiceRecognition(true);
+                onClose();
+                setIsQrScannerOpen(true);
+              }}
+              data-testid="quick-search-qr-btn"
+              aria-label={isArabic ? 'مسح رمز QR للمنتج' : 'Scan Product QR Code'}
+              title={isArabic ? 'مسح رمز QR للمنتج' : 'Scan Product QR Code'}
+              className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl border bg-white dark:bg-[#162038] border-[#DCE5F0] dark:border-[#1E293B] text-[#475569] dark:text-slate-300 hover:text-[#0070F3] dark:hover:text-[#38BDF8] hover:border-[#0070F3] transition-all cursor-pointer shrink-0"
+            >
+              <QrCode className="w-4 h-4" />
             </button>
 
             <button

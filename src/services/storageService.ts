@@ -928,15 +928,17 @@ export function saveAnnouncementBar(bar: StoreSettings['announcementBar']): void
   }).catch(() => {});
 }
 
-// File / Image reading helper preserving original full 4K resolution without downscaling or lossy compression
+// File / Image reading helper with smart compression to keep Firestore product docs well under 1 MiB
 export function readFileAsDataUrl(file: File): Promise<string> {
   // 10MB limit check
   if (file.size > 10 * 1024 * 1024) {
     return Promise.reject(new Error('File exceeds maximum size of 10MB'));
   }
   return optimizeUploadedImage(file, {
-    maxDimension: 3840,
-    preserveOriginal: true,
+    maxDimension: 1400,
+    maxDataUrlLength: 180_000,
+    initialQuality: 0.85,
+    preserveOriginal: false,
   });
 }
 

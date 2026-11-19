@@ -564,26 +564,26 @@
   @media (min-width: 768px) {
     .oaa-product-grid {
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 20px;
+      gap: 18px;
     }
   }
 
   @media (min-width: 1024px) {
     .oaa-product-grid {
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      gap: 20px;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 18px;
     }
   }
 
   .oaa-product-card {
     background-color: var(--card-bg);
-    border: 1px solid var(--card-border);
-    border-radius: var(--card-radius);
-    box-shadow: var(--card-shadow);
+    border: 1px solid #EAEEF4;
+    border-radius: 14px;
+    box-shadow: 0 2px 12px rgba(15, 23, 42, 0.045);
     display: flex;
     flex-direction: column;
     height: 100%;
-    padding: 10px;
+    padding: 0;
     position: relative;
     overflow: hidden;
     cursor: pointer;
@@ -593,13 +593,17 @@
       border-color 0.25s ease;
   }
 
-  @media (min-width: 640px) {
-    .oaa-product-card {
-      padding: 14px;
-    }
+  .dark .oaa-product-card {
+    border-color: var(--card-border);
+    box-shadow: var(--card-shadow);
   }
 
   .oaa-product-card:hover {
+    border-color: #CBD5E1;
+    box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+  }
+
+  .dark .oaa-product-card:hover {
     border-color: var(--card-border-hover);
     box-shadow: var(--card-shadow-hover);
   }
@@ -608,23 +612,41 @@
     .oaa-product-card--column {
       flex-direction: row;
       align-items: stretch;
-      gap: 16px;
+      gap: 0;
     }
 
-    .oaa-product-card--column .oaa-card-media {
-      width: 210px;
+    .oaa-product-card--column .oaa-card-media-wrap {
+      width: 220px;
       flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      border-right: 1px solid #F1F5F9;
     }
+
+    .dark .oaa-product-card--column .oaa-card-media-wrap {
+      border-right-color: #1E293B;
+    }
+
+    [dir="rtl"] .oaa-product-card--column .oaa-card-media-wrap,
+    .rtl .oaa-product-card--column .oaa-card-media-wrap {
+      border-right: none;
+      border-left: 1px solid #F1F5F9;
+    }
+  }
+
+  .oaa-card-media-wrap {
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    width: 100%;
   }
 
   .oaa-card-media {
     position: relative;
     width: 100%;
-    aspect-ratio: 1 / 1;
-    border-radius: 12px;
-    border: 1px solid var(--card-media-border);
+    aspect-ratio: 1 / 0.96;
     background-color: var(--card-media-bg);
-    padding: 14px;
+    padding: 16px;
     overflow: hidden;
     display: flex;
     align-items: center;
@@ -647,99 +669,72 @@
     transform: scale(1.045);
   }
 
-  /* Top-left stacked promotional pills */
-  .oaa-badge-stack {
+  /* Full-width Light Yellow-Gold Offer Banner directly below product image */
+  .oaa-offer-banner {
+    width: 100%;
+    background: linear-gradient(90deg, #FEF08A 0%, #FDE047 100%);
+    color: #111827;
+    font-size: 11px;
+    font-weight: 800;
+    line-height: 1.2;
+    letter-spacing: 0.045em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 5.5px 10px;
+    border-top: 1px solid rgba(234, 179, 8, 0.25);
+    border-bottom: 1px solid rgba(234, 179, 8, 0.35);
+    flex-shrink: 0;
+  }
+
+  .dark .oaa-offer-banner {
+    background: linear-gradient(90deg, #FACC15 0%, #EAB308 100%);
+    color: #0F172A;
+    border-top-color: rgba(250, 204, 21, 0.35);
+    border-bottom-color: rgba(234, 179, 8, 0.5);
+  }
+
+  .oaa-media-hairline {
+    width: 100%;
+    height: 1px;
+    background-color: #F1F5F9;
+    flex-shrink: 0;
+  }
+
+  .dark .oaa-media-hairline {
+    background-color: #1E293B;
+  }
+
+  .oaa-stock-corner-pill {
     position: absolute;
     top: 10px;
     left: 10px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 4px;
     z-index: 12;
+    padding: 3px 8px;
+    border-radius: 4px;
+    background-color: rgba(15, 23, 42, 0.86);
+    color: #FFFFFF;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
     pointer-events: none;
   }
 
-  [dir="rtl"] .oaa-badge-stack,
-  .rtl .oaa-badge-stack {
-    left: auto;
-    right: 10px;
-    align-items: flex-end;
-  }
-
-  .oaa-pill-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    padding: 3px 8px;
-    border-radius: 9999px;
-    font-size: 10px;
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    color: #FFFFFF;
-    white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.16);
-  }
-
-  .oaa-pill-badge--red {
-    background: var(--badge-red);
-  }
-
-  .oaa-pill-badge--blue {
-    background: var(--badge-blue);
-  }
-
-  .oaa-pill-badge--gold {
-    background: var(--badge-gold);
-  }
-
-  .oaa-pill-badge--amber {
-    background: linear-gradient(135deg, #D97706, #B45309);
-  }
-
-  .oaa-pill-badge--slate {
-    background: linear-gradient(135deg, #475569, #1E293B);
-  }
-
-  /* Bottom-left PRICE DROP pill */
-  .oaa-price-drop {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    z-index: 12;
-    pointer-events: none;
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    padding: 3px 8px;
-    border-radius: 9999px;
-    background: var(--badge-blue);
-    color: #FFFFFF;
-    font-size: 10px;
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: 0.03em;
-    text-transform: uppercase;
-    box-shadow: 0 2px 8px rgba(2, 132, 199, 0.28);
-  }
-
-  [dir="rtl"] .oaa-price-drop,
-  .rtl .oaa-price-drop {
+  [dir="rtl"] .oaa-stock-corner-pill,
+  .rtl .oaa-stock-corner-pill {
     left: auto;
     right: 10px;
   }
 
-  /* Top-right 32x32 rounded-square utility action stack */
+  /* Top-right 30x30 utility action stack */
   .oaa-action-stack {
     position: absolute;
     top: 10px;
     right: 10px;
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    z-index: 15;
+    gap: 5px;
+    z-index: 25;
+    transform: translateZ(28px);
   }
 
   [dir="rtl"] .oaa-action-stack,
@@ -749,23 +744,23 @@
   }
 
   .oaa-action-btn {
-    width: 32px;
-    height: 32px;
+    width: 30px;
+    height: 30px;
     border-radius: 8px;
-    background-color: rgba(255, 255, 255, 0.96);
+    background-color: rgba(255, 255, 255, 0.94);
     border: 1px solid #E2E8F0;
-    color: #475569;
+    color: #64748B;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 2px 6px rgba(15, 23, 42, 0.06);
     transition: transform 0.18s ease, box-shadow 0.18s ease, color 0.18s ease, background-color 0.18s ease, border-color 0.18s ease;
   }
 
   .oaa-action-btn:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 10px rgba(0, 112, 243, 0.16);
+    box-shadow: 0 4px 10px rgba(0, 112, 243, 0.15);
     color: var(--card-cta-primary);
     border-color: #93C5FD;
   }
@@ -802,50 +797,94 @@
     color: #FFFFFF;
   }
 
+  .oaa-compare-wrap {
+    position: relative;
+    display: inline-flex;
+  }
+
+  .oaa-compare-tooltip {
+    position: absolute;
+    top: 50%;
+    right: calc(100% + 8px);
+    transform: translateY(-50%) scale(0.95);
+    padding: 5px 10px;
+    border-radius: 7px;
+    background-color: #0F172A;
+    color: #FFFFFF;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.2;
+    white-space: nowrap;
+    pointer-events: none;
+    box-shadow: 0 6px 16px rgba(15, 23, 42, 0.28);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.14s ease, transform 0.14s ease, visibility 0.14s ease;
+    z-index: 35;
+  }
+
+  .oaa-compare-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    transform: translateY(-50%);
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent transparent #0F172A;
+  }
+
+  [dir="rtl"] .oaa-compare-tooltip,
+  .rtl .oaa-compare-tooltip {
+    right: auto;
+    left: calc(100% + 8px);
+  }
+
+  [dir="rtl"] .oaa-compare-tooltip::after,
+  .rtl .oaa-compare-tooltip::after {
+    left: auto;
+    right: 100%;
+    border-color: transparent #0F172A transparent transparent;
+  }
+
+  .dark .oaa-compare-tooltip {
+    background-color: #1E293B;
+    border-color: rgba(56, 189, 248, 0.32);
+    color: #F8FAFC;
+  }
+
+  .dark .oaa-compare-tooltip::after {
+    border-color: transparent transparent transparent #1E293B;
+  }
+
+  [dir="rtl"] .dark .oaa-compare-tooltip::after,
+  .rtl .dark .oaa-compare-tooltip::after {
+    border-color: transparent #1E293B transparent transparent;
+  }
+
+  .oaa-compare-wrap:hover .oaa-compare-tooltip,
+  .oaa-compare-wrap:focus-within .oaa-compare-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(-50%) scale(1) translateZ(10px);
+  }
+
   /* Equal-height card content body */
   .oaa-card-body {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
-    padding-top: 12px;
+    padding: 12px 14px 14px;
     min-width: 0;
   }
 
-  .oaa-meta-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    margin-bottom: 6px;
-  }
-
-  .oaa-brand {
-    font-size: 11px;
-    font-weight: 800;
-    color: var(--card-brand-color);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .oaa-stock-status {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
-    font-size: 11px;
-    font-weight: 700;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
   .oaa-title {
-    font-size: 15px;
-    font-weight: 700;
-    line-height: 1.35;
-    min-height: 2.7em;
-    color: var(--card-title-color);
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1.4;
+    min-height: 2.8em;
+    color: #1E293B;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
@@ -853,231 +892,242 @@
     margin: 0;
   }
 
-  .oaa-rating-row {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-top: 8px;
+  .dark .oaa-title {
+    color: #F1F5F9;
+  }
+
+  .oaa-title-brand {
+    font-weight: 700;
+    color: #0F172A;
+    text-transform: uppercase;
     font-size: 12px;
-    color: var(--card-muted-color);
-    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.015em;
   }
 
-  .oaa-card-footer {
-    margin-top: auto;
-    padding-top: 12px;
+  .dark .oaa-title-brand {
+    color: #CBD5E1;
   }
 
-  .oaa-divider {
-    height: 1px;
-    width: 100%;
-    background-color: var(--card-media-border);
-    margin-bottom: 10px;
-  }
-
-  .oaa-pricing-block {
+  /* Split Pricing (Left) + Rating/Sold Social Proof (Right) */
+  .oaa-pricing-split {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
     gap: 8px;
-    margin-bottom: 12px;
+    margin-top: 10px;
     font-variant-numeric: tabular-nums;
   }
 
-  .oaa-price-row {
+  .oaa-price-col {
     display: flex;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 6px;
+    flex-direction: column;
+    align-items: flex-start;
+    min-width: 0;
   }
 
-  .oaa-sale-price {
-    font-size: 20px;
+  .oaa-price-top-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .oaa-sale-price-red {
+    font-size: 18px;
     font-weight: 800;
     line-height: 1.05;
-    color: var(--card-cta-primary);
+    color: #DC2626;
     letter-spacing: -0.02em;
   }
 
   @media (min-width: 640px) {
-    .oaa-sale-price {
-      font-size: 24px;
+    .oaa-sale-price-red {
+      font-size: 19px;
     }
   }
 
-  .dark .oaa-sale-price {
-    color: #38BDF8;
+  .dark .oaa-sale-price-red {
+    color: #F87171;
   }
 
-  .oaa-regular-price {
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--card-strike-color);
+  .oaa-discount-tag {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 5px;
+    border-radius: 3px;
+    border: 1px solid #DC2626;
+    background-color: rgba(220, 38, 38, 0.04);
+    color: #DC2626;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .dark .oaa-discount-tag {
+    border-color: #F87171;
+    background-color: rgba(248, 113, 113, 0.1);
+    color: #F87171;
+  }
+
+  .oaa-regular-price-strike {
+    margin-top: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: #94A3B8;
     text-decoration: line-through;
   }
 
-  .oaa-savings-line {
-    display: block;
-    margin-top: 2px;
-    font-size: 11px;
-    font-weight: 700;
-    color: var(--stock-green);
+  .dark .oaa-regular-price-strike {
+    color: #64748B;
   }
 
-  .dark .oaa-savings-line {
-    color: #34D399;
-  }
-
-  .oaa-delivery-tag {
-    font-size: 10px;
-    font-weight: 700;
-    color: var(--card-muted-color);
-    text-transform: uppercase;
-    letter-spacing: 0.03em;
+  .oaa-proof-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
     text-align: right;
-    white-space: nowrap;
+    flex-shrink: 0;
   }
 
-  [dir="rtl"] .oaa-delivery-tag,
-  .rtl .oaa-delivery-tag {
+  [dir="rtl"] .oaa-proof-col,
+  .rtl .oaa-proof-col {
+    align-items: flex-start;
     text-align: left;
   }
 
-  /* Two-tier conversion CTA stack */
-  .oaa-cta-row {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .oaa-proof-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #1E293B;
+    line-height: 1.2;
+  }
+
+  .dark .oaa-proof-rating {
+    color: #E2E8F0;
+  }
+
+  .oaa-proof-reviews {
+    font-weight: 500;
+    color: #94A3B8;
+  }
+
+  .oaa-proof-sold {
+    margin-top: 2px;
+    font-size: 10.5px;
+    font-weight: 500;
+    line-height: 1.2;
+    color: #94A3B8;
+    white-space: nowrap;
+  }
+
+  .dark .oaa-proof-sold {
+    color: #64748B;
+  }
+
+  /* Bottom Footer Row: Red "express" Badge (Left) + Faint Square Cart Button (Right) */
+  .oaa-card-footer-bar {
+    margin-top: auto;
+    padding-top: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 8px;
   }
 
-  .oaa-btn-pack {
-    height: 38px;
-    padding: 0 8px;
-    border-radius: 10px;
-    background-color: var(--pack-btn-bg);
-    border: 1px solid var(--pack-btn-border);
-    color: var(--pack-btn-text);
-    font-size: 12px;
-    font-weight: 700;
+  .oaa-express-badge {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 5px;
-    white-space: nowrap;
-    cursor: pointer;
-    transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.14s ease;
-  }
-
-  .oaa-btn-pack:hover:not(:disabled) {
-    background-color: var(--light-blue-accent);
-    border-color: var(--card-cta-primary);
-  }
-
-  .oaa-btn-direct {
-    height: 38px;
-    padding: 0 8px;
-    border-radius: 10px;
-    background: linear-gradient(135deg, var(--card-cta-primary), var(--primary-blue-dark));
+    gap: 4px;
+    padding: 3px 7px;
+    border-radius: 4px;
+    background-color: #DC2626;
     color: #FFFFFF;
-    font-size: 12px;
-    font-weight: 700;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    white-space: nowrap;
-    cursor: pointer;
-    box-shadow: 0 4px 12px rgba(0, 112, 243, 0.24);
-    transition: filter 0.18s ease, box-shadow 0.18s ease, transform 0.14s ease;
-  }
-
-  .oaa-btn-direct:hover:not(:disabled) {
-    filter: brightness(1.06);
-    box-shadow: 0 6px 16px rgba(0, 112, 243, 0.34);
-  }
-
-  .oaa-btn-whatsapp {
-    width: 100%;
-    height: 38px;
-    margin-top: 8px;
-    padding: 0 10px;
-    border-radius: 10px;
-    background-color: var(--whatsapp-bg);
-    border: 1px solid var(--whatsapp-border);
-    color: var(--whatsapp-text);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 800;
+    font-style: italic;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(220, 38, 38, 0.22);
+  }
+
+  .oaa-cart-square-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background-color: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    color: #334155;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    white-space: nowrap;
     cursor: pointer;
-    transition: filter 0.18s ease, box-shadow 0.18s ease, transform 0.14s ease;
+    flex-shrink: 0;
+    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.12s ease;
   }
 
-  .oaa-btn-whatsapp:hover {
-    filter: brightness(0.97);
-    box-shadow: 0 4px 12px rgba(22, 163, 74, 0.16);
+  .oaa-cart-square-btn:hover:not(:disabled) {
+    background-color: #EAF3FF;
+    border-color: #93C5FD;
+    color: #0070F3;
   }
 
-  .oaa-btn-pack:active:not(:disabled),
-  .oaa-btn-direct:active:not(:disabled),
-  .oaa-btn-whatsapp:active {
-    transform: scale(0.97);
+  .oaa-cart-square-btn:active:not(:disabled) {
+    transform: scale(0.95);
   }
 
-  .oaa-btn-pack:disabled,
-  .oaa-btn-direct:disabled {
-    opacity: 0.52;
+  .oaa-cart-square-btn:disabled {
+    opacity: 0.48;
     cursor: not-allowed;
-    box-shadow: none;
   }
 
-  /* Compact 2-column mobile tuning (< 640px) — keeps full labels unclipped and crisp framing */
+  .oaa-cart-square-btn--added {
+    background-color: #16A34A;
+    border-color: #16A34A;
+    color: #FFFFFF;
+  }
+
+  .oaa-cart-square-btn--added:hover:not(:disabled) {
+    background-color: #15803D;
+    border-color: #15803D;
+    color: #FFFFFF;
+  }
+
+  .dark .oaa-cart-square-btn {
+    background-color: #111A2E;
+    border-color: #1E293B;
+    color: #CBD5E1;
+  }
+
+  .dark .oaa-cart-square-btn:hover:not(:disabled) {
+    background-color: rgba(0, 112, 243, 0.18);
+    border-color: #38BDF8;
+    color: #38BDF8;
+  }
+
+  /* Compact 2-column mobile tuning (< 640px) */
   @media (max-width: 639px) {
     .oaa-product-grid {
       gap: 10px;
     }
 
     .oaa-product-card {
-      padding: 8px;
-      border-radius: 14px;
+      border-radius: 12px;
     }
 
     .oaa-card-media {
-      padding: 8px;
-      border-radius: 10px;
+      padding: 10px;
     }
 
-    .oaa-badge-stack {
-      top: 6px;
-      left: 6px;
-      gap: 3px;
-    }
-
-    [dir="rtl"] .oaa-badge-stack,
-    .rtl .oaa-badge-stack {
-      left: auto;
-      right: 6px;
-    }
-
-    .oaa-pill-badge,
-    .oaa-price-drop {
-      padding: 2px 6px;
-      font-size: 9px;
-    }
-
-    .oaa-price-drop {
-      bottom: 6px;
-      left: 6px;
-    }
-
-    [dir="rtl"] .oaa-price-drop,
-    .rtl .oaa-price-drop {
-      left: auto;
-      right: 6px;
+    .oaa-offer-banner {
+      font-size: 10px;
+      padding: 4.5px 8px;
     }
 
     .oaa-action-stack {
@@ -1104,72 +1154,39 @@
     }
 
     .oaa-card-body {
-      padding-top: 9px;
-    }
-
-    .oaa-brand,
-    .oaa-stock-status {
-      font-size: 10px;
+      padding: 10px 10px 11px;
     }
 
     .oaa-title {
-      font-size: 13.5px;
-      min-height: 2.7em;
+      font-size: 12.5px;
+      min-height: 2.75em;
     }
 
-    .oaa-rating-row {
-      font-size: 11px;
-      gap: 6px;
-      margin-top: 6px;
+    .oaa-sale-price-red {
+      font-size: 16px;
     }
 
-    .oaa-pricing-block {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 4px;
-      margin-bottom: 10px;
-    }
-
-    .oaa-savings-line {
-      white-space: nowrap;
-      font-size: 10.5px;
-    }
-
-    .oaa-delivery-tag {
+    .oaa-discount-tag {
       font-size: 9.5px;
-      text-align: inherit;
+      padding: 1.5px 4px;
     }
 
-    .oaa-cta-row {
-      gap: 6px;
+    .oaa-proof-rating {
+      font-size: 10px;
     }
 
-    .oaa-btn-pack,
-    .oaa-btn-direct {
-      height: 36px;
-      padding: 0 5px;
-      font-size: 11px;
-      gap: 3px;
+    .oaa-proof-sold {
+      font-size: 9.5px;
     }
 
-    .oaa-btn-whatsapp {
-      height: 36px;
-      margin-top: 6px;
-      padding: 0 6px;
-      font-size: 11px;
-      gap: 4px;
-    }
-  }
-
-  @media (max-width: 459px) {
-    .oaa-cta-row {
-      grid-template-columns: minmax(0, 0.84fr) minmax(0, 1.16fr);
+    .oaa-express-badge {
+      font-size: 10px;
+      padding: 2.5px 6px;
     }
 
-    .oaa-btn-pack,
-    .oaa-btn-direct {
-      font-size: 10.5px;
-      padding: 0 3px;
+    .oaa-cart-square-btn {
+      width: 30px;
+      height: 30px;
     }
   }
 

@@ -219,6 +219,14 @@
           "type": "array",
           "description": "Available color variants"
         },
+        "colorImages": {
+          "type": "object",
+          "description": "Per-color dedicated product image URLs keyed by color label"
+        },
+        "variants": {
+          "type": "array",
+          "description": "Optional variant configurations with per-variant pricing, SKU, stock, color, and image"
+        },
         "rating": {
           "type": "number",
           "description": "Customer average rating score (1-5)"

@@ -1,5 +1,342 @@
 [
   {
+    "id": "audit-1795102986589-5xc8f5",
+    "action": "product_created",
+    "titleEn": "Added new product: Titanium Qv Check",
+    "titleAr": "تمت إضافة منتج جديد: Titanium Qv Check",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Titanium Qv Check (prod-1795102986586)",
+    "details": "Brand: Apple • Category: Phones • Price: $89 • Stock: 15",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@alaastore.lb"
+    },
+    "source": "client",
+    "timestamp": "2026-11-19T15:43:06.588Z"
+  },
+  {
+    "id": "audit-1795102895621-jakxm9",
+    "action": "product_created",
+    "titleEn": "Added new product: Apple iPhone 16 Pro Max Titanium Showcase",
+    "titleAr": "تمت إضافة منتج جديد: Apple iPhone 16 Pro Max Titanium Showcase",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Apple iPhone 16 Pro Max Titanium Showcase (prod-1795102895619)",
+    "details": "Brand: Apple • Category: Phones • Price: $89 • Stock: 15",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@alaastore.lb"
+    },
+    "source": "client",
+    "timestamp": "2026-11-19T15:41:35.621Z"
+  },
+  {
+    "id": "audit-1795102891216-js1w9u",
+    "action": "product_created",
+    "titleEn": "Added new product: ACEFAST R4 MIC WIRELESS",
+    "titleAr": "تمت إضافة منتج جديد: ACEFAST R4 MIC WIRELESS",
+    "category": "catalog",
+    "severity": "info",
+    "target": "ACEFAST R4 MIC WIRELESS (prod-1795102890950)",
+    "details": "Brand: ACEFAST • Category: Phones • Price: $33 • Stock: 15",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-19T15:41:31.216Z"
+  },
+  {
+    "id": "audit-1795102822415-n0xg9c",
+    "action": "product_created",
+    "titleEn": "Added new product: Apple iPhone 16 Pro Max Titanium Showcase",
+    "titleAr": "تمت إضافة منتج جديد: Apple iPhone 16 Pro Max Titanium Showcase",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Apple iPhone 16 Pro Max Titanium Showcase (prod-1795102822412)",
+    "details": "Brand: Apple • Category: Phones • Price: $89 • Stock: 15",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@alaastore.lb"
+    },
+    "source": "client",
+    "timestamp": "2026-11-19T15:40:22.415Z"
+  },
+  {
+    "id": "audit-1795102705929-la18kt",
+    "action": "product_created",
+    "titleEn": "Added new product: Apple iPhone 16 Pro Max Titanium Showcase",
+    "titleAr": "تمت إضافة منتج جديد: Apple iPhone 16 Pro Max Titanium Showcase",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Apple iPhone 16 Pro Max Titanium Showcase (prod-1795102705926)",
+    "details": "Brand: Apple • Category: Phones • Price: $89 • Stock: 15",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@alaastore.lb"
+    },
+    "source": "client",
+    "timestamp": "2026-11-19T15:38:25.929Z"
+  },
+  {
+    "id": "audit-1795102481444-zzb1pk",
+    "action": "product_created",
+    "titleEn": "Added new product: Apple iPhone 16 Pro Max Titanium Showcase",
+    "titleAr": "تمت إضافة منتج جديد: Apple iPhone 16 Pro Max Titanium Showcase",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Apple iPhone 16 Pro Max Titanium Showcase (prod-1795102481441)",
+    "details": "Brand: Apple • Category: Phones • Price: $89 • Stock: 15",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-19T15:34:41.444Z"
+  },
+  {
+    "id": "audit-1795102405723-wpa3ns",
+    "action": "product_created",
+    "titleEn": "Added new product: Apple iPhone 16 Pro Max Titanium Showcase",
+    "titleAr": "تمت إضافة منتج جديد: Apple iPhone 16 Pro Max Titanium Showcase",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Apple iPhone 16 Pro Max Titanium Showcase (prod-1795102405721)",
+    "details": "Brand: Apple • Category: Phones • Price: $89 • Stock: 15",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-19T15:33:25.723Z"
+  },
+  {
+    "id": "audit-1795102353254-219zyt",
+    "action": "product_created",
+    "titleEn": "Added new product: Apple iPhone 16 Pro Max Titanium Showcase",
+    "titleAr": "تمت إضافة منتج جديد: Apple iPhone 16 Pro Max Titanium Showcase",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Apple iPhone 16 Pro Max Titanium Showcase (prod-1795102353251)",
+    "details": "Brand: Apple • Category: Phones • Price: $89 • Stock: 15",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-19T15:32:33.254Z"
+  },
+  {
+    "id": "audit-1795102294354-hyzlso",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-19T15:31:34.354Z"
+  },
+  {
+    "id": "audit-1795102286302-1o1qq2",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (admin)",
+    "details": "Invalid administrator password submitted during authentication check.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-19T15:31:26.301Z"
+  },
+  {
+    "id": "audit-1795102227203-i45n9h",
+    "action": "product_created",
+    "titleEn": "Added new product: Apple iPhone 16 Pro Max Titanium Showcase",
+    "titleAr": "تمت إضافة منتج جديد: Apple iPhone 16 Pro Max Titanium Showcase",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Apple iPhone 16 Pro Max Titanium Showcase (prod-1795102227200)",
+    "details": "Brand: Apple • Category: Phones • Price: $89 • Stock: 15",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-19T15:30:27.203Z"
+  },
+  {
+    "id": "audit-1795102168545-r3prv4",
+    "action": "auth_logout",
+    "titleEn": "Administrator signed out",
+    "titleAr": "تم تسجيل خروج المدير",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Admin portal session terminated by user.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-19T15:29:28.545Z"
+  },
+  {
+    "id": "audit-1795101977645-fz321a",
+    "action": "product_created",
+    "titleEn": "Added new product: Apple iPhone 16 Pro Max Titanium Showcase",
+    "titleAr": "تمت إضافة منتج جديد: Apple iPhone 16 Pro Max Titanium Showcase",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Apple iPhone 16 Pro Max Titanium Showcase (prod-1795101977642)",
+    "details": "Brand: Apple • Category: Phones • Price: $89 • Stock: 15",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-19T15:26:17.644Z"
+  },
+  {
+    "id": "audit-1795101896428-709fve",
+    "action": "product_created",
+    "titleEn": "Added new product: Apple iPhone 16 Pro Max Titanium Showcase",
+    "titleAr": "تمت إضافة منتج جديد: Apple iPhone 16 Pro Max Titanium Showcase",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Apple iPhone 16 Pro Max Titanium Showcase (prod-1795101896425)",
+    "details": "Brand: Apple • Category: Phones • Price: $89 • Stock: 15",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-19T15:24:56.427Z"
+  },
+  {
+    "id": "audit-1795101866963-8gag4x",
+    "action": "product_created",
+    "titleEn": "Added new product: ACEFAST L11 USB-C hifi wired earphones, black",
+    "titleAr": "تمت إضافة منتج جديد: ACEFAST L11 USB-C hifi wired earphones, black",
+    "category": "catalog",
+    "severity": "info",
+    "target": "ACEFAST L11 USB-C hifi wired earphones, black (prod-1795101866824)",
+    "details": "Brand: ACEFAST • Category: Earphones • Price: $19 • Stock: 10",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-19T15:24:26.963Z"
+  },
+  {
+    "id": "audit-1795101395618-t6eh6s",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-19T15:16:35.618Z"
+  },
+  {
+    "id": "audit-1795101389361-pkqatn",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (admin)",
+    "details": "Invalid administrator password submitted during authentication check.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-19T15:16:29.361Z"
+  },
+  {
+    "id": "audit-1795101384997-l8lwgj",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (admin)",
+    "details": "Invalid administrator password submitted during authentication check.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-19T15:16:24.997Z"
+  },
+  {
+    "id": "audit-1795101370680-8v74le",
+    "action": "auth_logout",
+    "titleEn": "Administrator signed out",
+    "titleAr": "تم تسجيل خروج المدير",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Admin portal session terminated by user.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-19T15:16:10.680Z"
+  },
+  {
     "id": "audit-1795015581152-1vi5a2",
     "action": "report_exported_sales",
     "titleEn": "Sales & orders CSV report downloaded",

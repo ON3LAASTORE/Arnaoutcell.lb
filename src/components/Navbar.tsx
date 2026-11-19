@@ -14,6 +14,7 @@ import {
   Flame,
   Video,
   Scale,
+  QrCode,
 } from 'lucide-react';
 import { StoreLogo } from './StoreLogo';
 import { GlobalSearch } from './GlobalSearch';
@@ -44,6 +45,7 @@ export const Navbar: React.FC = () => {
     toggleDarkMode,
     compareList,
     setIsCompareModalOpen,
+    setIsQrScannerOpen,
   } = useShop();
 
   const toggleLanguage = () => setLang(lang === 'ar' ? 'en' : 'ar');
@@ -289,6 +291,18 @@ export const Navbar: React.FC = () => {
             <div className="flex items-center gap-5 shrink-0 text-[12.5px] font-medium text-[#9CA3AF]">
               <button
                 type="button"
+                data-testid="navbar-qr-scanner-button"
+                onClick={() => setIsQrScannerOpen(true)}
+                aria-label={isArabic ? 'مسح رمز QR للبحث عن منتج' : 'Scan Product QR Code'}
+                title={isArabic ? 'مسح رمز QR للبحث عن منتج' : 'Scan Product QR Code'}
+                className="inline-flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <QrCode className="w-3.5 h-3.5 text-[#00BAF2]" />
+                <span>{isArabic ? 'مسح QR' : 'Scan QR'}</span>
+              </button>
+
+              <button
+                type="button"
                 data-testid="navbar-compare-button"
                 onClick={() => setIsCompareModalOpen(true)}
                 aria-label={
@@ -308,13 +322,20 @@ export const Navbar: React.FC = () => {
 
               <button
                 type="button"
+                data-testid="navbar-wishlist-btn"
                 onClick={() => setCurrentView('wishlist')}
                 aria-label={t.wishlist}
                 title={t.wishlist}
                 className="inline-flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer whitespace-nowrap shrink-0"
               >
-                <Heart className="w-3.5 h-3.5" />
-                <span>{wishlist.length}</span>
+                <Heart
+                  className={`w-3.5 h-3.5 transition-colors ${
+                    wishlist.length > 0 ? 'text-rose-400 fill-current' : ''
+                  }`}
+                />
+                <span data-testid="navbar-wishlist-count" className="tabular-nums">
+                  {wishlist.length}
+                </span>
               </button>
 
               <button
@@ -388,6 +409,18 @@ export const Navbar: React.FC = () => {
             </a>
 
             <div className="flex items-center gap-4">
+              <button
+                type="button"
+                data-testid="mobile-menu-qr-scanner-button"
+                onClick={() => {
+                  setIsQrScannerOpen(true);
+                  setMobileMenuOpen(false);
+                }}
+                className="text-[#00BAF2] hover:text-white font-semibold inline-flex items-center gap-1 cursor-pointer"
+              >
+                <QrCode className="w-3.5 h-3.5" />
+                <span>{isArabic ? 'مسح QR' : 'Scan QR'}</span>
+              </button>
               <button
                 type="button"
                 onClick={() => {

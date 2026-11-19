@@ -1,10 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  buildOfferBannerLabel,
   buildProductCardViewModel,
   buildProductWhatsAppUrl,
   computeProductPricingMetrics,
   formatUsdAmount,
+  resolveProductSoldCountLabel,
 } from './productCardHelpers';
 import { Product } from '../types';
 
@@ -90,7 +92,9 @@ test('buildProductCardViewModel produces consistent uppercased brand, stock flag
   assert.equal(vm.isLowStock, false);
   assert.equal(vm.warrantyMonths, 12);
   assert.equal(vm.ratingValue, '5');
+  assert.equal(vm.ratingDecimal, '5.0');
   assert.equal(vm.reviewCount, 1);
+  assert.equal(vm.soldLabel, '50+ Sold');
 
   const outVm = buildProductCardViewModel({ ...BASE_PRODUCT, stock: 0 }, 'en');
   assert.equal(outVm.inStock, false);
@@ -99,4 +103,62 @@ test('buildProductCardViewModel produces consistent uppercased brand, stock flag
   const lowVm = buildProductCardViewModel({ ...BASE_PRODUCT, stock: 2 }, 'en');
   assert.equal(lowVm.inStock, true);
   assert.equal(lowVm.isLowStock, true);
+});
+
+test('resolveProductSoldCountLabel derives deterministic social proof tiers in EN and AR', () => {
+  assert.equal(
+    resolveProductSoldCountLabel(
+      { name: 'G.L SNAP GRIP MAGNETIC CAMERA GRIP', isBestSeller: false, reviewCount: 1 },
+      'en'
+    ),
+    '100+ Sold'
+  );
+  assert.equal(
+    resolveProductSoldCountLabel(
+      { name: 'Fast Charge Power Bank M12', isBestSeller: true, reviewCount: 1 },
+      'en'
+    ),
+    '50+ Sold'
+  );
+  assert.equal(
+    resolveProductSoldCountLabel(
+      { name: 'Universal Capacitive Pen V1', isBestSeller: false, reviewCount: 1 },
+      'en'
+    ),
+    '20+ Sold'
+  );
+  assert.equal(
+    resolveProductSoldCountLabel(
+      { name: 'Custom Item', soldCount: 140, isBestSeller: false, reviewCount: 0 },
+      'ar'
+    ),
+    'تم بيع +100'
+  );
+});
+
+test('buildOfferBannerLabel displays UP TO 40% OFF for discounted and offer items', () => {
+  assert.equal(
+    buildOfferBannerLabel(
+      { isSpecialOffer: true, price: 35, originalPrice: 50, discountPercentage: 30 },
+      false,
+      'en'
+    ),
+    'UP TO 40% OFF'
+  );
+  assert.equal(
+    buildOfferBannerLabel(
+      { isSpecialOffer: true, price: 35, originalPrice: 50, discountPercentage: 30 },
+      false,
+      'ar'
+    ),
+    'خصم حتى 40%'
+  );
+  assert.equal(
+    buildOfferBannerLabel(
+      { isSpecialOffer: false, price: 100, originalPrice: 100, discountPercentage: 0 },
+      false,
+      'en'
+    ),
+    null
+  );
 });

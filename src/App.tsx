@@ -66,6 +66,11 @@ const ProductQuickViewModal = safeLazy(
   () => import('./components/ProductQuickViewModal'),
   'ProductQuickViewModal'
 );
+const ProductQrScannerModal = safeLazy(
+  () => import('./components/ProductQrScannerModal'),
+  'ProductQrScannerModal',
+  { fallbackComponent: EmptyOverlayFallback }
+);
 
 const FastSpinner: React.FC = () => (
   <div className="flex items-center justify-center min-h-[35vh] w-full py-12">
@@ -81,6 +86,7 @@ const AppContent: React.FC = () => {
     isCartOpen,
     compareList,
     isCompareModalOpen,
+    isQrScannerOpen,
     quickViewProduct,
   } = useShop();
   const dirClass = lang === 'ar' ? 'rtl' : 'ltr';
@@ -205,6 +211,7 @@ const AppContent: React.FC = () => {
           {quickViewProduct && <ProductQuickViewModal />}
           {compareList.length > 0 && <CompareFloatingBar />}
           {isCompareModalOpen && <ProductCompareModal />}
+          {isQrScannerOpen && <ProductQrScannerModal />}
           <FloatingWhatsAppButton />
         </React.Suspense>
       </ChunkErrorBoundary>

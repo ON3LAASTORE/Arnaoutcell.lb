@@ -164,9 +164,21 @@ export function compactProductsForStorage(
 
     const fallbackImage = DEFAULT_FULL_RES_FALLBACK_IMAGE;
 
+    let cleanColorImages: Record<string, string> | undefined = product.colorImages;
+    if (product.colorImages && typeof product.colorImages === 'object') {
+      const nextMap: Record<string, string> = {};
+      for (const [col, url] of Object.entries(product.colorImages)) {
+        if (typeof url === 'string' && !(url.startsWith('data:') && url.length > maxInlineImageChars)) {
+          nextMap[col] = url;
+        }
+      }
+      cleanColorImages = nextMap;
+    }
+
     return {
       ...product,
       images: cleanImages.length > 0 ? cleanImages : [fallbackImage],
+      ...(cleanColorImages ? { colorImages: cleanColorImages } : {}),
     };
   });
 }

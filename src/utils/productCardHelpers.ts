@@ -18,7 +18,9 @@ export interface ProductCardViewModel {
   isOutOfStock: boolean;
   isLowStock: boolean;
   ratingValue: string;
+  ratingDecimal: string;
   reviewCount: number;
+  soldLabel: string;
   warrantyMonths: number;
   pricing: ProductPricingMetrics;
   whatsappUrl: string;
@@ -74,6 +76,48 @@ export function computeProductPricingMetrics(
 }
 
 /**
+ * Returns deterministic, localized social-proof sold count badge text (e.g. "50+ Sold", "20+ Sold", "100+ Sold").
+ */
+export function resolveProductSoldCountLabel(
+  product: Pick<Product, 'name' | 'soldCount' | 'isBestSeller' | 'reviewCount'>,
+  lang: Language
+): string {
+  let tier = 20;
+
+  if (typeof product.soldCount === 'number' && Number.isFinite(product.soldCount) && product.soldCount > 0) {
+    if (product.soldCount >= 100) tier = 100;
+    else if (product.soldCount >= 50) tier = 50;
+    else if (product.soldCount >= 20) tier = 20;
+    else tier = 10;
+  } else if (/snap\s*grip|\bn8\b/i.test(product.name || '')) {
+    tier = 100;
+  } else if (product.isBestSeller) {
+    tier = 50;
+  } else if ((product.reviewCount ?? 0) > 0) {
+    tier = 20;
+  } else {
+    tier = 10;
+  }
+
+  return lang === 'ar' ? `تم بيع +${tier}` : `${tier}+ Sold`;
+}
+
+/**
+ * Resolves the full-width yellow-gold offer banner text placed directly beneath the product image.
+ */
+export function buildOfferBannerLabel(
+  product: Pick<Product, 'isSpecialOffer' | 'price' | 'originalPrice' | 'discountPercentage'>,
+  showOfferDetails: boolean,
+  lang: Language
+): string | null {
+  const pricing = computeProductPricingMetrics(product);
+  if (product.isSpecialOffer || showOfferDetails || pricing.isDiscounted) {
+    return lang === 'ar' ? 'خصم حتى 40%' : 'UP TO 40% OFF';
+  }
+  return null;
+}
+
+/**
  * Builds the dynamic WhatsApp quick-order link pre-populated with product title, price, and ID.
  */
 export function buildProductWhatsAppUrl(
@@ -116,7 +160,9 @@ export function buildProductCardViewModel(
     isOutOfStock,
     isLowStock,
     ratingValue: Number.isInteger(rawRating) ? String(rawRating) : rawRating.toFixed(1),
+    ratingDecimal: rawRating.toFixed(1),
     reviewCount: typeof product.reviewCount === 'number' ? product.reviewCount : 0,
+    soldLabel: resolveProductSoldCountLabel(product, lang),
     warrantyMonths: typeof product.warrantyMonths === 'number' ? product.warrantyMonths : 0,
     pricing,
     whatsappUrl: buildProductWhatsAppUrl(product, storeWhatsapp, lang),
