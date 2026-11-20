@@ -139,6 +139,24 @@ export const D3CategorySalesChart: React.FC<D3CategorySalesChartProps> = ({
       .text((d) => `$${Math.round(d.revenueUsd).toLocaleString()}`);
   }, [categories, containerWidth]);
 
+  if (categories.length === 0) {
+    return (
+      <div
+        data-testid="d3-category-sales-empty"
+        className="w-full py-12 px-4 rounded-xl bg-[#F8FAFC] border border-dashed border-[#DCE5F0] text-center space-y-1.5"
+      >
+        <p className="text-xs font-bold text-[#172033]">
+          {isAr ? 'لا توجد مبيعات مسجلة حتى الآن' : 'No recorded category sales yet'}
+        </p>
+        <p className="text-[11px] text-[#64748B]">
+          {isAr
+            ? 'سيظهر توزيع المبيعات الحقيقي هنا تلقائياً عند تسجيل أول طلب.'
+            : 'Category revenue distribution begins at $0 and updates automatically as real orders are placed.'}
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div ref={containerRef} className="w-full space-y-2 select-none">
       <svg

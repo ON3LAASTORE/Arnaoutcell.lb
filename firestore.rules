@@ -35,11 +35,27 @@ service cloud.firestore {
     // 3. Validation Blueprints
     function isValidOrder(data) {
       return data.keys().hasAll(['id', 'customer', 'items', 'subtotal', 'total', 'paymentMethod', 'status'])
-        && data.id is string && data.id.size() <= 64
-        && data.subtotal is number && data.subtotal >= 0
-        && data.total is number && data.total >= 0
-        && data.paymentMethod in ['cod', 'whish_money', 'omt_western_union']
-        && data.status in ['new', 'confirmed', 'preparing', 'dispatched', 'delivered', 'cancelled', 'returned']
+        && data.keys().hasOnly([
+          'id', 'orderDate', 'customer', 'items', 'subtotal', 'discount',
+          'deliveryFee', 'total', 'currency', 'paymentMethod', 'paymentStatus',
+          'status', 'trackingNumber', 'statusHistory', 'userId'
+        ])
+        && data.id is string && data.id.size() > 0 && data.id.size() <= 64
+        && data.customer is map
+        && data.customer.fullName is string && data.customer.fullName.size() > 0 && data.customer.fullName.size() <= 160
+        && data.customer.phone is string && data.customer.phone.size() > 0 && data.customer.phone.size() <= 40
+        && data.subtotal is number && data.subtotal >= 0 && data.subtotal <= 1000000
+        && (!('discount' in data) || (data.discount is number && data.discount >= 0 && data.discount <= data.subtotal))
+        && (!('deliveryFee' in data) || (data.deliveryFee is number && data.deliveryFee >= 0 && data.deliveryFee <= 10000))
+        && data.total is number && data.total >= 0 && data.total <= 1000000
+        && (!('currency' in data) || data.currency in ['USD'])
+        && data.paymentMethod in ['cod', 'whish_money', 'store_pickup', 'omt_western_union']
+        && (!('paymentStatus' in data) || data.paymentStatus in ['pending', 'paid', 'pay_on_delivery'])
+        && data.status in ['new', 'confirmed', 'preparing', 'ready_for_delivery', 'out_for_delivery', 'dispatched', 'delivered', 'cancelled', 'returned']
+        && (!('orderDate' in data) || (data.orderDate is string && data.orderDate.size() <= 64))
+        && (!('trackingNumber' in data) || (data.trackingNumber is string && data.trackingNumber.size() <= 64))
+        && (!('statusHistory' in data) || (data.statusHistory is list && data.statusHistory.size() <= 30))
+        && (!('userId' in data) || (data.userId is string && data.userId.size() <= 128))
         && data.items is list && data.items.size() > 0 && data.items.size() <= 50;
     }
 
@@ -89,16 +105,48 @@ service cloud.firestore {
 
     function isValidProduct(data) {
       return data.keys().hasAll(['id', 'name', 'brand', 'category', 'sku', 'price', 'stock', 'images', 'description', 'isPublished'])
+        && data.keys().hasOnly([
+          'id', 'name', 'nameAr', 'brand', 'category', 'subcategory', 'sku', 'barcode',
+          'originalPrice', 'price', 'discountPercentage', 'stock', 'lowStockThreshold',
+          'images', 'videoUrl', 'description', 'descriptionAr', 'specifications',
+          'variants', 'colors', 'colorImages', 'warrantyMonths', 'warrantyTerms',
+          'isSpecialOffer', 'offerExpiresAt', 'isFeatured', 'isNewArrival', 'isBestSeller',
+          'isPublished', 'rating', 'reviewCount', 'soldCount', 'reviews', 'createdAt'
+        ])
         && data.id is string && data.id.size() > 0 && data.id.size() <= 128
         && data.name is string && data.name.size() > 0 && data.name.size() <= 255
+        && (!('nameAr' in data) || (data.nameAr is string && data.nameAr.size() <= 255))
         && data.brand is string && data.brand.size() > 0 && data.brand.size() <= 64
         && data.category is string && data.category.size() > 0 && data.category.size() <= 64
+        && (!('subcategory' in data) || (data.subcategory is string && data.subcategory.size() <= 64))
         && data.sku is string && data.sku.size() > 0 && data.sku.size() <= 64
-        && data.price is number && data.price >= 0
-        && data.stock is number && data.stock >= 0
-        && data.images is list && data.images.size() > 0 && data.images.size() <= 30
+        && (!('barcode' in data) || (data.barcode is string && data.barcode.size() <= 64))
+        && data.price is number && data.price >= 0 && data.price <= 1000000
+        && (!('originalPrice' in data) || (data.originalPrice is number && data.originalPrice >= 0 && data.originalPrice <= 1000000))
+        && (!('discountPercentage' in data) || (data.discountPercentage is number && data.discountPercentage >= 0 && data.discountPercentage <= 100))
+        && data.stock is number && data.stock >= 0 && data.stock <= 1000000
+        && (!('lowStockThreshold' in data) || (data.lowStockThreshold is number && data.lowStockThreshold >= 0 && data.lowStockThreshold <= 100000))
+        && data.images is list && data.images.size() > 0 && data.images.size() <= 30 && data.images[0] is string
+        && (!('videoUrl' in data) || (data.videoUrl is string && data.videoUrl.size() <= 512))
         && data.description is string && data.description.size() <= 5000
-        && data.isPublished is bool;
+        && (!('descriptionAr' in data) || (data.descriptionAr is string && data.descriptionAr.size() <= 5000))
+        && (!('specifications' in data) || (data.specifications is list && data.specifications.size() <= 60))
+        && (!('variants' in data) || (data.variants is list && data.variants.size() <= 50))
+        && (!('colors' in data) || (data.colors is list && data.colors.size() <= 30 && (data.colors.size() == 0 || data.colors[0] is string)))
+        && (!('colorImages' in data) || data.colorImages is map)
+        && (!('warrantyMonths' in data) || (data.warrantyMonths is number && data.warrantyMonths >= 0 && data.warrantyMonths <= 120))
+        && (!('warrantyTerms' in data) || (data.warrantyTerms is string && data.warrantyTerms.size() <= 2000))
+        && (!('isSpecialOffer' in data) || data.isSpecialOffer is bool)
+        && (!('offerExpiresAt' in data) || (data.offerExpiresAt is string && data.offerExpiresAt.size() <= 64))
+        && (!('isFeatured' in data) || data.isFeatured is bool)
+        && (!('isNewArrival' in data) || data.isNewArrival is bool)
+        && (!('isBestSeller' in data) || data.isBestSeller is bool)
+        && data.isPublished is bool
+        && (!('rating' in data) || (data.rating is number && data.rating >= 0 && data.rating <= 5))
+        && (!('reviewCount' in data) || (data.reviewCount is number && data.reviewCount >= 0 && data.reviewCount <= 100000))
+        && (!('soldCount' in data) || (data.soldCount is number && data.soldCount >= 0 && data.soldCount <= 1000000))
+        && (!('reviews' in data) || (data.reviews is list && data.reviews.size() <= 50))
+        && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64));
     }
 
     function isValidCategory(data) {
@@ -160,7 +208,7 @@ service cloud.firestore {
 
     // 4. Connection Test Document for getDocFromServer
     match /test/connection {
-      allow read: if true;
+      allow get: if true;
     }
 
     // 5. Orders Collection: Public order submission with Lebanese tracking, admin fulfillment
@@ -181,6 +229,7 @@ service cloud.firestore {
 
       allow update: if isValidId(orderId)
         && isValidOrder(incoming())
+        && incoming().id == existing().id
         && (
           // Admin override
           isAdmin() ||
@@ -322,4 +371,3 @@ service cloud.firestore {
     }
   }
 }
-

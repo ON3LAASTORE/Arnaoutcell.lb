@@ -25,6 +25,7 @@ import {
   sanitizeColorImagesForFirestore,
   sanitizeProductImagesForFirestore,
 } from '../utils/firestorePayloadHelpers';
+import { sanitizeProductReviewsForStorage } from '../utils/checkoutHelpers';
 
 const PRODUCTS_COLLECTION = 'products';
 
@@ -96,9 +97,14 @@ function cleanProductForFirestore(product: Product): Record<string, unknown> {
     warrantyMonths: Number(product.warrantyMonths) || 12,
     isPublished: product.isPublished !== false,
     rating: Number(product.rating) || 5.0,
-    reviewCount: Number(product.reviewCount) || 1,
+    reviewCount: Number(product.reviewCount) || (Array.isArray(product.reviews) ? product.reviews.length : 0),
+    soldCount: Number(product.soldCount) >= 0 ? Number(product.soldCount) : 0,
     createdAt: product.createdAt || new Date().toISOString(),
   };
+
+  if (Array.isArray(product.reviews) && product.reviews.length > 0) {
+    data.reviews = sanitizeProductReviewsForStorage(product.reviews, 50);
+  }
 
   if (product.nameAr) data.nameAr = product.nameAr;
   if (product.subcategory) data.subcategory = product.subcategory;
@@ -281,6 +287,11 @@ export function subscribeToLiveProducts(
       const cloudProducts: Product[] = [];
       snapshot.forEach((docSnap) => {
         const data = docSnap.data();
+        const firestoreColorImages =
+          data.colorImages && typeof data.colorImages === 'object'
+            ? sanitizeColorImagesForFirestore(data.colorImages).colorImages
+            : {};
+
         cloudProducts.push({
           id: docSnap.id,
           name: data.name || '',
@@ -303,10 +314,7 @@ export function subscribeToLiveProducts(
           descriptionAr: data.descriptionAr || '',
           specifications: Array.isArray(data.specifications) ? data.specifications : [],
           colors: Array.isArray(data.colors) ? data.colors : [],
-          colorImages:
-            data.colorImages && typeof data.colorImages === 'object'
-              ? sanitizeColorImagesForFirestore(data.colorImages).colorImages
-              : {},
+          colorImages: firestoreColorImages,
           variants: Array.isArray(data.variants) ? data.variants : [],
           warrantyMonths: Number(data.warrantyMonths) || 12,
           warrantyTerms: data.warrantyTerms || undefined,
@@ -316,7 +324,9 @@ export function subscribeToLiveProducts(
           isBestSeller: Boolean(data.isBestSeller),
           isPublished: data.isPublished !== false,
           rating: Number(data.rating) || 5.0,
-          reviewCount: Number(data.reviewCount) || 1,
+          reviewCount: Number(data.reviewCount) ?? (Array.isArray(data.reviews) ? data.reviews.length : 0),
+          soldCount: Number(data.soldCount) >= 0 ? Number(data.soldCount) : 0,
+          reviews: Array.isArray(data.reviews) ? sanitizeProductReviewsForStorage(data.reviews, 50) : [],
           createdAt: data.createdAt || new Date().toISOString(),
         });
       });

@@ -210,9 +210,9 @@ export const ProductsPage: React.FC = () => {
             {/* Mobile Filter Trigger */}
             <button
               onClick={() => setMobileFilterOpen(true)}
-              className="lg:hidden px-3.5 py-2 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0] text-[#172033] text-xs font-bold flex items-center gap-2 cursor-pointer"
+              className="lg:hidden px-3.5 py-2 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] text-xs font-bold flex items-center gap-2 cursor-pointer"
             >
-              <Filter className="w-4 h-4 text-[#007AFF]" />
+              <Filter className="w-4 h-4 text-[#007AFF] dark:text-[#38BDF8]" />
               <span>{t.filterBy}</span>
             </button>
 
@@ -262,11 +262,11 @@ export const ProductsPage: React.FC = () => {
             </button>
 
             {/* Layout Toggle */}
-            <div className="hidden sm:flex items-center bg-[#F5F8FC] border border-[#DCE5F0] rounded-xl p-1 gap-1">
+            <div className="hidden sm:flex items-center bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] rounded-xl p-1 gap-1">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                  viewMode === 'grid' ? 'bg-[#007AFF] text-white shadow-xs' : 'text-[#64748B] hover:text-[#172033]'
+                  viewMode === 'grid' ? 'bg-[#007AFF] text-white shadow-xs' : 'text-[#64748B] dark:text-slate-400 hover:text-[#172033] dark:hover:text-white'
                 }`}
                 title="Grid View"
               >
@@ -275,7 +275,7 @@ export const ProductsPage: React.FC = () => {
               <button
                 onClick={() => setViewMode('column')}
                 className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
-                  viewMode === 'column' ? 'bg-[#007AFF] text-white shadow-xs' : 'text-[#64748B] hover:text-[#172033]'
+                  viewMode === 'column' ? 'bg-[#007AFF] text-white shadow-xs' : 'text-[#64748B] dark:text-slate-400 hover:text-[#172033] dark:hover:text-white'
                 }`}
                 title="Column View"
               >
@@ -289,16 +289,16 @@ export const ProductsPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Desktop Filter Sidebar */}
           <aside className="hidden lg:block lg:col-span-1 space-y-6">
-            <div className="p-5 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] space-y-6 sticky top-28 shadow-xs">
-              <div className="flex items-center justify-between pb-3 border-b border-[#DCE5F0]">
-                <div className="flex items-center gap-2 font-bold text-[#172033] text-sm">
-                  <SlidersHorizontal className="w-4 h-4 text-[#007AFF]" />
+            <div className="p-5 rounded-2xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] space-y-6 sticky top-28 shadow-xs">
+              <div className="flex items-center justify-between pb-3 border-b border-[#DCE5F0] dark:border-[#1E293B]">
+                <div className="flex items-center gap-2 font-bold text-[#172033] dark:text-[#F8FAFC] text-sm">
+                  <SlidersHorizontal className="w-4 h-4 text-[#007AFF] dark:text-[#38BDF8]" />
                   <span>{t.filterBy}</span>
                 </div>
                 {hasActiveFilters && (
                   <button
                     onClick={clearAllFilters}
-                    className="text-xs text-[#DC2626] hover:underline cursor-pointer font-semibold"
+                    className="text-xs text-[#DC2626] dark:text-red-400 hover:underline cursor-pointer font-semibold"
                   >
                     {t.clearFilters}
                   </button>
@@ -318,8 +318,8 @@ export const ProductsPage: React.FC = () => {
               />
 
               {/* Toggles */}
-              <div className="space-y-3 pt-2 border-t border-[#DCE5F0] text-xs">
-                <label className="flex items-center gap-2.5 cursor-pointer text-[#172033]">
+              <div className="space-y-3 pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B] text-xs">
+                <label className="flex items-center gap-2.5 cursor-pointer text-[#172033] dark:text-slate-200">
                   <input
                     type="checkbox"
                     checked={onlyInStock}
@@ -329,7 +329,7 @@ export const ProductsPage: React.FC = () => {
                   <span>{lang === 'ar' ? 'متوفر في المخزون فقط' : 'In-Stock Only'}</span>
                 </label>
 
-                <label className="flex items-center gap-2.5 cursor-pointer text-[#172033]">
+                <label className="flex items-center gap-2.5 cursor-pointer text-[#172033] dark:text-slate-200">
                   <input
                     type="checkbox"
                     checked={onlyOffers}
@@ -341,8 +341,8 @@ export const ProductsPage: React.FC = () => {
               </div>
 
               {/* Brands Filter */}
-              <div className="pt-3 border-t border-[#DCE5F0]">
-                <span className="text-xs font-bold text-[#172033] uppercase tracking-wider block mb-2.5">
+              <div className="pt-3 border-t border-[#DCE5F0] dark:border-[#1E293B]">
+                <span className="text-xs font-bold text-[#172033] dark:text-[#F8FAFC] uppercase tracking-wider block mb-2.5">
                   {t.brands}
                 </span>
                 <div className="max-h-48 overflow-y-auto space-y-1 pr-1">
@@ -350,8 +350,8 @@ export const ProductsPage: React.FC = () => {
                     onClick={() => selectBrand(null)}
                     className={`w-full text-left rtl:text-right px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
                       !selectedBrandName
-                        ? 'bg-[#EAF3FF] text-[#007AFF] font-bold'
-                        : 'text-[#64748B] hover:text-[#172033] hover:bg-white'
+                        ? 'bg-[#EAF3FF] dark:bg-[#007AFF]/20 text-[#007AFF] dark:text-[#38BDF8] font-bold'
+                        : 'text-[#64748B] dark:text-slate-300 hover:text-[#172033] dark:hover:text-white hover:bg-white dark:hover:bg-[#0E1726]'
                     }`}
                   >
                     {lang === 'ar' ? 'كافة الماركات' : 'All Brands'}
@@ -362,8 +362,8 @@ export const ProductsPage: React.FC = () => {
                       onClick={() => selectBrand(b.name === selectedBrandName ? null : b.name)}
                       className={`w-full text-left rtl:text-right px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer flex justify-between ${
                         selectedBrandName === b.name
-                          ? 'bg-[#EAF3FF] text-[#007AFF] font-bold'
-                          : 'text-[#64748B] hover:text-[#172033] hover:bg-white'
+                          ? 'bg-[#EAF3FF] dark:bg-[#007AFF]/20 text-[#007AFF] dark:text-[#38BDF8] font-bold'
+                          : 'text-[#64748B] dark:text-slate-300 hover:text-[#172033] dark:hover:text-white hover:bg-white dark:hover:bg-[#0E1726]'
                       }`}
                     >
                       <span>{b.name}</span>
@@ -374,8 +374,8 @@ export const ProductsPage: React.FC = () => {
               </div>
 
               {/* Categories Filter */}
-              <div className="pt-3 border-t border-[#DCE5F0]">
-                <span className="text-xs font-bold text-[#172033] uppercase tracking-wider block mb-2.5">
+              <div className="pt-3 border-t border-[#DCE5F0] dark:border-[#1E293B]">
+                <span className="text-xs font-bold text-[#172033] dark:text-[#F8FAFC] uppercase tracking-wider block mb-2.5">
                   {t.allCategories}
                 </span>
                 <div className="max-h-56 overflow-y-auto space-y-1 pr-1">
@@ -383,8 +383,8 @@ export const ProductsPage: React.FC = () => {
                     onClick={() => selectCategory(null)}
                     className={`w-full text-left rtl:text-right px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
                       !selectedCategorySlug
-                        ? 'bg-[#EAF3FF] text-[#007AFF] font-bold'
-                        : 'text-[#64748B] hover:text-[#172033] hover:bg-white'
+                        ? 'bg-[#EAF3FF] dark:bg-[#007AFF]/20 text-[#007AFF] dark:text-[#38BDF8] font-bold'
+                        : 'text-[#64748B] dark:text-slate-300 hover:text-[#172033] dark:hover:text-white hover:bg-white dark:hover:bg-[#0E1726]'
                     }`}
                   >
                     {lang === 'ar' ? 'كافة الأقسام' : 'All Categories'}
@@ -395,8 +395,8 @@ export const ProductsPage: React.FC = () => {
                       onClick={() => selectCategory(c.slug === selectedCategorySlug ? null : c.slug)}
                       className={`w-full text-left rtl:text-right px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
                         selectedCategorySlug === c.slug
-                          ? 'bg-[#EAF3FF] text-[#007AFF] font-bold'
-                          : 'text-[#64748B] hover:text-[#172033] hover:bg-white'
+                          ? 'bg-[#EAF3FF] dark:bg-[#007AFF]/20 text-[#007AFF] dark:text-[#38BDF8] font-bold'
+                          : 'text-[#64748B] dark:text-slate-300 hover:text-[#172033] dark:hover:text-white hover:bg-white dark:hover:bg-[#0E1726]'
                       }`}
                     >
                       {lang === 'ar' ? c.nameAr : c.name}
@@ -412,39 +412,39 @@ export const ProductsPage: React.FC = () => {
             {/* Active filters pill list */}
             {hasActiveFilters && (
               <div className="flex flex-wrap items-center gap-2 mb-6">
-                <span className="text-xs text-[#64748B]">{lang === 'ar' ? 'التصفيات النشطة:' : 'Active Filters:'}</span>
+                <span className="text-xs text-[#64748B] dark:text-slate-400">{lang === 'ar' ? 'التصفيات النشطة:' : 'Active Filters:'}</span>
                 {selectedCategorySlug && activeCategory && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#EAF3FF] text-[#007AFF] border border-[#BAE6FD] text-xs font-semibold">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#EAF3FF] dark:bg-[#111A2E] text-[#007AFF] dark:text-[#38BDF8] border border-[#BAE6FD] dark:border-[#1E293B] text-xs font-semibold">
                     {lang === 'ar' ? activeCategory.nameAr : activeCategory.name}
                     <X
-                      className="w-3.5 h-3.5 cursor-pointer hover:text-[#007AFF]"
+                      className="w-3.5 h-3.5 cursor-pointer hover:text-[#007AFF] dark:hover:text-white"
                       onClick={() => selectCategory(null)}
                     />
                   </span>
                 )}
                 {selectedBrandName && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#EAF3FF] text-[#007AFF] border border-[#BAE6FD] text-xs font-semibold">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#EAF3FF] dark:bg-[#111A2E] text-[#007AFF] dark:text-[#38BDF8] border border-[#BAE6FD] dark:border-[#1E293B] text-xs font-semibold">
                     {selectedBrandName}
                     <X
-                      className="w-3.5 h-3.5 cursor-pointer hover:text-[#007AFF]"
+                      className="w-3.5 h-3.5 cursor-pointer hover:text-[#007AFF] dark:hover:text-white"
                       onClick={() => selectBrand(null)}
                     />
                   </span>
                 )}
                 {searchQuery && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#F5F8FC] text-[#172033] border border-[#DCE5F0] text-xs font-semibold">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#F5F8FC] dark:bg-[#111A2E] text-[#172033] dark:text-[#F8FAFC] border border-[#DCE5F0] dark:border-[#1E293B] text-xs font-semibold">
                     "{searchQuery}"
                     <X
-                      className="w-3.5 h-3.5 cursor-pointer hover:text-[#007AFF]"
+                      className="w-3.5 h-3.5 cursor-pointer hover:text-[#007AFF] dark:hover:text-white"
                       onClick={() => setSearchQuery('')}
                     />
                   </span>
                 )}
                 {(priceMin > 0 || priceMax < 3000) && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#EAF3FF] text-[#007AFF] border border-[#BAE6FD] text-xs font-semibold">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#EAF3FF] dark:bg-[#111A2E] text-[#007AFF] dark:text-[#38BDF8] border border-[#BAE6FD] dark:border-[#1E293B] text-xs font-semibold">
                     <span>${priceMin} — ${priceMax}</span>
                     <X
-                      className="w-3.5 h-3.5 cursor-pointer hover:text-[#007AFF]"
+                      className="w-3.5 h-3.5 cursor-pointer hover:text-[#007AFF] dark:hover:text-white"
                       onClick={() => {
                         setPriceMin(0);
                         setPriceMax(3000);
@@ -458,11 +458,11 @@ export const ProductsPage: React.FC = () => {
                   return (
                     <span
                       key={tierId}
-                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 text-[#007AFF] border border-blue-200 text-xs font-semibold"
+                      className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 dark:bg-[#111A2E] text-[#007AFF] dark:text-[#38BDF8] border border-blue-200 dark:border-[#1E293B] text-xs font-semibold"
                     >
                       <span>{lang === 'ar' ? tier.labelAr : tier.labelEn}</span>
                       <X
-                        className="w-3.5 h-3.5 cursor-pointer hover:text-[#007AFF]"
+                        className="w-3.5 h-3.5 cursor-pointer hover:text-[#007AFF] dark:hover:text-white"
                         onClick={() => toggleBudgetTier(tierId)}
                       />
                     </span>
@@ -470,7 +470,7 @@ export const ProductsPage: React.FC = () => {
                 })}
                 <button
                   onClick={clearAllFilters}
-                  className="text-xs text-[#DC2626] hover:underline font-semibold ml-2"
+                  className="text-xs text-[#DC2626] dark:text-red-400 hover:underline font-semibold ml-2 cursor-pointer"
                 >
                   {t.clearFilters}
                 </button>
@@ -522,12 +522,12 @@ export const ProductsPage: React.FC = () => {
                 ))}
               </div>
             ) : (
-              <div className="py-20 text-center bg-[#F5F8FC] rounded-3xl border border-dashed border-[#DCE5F0] p-8">
-                <Sparkles className="w-12 h-12 text-[#64748B] mx-auto mb-3" />
-                <h3 className="text-lg font-bold text-[#172033] mb-1">
+              <div className="py-20 text-center bg-[#F5F8FC] dark:bg-[#111A2E] rounded-3xl border border-dashed border-[#DCE5F0] dark:border-[#1E293B] p-8">
+                <Sparkles className="w-12 h-12 text-[#64748B] dark:text-slate-400 mx-auto mb-3" />
+                <h3 className="text-lg font-bold text-[#172033] dark:text-[#F8FAFC] mb-1">
                   {lang === 'ar' ? 'لم نجد منتجات مطابقة لخياراتك' : 'No products matched your criteria'}
                 </h3>
-                <p className="text-xs text-[#64748B] max-w-sm mx-auto mb-6">
+                <p className="text-xs text-[#64748B] dark:text-slate-400 max-w-sm mx-auto mb-6">
                   {lang === 'ar'
                     ? 'جرب تقليل شروط التصفية أو البحث عن مسمى آخر أو تواصل معنا عبر واتساب على الرقم 70 773 067 للمساعدة.'
                     : 'Try broadening your filters or contact ON AlAA STORE directly at 70 773 067.'}
@@ -551,12 +551,12 @@ export const ProductsPage: React.FC = () => {
             onClick={() => setMobileFilterOpen(false)}
             className="fixed inset-0 bg-black/50 backdrop-blur-xs"
           />
-          <div className="relative ml-auto rtl:ml-0 rtl:mr-auto w-full max-w-xs bg-white h-full p-6 overflow-y-auto space-y-6 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-[#DCE5F0]">
-              <h3 className="font-bold text-[#172033] text-base">{t.filterBy}</h3>
+          <div className="relative ml-auto rtl:ml-0 rtl:mr-auto w-full max-w-xs bg-white dark:bg-[#0E1726] border-l dark:border-[#1E293B] h-full p-6 overflow-y-auto space-y-6 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-[#DCE5F0] dark:border-[#1E293B]">
+              <h3 className="font-bold text-[#172033] dark:text-[#F8FAFC] text-base">{t.filterBy}</h3>
               <button
                 onClick={() => setMobileFilterOpen(false)}
-                className="p-1 rounded-lg hover:bg-slate-100 text-[#64748B]"
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-[#111A2E] text-[#64748B] dark:text-slate-400 cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -564,8 +564,8 @@ export const ProductsPage: React.FC = () => {
 
             {/* Mobile Sort Options */}
             <div>
-              <span className="text-xs font-bold text-[#172033] block mb-2.5 flex items-center gap-1.5">
-                <ArrowUpDown className="w-3.5 h-3.5 text-[#007AFF]" />
+              <span className="text-xs font-bold text-[#172033] dark:text-[#F8FAFC] block mb-2.5 flex items-center gap-1.5">
+                <ArrowUpDown className="w-3.5 h-3.5 text-[#007AFF] dark:text-[#38BDF8]" />
                 {t.sortBy}
               </span>
               <div className="space-y-1.5">
@@ -579,7 +579,7 @@ export const ProductsPage: React.FC = () => {
                     className={`w-full text-left rtl:text-right px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
                       sortOption === opt.value
                         ? 'bg-[#007AFF] text-white shadow-xs'
-                        : 'bg-slate-50 hover:bg-slate-100 text-[#172033]'
+                        : 'bg-slate-50 dark:bg-[#111A2E] hover:bg-slate-100 dark:hover:bg-[#152033] text-[#172033] dark:text-slate-200 border border-transparent dark:border-[#1E293B]'
                     }`}
                   >
                     <span className="flex items-center gap-2">
@@ -607,7 +607,7 @@ export const ProductsPage: React.FC = () => {
 
             {/* Brands */}
             <div>
-              <span className="text-xs font-bold text-[#172033] block mb-2">{t.brands}</span>
+              <span className="text-xs font-bold text-[#172033] dark:text-[#F8FAFC] block mb-2">{t.brands}</span>
               <div className="max-h-40 overflow-y-auto space-y-1">
                 {brands.map((b) => (
                   <button
@@ -616,8 +616,8 @@ export const ProductsPage: React.FC = () => {
                       selectBrand(b.name === selectedBrandName ? null : b.name);
                       setMobileFilterOpen(false);
                     }}
-                    className={`w-full text-left rtl:text-right px-2 py-1 rounded text-xs ${
-                      selectedBrandName === b.name ? 'text-[#007AFF] font-bold' : 'text-[#64748B]'
+                    className={`w-full text-left rtl:text-right px-2 py-1 rounded text-xs cursor-pointer ${
+                      selectedBrandName === b.name ? 'text-[#007AFF] dark:text-[#38BDF8] font-bold' : 'text-[#64748B] dark:text-slate-300'
                     }`}
                   >
                     {b.name}
@@ -627,13 +627,13 @@ export const ProductsPage: React.FC = () => {
             </div>
 
             {/* Clear button */}
-            <div className="pt-4 border-t border-[#DCE5F0]">
+            <div className="pt-4 border-t border-[#DCE5F0] dark:border-[#1E293B]">
               <button
                 onClick={() => {
                   clearAllFilters();
                   setMobileFilterOpen(false);
                 }}
-                className="w-full py-2.5 rounded-xl bg-[#F5F8FC] text-[#DC2626] font-bold text-xs border border-[#DCE5F0]"
+                className="w-full py-2.5 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] text-[#DC2626] dark:text-red-400 font-bold text-xs border border-[#DCE5F0] dark:border-[#1E293B] cursor-pointer"
               >
                 {t.clearFilters}
               </button>

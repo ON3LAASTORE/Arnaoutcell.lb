@@ -11,10 +11,16 @@ import {
   CheckCircle2,
   Lock,
   AlertCircle,
+  Tag,
 } from 'lucide-react';
 import { WhatsApp3DIcon } from '../components/icons/ThreeDIcons';
 import { LazyImage } from '../components/LazyImage';
 import { openExternalUrl } from '../utils/navigation';
+import {
+  calculateOrderGrandTotal,
+  resolveCartItemImage,
+  validateAndCalculatePromoDiscount,
+} from '../utils/checkoutHelpers';
 
 export const CheckoutPage: React.FC = () => {
   const {
@@ -22,6 +28,9 @@ export const CheckoutPage: React.FC = () => {
     t,
     cart,
     cartSubtotal,
+    promoCode,
+    applyPromoCode,
+    clearPromoCode,
     storeSettings,
     submitOrder,
     setCurrentView,
@@ -37,6 +46,8 @@ export const CheckoutPage: React.FC = () => {
   const [addressLine, setAddressLine] = useState('');
   const [notes, setNotes] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cod');
+  const [promoInput, setPromoInput] = useState(promoCode);
+  const [promoFeedback, setPromoFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -45,15 +56,34 @@ export const CheckoutPage: React.FC = () => {
     storeSettings.deliveryZones[0];
 
   const deliveryFee = selectedZone ? selectedZone.fee : 0;
-  const grandTotal = cartSubtotal + deliveryFee;
+  const activePromo = promoCode
+    ? validateAndCalculatePromoDiscount(promoCode, cartSubtotal, deliveryFee)
+    : null;
+  const appliedDiscount = activePromo && activePromo.isValid ? activePromo.discount : 0;
+  const grandTotal = calculateOrderGrandTotal(cartSubtotal, appliedDiscount, deliveryFee);
+
+  const handleApplyCheckoutPromo = () => {
+    const result = applyPromoCode(promoInput, deliveryFee);
+    if (result.isValid) {
+      setPromoFeedback({
+        type: 'success',
+        msg: lang === 'ar' ? result.messageAr : result.messageEn,
+      });
+    } else {
+      setPromoFeedback({
+        type: 'error',
+        msg: lang === 'ar' ? result.messageAr : result.messageEn,
+      });
+    }
+  };
 
   if (cart.length === 0) {
     return (
-      <div className="py-24 bg-[#F5F8FC] text-center min-h-[60vh] flex flex-col items-center justify-center">
-        <h2 className="text-xl font-bold text-[#172033] mb-2">{t.emptyCart}</h2>
+      <div className="py-24 bg-[#F5F8FC] dark:bg-[#0A0F1D] text-center min-h-[60vh] flex flex-col items-center justify-center">
+        <h2 className="text-xl font-bold text-[#172033] dark:text-[#F8FAFC] mb-2">{t.emptyCart}</h2>
         <button
           onClick={() => setCurrentView('products')}
-          className="px-6 py-2.5 rounded-xl bg-[#007AFF] text-white font-bold text-xs hover:bg-[#0066D6]"
+          className="px-6 py-2.5 rounded-xl bg-[#007AFF] text-white font-bold text-xs hover:bg-[#0066D6] cursor-pointer"
         >
           {t.continueShopping}
         </button>
@@ -97,7 +127,7 @@ export const CheckoutPage: React.FC = () => {
         brand: item.product.brand,
         price: item.selectedVariant ? item.selectedVariant.price : item.product.price,
         quantity: item.quantity,
-        image: item.product.images[0],
+        image: resolveCartItemImage(item),
         color: item.selectedColor,
         variantName: item.selectedVariant?.name,
       }));
@@ -113,7 +143,7 @@ export const CheckoutPage: React.FC = () => {
         },
         items: orderItems,
         subtotal: cartSubtotal,
-        discount: 0,
+        discount: appliedDiscount,
         deliveryFee,
         total: grandTotal,
         currency: 'USD',
@@ -143,6 +173,7 @@ export const CheckoutPage: React.FC = () => {
         addressLine: addressLine || 'Delivery Across Lebanon',
       },
       items: cart,
+      discount: appliedDiscount,
       total: grandTotal,
       paymentMethod,
     };
@@ -387,7 +418,7 @@ export const CheckoutPage: React.FC = () => {
                       <div key={idx} className="pt-2 first:pt-0 flex items-center justify-between gap-3 text-xs">
                         <div className="flex items-center gap-2.5 min-w-0">
                           <LazyImage
-                            src={item.product.images[0]}
+                            src={resolveCartItemImage(item)}
                             alt={item.product.name}
                             width={40}
                             height={40}
@@ -412,12 +443,74 @@ export const CheckoutPage: React.FC = () => {
                   })}
                 </div>
 
+                {/* Promo Code Input */}
+                <div className="pt-3 border-t border-[#DCE5F0] dark:border-[#1E293B] space-y-2">
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Tag className="w-3.5 h-3.5 text-[#64748B] dark:text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 rtl:left-auto rtl:right-3" />
+                      <input
+                        type="text"
+                        value={promoInput}
+                        onChange={(e) => setPromoInput(e.target.value)}
+                        placeholder={lang === 'ar' ? 'كود الخصم (مثال: ONALAA10)' : 'Promo code (e.g. ONALAA10)'}
+                        data-testid="checkout-promo-input"
+                        className="w-full bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] rounded-xl pl-8 pr-3 rtl:pl-3 rtl:pr-8 py-2 text-xs text-[#172033] dark:text-[#F8FAFC] uppercase tracking-wider focus:outline-none focus:border-[#007AFF]"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleApplyCheckoutPromo}
+                      data-testid="checkout-apply-promo-btn"
+                      className="px-3.5 py-2 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] text-xs font-bold text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] transition-colors cursor-pointer"
+                    >
+                      {lang === 'ar' ? 'تطبيق' : 'Apply'}
+                    </button>
+                    {promoCode && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          clearPromoCode();
+                          setPromoInput('');
+                          setPromoFeedback(null);
+                        }}
+                        className="px-3 py-2 rounded-xl border border-[#DCE5F0] dark:border-[#1E293B] text-xs font-bold text-[#DC2626] dark:text-rose-400 cursor-pointer"
+                      >
+                        {lang === 'ar' ? 'حذف' : 'Clear'}
+                      </button>
+                    )}
+                  </div>
+                  {promoFeedback && (
+                    <p
+                      className={`text-[11px] font-semibold ${
+                        promoFeedback.type === 'success'
+                          ? 'text-[#16A34A] dark:text-emerald-400'
+                          : 'text-[#DC2626] dark:text-rose-400'
+                      }`}
+                    >
+                      {promoFeedback.msg}
+                    </p>
+                  )}
+                </div>
+
                 {/* Totals */}
                 <div className="space-y-2 pt-3 border-t border-[#DCE5F0] dark:border-[#1E293B] text-xs">
                   <div className="flex justify-between text-[#172033] dark:text-[#F8FAFC]">
                     <span>{t.subtotal}</span>
                     <span className="font-bold">${cartSubtotal} USD</span>
                   </div>
+
+                  {appliedDiscount > 0 && (
+                    <div
+                      data-testid="checkout-discount-row"
+                      className="flex justify-between text-[#16A34A] dark:text-emerald-400 font-bold"
+                    >
+                      <span>
+                        {lang === 'ar' ? 'الخصم' : 'Promo Discount'}
+                        {promoCode ? ` (${promoCode})` : ''}:
+                      </span>
+                      <span>-${appliedDiscount} USD</span>
+                    </div>
+                  )}
 
                   <div className="flex justify-between text-[#172033] dark:text-[#F8FAFC]">
                     <span>{t.deliveryFee} ({selectedZone ? (lang === 'ar' ? selectedZone.nameAr : selectedZone.nameEn) : ''})</span>
@@ -428,7 +521,12 @@ export const CheckoutPage: React.FC = () => {
 
                   <div className="pt-3 border-t border-[#DCE5F0] dark:border-[#1E293B] flex items-baseline justify-between">
                     <span className="text-sm font-bold text-[#172033] dark:text-[#F8FAFC]">{t.total}</span>
-                    <span className="text-2xl font-black text-[#007AFF] dark:text-[#38BDF8]">${grandTotal} USD</span>
+                    <span
+                      data-testid="checkout-grand-total"
+                      className="text-2xl font-black text-[#007AFF] dark:text-[#38BDF8]"
+                    >
+                      ${grandTotal} USD
+                    </span>
                   </div>
                 </div>
 

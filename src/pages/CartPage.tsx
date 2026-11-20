@@ -4,6 +4,7 @@ import { Trash2, ShoppingBag, ArrowRight, ShieldCheck, Tag } from 'lucide-react'
 import { WhatsApp3DIcon, Cart3DIcon } from '../components/icons/ThreeDIcons';
 import { LazyImage } from '../components/LazyImage';
 import { openExternalUrl } from '../utils/navigation';
+import { resolveCartItemImage } from '../utils/checkoutHelpers';
 
 export const CartPage: React.FC = () => {
   const {
@@ -14,13 +15,16 @@ export const CartPage: React.FC = () => {
     removeFromCart,
     clearCart,
     cartSubtotal,
+    promoCode,
+    cartDiscount,
+    applyPromoCode,
+    clearPromoCode,
     cartCount,
     setCurrentView,
     generateWhatsAppOrderUrl,
   } = useShop();
 
-  const [couponCode, setCouponCode] = useState('');
-  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponInput, setCouponInput] = useState(promoCode);
   const [couponError, setCouponError] = useState('');
   const [couponSuccess, setCouponSuccess] = useState('');
 
@@ -28,31 +32,25 @@ export const CartPage: React.FC = () => {
     e.preventDefault();
     setCouponError('');
     setCouponSuccess('');
-    const code = couponCode.trim().toUpperCase();
-
-    if (code === 'ONALAA10' || code === 'CHOUF10' || code === 'WELCOME10') {
-      const discount = Math.round(cartSubtotal * 0.1); // 10% discount
-      setCouponDiscount(discount);
-      setCouponSuccess(lang === 'ar' ? 'تم تطبيق خصم 10% بنجاح!' : '10% Discount applied successfully!');
-    } else if (code === 'FREESHIP') {
-      setCouponDiscount(3);
-      setCouponSuccess(lang === 'ar' ? 'تم خصم تكلفة التوصيل!' : 'Free shipping applied!');
+    const result = applyPromoCode(couponInput);
+    if (result.isValid) {
+      setCouponSuccess(lang === 'ar' ? result.messageAr : result.messageEn);
     } else {
-      setCouponError(lang === 'ar' ? 'كود الخصم غير صالح أو منتهي الصلاحية' : 'Invalid or expired coupon code');
+      setCouponError(lang === 'ar' ? result.messageAr : result.messageEn);
     }
   };
 
-  const finalTotal = Math.max(0, cartSubtotal - couponDiscount);
+  const finalTotal = Math.max(0, cartSubtotal - cartDiscount);
 
   if (cart.length === 0) {
     return (
-      <div className="py-24 bg-[#F5F8FC] min-h-[70vh] flex items-center justify-center">
-        <div className="max-w-md mx-auto text-center p-8 bg-white rounded-3xl border border-[#DCE5F0] shadow-sm space-y-4">
-          <div className="w-20 h-20 rounded-full bg-[#F5F8FC] border border-[#DCE5F0] flex items-center justify-center mx-auto text-[#64748B]">
+      <div className="py-24 bg-[#F5F8FC] dark:bg-[#0A0F1D] min-h-[70vh] flex items-center justify-center">
+        <div className="max-w-md mx-auto text-center p-8 bg-white dark:bg-[#0E1726] rounded-3xl border border-[#DCE5F0] dark:border-[#1E293B] shadow-sm space-y-4">
+          <div className="w-20 h-20 rounded-full bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] flex items-center justify-center mx-auto text-[#64748B] dark:text-slate-400">
             <ShoppingBag className="w-10 h-10" />
           </div>
-          <h2 className="text-xl font-bold text-[#172033]">{t.emptyCart}</h2>
-          <p className="text-xs text-[#64748B]">{t.emptyCartSub}</p>
+          <h2 className="text-xl font-bold text-[#172033] dark:text-[#F8FAFC]">{t.emptyCart}</h2>
+          <p className="text-xs text-[#64748B] dark:text-slate-400">{t.emptyCartSub}</p>
           <button
             onClick={() => setCurrentView('products')}
             className="px-6 py-3 rounded-xl bg-[#007AFF] text-white font-bold text-xs hover:bg-[#0066D6] transition-colors cursor-pointer shadow-sm"
@@ -96,7 +94,7 @@ export const CartPage: React.FC = () => {
                     <div key={idx} className="p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 justify-between">
                       <div className="flex items-center gap-4 w-full sm:w-auto">
                         <LazyImage
-                          src={item.product.images[0]}
+                          src={resolveCartItemImage(item)}
                           alt={item.product.name}
                           width={80}
                           height={80}
@@ -183,19 +181,39 @@ export const CartPage: React.FC = () => {
                   <input
                     type="text"
                     placeholder={lang === 'ar' ? 'أدخل كود الخصم (مثال: ONALAA10 أو WELCOME10)' : 'Promo code (try ONALAA10)'}
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value)}
+                    data-testid="cart-promo-input"
                     className="w-full bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] rounded-xl pl-10 pr-3 rtl:pl-3 rtl:pr-10 py-2.5 text-xs text-[#172033] dark:text-[#F8FAFC] uppercase tracking-wider focus:outline-none focus:border-[#007AFF]"
                   />
                 </div>
                 <button
                   type="submit"
+                  data-testid="cart-apply-promo-btn"
                   className="px-5 py-2.5 rounded-xl bg-white dark:bg-[#111A2E] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] font-bold text-xs border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] transition-colors cursor-pointer"
                 >
                   {lang === 'ar' ? 'تطبيق الكود' : 'Apply Coupon'}
                 </button>
+                {promoCode && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      clearPromoCode();
+                      setCouponInput('');
+                      setCouponSuccess('');
+                      setCouponError('');
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-white dark:bg-[#111A2E] hover:bg-red-50 dark:hover:bg-rose-950/40 text-[#DC2626] dark:text-rose-400 font-bold text-xs border border-[#DCE5F0] dark:border-[#1E293B] transition-colors cursor-pointer"
+                  >
+                    {lang === 'ar' ? 'إزالة' : 'Remove'}
+                  </button>
+                )}
               </form>
-              {couponSuccess && <p className="text-xs text-[#16A34A] dark:text-emerald-400 font-semibold mt-2">{couponSuccess}</p>}
+              {(couponSuccess || (promoCode && cartDiscount > 0)) && (
+                <p className="text-xs text-[#16A34A] dark:text-emerald-400 font-semibold mt-2">
+                  {couponSuccess || (lang === 'ar' ? `الكود ${promoCode} مطبّق` : `Promo ${promoCode} active`)}
+                </p>
+              )}
               {couponError && <p className="text-xs text-[#DC2626] dark:text-rose-400 font-semibold mt-2">{couponError}</p>}
             </div>
           </div>
@@ -213,10 +231,13 @@ export const CartPage: React.FC = () => {
                   <span className="font-bold">${cartSubtotal} USD</span>
                 </div>
 
-                {couponDiscount > 0 && (
+                {cartDiscount > 0 && (
                   <div className="flex justify-between text-[#16A34A] dark:text-emerald-400 font-bold">
-                    <span>{lang === 'ar' ? 'قيمة الخصم:' : 'Discount Applied:'}</span>
-                    <span>-${couponDiscount} USD</span>
+                    <span>
+                      {lang === 'ar' ? 'قيمة الخصم' : 'Discount Applied'}
+                      {promoCode ? ` (${promoCode})` : ''}:
+                    </span>
+                    <span>-${cartDiscount} USD</span>
                   </div>
                 )}
 
@@ -245,7 +266,7 @@ export const CartPage: React.FC = () => {
 
                 <button
                   onClick={() => {
-                    const url = generateWhatsAppOrderUrl({ items: cart, total: finalTotal });
+                    const url = generateWhatsAppOrderUrl({ items: cart, discount: cartDiscount, total: finalTotal });
                     openExternalUrl(url);
                   }}
                   className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-50 via-green-50 to-emerald-100 hover:from-emerald-100 hover:to-green-100 dark:from-emerald-950/40 dark:via-emerald-900/40 dark:to-emerald-950/60 border border-emerald-300 dark:border-emerald-700 text-emerald-800 dark:text-emerald-300 font-extrabold text-xs flex items-center justify-center gap-2.5 transition-all cursor-pointer shadow-sm hover:shadow-md hover:shadow-emerald-500/20 group active:scale-98"

@@ -24,6 +24,7 @@ import {
   Send,
 } from 'lucide-react';
 import { LazyImage } from '../../LazyImage';
+import { ConfirmDialog } from '../../ConfirmDialog';
 
 interface SocialPostHistoryProps {
   onEditPost: (post: MarketingPost) => void;
@@ -37,12 +38,17 @@ export const SocialPostHistory: React.FC<SocialPostHistoryProps> = ({ onEditPost
   const [statusFilter, setStatusFilter] = useState<'all' | 'published' | 'draft' | 'failed'>('all');
   const [retryingId, setRetryingId] = useState<string | null>(null);
   const [activeErrorModal, setActiveErrorModal] = useState<{ title: string; details: string; platform: string } | null>(null);
+  const [pendingDeletePost, setPendingDeletePost] = useState<{ id: string; name: string } | null>(null);
 
-  const handleDelete = async (id: string, name: string) => {
-    if (window.confirm(isArabic ? `حذف المنشور "${name}" من سجل النشر؟` : `Delete post for "${name}" from post history?`)) {
-      await deleteMarketingPost(id);
-      setPosts(getSavedMarketingPosts());
-    }
+  const handleDelete = (id: string, name: string) => {
+    setPendingDeletePost({ id, name });
+  };
+
+  const confirmDeletePost = async () => {
+    if (!pendingDeletePost) return;
+    await deleteMarketingPost(pendingDeletePost.id);
+    setPosts(getSavedMarketingPosts());
+    setPendingDeletePost(null);
   };
 
   const handleRetryPlatform = async (post: MarketingPost, platform: SocialPlatform) => {
@@ -354,6 +360,22 @@ export const SocialPostHistory: React.FC<SocialPostHistoryProps> = ({ onEditPost
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingDeletePost)}
+        lang={lang}
+        title={isArabic ? 'حذف المنشور' : 'Delete Marketing Post'}
+        message={
+          pendingDeletePost
+            ? isArabic
+              ? `حذف المنشور "${pendingDeletePost.name}" من سجل النشر؟`
+              : `Delete post for "${pendingDeletePost.name}" from post history?`
+            : ''
+        }
+        confirmLabel={isArabic ? 'حذف المنشور' : 'Delete Post'}
+        onConfirm={confirmDeletePost}
+        onCancel={() => setPendingDeletePost(null)}
+      />
     </div>
   );
 };

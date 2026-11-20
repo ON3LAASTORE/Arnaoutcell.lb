@@ -90,26 +90,26 @@ test('buildDailySalesAndTrafficSeries aggregates live orders and traffic in live
   assert.equal(today.conversionRate, 4.0);
 });
 
-test('buildDailySalesAndTrafficSeries in blended mode is deterministic and adds live deltas cleanly', () => {
-  const firstRun = buildDailySalesAndTrafficSeries({
+test('buildDailySalesAndTrafficSeries starts cleanly at zero when no real orders or traffic exist', () => {
+  const series = buildDailySalesAndTrafficSeries({
     orders: [],
     trafficStore: {},
     searchEvents: [],
     rangeDays: 14,
-    dataMode: 'blended',
-    now: SAMPLE_DATE,
-  });
-  const secondRun = buildDailySalesAndTrafficSeries({
-    orders: [],
-    trafficStore: {},
-    searchEvents: [],
-    rangeDays: 14,
-    dataMode: 'blended',
     now: SAMPLE_DATE,
   });
 
-  assert.deepEqual(firstRun, secondRun);
-  assert.ok(firstRun.every((pt) => pt.visits > 0 && pt.revenueUsd > 0));
+  assert.equal(series.length, 14);
+  assert.ok(series.every((pt) => pt.revenueUsd === 0 && pt.ordersCount === 0 && pt.unitsSold === 0));
+
+  const summary = summarizeDailySalesAndTraffic(series);
+  assert.equal(summary.totalRevenueUsd, 0);
+  assert.equal(summary.totalOrdersCount, 0);
+  assert.equal(summary.avgOrderValueUsd, 0);
+  assert.equal(summary.peakSalesDate, '');
+
+  const emptyCats = computeCategorySalesBreakdown([], [] as unknown as Product[], 6);
+  assert.equal(emptyCats.length, 0);
 });
 
 test('summarizeDailySalesAndTraffic computes totals, conversion rate, and peak date', () => {

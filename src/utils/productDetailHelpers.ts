@@ -5,7 +5,7 @@ import {
 } from './productCardHelpers';
 import {
   findVariantForColor,
-  resolveExplicitColorImage,
+  resolveColorShowcaseImage,
 } from './colorVariantHelpers';
 
 export interface PdpGalleryItem {
@@ -165,7 +165,7 @@ export function buildPdpColorSwatches(
     const isLightTone = /silver|white|titanium|beige|starlight|champagne|gold|أبيض|فضي/i.test(
       color
     );
-    const explicitImage = resolveExplicitColorImage(product, color);
+    const mappedColorImage = resolveColorShowcaseImage(product, color);
     const matchedVariant = findVariantForColor(product, color);
     const swatchPrice =
       matchedVariant && Number.isFinite(matchedVariant.price) && matchedVariant.price > 0
@@ -174,8 +174,8 @@ export function buildPdpColorSwatches(
 
     return {
       color,
-      thumbnailUrl: explicitImage || fallbackImg,
-      isLightTone: isLightTone && !explicitImage,
+      thumbnailUrl: mappedColorImage || fallbackImg,
+      isLightTone: isLightTone && !mappedColorImage,
       formattedPrice: `$${formatUsdAmount(swatchPrice)}`,
     };
   });

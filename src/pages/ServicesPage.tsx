@@ -47,14 +47,14 @@ export const ServicesPage: React.FC = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EAF3FF] border border-[#BAE6FD] text-[#007AFF] text-xs font-bold tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EAF3FF] dark:bg-[#111A2E] border border-[#BAE6FD] dark:border-[#1E293B] text-[#007AFF] dark:text-[#38BDF8] text-xs font-bold tracking-wider">
             <CreditCard className="w-4 h-4" />
             <span>{lang === 'ar' ? 'خدمات ويش موني والاتصالات — ON AlAA STORE' : 'WHISH WALLET & TELECOM SERVICES'}</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black text-[#172033]">
+          <h1 className="text-3xl sm:text-5xl font-black text-[#172033] dark:text-[#F8FAFC]">
             {lang === 'ar' ? 'خدمات ويش موني وتوتش للاتصالات' : 'Whish Money & Touch Services'}
           </h1>
-          <p className="text-[#64748B] text-sm sm:text-base leading-relaxed">
+          <p className="text-[#64748B] dark:text-slate-400 text-sm sm:text-base leading-relaxed">
             {lang === 'ar'
               ? 'من متجر ON AlAA STORE الإلكتروني في الشوف مع خدمة تغطي كافة مناطق لبنان، نوفر دعم خدمات ويش موني والاتصالات بأعلى معايير السرعة والأمان.'
               : 'Through ON AlAA STORE online hub based in Chouf serving customers across all Lebanon, we assist with Whish Money digital wallet and Touch/Alfa telecom services.'}
@@ -62,16 +62,16 @@ export const ServicesPage: React.FC = () => {
         </div>
 
         {/* Online Store & Delivery Notice */}
-        <div className="p-6 rounded-3xl bg-[#F5F8FC] border border-[#DCE5F0] mb-12 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xs">
+        <div className="p-6 rounded-3xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] mb-12 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-xs">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-[#EAF3FF] text-[#007AFF] flex items-center justify-center flex-shrink-0 border border-[#BAE6FD]">
+            <div className="w-12 h-12 rounded-2xl bg-[#EAF3FF] dark:bg-[#0E1726] text-[#007AFF] dark:text-[#38BDF8] flex items-center justify-center flex-shrink-0 border border-[#BAE6FD] dark:border-[#1E293B]">
               <MapPin className="w-6 h-6" />
             </div>
             <div>
-              <h4 className="font-bold text-[#172033] text-base">
+              <h4 className="font-bold text-[#172033] dark:text-[#F8FAFC] text-base">
                 {lang === 'ar' ? 'متجر إلكتروني في الشوف • توصيل لجميع لبنان' : 'Online Store Based in Chouf • All Lebanon Delivery'}
               </h4>
-              <p className="text-xs text-[#64748B] mt-0.5">
+              <p className="text-xs text-[#64748B] dark:text-slate-400 mt-0.5">
                 {lang === 'ar' ? storeSettings.locationAr : storeSettings.locationEn}
               </p>
             </div>
@@ -101,84 +101,84 @@ export const ServicesPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
           {/* Whish Money */}
-          <div className="p-8 rounded-3xl bg-white border border-[#DCE5F0] hover:border-[#007AFF] shadow-xs hover:shadow-[0_4px_20px_-4px_rgba(0,122,255,0.12)] transition-all space-y-4">
+          <div className="p-8 rounded-3xl bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] dark:hover:border-[#38BDF8] shadow-xs hover:shadow-[0_4px_20px_-4px_rgba(0,122,255,0.12)] transition-all space-y-4">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-[#EAF3FF] text-[#007AFF] border border-[#BAE6FD] flex items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-[#EAF3FF] dark:bg-[#0E1726] text-[#007AFF] dark:text-[#38BDF8] border border-[#BAE6FD] dark:border-[#1E293B] flex items-center justify-center">
                 <CreditCard className="w-6 h-6" />
               </div>
-              <span className="text-xs font-bold text-[#007AFF] px-3 py-1 rounded-full bg-[#EAF3FF] border border-[#BAE6FD]">
+              <span className="text-xs font-bold text-[#007AFF] dark:text-[#38BDF8] px-3 py-1 rounded-full bg-[#EAF3FF] dark:bg-[#0E1726] border border-[#BAE6FD] dark:border-[#1E293B]">
                 Whish Money Agent
               </span>
             </div>
 
-            <h3 className="text-xl font-bold text-[#172033]">
+            <h3 className="text-xl font-bold text-[#172033] dark:text-[#F8FAFC]">
               {lang === 'ar' ? 'ويش موني — المحفظة الرقمية' : 'Whish Money Hub'}
             </h3>
-            <p className="text-xs text-[#64748B] leading-relaxed">
+            <p className="text-xs text-[#64748B] dark:text-slate-400 leading-relaxed">
               {lang === 'ar'
                 ? 'شحن رصيد المحفظة الإلكترونية وسحب الكاش بدون تعقيدات، شراء بطاقات الألعاب الرقمية (PlayStation, PUBG, Steam, Xbox)، وشحن اشتراكات الإنترنت.'
                 : 'Top-up your Whish digital wallet, cash-out, and buy online gaming cards and digital streaming subscriptions.'}
             </p>
 
-            <div className="space-y-2 pt-2 text-xs text-[#172033]">
+            <div className="space-y-2 pt-2 text-xs text-[#172033] dark:text-slate-200">
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-[#16A34A]" />
+                <CheckCircle className="w-4 h-4 text-[#16A34A] dark:text-emerald-400" />
                 <span>{lang === 'ar' ? 'سحب وتعبئة كاش فوري' : 'Zero hassle Cash-In and Cash-Out'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-[#16A34A]" />
+                <CheckCircle className="w-4 h-4 text-[#16A34A] dark:text-emerald-400" />
                 <span>{lang === 'ar' ? 'كافة بطاقات الألعاب والتطبيقات' : 'Gaming vouchers and digital gift cards'}</span>
               </div>
             </div>
           </div>
 
           {/* Touch Store */}
-          <div className="p-8 rounded-3xl bg-white border border-[#DCE5F0] hover:border-[#007AFF] shadow-xs hover:shadow-[0_4px_20px_-4px_rgba(0,122,255,0.12)] transition-all space-y-4">
+          <div className="p-8 rounded-3xl bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] dark:hover:border-[#38BDF8] shadow-xs hover:shadow-[0_4px_20px_-4px_rgba(0,122,255,0.12)] transition-all space-y-4">
             <div className="flex items-center justify-between">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#16A34A] border border-emerald-200 flex items-center justify-center">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/30 text-[#16A34A] dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/50 flex items-center justify-center">
                 <Smartphone className="w-6 h-6" />
               </div>
-              <span className="text-xs font-bold text-[#16A34A] px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200">
+              <span className="text-xs font-bold text-[#16A34A] dark:text-emerald-400 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50">
                 Touch Store Certified
               </span>
             </div>
 
-            <h3 className="text-xl font-bold text-[#172033]">
+            <h3 className="text-xl font-bold text-[#172033] dark:text-[#F8FAFC]">
               {lang === 'ar' ? 'توتش ستور وخدمات الخطوط' : 'Touch Store & Mobile Services'}
             </h3>
-            <p className="text-xs text-[#64748B] leading-relaxed">
+            <p className="text-xs text-[#64748B] dark:text-slate-400 leading-relaxed">
               {lang === 'ar'
                 ? 'خدمات خطوط الهاتف المحمول المعتمدة: شراء خطوط مسبقة ولاحقة الدفع، استخراج بدل ضائع، تجديد وتمديد صلاحية الأيام، وتفعيل باقات الـ 4G/5G.'
                 : 'Authorized Touch and Alfa line services: new SIM cards, replacement SIMs, prepaid line validity extension, and 4G/5G data packs.'}
             </p>
 
-            <div className="space-y-2 pt-2 text-xs text-[#172033]">
+            <div className="space-y-2 pt-2 text-xs text-[#172033] dark:text-slate-200">
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-[#16A34A]" />
+                <CheckCircle className="w-4 h-4 text-[#16A34A] dark:text-emerald-400" />
                 <span>{lang === 'ar' ? 'تبديل شرائح SIM وبدل ضائع فوري' : 'Immediate replacement SIM activation'}</span>
               </div>
               <div className="flex items-center gap-2">
-                <CheckCircle className="w-4 h-4 text-[#16A34A]" />
+                <CheckCircle className="w-4 h-4 text-[#16A34A] dark:text-emerald-400" />
                 <span>{lang === 'ar' ? 'شحن فوري للأيام والدولارات' : 'Instant days and recharge top-ups'}</span>
               </div>
             </div>
 
             {/* Direct Line for Touch Store: 70 773 067 */}
-            <div className="pt-4 border-t border-[#DCE5F0] flex flex-wrap items-center justify-between gap-2 text-xs">
-              <span className="text-[#64748B] font-semibold">{lang === 'ar' ? 'الخط المباشر لخدمات الخطوط:' : 'Touch Store Direct Line:'}</span>
+            <div className="pt-4 border-t border-[#DCE5F0] dark:border-[#1E293B] flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span className="text-[#64748B] dark:text-slate-400 font-semibold">{lang === 'ar' ? 'الخط المباشر لخدمات الخطوط:' : 'Touch Store Direct Line:'}</span>
               <div className="flex items-center gap-2">
                 <a
                   href="tel:70773067"
-                  className="px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-900 font-bold flex items-center gap-1.5 transition-colors"
+                  className="px-3 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-800/50 text-emerald-900 dark:text-emerald-300 font-bold flex items-center gap-1.5 transition-colors"
                 >
-                  <Phone className="w-3.5 h-3.5 text-emerald-700" />
+                  <Phone className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400" />
                   <span>70 773 067</span>
                 </a>
                 <a
                   href="https://wa.me/96170773067?text=Hello%20ON%20AlAA%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20Touch%20telecom%20services"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 font-bold flex items-center gap-1 transition-all"
+                  className="px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300 font-bold flex items-center gap-1 transition-all"
                   title="WhatsApp: 70 773 067"
                 >
                   <WhatsApp3DIcon size={16} />

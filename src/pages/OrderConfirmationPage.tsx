@@ -14,13 +14,13 @@ export const OrderConfirmationPage: React.FC = () => {
 
   if (!lastCompletedOrder) {
     return (
-      <div className="py-24 bg-[#F5F8FC] text-center min-h-[60vh] flex flex-col items-center justify-center">
-        <h2 className="text-xl font-bold text-[#172033] mb-2">
+      <div className="py-24 bg-[#F5F8FC] dark:bg-[#0A0F1D] text-center min-h-[60vh] flex flex-col items-center justify-center">
+        <h2 className="text-xl font-bold text-[#172033] dark:text-[#F8FAFC] mb-2">
           {lang === 'ar' ? 'لا يوجد طلب معروض' : 'No order to display'}
         </h2>
         <button
           onClick={() => setCurrentView('home')}
-          className="px-6 py-2.5 rounded-xl bg-[#007AFF] text-white font-bold text-xs hover:bg-[#0066D6]"
+          className="px-6 py-2.5 rounded-xl bg-[#007AFF] text-white font-bold text-xs hover:bg-[#0066D6] cursor-pointer"
         >
           {t.backToHome}
         </button>
@@ -44,76 +44,81 @@ export const OrderConfirmationPage: React.FC = () => {
       <div className="max-w-3xl mx-auto px-4 sm:px-6">
         {/* Success Header */}
         <div className="text-center space-y-4 mb-10">
-          <div className="w-20 h-20 rounded-full bg-emerald-50 border-2 border-emerald-200 text-[#16A34A] flex items-center justify-center mx-auto shadow-sm animate-in zoom-in-75 duration-300">
+          <div className="w-20 h-20 rounded-full bg-emerald-50 dark:bg-emerald-950/50 border-2 border-emerald-200 dark:border-emerald-800 text-[#16A34A] dark:text-emerald-400 flex items-center justify-center mx-auto shadow-sm animate-in zoom-in-75 duration-300">
             <CheckCircle className="w-10 h-10" />
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-black text-[#172033]">{t.orderSuccessTitle}</h1>
-          <p className="text-xs sm:text-sm text-[#64748B] max-w-md mx-auto leading-relaxed">
+          <h1 className="text-2xl sm:text-3xl font-black text-[#172033] dark:text-[#F8FAFC]">{t.orderSuccessTitle}</h1>
+          <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 max-w-md mx-auto leading-relaxed">
             {t.orderSuccessSub}
           </p>
 
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#EAF3FF] border border-[#BAE6FD] text-[#007AFF] font-mono text-sm font-black shadow-xs">
+          <div
+            data-testid="confirmation-order-id"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#EAF3FF] dark:bg-[#1E293B] border border-[#BAE6FD] dark:border-[#007AFF]/40 text-[#007AFF] dark:text-[#38BDF8] font-mono text-sm font-black shadow-xs"
+          >
             <span>{t.orderIdLabel}:</span>
-            <span className="text-[#172033]">{order.id}</span>
+            <span className="text-[#172033] dark:text-[#F8FAFC]">{order.id}</span>
           </div>
         </div>
 
         {/* Invoice / Printable Container */}
-        <div className="bg-white border border-[#DCE5F0] rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm print:border-none print:shadow-none">
+        <div className="bg-white dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm print:border-none print:shadow-none">
           {/* Header row */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-[#DCE5F0] gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-[#DCE5F0] dark:border-[#1E293B] gap-4">
             <div>
               <StoreLogo size="sm" showTagline={false} />
-              <span className="text-[11px] text-[#64748B] block mt-1">
+              <span className="text-[11px] text-[#64748B] dark:text-slate-400 block mt-1">
                 {lang === 'ar' ? storeSettings.locationAr : storeSettings.locationEn} • {storeSettings.phone}
               </span>
             </div>
-            <div className="text-left sm:text-right rtl:sm:text-left text-xs text-[#64748B]">
+            <div className="text-left sm:text-right rtl:sm:text-left text-xs text-[#64748B] dark:text-slate-400">
               <p>Date: {new Date(order.orderDate).toLocaleDateString()}</p>
-              <p className="font-semibold text-[#16A34A] mt-0.5">Status: {order.status.toUpperCase()}</p>
+              <p className="font-semibold text-[#16A34A] dark:text-emerald-400 mt-0.5">
+                Status: {order.status.toUpperCase()}
+              </p>
             </div>
           </div>
 
           {/* Customer & Delivery Summary */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-            <div className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] space-y-1">
-              <span className="text-[10px] text-[#007AFF] font-bold uppercase tracking-wider block">
+            <div className="p-4 rounded-2xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] space-y-1">
+              <span className="text-[10px] text-[#007AFF] dark:text-[#38BDF8] font-bold uppercase tracking-wider block">
                 {lang === 'ar' ? 'بيانات المستلم' : 'CUSTOMER INFO'}
               </span>
-              <p className="font-bold text-[#172033] text-sm">{order.customer.fullName}</p>
-              <p className="text-[#64748B]">{order.customer.phone}</p>
+              <p className="font-bold text-[#172033] dark:text-[#F8FAFC] text-sm">{order.customer.fullName}</p>
+              <p className="text-[#64748B] dark:text-slate-400">{order.customer.phone}</p>
             </div>
 
-            <div className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] space-y-1">
-              <span className="text-[10px] text-[#007AFF] font-bold uppercase tracking-wider block">
+            <div className="p-4 rounded-2xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] space-y-1">
+              <span className="text-[10px] text-[#007AFF] dark:text-[#38BDF8] font-bold uppercase tracking-wider block">
                 {lang === 'ar' ? 'عنوان وجهة التوصيل' : 'DELIVERY ADDRESS'}
               </span>
-              <p className="font-bold text-[#172033]">{order.customer.cityArea}</p>
-              <p className="text-[#64748B]">{order.customer.addressLine}</p>
-              {order.customer.notes && <p className="text-[#64748B] italic">Note: {order.customer.notes}</p>}
+              <p className="font-bold text-[#172033] dark:text-[#F8FAFC]">{order.customer.cityArea}</p>
+              <p className="text-[#64748B] dark:text-slate-400">{order.customer.addressLine}</p>
+              {order.customer.notes && <p className="text-[#64748B] dark:text-slate-400 italic">Note: {order.customer.notes}</p>}
             </div>
           </div>
 
           {/* Items Table */}
-          <div className="border border-[#DCE5F0] rounded-2xl overflow-hidden">
+          <div className="border border-[#DCE5F0] dark:border-[#1E293B] rounded-2xl overflow-hidden">
             <table className="w-full text-left rtl:text-right text-xs">
-              <thead className="bg-[#F5F8FC] text-[#64748B] uppercase tracking-wider text-[10px]">
+              <thead className="bg-[#F5F8FC] dark:bg-[#111A2E] text-[#64748B] dark:text-slate-400 uppercase tracking-wider text-[10px]">
                 <tr>
                   <th className="py-3 px-4">{lang === 'ar' ? 'المنتج' : 'Item'}</th>
                   <th className="py-3 px-4 text-center">{lang === 'ar' ? 'الكمية' : 'Qty'}</th>
                   <th className="py-3 px-4 text-right rtl:text-left">{lang === 'ar' ? 'السعر' : 'Total'}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#DCE5F0] text-[#172033]">
+              <tbody className="divide-y divide-[#DCE5F0] dark:divide-[#1E293B] text-[#172033] dark:text-[#F8FAFC]">
                 {order.items.map((item, idx) => (
                   <tr key={idx}>
                     <td className="py-3 px-4">
-                      <div className="font-bold text-[#172033]">{item.productName}</div>
-                      {item.color && <div className="text-[10px] text-[#64748B]">{item.color}</div>}
+                      <div className="font-bold text-[#172033] dark:text-[#F8FAFC]">{item.productName}</div>
+                      {item.color && <div className="text-[10px] text-[#64748B] dark:text-slate-400">{item.color}</div>}
                     </td>
                     <td className="py-3 px-4 text-center font-bold">x{item.quantity}</td>
-                    <td className="py-3 px-4 text-right rtl:text-left font-black text-[#007AFF]">
+                    <td className="py-3 px-4 text-right rtl:text-left font-black text-[#007AFF] dark:text-[#38BDF8]">
                       ${item.price * item.quantity}
                     </td>
                   </tr>
@@ -123,20 +128,29 @@ export const OrderConfirmationPage: React.FC = () => {
           </div>
 
           {/* Financial Totals */}
-          <div className="space-y-2 pt-2 border-t border-[#DCE5F0] text-xs">
-            <div className="flex justify-between text-[#64748B]">
+          <div className="space-y-2 pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B] text-xs">
+            <div className="flex justify-between text-[#64748B] dark:text-slate-400">
               <span>{t.subtotal}</span>
-              <span className="font-bold text-[#172033]">${order.subtotal} USD</span>
+              <span className="font-bold text-[#172033] dark:text-[#F8FAFC]">${order.subtotal} USD</span>
             </div>
-            <div className="flex justify-between text-[#64748B]">
+            {order.discount > 0 && (
+              <div
+                data-testid="confirmation-discount-row"
+                className="flex justify-between text-[#16A34A] dark:text-emerald-400 font-bold"
+              >
+                <span>{lang === 'ar' ? 'الخصم' : 'Discount'}</span>
+                <span>-${order.discount} USD</span>
+              </div>
+            )}
+            <div className="flex justify-between text-[#64748B] dark:text-slate-400">
               <span>{t.deliveryFee}</span>
-              <span className="font-bold text-[#172033]">
+              <span className="font-bold text-[#172033] dark:text-[#F8FAFC]">
                 {order.deliveryFee === 0 ? 'FREE' : `$${order.deliveryFee} USD`}
               </span>
             </div>
-            <div className="pt-2 border-t border-[#DCE5F0] flex justify-between items-baseline text-sm">
-              <span className="font-bold text-[#172033]">{t.total}</span>
-              <span className="text-2xl font-black text-[#007AFF]">${order.total} USD</span>
+            <div className="pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B] flex justify-between items-baseline text-sm">
+              <span className="font-bold text-[#172033] dark:text-[#F8FAFC]">{t.total}</span>
+              <span className="text-2xl font-black text-[#007AFF] dark:text-[#38BDF8]">${order.total} USD</span>
             </div>
           </div>
         </div>
@@ -145,9 +159,9 @@ export const OrderConfirmationPage: React.FC = () => {
         <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
           <button
             onClick={handlePrint}
-            className="px-5 py-2.5 rounded-xl bg-white hover:bg-[#F5F8FC] border border-[#DCE5F0] text-[#172033] text-xs font-bold flex items-center gap-2 cursor-pointer shadow-xs"
+            className="px-5 py-2.5 rounded-xl bg-white dark:bg-[#0E1726] hover:bg-[#F5F8FC] dark:hover:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] text-xs font-bold flex items-center gap-2 cursor-pointer shadow-xs"
           >
-            <Printer className="w-4 h-4 text-[#007AFF]" />
+            <Printer className="w-4 h-4 text-[#007AFF] dark:text-[#38BDF8]" />
             <span>{lang === 'ar' ? 'طباعة الفاتورة' : 'Print Invoice'}</span>
           </button>
 

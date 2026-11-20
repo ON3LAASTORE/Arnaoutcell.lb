@@ -4,12 +4,18 @@ import { upsertCategory, deleteCategory, saveBrands, readFileAsDataUrl } from '.
 import { Category, Brand } from '../../types';
 import { Plus, Trash2, Upload } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 export const AdminCategoriesBrands: React.FC = () => {
   const { lang, categories, brands, refreshData } = useShop();
 
   const [activeTab, setActiveTab] = useState<'categories' | 'brands'>('categories');
   const [feedback, setFeedback] = useState('');
+  const [pendingDelete, setPendingDelete] = useState<{
+    kind: 'category' | 'brand';
+    id: string;
+    name: string;
+  } | null>(null);
 
   // Category Form
   const [newCatName, setNewCatName] = useState('');
@@ -51,10 +57,7 @@ export const AdminCategoriesBrands: React.FC = () => {
   };
 
   const handleDeleteCategory = (catId: string, name: string) => {
-    if (window.confirm(`Delete category "${name}"?`)) {
-      deleteCategory(catId);
-      refreshData();
-    }
+    setPendingDelete({ kind: 'category', id: catId, name });
   };
 
   const handleAddBrand = (e: React.FormEvent) => {
@@ -91,11 +94,19 @@ export const AdminCategoriesBrands: React.FC = () => {
   };
 
   const handleDeleteBrand = (brandId: string, name: string) => {
-    if (window.confirm(`Delete brand "${name}"?`)) {
-      const updated = brands.filter((b) => b.id !== brandId);
+    setPendingDelete({ kind: 'brand', id: brandId, name });
+  };
+
+  const confirmPendingDelete = () => {
+    if (!pendingDelete) return;
+    if (pendingDelete.kind === 'category') {
+      deleteCategory(pendingDelete.id);
+    } else {
+      const updated = brands.filter((b) => b.id !== pendingDelete.id);
       saveBrands(updated, true);
-      refreshData();
     }
+    refreshData();
+    setPendingDelete(null);
   };
 
   return (
@@ -330,6 +341,30 @@ export const AdminCategoriesBrands: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingDelete)}
+        lang={lang}
+        title={
+          pendingDelete?.kind === 'category'
+            ? lang === 'ar'
+              ? 'حذف القسم'
+              : 'Delete Category'
+            : lang === 'ar'
+            ? 'حذف العلامة التجارية'
+            : 'Delete Brand'
+        }
+        message={
+          pendingDelete
+            ? pendingDelete.kind === 'category'
+              ? `Delete category "${pendingDelete.name}"?`
+              : `Delete brand "${pendingDelete.name}"?`
+            : ''
+        }
+        confirmLabel={lang === 'ar' ? 'حذف' : 'Delete'}
+        onConfirm={confirmPendingDelete}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 };

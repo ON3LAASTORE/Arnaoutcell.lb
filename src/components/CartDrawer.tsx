@@ -4,6 +4,7 @@ import { X, Trash2, ShoppingBag, ArrowRight, MessageSquare, ShieldCheck } from '
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import { LazyImage } from './LazyImage';
 import { openExternalUrl } from '../utils/navigation';
+import { resolveCartItemImage } from '../utils/checkoutHelpers';
 
 export const CartDrawer: React.FC = () => {
   const {
@@ -72,7 +73,7 @@ export const CartDrawer: React.FC = () => {
                 return (
                   <div key={idx} className="pt-4 first:pt-0 flex gap-4 items-center">
                     <LazyImage
-                      src={item.product.images[0]}
+                      src={resolveCartItemImage(item)}
                       alt={item.product.name}
                       width={64}
                       height={64}

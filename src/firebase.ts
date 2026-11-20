@@ -7,8 +7,6 @@ import {
   getDocFromServer,
   enableNetwork,
   disableNetwork,
-  persistentLocalCache,
-  persistentMultipleTabManager,
   memoryLocalCache,
   setLogLevel,
   Firestore,
@@ -20,6 +18,7 @@ import {
   isFirestoreQuotaExceededError,
   markFirestoreQuotaExceeded,
 } from './utils/firestoreQuotaHelpers';
+import { purgeStaleFirestoreWebStorageKeys } from './utils/storageQuotaHelpers';
 
 const app = initializeApp(firebaseConfig);
 
@@ -33,9 +32,11 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * Configure Firestore with persistent local cache and WebChannel long polling
- * to eliminate 'WebChannelConnection RPC Listen stream transport errored' in Cloud Run,
- * proxy, and containerized preview environments.
+ * Configure Firestore with in-memory local cache and WebChannel long polling.
+ * Avoids persistentMultipleTabManager's WebStorageSharedClientState, which writes
+ * `firestore_mutations_*` payloads to window.localStorage and throws QuotaExceededError /
+ * INTERNAL ASSERTION FAILED (ID: b815) when browser storage nears its 5MB ceiling.
+ * Storefront offline resilience is handled separately by our compacted storage cache.
  */
 function createFirestoreInstance(): Firestore {
   const databaseId = firebaseConfig.firestoreDatabaseId;
@@ -49,15 +50,18 @@ function createFirestoreInstance(): Firestore {
     }
   }
 
-  // 1. In browser/proxy environments, use persistent IndexedDB cache with multi-tab support
-  // 2. Force WebChannel long polling with a 25s timeout (prevents reverse-proxies from prematurely killing hanging GET streams)
+  // Reclaim any legacy `firestore_mutations_*` / `firestore_clients_*` bloat already in localStorage
+  try {
+    purgeStaleFirestoreWebStorageKeys(window.localStorage);
+  } catch {
+    // Ignore restricted storage access
+  }
+
   try {
     return initializeFirestore(
       app,
       {
-        localCache: persistentLocalCache({
-          tabManager: persistentMultipleTabManager(),
-        }),
+        localCache: memoryLocalCache(),
         experimentalForceLongPolling: true,
         experimentalLongPollingOptions: {
           timeoutSeconds: 25,
@@ -66,22 +70,7 @@ function createFirestoreInstance(): Firestore {
       databaseId
     );
   } catch {
-    // Fallback for environments where IndexedDB is blocked (e.g. private browsing, restricted iframes)
-    try {
-      return initializeFirestore(
-        app,
-        {
-          localCache: memoryLocalCache(),
-          experimentalForceLongPolling: true,
-          experimentalLongPollingOptions: {
-            timeoutSeconds: 25,
-          },
-        },
-        databaseId
-      );
-    } catch {
-      return getFirestore(app, databaseId);
-    }
+    return getFirestore(app, databaseId);
   }
 }
 

@@ -164,7 +164,10 @@ const AppContent: React.FC = () => {
       {mountScrollLines && (
         <ChunkErrorBoundary silent label="scroll-lines">
           <React.Suspense fallback={null}>
-            <GsapScrollLines showTopIndicator={true} showVerticalGuideLines={true} />
+            <GsapScrollLines
+              showTopIndicator={true}
+              showVerticalGuideLines={currentView !== 'product-detail'}
+            />
           </React.Suspense>
         </ChunkErrorBoundary>
       )}
@@ -212,7 +215,7 @@ const AppContent: React.FC = () => {
           {compareList.length > 0 && <CompareFloatingBar />}
           {isCompareModalOpen && <ProductCompareModal />}
           {isQrScannerOpen && <ProductQrScannerModal />}
-          <FloatingWhatsAppButton />
+          {currentView !== 'product-detail' && !quickViewProduct && <FloatingWhatsAppButton />}
         </React.Suspense>
       </ChunkErrorBoundary>
     </div>

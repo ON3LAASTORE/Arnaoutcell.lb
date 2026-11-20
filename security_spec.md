@@ -2,9 +2,10 @@
 
 ## 1. Data Invariants
 
-1. **Orders Integrity**: An order document in `/orders/{orderId}` must have a valid Lebanese customer telephone, non-negative subtotal and total, a recognized payment method (`cod`, `whish_money`, `omt_western_union`), and initial status `new`.
+1. **Orders Integrity**: An order document in `/orders/{orderId}` must have a valid Lebanese customer telephone, non-negative subtotal, non-negative discount bounded by subtotal, non-negative delivery fee and total, a recognized payment method (`cod`, `whish_money`, `store_pickup`, `omt_western_union`), valid currency (`USD`), valid payment status (`pending`, `paid`, `pay_on_delivery`), and valid fulfillment status (`new`, `confirmed`, `preparing`, `ready_for_delivery`, `out_for_delivery`, `dispatched`, `delivered`, `cancelled`, `returned`).
 2. **Order Immutability**: Customers or non-admins cannot mutate order amounts, delivery fees, or item collections once created.
 3. **Status Transitions**: State transitions from `delivered` or `cancelled` are terminal states that cannot be reverted by non-admin users.
+4. **Products Reviews & Sold Count Integrity**: Public product documents in `/products/{productId}` enforce bounded `reviews` arrays (max 50), valid `rating` (`0-5`), non-negative `reviewCount`/`soldCount`, and strict key allowlists (`hasAll`/`hasOnly`).
 4. **Admin Protection**: Admin records in `/admins/{adminUid}` can only be read by authenticated staff and can never be written or created by unauthenticated or non-admin clients (preventing self-promotion).
 5. **Search Analytics**: Anonymous or client queries may write search events if conforming to payload size limits (terms <= 200 chars), but can only be read/analyzed by authenticated admins.
 6. **Stock Notifications PII Isolation**: Out-of-stock alert requests in `/stock_notifications/{notificationId}` contain customer email addresses (`email`), target `productId`, and `status` (`pending` or `notified`). Only authenticated admins may `get`, `list`, `delete`, or transition `status` to `notified`. Public/anonymous users may only `create` valid requests with `status == 'pending'` and strict field allowlists (`hasAll`/`hasOnly`), or refresh their own `pending` metadata without mutating `email`, `productId`, or `status`.

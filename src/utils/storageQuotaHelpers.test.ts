@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   isQuotaExceededError,
   safeStorageSetItem,
+  purgeStaleFirestoreWebStorageKeys,
   compactStoreSettingsPayload,
   compactProductsForStorage,
   StorageLike,
@@ -27,6 +28,10 @@ function createQuotaMockStorage(options: {
 
   return {
     store,
+    get length() {
+      return store.size;
+    },
+    key: (index: number) => Array.from(store.keys())[index] ?? null,
     getItem: (key: string) => store.get(key) ?? null,
     removeItem: (key: string) => {
       store.delete(key);
@@ -127,4 +132,35 @@ test('compactProductsForStorage strips huge inline data URLs cleanly', () => {
   ]);
   assert.equal(compacted.length, 1);
   assert.equal(compacted[0].images[0].startsWith('https://'), true);
+});
+
+test('purgeStaleFirestoreWebStorageKeys removes legacy firestore multi-tab keys while preserving storefront data', () => {
+  const mock = createQuotaMockStorage({
+    maxBytes: 1000,
+    initial: {
+      'firestore_mutations_firestore/[DEFAULT]/db/_78': '{"pending":true}',
+      'firestore_clients_firestore/[DEFAULT]/db': '{"clientId":"1"}',
+      'firestore_online_state_firestore/[DEFAULT]/db': '{"state":"Online"}',
+      arnaout_cell_products_v2: '[{"id":"1"}]',
+    },
+  });
+
+  const removed = purgeStaleFirestoreWebStorageKeys(mock);
+  assert.equal(removed, 3);
+  assert.equal(mock.getItem('arnaout_cell_products_v2'), '[{"id":"1"}]');
+  assert.equal(mock.getItem('firestore_mutations_firestore/[DEFAULT]/db/_78'), null);
+});
+
+test('safeStorageSetItem recovers quota by purging bloated firestore_mutations keys', () => {
+  const mock = createQuotaMockStorage({
+    maxBytes: 140,
+    initial: {
+      'firestore_mutations_firestore/[DEFAULT]/db/_78': 'z'.repeat(80),
+    },
+  });
+
+  const result = safeStorageSetItem(mock, 'arnaout_cell_cart_v2', '[{"id":"item-1"}]');
+  assert.equal(result.ok, true);
+  assert.equal(result.recovered, true);
+  assert.equal(mock.getItem('firestore_mutations_firestore/[DEFAULT]/db/_78'), null);
 });

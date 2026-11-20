@@ -26,6 +26,7 @@ import {
 } from '../../utils/colorVariantHelpers';
 import { optimizeUploadedImage } from '../../utils/imageCompression';
 import { validateImageFile } from '../../utils/imageUploadHelpers';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 interface AdminProductsProps {
   onShareProduct?: (productId: string) => void;
@@ -321,13 +322,19 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setTimeout(() => setFeedback(null), 4500);
   };
 
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
+
   const handleDelete = (id: string, name: string) => {
-    if (window.confirm(`Are you sure you want to delete "${name}"?`)) {
-      deleteProduct(id);
-      refreshData();
-      setFeedback({ type: 'success', msg: `Product deleted and removed from live database.` });
-      setTimeout(() => setFeedback(null), 3500);
-    }
+    setPendingDelete({ id, name });
+  };
+
+  const confirmDeleteProduct = () => {
+    if (!pendingDelete) return;
+    deleteProduct(pendingDelete.id);
+    refreshData();
+    setFeedback({ type: 'success', msg: `Product "${pendingDelete.name}" deleted and removed from live database.` });
+    setPendingDelete(null);
+    setTimeout(() => setFeedback(null), 3500);
   };
 
   const filteredProducts = products.filter((p) => {
@@ -1105,6 +1112,22 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingDelete)}
+        lang={lang}
+        title={lang === 'ar' ? 'حذف المنتج' : 'Delete Product'}
+        message={
+          pendingDelete
+            ? lang === 'ar'
+              ? `هل أنت متأكد من حذف المنتج "${pendingDelete.name}" من قاعدة البيانات؟`
+              : `Are you sure you want to delete "${pendingDelete.name}" from the live catalog?`
+            : ''
+        }
+        confirmLabel={lang === 'ar' ? 'حذف المنتج' : 'Delete Product'}
+        onConfirm={confirmDeleteProduct}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 };

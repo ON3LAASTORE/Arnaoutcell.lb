@@ -77,57 +77,47 @@ export const TrackOrderPage: React.FC = () => {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center max-w-xl mx-auto mb-10 space-y-2">
-          <div className="w-14 h-14 rounded-2xl bg-[#EAF3FF] border border-[#BAE6FD] text-[#007AFF] flex items-center justify-center mx-auto mb-3 shadow-xs">
+          <div className="w-14 h-14 rounded-2xl bg-[#EAF3FF] dark:bg-[#111A2E] border border-[#BAE6FD] dark:border-[#1E293B] text-[#007AFF] dark:text-[#38BDF8] flex items-center justify-center mx-auto mb-3 shadow-xs">
             <Package className="w-7 h-7" />
           </div>
-          <h1 className="text-2xl sm:text-4xl font-black text-[#172033]">{t.trackOrder}</h1>
-          <p className="text-xs sm:text-sm text-[#64748B] leading-relaxed">
+          <h1 className="text-2xl sm:text-4xl font-black text-[#172033] dark:text-[#F8FAFC]">{t.trackOrder}</h1>
+          <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400 leading-relaxed">
             {t.trackOrderPrompt}
           </p>
         </div>
 
         {/* Search Bar */}
-        <div className="p-6 rounded-3xl bg-[#F5F8FC] border border-[#DCE5F0] mb-10 shadow-xs">
+        <div className="p-6 rounded-3xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] mb-10 shadow-xs">
           <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="w-4 h-4 text-[#64748B] absolute left-4 top-1/2 -translate-y-1/2 rtl:left-auto rtl:right-4" />
+              <Search className="w-4 h-4 text-[#64748B] dark:text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 rtl:left-auto rtl:right-4" />
               <input
                 type="text"
                 placeholder={lang === 'ar' ? 'أدخل رقم الطلب (مثلاً: OAA-2027-1001 أو رقم الهاتف)' : 'Enter Order ID (e.g. OAA-2027-1001 or Phone)'}
                 value={orderQuery}
                 onChange={(e) => setOrderQuery(e.target.value)}
-                className="w-full bg-white border border-[#DCE5F0] rounded-2xl pl-11 pr-4 rtl:pl-4 rtl:pr-11 py-3 text-xs sm:text-sm text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono"
+                data-testid="track-order-input"
+                className="w-full bg-white dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] rounded-2xl pl-11 pr-4 rtl:pl-4 rtl:pr-11 py-3 text-xs sm:text-sm text-[#172033] dark:text-[#F8FAFC] placeholder-[#94A3B8] dark:placeholder-slate-500 focus:outline-none focus:border-[#007AFF] font-mono"
               />
             </div>
             <button
               type="submit"
-              className="px-6 py-3 rounded-2xl bg-[#007AFF] hover:bg-[#0066D6] text-white font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-sm shadow-[#007AFF]/25"
+              disabled={isSearching}
+              data-testid="track-order-submit"
+              className="px-6 py-3 rounded-2xl bg-[#007AFF] hover:bg-[#0066D6] disabled:opacity-60 text-white font-bold text-xs sm:text-sm transition-all cursor-pointer shadow-sm shadow-[#007AFF]/25"
             >
-              {lang === 'ar' ? 'تتبع الآن' : 'Track Status'}
+              {isSearching
+                ? lang === 'ar' ? 'جاري البحث...' : 'Searching...'
+                : lang === 'ar' ? 'تتبع الآن' : 'Track Status'}
             </button>
           </form>
 
-          {/* Quick Demo links */}
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-[#64748B]">
-            <span>{lang === 'ar' ? 'أرقام طلبات تجريبية:' : 'Try sample orders:'}</span>
-            <button
-              type="button"
-              onClick={() => {
-                setOrderQuery('OAA-2027-1001');
-              }}
-              className="font-mono text-[#007AFF] hover:underline bg-white px-2 py-0.5 rounded border border-[#DCE5F0]"
-            >
-              OAA-2027-1001 (Chouf)
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setOrderQuery('OAA-2027-1002');
-              }}
-              className="font-mono text-[#007AFF] hover:underline bg-white px-2 py-0.5 rounded border border-[#DCE5F0]"
-            >
-              OAA-2027-1002 (All Lebanon)
-            </button>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px] text-[#64748B] dark:text-slate-400">
+            <span>
+              {lang === 'ar'
+                ? 'أدخل رقم الطلب الصادر عند إتمام الشراء (مثال: OAA-2027-XXXX) أو رقم الهاتف المسجل.'
+                : 'Enter the Order ID issued at checkout (e.g. OAA-2027-XXXX) or the phone number used on your order.'}
+            </span>
           </div>
         </div>
 
@@ -135,21 +125,21 @@ export const TrackOrderPage: React.FC = () => {
         {hasSearched && (
           <div>
             {searchedOrder ? (
-              <div className="bg-white border border-[#DCE5F0] rounded-3xl p-6 sm:p-8 space-y-8 shadow-sm">
+              <div className="bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] rounded-3xl p-6 sm:p-8 space-y-8 shadow-sm">
                 {/* Order Top Meta */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-[#DCE5F0] gap-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-[#DCE5F0] dark:border-[#1E293B] gap-4">
                   <div>
-                    <span className="text-xs text-[#64748B] block font-semibold">{t.orderIdLabel}</span>
-                    <h3 className="text-xl font-black text-[#172033] font-mono">{searchedOrder.id}</h3>
-                    <p className="text-xs text-[#64748B] mt-0.5">
+                    <span className="text-xs text-[#64748B] dark:text-slate-400 block font-semibold">{t.orderIdLabel}</span>
+                    <h3 className="text-xl font-black text-[#172033] dark:text-[#F8FAFC] font-mono">{searchedOrder.id}</h3>
+                    <p className="text-xs text-[#64748B] dark:text-slate-400 mt-0.5">
                       {lang === 'ar' ? 'تاريخ الطلب:' : 'Ordered on:'}{' '}
                       {new Date(searchedOrder.orderDate).toLocaleString()}
                     </p>
                   </div>
 
                   <div className="text-left sm:text-right rtl:sm:text-left">
-                    <span className="text-xs text-[#64748B] block font-semibold">{t.orderStatus}</span>
-                    <span className="inline-block mt-1 px-3 py-1 rounded-full bg-[#EAF3FF] text-[#007AFF] border border-[#BAE6FD] text-xs font-black uppercase">
+                    <span className="text-xs text-[#64748B] dark:text-slate-400 block font-semibold">{t.orderStatus}</span>
+                    <span className="inline-block mt-1 px-3 py-1 rounded-full bg-[#EAF3FF] dark:bg-[#0E1726] text-[#007AFF] dark:text-[#38BDF8] border border-[#BAE6FD] dark:border-[#1E293B] text-xs font-black uppercase">
                       {searchedOrder.status.replace(/_/g, ' ')}
                     </span>
                   </div>
@@ -157,7 +147,7 @@ export const TrackOrderPage: React.FC = () => {
 
                 {/* Progress Stepper Timeline */}
                 <div>
-                  <h4 className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-6">
+                  <h4 className="text-xs font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider mb-6">
                     {lang === 'ar' ? 'مراحل التوصيل والتجهيز' : 'Live Order Timeline'}
                   </h4>
 
@@ -172,10 +162,10 @@ export const TrackOrderPage: React.FC = () => {
                             key={step.status}
                             className={`p-3.5 rounded-2xl border text-center transition-all ${
                               isCurrent
-                                ? 'bg-[#EAF3FF] border-[#007AFF] shadow-sm'
+                                ? 'bg-[#EAF3FF] dark:bg-[#0E1726] border-[#007AFF] dark:border-[#38BDF8] shadow-sm'
                                 : isDone
-                                ? 'bg-emerald-50 border-emerald-200'
-                                : 'bg-[#F5F8FC] border-[#DCE5F0] opacity-60'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/50'
+                                : 'bg-[#F5F8FC] dark:bg-[#0E1726]/60 border-[#DCE5F0] dark:border-[#1E293B] opacity-60'
                             }`}
                           >
                             <div
@@ -184,15 +174,15 @@ export const TrackOrderPage: React.FC = () => {
                                   ? 'bg-[#007AFF] text-white'
                                   : isDone
                                   ? 'bg-[#16A34A] text-white'
-                                  : 'bg-slate-200 text-[#64748B]'
+                                  : 'bg-slate-200 dark:bg-[#1A253C] text-[#64748B] dark:text-slate-400'
                               }`}
                             >
                               {isDone ? <CheckCircle2 className="w-4 h-4" /> : idx + 1}
                             </div>
-                            <h5 className="font-bold text-[#172033] text-xs">
+                            <h5 className="font-bold text-[#172033] dark:text-[#F8FAFC] text-xs">
                               {lang === 'ar' ? step.labelAr : step.labelEn}
                             </h5>
-                            <p className="text-[10px] text-[#64748B] mt-1 line-clamp-2">
+                            <p className="text-[10px] text-[#64748B] dark:text-slate-400 mt-1 line-clamp-2">
                               {lang === 'ar' ? step.descAr : step.descEn}
                             </p>
                           </div>
@@ -204,22 +194,22 @@ export const TrackOrderPage: React.FC = () => {
 
                 {/* Status History Logs */}
                 {searchedOrder.statusHistory && searchedOrder.statusHistory.length > 0 && (
-                  <div className="pt-6 border-t border-[#DCE5F0]">
-                    <h4 className="text-xs font-bold text-[#64748B] uppercase tracking-wider mb-3">
+                  <div className="pt-6 border-t border-[#DCE5F0] dark:border-[#1E293B]">
+                    <h4 className="text-xs font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider mb-3">
                       {lang === 'ar' ? 'سجل التحديثات' : 'Activity Logs'}
                     </h4>
                     <div className="space-y-2">
                       {searchedOrder.statusHistory.map((h, i) => (
                         <div
                           key={i}
-                          className="flex items-center justify-between text-xs p-3 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0]"
+                          className="flex items-center justify-between text-xs p-3 rounded-xl bg-[#F5F8FC] dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B]"
                         >
                           <div className="flex items-center gap-2">
-                            <Clock className="w-3.5 h-3.5 text-[#007AFF]" />
-                            <span className="font-semibold text-[#172033] capitalize">{h.status.replace(/_/g, ' ')}</span>
-                            {h.note && <span className="text-[#64748B] text-[11px]">— {h.note}</span>}
+                            <Clock className="w-3.5 h-3.5 text-[#007AFF] dark:text-[#38BDF8]" />
+                            <span className="font-semibold text-[#172033] dark:text-[#F8FAFC] capitalize">{h.status.replace(/_/g, ' ')}</span>
+                            {h.note && <span className="text-[#64748B] dark:text-slate-400 text-[11px]">— {h.note}</span>}
                           </div>
-                          <span className="text-[11px] text-[#64748B]">
+                          <span className="text-[11px] text-[#64748B] dark:text-slate-400">
                             {new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                           </span>
                         </div>
@@ -229,30 +219,54 @@ export const TrackOrderPage: React.FC = () => {
                 )}
 
                 {/* Items & Recipient Details */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-[#DCE5F0] text-xs">
-                  <div className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] space-y-1.5">
-                    <span className="text-[#007AFF] font-bold uppercase tracking-wider text-[10px] block">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-[#DCE5F0] dark:border-[#1E293B] text-xs">
+                  <div className="p-4 rounded-2xl bg-[#F5F8FC] dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] space-y-1.5">
+                    <span className="text-[#007AFF] dark:text-[#38BDF8] font-bold uppercase tracking-wider text-[10px] block">
                       {t.customerDetails}
                     </span>
-                    <p className="font-bold text-[#172033]">{searchedOrder.customer.fullName}</p>
-                    <p className="text-[#64748B]">{searchedOrder.customer.phone}</p>
-                    <p className="text-[#64748B]">{searchedOrder.customer.cityArea}</p>
-                    <p className="text-[#64748B]">{searchedOrder.customer.addressLine}</p>
+                    <p className="font-bold text-[#172033] dark:text-[#F8FAFC]">{searchedOrder.customer.fullName}</p>
+                    <p className="text-[#64748B] dark:text-slate-300">{searchedOrder.customer.phone}</p>
+                    <p className="text-[#64748B] dark:text-slate-300">{searchedOrder.customer.cityArea}</p>
+                    <p className="text-[#64748B] dark:text-slate-400">{searchedOrder.customer.addressLine}</p>
                   </div>
 
-                  <div className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] space-y-1.5">
-                    <span className="text-[#007AFF] font-bold uppercase tracking-wider text-[10px] block">
+                  <div className="p-4 rounded-2xl bg-[#F5F8FC] dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] space-y-2">
+                    <span className="text-[#007AFF] dark:text-[#38BDF8] font-bold uppercase tracking-wider text-[10px] block">
                       {lang === 'ar' ? 'المنتجات المطلوبة' : 'Items'}
                     </span>
                     {searchedOrder.items.map((it, idx) => (
-                      <div key={idx} className="flex justify-between text-[#172033]">
-                        <span className="truncate max-w-[200px]">{it.productName} x{it.quantity}</span>
-                        <span className="font-bold text-[#172033]">${it.price * it.quantity}</span>
+                      <div key={idx} className="flex items-center justify-between gap-2 text-[#172033] dark:text-[#F8FAFC]">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {it.image && (
+                            <img
+                              src={it.image}
+                              alt={it.productName}
+                              className="w-8 h-8 rounded-lg object-contain bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] shrink-0 p-0.5"
+                            />
+                          )}
+                          <div className="min-w-0">
+                            <span className="truncate block max-w-[180px] font-medium">
+                              {it.productName} x{it.quantity}
+                            </span>
+                            {(it.color || it.variantName) && (
+                              <span className="text-[10px] text-[#64748B] dark:text-slate-400 block">
+                                {[it.color, it.variantName].filter(Boolean).join(' · ')}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <span className="font-bold text-[#172033] dark:text-[#F8FAFC] shrink-0">${it.price * it.quantity}</span>
                       </div>
                     ))}
-                    <div className="pt-2 border-t border-[#DCE5F0] flex justify-between font-bold text-[#172033]">
+                    {searchedOrder.discount > 0 && (
+                      <div className="flex justify-between text-[#16A34A] dark:text-emerald-400 font-semibold">
+                        <span>{lang === 'ar' ? 'الخصم' : 'Discount'}</span>
+                        <span>-${searchedOrder.discount}</span>
+                      </div>
+                    )}
+                    <div className="pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B] flex justify-between font-bold text-[#172033] dark:text-[#F8FAFC]">
                       <span>{t.total}</span>
-                      <span className="text-[#007AFF] font-black">${searchedOrder.total} USD</span>
+                      <span className="text-[#007AFF] dark:text-[#38BDF8] font-black">${searchedOrder.total} USD</span>
                     </div>
                   </div>
                 </div>
@@ -261,7 +275,7 @@ export const TrackOrderPage: React.FC = () => {
                 <div className="text-center pt-2">
                   <a
                     href="tel:70773067"
-                    className="inline-flex items-center gap-2 text-xs text-[#007AFF] hover:underline font-semibold"
+                    className="inline-flex items-center gap-2 text-xs text-[#007AFF] dark:text-[#38BDF8] hover:underline font-semibold"
                   >
                     <Phone className="w-3.5 h-3.5" />
                     <span>{lang === 'ar' ? 'هل تحتاج لمساعدة بخصوص طلبك؟ اتصل بنا: 70 773 067' : 'Need help with this order? Call us: 70 773 067'}</span>
@@ -269,12 +283,12 @@ export const TrackOrderPage: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="p-8 text-center bg-white rounded-3xl border border-[#DCE5F0] shadow-sm space-y-3">
+              <div className="p-8 text-center bg-white dark:bg-[#111A2E] rounded-3xl border border-[#DCE5F0] dark:border-[#1E293B] shadow-sm space-y-3">
                 <AlertCircle className="w-8 h-8 text-[#DC2626] mx-auto" />
-                <h3 className="font-bold text-[#172033] text-base">
+                <h3 className="font-bold text-[#172033] dark:text-[#F8FAFC] text-base">
                   {lang === 'ar' ? 'لم يتم العثور على طلب بهذا الرقم' : 'No order found with this reference'}
                 </h3>
-                <p className="text-xs text-[#64748B] max-w-sm mx-auto">
+                <p className="text-xs text-[#64748B] dark:text-slate-400 max-w-sm mx-auto">
                   {lang === 'ar'
                     ? `يرجى التحقق من رقم الطلب (مثال: OAA-2027-1001) أو التواصل مع خدمة عملاء ${storeSettings.storeNameAr || 'ON AlAA STORE'}.`
                     : `Please verify your Order ID or contact ${storeSettings.storeName || 'ON AlAA STORE'} support on ${storeSettings.phone || '70 773 067'}.`}

@@ -1,0 +1,200 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {
+  validateAndCalculatePromoDiscount,
+  calculateOrderGrandTotal,
+  resolveCartItemImage,
+  aggregateOrderItemQuantities,
+  applyOrderStockDelta,
+  sanitizeProductReviewsForStorage,
+  addProductReviewPure,
+} from './checkoutHelpers';
+import { Product } from '../types';
+
+function makeProduct(overrides: Partial<Product> = {}): Product {
+  return {
+    id: 'prod-1',
+    name: 'Test Phone',
+    brand: 'Apple',
+    category: 'Smartphones',
+    sku: 'SKU-1',
+    originalPrice: 1000,
+    price: 900,
+    stock: 10,
+    images: ['https://example.com/main.png', 'https://example.com/alt-silver.png'],
+    description: 'Flagship smartphone',
+    specifications: [],
+    warrantyMonths: 12,
+    isPublished: true,
+    rating: 5,
+    reviewCount: 0,
+    colors: ['Desert Titanium', 'White Titanium'],
+    colorImages: {
+      'White Titanium': 'https://example.com/white-titanium.png',
+    },
+    variants: [
+      {
+        id: 'var-color-white-titanium',
+        name: 'White Titanium',
+        color: 'White Titanium',
+        price: 920,
+        stock: 4,
+        sku: 'SKU-WT',
+        image: 'https://example.com/white-variant.png',
+      },
+      {
+        id: 'var-color-desert-titanium',
+        name: 'Desert Titanium',
+        color: 'Desert Titanium',
+        price: 900,
+        stock: 6,
+        sku: 'SKU-DT',
+      },
+    ],
+    createdAt: '2026-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+test('validateAndCalculatePromoDiscount handles valid percentage, free ship, and invalid codes', () => {
+  const tenPct = validateAndCalculatePromoDiscount(' onalaa10 ', 250);
+  assert.equal(tenPct.isValid, true);
+  assert.equal(tenPct.normalizedCode, 'ONALAA10');
+  assert.equal(tenPct.discount, 25);
+
+  const welcomePct = validateAndCalculatePromoDiscount('WELCOME10', 99);
+  assert.equal(welcomePct.isValid, true);
+  assert.equal(welcomePct.discount, 10);
+
+  const freeshipCart = validateAndCalculatePromoDiscount('freeship', 120);
+  assert.equal(freeshipCart.isValid, true);
+  assert.equal(freeshipCart.discount, 3);
+
+  const freeshipCheckout = validateAndCalculatePromoDiscount('FREESHIP', 120, 5);
+  assert.equal(freeshipCheckout.isValid, true);
+  assert.equal(freeshipCheckout.discount, 5);
+
+  const invalid = validateAndCalculatePromoDiscount('BOGUS', 120);
+  assert.equal(invalid.isValid, false);
+  assert.equal(invalid.discount, 0);
+
+  const empty = validateAndCalculatePromoDiscount('   ', 120);
+  assert.equal(empty.isValid, false);
+  assert.equal(empty.discount, 0);
+});
+
+test('calculateOrderGrandTotal subtracts discount and never drops below 0', () => {
+  assert.equal(calculateOrderGrandTotal(200, 20, 4), 184);
+  assert.equal(calculateOrderGrandTotal(10, 50, 2), 0);
+});
+
+test('resolveCartItemImage prioritizes variant image, then color showcase image, then primary product image', () => {
+  const product = makeProduct();
+
+  const withVariant = resolveCartItemImage({
+    product,
+    selectedColor: 'White Titanium',
+    selectedVariant: product.variants![0],
+  });
+  assert.equal(withVariant, 'https://example.com/white-variant.png');
+
+  const withColorMap = resolveCartItemImage({
+    product,
+    selectedColor: 'White Titanium',
+  });
+  assert.equal(withColorMap, 'https://example.com/white-titanium.png');
+
+  const fallbackMain = resolveCartItemImage({
+    product: makeProduct({ colorImages: undefined, variants: [] }),
+    selectedColor: undefined,
+  });
+  assert.equal(fallbackMain, 'https://example.com/main.png');
+});
+
+test('aggregateOrderItemQuantities and applyOrderStockDelta handle multiple variants of the same product', () => {
+  const product = makeProduct({ stock: 10 });
+  const orderItems = [
+    {
+      productId: 'prod-1',
+      productName: 'Test Phone',
+      quantity: 2,
+      color: 'White Titanium',
+      variantName: 'White Titanium',
+    },
+    {
+      productId: 'prod-1',
+      productName: 'Test Phone',
+      quantity: 3,
+      color: 'Desert Titanium',
+      variantName: 'Desert Titanium',
+    },
+  ];
+
+  const agg = aggregateOrderItemQuantities(orderItems);
+  assert.equal(agg.get('prod-1'), 5);
+
+  const deducted = applyOrderStockDelta([product], orderItems, 'deduct');
+  assert.equal(deducted[0].stock, 5);
+  assert.equal(deducted[0].variants![0].stock, 2);
+  assert.equal(deducted[0].variants![1].stock, 3);
+  // Ensure original product was not mutated
+  assert.equal(product.stock, 10);
+
+  const restored = applyOrderStockDelta(deducted, orderItems, 'restore');
+  assert.equal(restored[0].stock, 10);
+  assert.equal(restored[0].variants![0].stock, 4);
+  assert.equal(restored[0].variants![1].stock, 6);
+});
+
+test('applyOrderStockDelta throws when combined quantity across two variants exceeds total stock', () => {
+  const product = makeProduct({ stock: 4 });
+  assert.throws(() => {
+    applyOrderStockDelta(
+      [product],
+      [
+        { productId: 'prod-1', productName: 'Test Phone', quantity: 3, color: 'White Titanium' },
+        { productId: 'prod-1', productName: 'Test Phone', quantity: 2, color: 'Desert Titanium' },
+      ],
+      'deduct'
+    );
+  }, /Insufficient stock/);
+});
+
+test('sanitizeProductReviewsForStorage and addProductReviewPure compute rating without mutating input', () => {
+  const original = makeProduct({
+    reviews: [
+      {
+        id: 'rev-1',
+        userName: 'Karim',
+        rating: 4,
+        comment: 'Solid build',
+        date: '2026-01-05',
+        verifiedPurchase: true,
+      },
+    ],
+    reviewCount: 1,
+    rating: 4,
+  });
+
+  const result = addProductReviewPure(
+    original,
+    { userName: '  Layla  ', rating: 5, comment: '  Great screen  ' },
+    new Date('2026-02-10T12:00:00Z')
+  );
+
+  assert.equal(result.updatedProduct.reviewCount, 2);
+  assert.equal(result.updatedProduct.rating, 4.5);
+  assert.equal(result.review.userName, 'Layla');
+  assert.equal(result.review.comment, 'Great screen');
+  assert.equal(result.review.date, '2026-02-10');
+  // Original untouched
+  assert.equal(original.reviewCount, 1);
+  assert.equal(original.reviews?.length, 1);
+
+  const cleaned = sanitizeProductReviewsForStorage([
+    { id: 'r1', userName: '', comment: 'Empty name' },
+    { id: 'r2', userName: 'Omar', rating: 99, comment: 'Clamped rating' },
+  ]);
+  assert.equal(cleaned.length, 1);
+  assert.equal(cleaned[0].rating, 5);
+});

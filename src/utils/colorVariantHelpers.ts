@@ -37,6 +37,34 @@ export function findVariantForColor(
 }
 
 /**
+ * Checks whether a product has any explicit per-color image override configured
+ * in `colorImages` or color-linked `variants`.
+ */
+export function hasExplicitColorImageMap(
+  product: Pick<Product, 'colorImages' | 'variants'>
+): boolean {
+  if (product.colorImages && typeof product.colorImages === 'object') {
+    for (const url of Object.values(product.colorImages)) {
+      if (typeof url === 'string' && url.trim().length > 0) {
+        return true;
+      }
+    }
+  }
+  if (Array.isArray(product.variants)) {
+    for (const variant of product.variants) {
+      if (
+        typeof variant.image === 'string' &&
+        variant.image.trim().length > 0 &&
+        (variant.id.startsWith('var-color-') || Boolean(variant.color))
+      ) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/**
  * Resolves an explicitly configured custom image URL for a given color label,
  * checking `product.colorImages` first and then color-linked `product.variants`.
  * Returns `undefined` when the color relies on the default main product image.
@@ -66,11 +94,85 @@ export function resolveExplicitColorImage(
 }
 
 /**
+ * Resolves the showcase image URL for a color swatch / selection on PDP and Quick View:
+ * 1. Always uses explicit `product.colorImages` or color-linked `variant.image` when configured.
+ * 2. When NO explicit `colorImages` map exists yet and the product has multiple distinct gallery
+ *    images for multiple colors, matches by distinctive color keyword in URL or by color index.
+ * Returns `undefined` if no dedicated or distinct color image applies.
+ */
+export function resolveColorShowcaseImage(
+  product: Pick<Product, 'colors' | 'images' | 'colorImages' | 'variants'>,
+  selectedColor?: string
+): string | undefined {
+  const explicit = resolveExplicitColorImage(product, selectedColor);
+  if (explicit) return explicit;
+
+  if (hasExplicitColorImageMap(product)) return undefined;
+
+  const cleanKey = normalizeColorKey(selectedColor);
+  if (!cleanKey) return undefined;
+
+  const cleanColors = Array.isArray(product.colors)
+    ? product.colors.filter((c): c is string => typeof c === 'string' && c.trim().length > 0)
+    : [];
+  const distinctImages: string[] = [];
+  const seenImages = new Set<string>();
+  for (const rawImg of Array.isArray(product.images) ? product.images : []) {
+    const norm = normalizeOptionalImage(rawImg);
+    if (norm && !seenImages.has(norm)) {
+      seenImages.add(norm);
+      distinctImages.push(norm);
+    }
+  }
+
+  if (cleanColors.length <= 1 || distinctImages.length <= 1) {
+    return undefined;
+  }
+
+  // Only match URL tokens that distinguish images (present in some but not all gallery URLs)
+  const rawTokens = cleanKey.split(/[^a-z0-9]+/).filter((t) => t.length >= 3);
+  const discriminatingTokens = rawTokens.filter((token) => {
+    const matchCount = distinctImages.filter((url) => url.toLowerCase().includes(token)).length;
+    return matchCount > 0 && matchCount < distinctImages.length;
+  });
+
+  if (discriminatingTokens.length > 0) {
+    let bestUrl: string | undefined;
+    let bestScore = 0;
+    let isTie = false;
+    for (const imgUrl of distinctImages) {
+      const lowerUrl = imgUrl.toLowerCase();
+      const score = discriminatingTokens.reduce(
+        (acc, tok) => (lowerUrl.includes(tok) ? acc + 1 : acc),
+        0
+      );
+      if (score > bestScore) {
+        bestScore = score;
+        bestUrl = imgUrl;
+        isTie = false;
+      } else if (score > 0 && score === bestScore) {
+        isTie = true;
+      }
+    }
+    if (bestUrl && !isTie) {
+      return bestUrl;
+    }
+  }
+
+  const colorIdx = cleanColors.findIndex((c) => normalizeColorKey(c) === cleanKey);
+  if (colorIdx >= 0 && colorIdx < distinctImages.length) {
+    return distinctImages[colorIdx];
+  }
+
+  return undefined;
+}
+
+/**
  * Resolves the active main image URL to showcase for a given selected color / variant,
  * falling back cleanly to the primary product image when no dedicated color image is assigned.
  */
 export function resolveProductImageForColor(
-  product: Pick<Product, 'images' | 'colorImages' | 'variants'>,
+  product: Pick<Product, 'colors' | 'images' | 'colorImages' | 'variants'>,
   selectedColor?: string,
   selectedVariant?: Pick<ProductVariant, 'image' | 'color' | 'name'>
 ): string {
@@ -79,9 +181,9 @@ export function resolveProductImageForColor(
     if (normalized) return normalized;
   }
 
-  const explicitColorImage = resolveExplicitColorImage(product, selectedColor);
-  if (explicitColorImage) {
-    return explicitColorImage;
+  const showcaseImage = resolveColorShowcaseImage(product, selectedColor);
+  if (showcaseImage) {
+    return showcaseImage;
   }
 
   const fallbackFirst = Array.isArray(product.images)

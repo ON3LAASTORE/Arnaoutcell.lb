@@ -59,6 +59,10 @@ import {
 } from '../utils/languageToggleHelpers';
 import { ProductCollectionPreset } from '../utils/navbarMenuHelpers';
 import { extractResetTokenFromLocation } from '../services/authService';
+import {
+  PromoValidationResult,
+  validateAndCalculatePromoDiscount,
+} from '../utils/checkoutHelpers';
 
 interface ShopContextType {
   lang: Language;
@@ -83,6 +87,10 @@ interface ShopContextType {
   clearCart: () => void;
   cartCount: number;
   cartSubtotal: number;
+  promoCode: string;
+  cartDiscount: number;
+  applyPromoCode: (code: string, deliveryFee?: number) => PromoValidationResult;
+  clearPromoCode: () => void;
   isCartOpen: boolean;
   setIsCartOpen: (open: boolean) => void;
 
@@ -215,6 +223,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     return [];
   });
+  const [promoCode, setPromoCode] = useState<string>('');
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [wishlist, setWishlist] = useState<string[]>(() => {
     if (typeof window !== 'undefined') {
@@ -406,10 +415,13 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     };
   }, []);
 
-  // Persist cart
+  // Persist cart & reset promo code if cart becomes empty
   useEffect(() => {
     safeStorageSetItem(typeof window !== 'undefined' ? window.localStorage : null, 'arnaout_cart', JSON.stringify(cart));
-  }, [cart]);
+    if (cart.length === 0 && promoCode) {
+      setPromoCode('');
+    }
+  }, [cart, promoCode]);
 
   // Persist wishlist
   useEffect(() => {
@@ -550,6 +562,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const clearCart = () => {
     setCart([]);
+    setPromoCode('');
   };
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
@@ -557,6 +570,23 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const itemPrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
     return sum + itemPrice * item.quantity;
   }, 0);
+
+  const promoResult = promoCode
+    ? validateAndCalculatePromoDiscount(promoCode, cartSubtotal)
+    : null;
+  const cartDiscount = promoResult && promoResult.isValid ? promoResult.discount : 0;
+
+  const applyPromoCode = (code: string, deliveryFee?: number): PromoValidationResult => {
+    const result = validateAndCalculatePromoDiscount(code, cartSubtotal, deliveryFee);
+    if (result.isValid) {
+      setPromoCode(result.normalizedCode);
+    }
+    return result;
+  };
+
+  const clearPromoCode = () => {
+    setPromoCode('');
+  };
 
   const toggleWishlist = (productId: string) => {
     setWishlist((prev) => toggleWishlistProductId(prev, productId));
@@ -632,7 +662,11 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       text += `${idx + 1}. ${name}${color} x${item.quantity} - $${price * item.quantity}\n`;
     });
 
-    const total = order.total !== undefined ? order.total : cartSubtotal;
+    const discount = Number(order.discount) || 0;
+    if (discount > 0) {
+      text += `\n*Promo Discount:* -$${discount} USD`;
+    }
+    const total = order.total !== undefined ? order.total : Math.max(0, cartSubtotal - cartDiscount);
     text += `\n*Total Amount:* $${total} USD`;
     if (order.paymentMethod) {
       text += `\n*Payment Method:* ${order.paymentMethod.toUpperCase()}`;
@@ -667,6 +701,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         clearCart,
         cartCount,
         cartSubtotal,
+        promoCode,
+        cartDiscount,
+        applyPromoCode,
+        clearPromoCode,
         isCartOpen,
         setIsCartOpen,
         wishlist,

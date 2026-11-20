@@ -6,6 +6,54 @@ export interface StorageLike {
   getItem: (key: string) => string | null;
   setItem: (key: string, value: string) => void;
   removeItem: (key: string) => void;
+  length?: number;
+  key?: (index: number) => string | null;
+}
+
+export const FIRESTORE_WEB_STORAGE_PREFIXES: readonly string[] = [
+  'firestore_mutations_',
+  'firestore_clients_',
+  'firestore_online_state_',
+  'firestore_sequence_number_',
+  'firestore_primary_lease_',
+];
+
+/**
+ * Removes legacy Firestore multi-tab WebStorage coordination entries
+ * (which can accumulate and trigger localStorage QuotaExceededError / b815 assertions).
+ */
+export function purgeStaleFirestoreWebStorageKeys(
+  storage: StorageLike | undefined | null
+): number {
+  if (!storage || typeof storage.length !== 'number' || typeof storage.key !== 'function') {
+    return 0;
+  }
+
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < storage.length; i += 1) {
+    try {
+      const k = storage.key(i);
+      if (
+        typeof k === 'string' &&
+        FIRESTORE_WEB_STORAGE_PREFIXES.some((prefix) => k.startsWith(prefix))
+      ) {
+        keysToRemove.push(k);
+      }
+    } catch {
+      // Ignore storage iteration errors
+    }
+  }
+
+  let removed = 0;
+  for (const key of keysToRemove) {
+    try {
+      storage.removeItem(key);
+      removed += 1;
+    } catch {
+      // Ignore individual removal failures
+    }
+  }
+  return removed;
 }
 
 export const LEGACY_EVICTABLE_KEYS: string[] = [
@@ -68,7 +116,8 @@ export function safeStorageSetItem(
       return { ok: false, recovered: false, reason: 'storage_unavailable' };
     }
 
-    // Step 1: Evict legacy/disposable keys and retry exact value
+    // Step 1: Purge any leftover Firestore WebStorage keys and legacy disposable keys
+    purgeStaleFirestoreWebStorageKeys(storage);
     const evictable = options?.evictableKeys ?? LEGACY_EVICTABLE_KEYS;
     for (const evictKey of evictable) {
       if (evictKey !== key) {

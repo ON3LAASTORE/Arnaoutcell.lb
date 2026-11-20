@@ -96,20 +96,30 @@ export const AdminCustomers: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#DCE5F0] text-[#172033]">
-              {customers.map((c, idx) => (
-                <tr key={idx} className="hover:bg-[#F5F8FC] transition-colors">
-                  <td className="py-3 px-4 font-bold text-[#172033]">{c.name}</td>
-                  <td className="py-3 px-4 font-mono text-[#007AFF] font-semibold">{c.phone}</td>
-                  <td className="py-3 px-4 text-[#64748B]">{c.area}</td>
-                  <td className="py-3 px-4 font-bold text-center sm:text-left rtl:sm:text-right">
-                    {c.ordersCount} orders
-                  </td>
-                  <td className="py-3 px-4 font-mono font-black text-[#172033]">${c.totalSpend} USD</td>
-                  <td className="py-3 px-4 text-right rtl:text-left text-[#64748B] font-mono text-[11px]">
-                    {new Date(c.lastOrder).toLocaleDateString()}
+              {customers.length > 0 ? (
+                customers.map((c, idx) => (
+                  <tr key={idx} className="hover:bg-[#F5F8FC] transition-colors">
+                    <td className="py-3 px-4 font-bold text-[#172033]">{c.name}</td>
+                    <td className="py-3 px-4 font-mono text-[#007AFF] font-semibold">{c.phone}</td>
+                    <td className="py-3 px-4 text-[#64748B]">{c.area}</td>
+                    <td className="py-3 px-4 font-bold text-center sm:text-left rtl:sm:text-right">
+                      {c.ordersCount} orders
+                    </td>
+                    <td className="py-3 px-4 font-mono font-black text-[#172033]">${c.totalSpend} USD</td>
+                    <td className="py-3 px-4 text-right rtl:text-left text-[#64748B] font-mono text-[11px]">
+                      {new Date(c.lastOrder).toLocaleDateString()}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={6} className="py-10 px-4 text-center text-xs text-[#64748B]">
+                    {lang === 'ar'
+                      ? 'لا توجد سجلات عملاء حتى الآن. سيظهر العملاء الحقيقيون تلقائياً عند تسجيل الطلبات الجديدة.'
+                      : 'No customer records yet — starts empty and updates automatically from genuine store orders.'}
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

@@ -25,6 +25,7 @@ import {
   KeyRound,
   Check,
 } from 'lucide-react';
+import { ConfirmDialog } from '../../ConfirmDialog';
 
 interface SocialAccountsManagerProps {
   lang?: 'en' | 'ar';
@@ -51,6 +52,7 @@ export const SocialAccountsManager: React.FC<SocialAccountsManagerProps> = ({ la
   const [testingError, setTestingError] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [showGuideModal, setShowGuideModal] = useState(false);
+  const [pendingDisconnectPlatform, setPendingDisconnectPlatform] = useState<SocialPlatform | null>(null);
 
   const loadAccounts = async () => {
     setLoading(true);
@@ -139,12 +141,16 @@ export const SocialAccountsManager: React.FC<SocialAccountsManagerProps> = ({ la
     }
   };
 
-  const handleDisconnect = async (platform: SocialPlatform) => {
-    if (window.confirm(isArabic ? 'هل أنت متأكد من فصل هذا الحساب وإزالة مفاتيح النشر؟' : 'Disconnect this channel and clear stored tokens?')) {
-      await disconnectBackendSocialAccount(platform);
-      await loadAccounts();
-      setEditingAccount(null);
-    }
+  const handleDisconnect = (platform: SocialPlatform) => {
+    setPendingDisconnectPlatform(platform);
+  };
+
+  const confirmDisconnect = async () => {
+    if (!pendingDisconnectPlatform) return;
+    await disconnectBackendSocialAccount(pendingDisconnectPlatform);
+    await loadAccounts();
+    setPendingDisconnectPlatform(null);
+    setEditingAccount(null);
   };
 
   const getPlatformIconColor = (p: SocialPlatform) => {
@@ -646,6 +652,20 @@ export const SocialAccountsManager: React.FC<SocialAccountsManagerProps> = ({ la
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingDisconnectPlatform)}
+        lang={lang}
+        title={isArabic ? 'فصل القناة الاجتماعية' : 'Disconnect Channel'}
+        message={
+          isArabic
+            ? 'هل أنت متأكد من فصل هذا الحساب وإزالة مفاتيح النشر؟'
+            : 'Disconnect this channel and clear stored tokens?'
+        }
+        confirmLabel={isArabic ? 'فصل الحساب' : 'Disconnect'}
+        onConfirm={confirmDisconnect}
+        onCancel={() => setPendingDisconnectPlatform(null)}
+      />
     </div>
   );
 };

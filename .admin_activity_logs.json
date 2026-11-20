@@ -1,5 +1,76 @@
 [
   {
+    "id": "audit-1795172422602-p3n1so",
+    "action": "product_updated",
+    "titleEn": "Updated product: ACEFAST A135 DIGITAL ADAPTER",
+    "titleAr": "تم تحديث المنتج: ACEFAST A135 DIGITAL ADAPTER",
+    "category": "catalog",
+    "severity": "info",
+    "target": "ACEFAST A135 DIGITAL ADAPTER (prod-1795017753220)",
+    "details": "Modified specifications/media for ACEFAST item.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-20T11:00:22.602Z"
+  },
+  {
+    "id": "audit-1795172337708-mo23xm",
+    "action": "product_updated",
+    "titleEn": "Updated product: SAN MARIO POWERBANK 20,000MAH (b)",
+    "titleAr": "تم تحديث المنتج: SAN MARIO POWERBANK 20,000MAH (b)",
+    "category": "catalog",
+    "severity": "info",
+    "target": "SAN MARIO POWERBANK 20,000MAH (b) (prod-1794951898018)",
+    "details": "Modified specifications/media for Green Lion item.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-20T10:58:57.708Z"
+  },
+  {
+    "id": "audit-1795164042363-hcw4zp",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (admin)",
+    "details": "Invalid administrator password submitted during authentication check.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-20T08:40:42.363Z"
+  },
+  {
+    "id": "audit-1795163815204-l6ojyy",
+    "action": "auth_logout",
+    "titleEn": "Administrator signed out",
+    "titleAr": "تم تسجيل خروج المدير",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Admin portal session terminated by user.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-20T08:36:55.203Z"
+  },
+  {
     "id": "audit-1795102986589-5xc8f5",
     "action": "product_created",
     "titleEn": "Added new product: Titanium Qv Check",

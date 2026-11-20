@@ -5,6 +5,7 @@ import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import compression from 'compression';
+import { GoogleGenAI } from '@google/genai';
 import {
   ensureAdminCredentialRecord,
   verifyServerAdminLogin,
@@ -1834,8 +1835,117 @@ async function startServer() {
     });
   });
 
+  // Product Sidekick Assistant endpoint (server-side Gemini API)
+  app.post('/api/sidekick/ask', async (req: Request, res: Response) => {
+    const apiKey = process.env.GEMINI_API_KEY?.trim();
+    if (!apiKey) {
+      return res.status(503).json({
+        success: false,
+        error:
+          'Sidekick AI is currently unavailable because GEMINI_API_KEY is not configured in server environment settings.',
+      });
+    }
+
+    const {
+      productName = '',
+      brand = '',
+      category = '',
+      price = 0,
+      selectedColor = '',
+      selectedCapacity = '',
+      warrantyMonths = 12,
+      description = '',
+      specifications = [],
+      question = '',
+      lang = 'en',
+    } = req.body || {};
+
+    const cleanQuestion = typeof question === 'string' ? question.trim() : '';
+    if (!cleanQuestion) {
+      return res.status(400).json({
+        success: false,
+        error: 'Please enter a question about this product.',
+      });
+    }
+
+    try {
+      const ai = new GoogleGenAI({
+        apiKey,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build',
+          },
+        },
+      });
+
+      const specLines = Array.isArray(specifications)
+        ? specifications
+            .slice(0, 14)
+            .map((s: { label?: string; value?: string }) => `- ${s.label || 'Spec'}: ${s.value || ''}`)
+            .join('\n')
+        : '';
+
+      const productContext = [
+        `Product: ${productName}`,
+        `Brand: ${brand}`,
+        `Category: ${category}`,
+        `Unit Price: $${Number(price) || 0} USD`,
+        selectedColor ? `Selected Color: ${selectedColor}` : '',
+        selectedCapacity ? `Selected Capacity/Edition: ${selectedCapacity}` : '',
+        `Official Warranty: ${Number(warrantyMonths) || 12} months`,
+        description ? `Overview: ${description}` : '',
+        specLines ? `Specifications:\n${specLines}` : '',
+      ]
+        .filter(Boolean)
+        .join('\n');
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-4-hydrogen',
+        contents: `Product Context:\n${productContext}\n\nShopper Question: ${cleanQuestion}`,
+        config: {
+          systemInstruction:
+            lang === 'ar'
+              ? 'أنت مساعد ON AlAA Sidekick المختص بالمنتجات التقنية في لبنان. أجب باختصار ودقة عالية (2-4 جمل أو نقاط موجزة) اعتماداً على مواصفات المنتج المقدمة فقط، وباللغة العربية الواضحة.'
+              : 'You are ON AlAA Sidekick, a concise luxury tech shopping advisor in Lebanon (based in Chouf, all-Lebanon delivery, WhatsApp 70773067). Answer in 2-4 crisp, helpful sentences based strictly on the provided product facts.',
+        },
+      });
+
+      const answer = (response.text || '').trim();
+      if (!answer) {
+        return res.status(502).json({
+          success: false,
+          error: 'Sidekick received an empty response from the model. Please try again.',
+        });
+      }
+
+      return res.json({ success: true, answer });
+    } catch (error: unknown) {
+      const errMsg = error instanceof Error ? error.message : 'Unable to reach Sidekick AI service.';
+      const status =
+        /403|PERMISSION_DENIED/i.test(errMsg)
+          ? 403
+          : /429|RESOURCE_EXHAUSTED/i.test(errMsg)
+          ? 429
+          : 500;
+      return res.status(status).json({
+        success: false,
+        error: errMsg,
+      });
+    }
+  });
+
   // Health and System Status Endpoint
   app.get('/api/health', (_req: Request, res: Response) => {
+    let activeDbId = 'ai-studio-marnaoutcellprem-6629f884-c968-499b-93cd-3c6b634467cb';
+    try {
+      const cfgRaw = fs.readFileSync(path.resolve(__dirname, 'firebase-applet-config.json'), 'utf8');
+      const cfg = JSON.parse(cfgRaw);
+      if (typeof cfg?.firestoreDatabaseId === 'string' && cfg.firestoreDatabaseId.trim()) {
+        activeDbId = cfg.firestoreDatabaseId.trim();
+      }
+    } catch {
+      // Fallback to default database id
+    }
     res.json({
       status: 'healthy',
       store: 'ON AlAA STORE',
@@ -1843,7 +1953,7 @@ async function startServer() {
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
       environment: process.env.NODE_ENV || 'development',
-      database: 'ai-studio-onalaastore-6629f884-c968-499b-93cd-3c6b634467cb',
+      database: activeDbId,
       instagramHandle: '@onalaastore.lb',
     });
   });

@@ -4,12 +4,14 @@ import { saveAnnouncementBar, saveMarketingVideos } from '../../services/storage
 import { MarketingVideo } from '../../types';
 import { Bell, Video, Plus, Trash2 } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 export const AdminContent: React.FC = () => {
   const { lang, storeSettings, marketingVideos, products, refreshData } = useShop();
 
   const [activeSection, setActiveSection] = useState<'announcement' | 'videos'>('announcement');
   const [feedback, setFeedback] = useState('');
+  const [pendingDeleteVideoId, setPendingDeleteVideoId] = useState<string | null>(null);
 
   const currentBar = storeSettings?.announcementBar || {
     enabled: true,
@@ -83,11 +85,15 @@ export const AdminContent: React.FC = () => {
   };
 
   const handleDeleteVideo = (id: string) => {
-    if (window.confirm('Delete this video?')) {
-      const updated = marketingVideos.filter((v) => v.id !== id);
-      saveMarketingVideos(updated);
-      refreshData();
-    }
+    setPendingDeleteVideoId(id);
+  };
+
+  const confirmDeleteVideo = () => {
+    if (!pendingDeleteVideoId) return;
+    const updated = marketingVideos.filter((v) => v.id !== pendingDeleteVideoId);
+    saveMarketingVideos(updated);
+    refreshData();
+    setPendingDeleteVideoId(null);
   };
 
   return (
@@ -348,6 +354,20 @@ export const AdminContent: React.FC = () => {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={Boolean(pendingDeleteVideoId)}
+        lang={lang}
+        title={lang === 'ar' ? 'حذف الفيديو' : 'Delete Marketing Video'}
+        message={
+          lang === 'ar'
+            ? 'هل أنت متأكد من حذف هذا الفيديو التسويقي؟'
+            : 'Are you sure you want to delete this marketing video?'
+        }
+        confirmLabel={lang === 'ar' ? 'حذف الفيديو' : 'Delete Video'}
+        onConfirm={confirmDeleteVideo}
+        onCancel={() => setPendingDeleteVideoId(null)}
+      />
     </div>
   );
 };

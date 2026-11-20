@@ -33,6 +33,7 @@ import {
   markFirestoreQuotaExceeded,
 } from '../utils/firestoreQuotaHelpers';
 import { recordAdminActivity } from './activityLogService';
+import { addProductReviewPure, applyOrderStockDelta } from '../utils/checkoutHelpers';
 
 const memoryStorageFallback = new Map<string, string>();
 
@@ -69,8 +70,15 @@ const KEYS = {
   WISHLIST: 'arnaout_cell_wishlist_v2',
   CART: 'arnaout_cell_cart_v2',
   TESTIMONIALS: 'arnaout_cell_testimonials_v2',
-  WARRANTY_SAMPLES_SEEDED: 'arnaout_cell_warranty_samples_v1',
+  REAL_LEDGER_RESET: 'arnaout_cell_real_ledger_reset_v1',
 };
+
+const SEEDED_SAMPLE_ORDER_IDS = new Set([
+  'OAA-2027-1001',
+  'OAA-2027-1002',
+  'OAA-2025-0412',
+  'OAA-2026-0884',
+]);
 
 // Initialize if empty
 export function initStorage(): void {
@@ -119,257 +127,21 @@ export function initStorage(): void {
     setStorageItem(KEYS.SETTINGS, JSON.stringify(INITIAL_STORE_SETTINGS));
   }
   if (!getStorageItem(KEYS.ORDERS)) {
-    // Seed sample initial orders for demonstration
-    const sampleOrders: Order[] = [
-      {
-        id: 'OAA-2027-1001',
-        customer: {
-          fullName: 'Sami Khoury',
-          phone: '03 123 456',
-          cityArea: 'Chouf & Mount Lebanon (Baakline)',
-          addressLine: 'Chouf Main Road, Near Square',
-          notes: 'Customer requested afternoon delivery',
-        },
-        items: [
-          {
-            productId: 'prod-iphone16promax',
-            productName: 'Apple iPhone 16 Pro Max 256GB Desert Titanium',
-            brand: 'Apple',
-            price: 1249,
-            quantity: 1,
-            image: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab',
-            color: 'Desert Titanium',
-          },
-        ],
-        subtotal: 1249,
-        discount: 0,
-        deliveryFee: 2,
-        total: 1251,
-        currency: 'USD',
-        status: 'delivered',
-        paymentMethod: 'cod',
-        paymentStatus: 'paid',
-        orderDate: '2026-10-10T14:20:00Z',
-        statusHistory: [
-          { status: 'new', timestamp: '2026-10-10T14:20:00Z' },
-          { status: 'confirmed', timestamp: '2026-10-10T14:25:00Z' },
-          { status: 'ready_for_delivery', timestamp: '2026-10-10T15:00:00Z' },
-          { status: 'delivered', timestamp: '2026-10-10T17:10:00Z', note: 'Delivered in Chouf' },
-        ],
-      },
-      {
-        id: 'OAA-2027-1002',
-        customer: {
-          fullName: 'Nour El-Hajj',
-          phone: '70 987 654',
-          cityArea: 'Beirut & Greater Beirut',
-          addressLine: 'Hamra Street, Makdessi Bldg, 4th Floor',
-          notes: 'Call 15 minutes before arrival',
-        },
-        items: [
-          {
-            productId: 'prod-anker737',
-            productName: 'Anker 737 Power Bank (PowerCore 24K) 140W GaNPrime',
-            brand: 'Anker',
-            price: 119,
-            quantity: 1,
-            image: 'https://images.unsplash.com/photo-1609081219090-a6d81d3085bf',
-          },
-          {
-            productId: 'prod-greenlionsmartwatch',
-            productName: 'Green Lion Signature Ultra 2 Smartwatch AMOLED 49mm',
-            brand: 'Green Lion',
-            price: 59,
-            quantity: 1,
-            image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30',
-            color: 'Titanium Orange',
-          },
-        ],
-        subtotal: 178,
-        discount: 0,
-        deliveryFee: 3,
-        total: 181,
-        currency: 'USD',
-        status: 'out_for_delivery',
-        paymentMethod: 'cod',
-        paymentStatus: 'pay_on_delivery',
-        orderDate: '2026-10-14T09:15:00Z',
-        statusHistory: [
-          { status: 'new', timestamp: '2026-10-14T09:15:00Z' },
-          { status: 'confirmed', timestamp: '2026-10-14T09:30:00Z' },
-          { status: 'preparing', timestamp: '2026-10-14T10:00:00Z' },
-            { status: 'out_for_delivery', timestamp: '2026-10-14T12:00:00Z', note: 'Courier out in Beirut route' },
-          ],
-        },
-        {
-          id: 'OAA-2025-0412',
-          customer: {
-            fullName: 'Karim Haddad',
-            phone: '71 555 210',
-            cityArea: 'Mount Lebanon (Aley)',
-            addressLine: 'Aley Main Street',
-          },
-          items: [
-            {
-              productId: 'prod-sonywh1000xm5',
-              productName: 'Sony WH-1000XM5 Wireless Noise-Cancelling Headphones',
-              brand: 'Sony',
-              price: 319,
-              quantity: 1,
-              image: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb',
-              color: 'Midnight Blue',
-            },
-          ],
-          subtotal: 319,
-          discount: 0,
-          deliveryFee: 3,
-          total: 322,
-          currency: 'USD',
-          status: 'delivered',
-          paymentMethod: 'cod',
-          paymentStatus: 'paid',
-          orderDate: '2025-02-01T10:00:00Z',
-          statusHistory: [
-            { status: 'new', timestamp: '2025-02-01T10:00:00Z' },
-            { status: 'delivered', timestamp: '2025-02-01T15:30:00Z', note: 'Delivered in Aley' },
-          ],
-        },
-        {
-          id: 'OAA-2026-0884',
-          customer: {
-            fullName: 'Rami Mansour',
-            phone: '76 345 901',
-            cityArea: 'Chouf (Deir El Qamar)',
-            addressLine: 'Main Square, Bldg 12',
-          },
-          items: [
-            {
-              productId: 'prod-s25ultra',
-              productName: 'Samsung Galaxy S25 Ultra 512GB Titanium Gray',
-              brand: 'Samsung',
-              price: 1299,
-              quantity: 1,
-              image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c',
-              color: 'Titanium Gray',
-            },
-          ],
-          subtotal: 1299,
-          discount: 0,
-          deliveryFee: 2,
-          total: 1301,
-          currency: 'USD',
-          status: 'delivered',
-          paymentMethod: 'cod',
-          paymentStatus: 'paid',
-          orderDate: '2026-04-15T11:00:00Z',
-          statusHistory: [
-            { status: 'new', timestamp: '2026-04-15T11:00:00Z' },
-            { status: 'delivered', timestamp: '2026-04-15T16:45:00Z', note: 'Delivered in Chouf' },
-          ],
-          warrantyClaim: {
-            status: 'replaced',
-            claimedAt: '2026-09-18T13:20:00Z',
-            claimReference: 'WCL-2026-084',
-            resolution: 'Display assembly serviced & replaced under official warranty.',
-            resolutionAr: 'تمت معالجة المطالبة واستبدال وحدة الشاشة ضمن الكفالة الرسمية.',
-          },
-        },
-      ];
-    setStorageItem(KEYS.ORDERS, JSON.stringify(sampleOrders));
-    setStorageItem(KEYS.WARRANTY_SAMPLES_SEEDED, '1');
-  } else if (!getStorageItem(KEYS.WARRANTY_SAMPLES_SEEDED)) {
+    // Begin with an empty real orders ledger (0 recorded orders, 0 CRM entries)
+    setStorageItem(KEYS.ORDERS, JSON.stringify([]));
+    setStorageItem(KEYS.REAL_LEDGER_RESET, '1');
+  } else if (!getStorageItem(KEYS.REAL_LEDGER_RESET)) {
     try {
       const existingRaw = getStorageItem(KEYS.ORDERS);
       const existingOrders: Order[] = existingRaw ? JSON.parse(existingRaw) : [];
-      const existingIds = new Set(existingOrders.map((o) => o.id));
-      const extraSamples: Order[] = [
-        {
-          id: 'OAA-2025-0412',
-          customer: {
-            fullName: 'Karim Haddad',
-            phone: '71 555 210',
-            cityArea: 'Mount Lebanon (Aley)',
-            addressLine: 'Aley Main Street',
-          },
-          items: [
-            {
-              productId: 'prod-sonywh1000xm5',
-              productName: 'Sony WH-1000XM5 Wireless Noise-Cancelling Headphones',
-              brand: 'Sony',
-              price: 319,
-              quantity: 1,
-              image: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb',
-              color: 'Midnight Blue',
-            },
-          ],
-          subtotal: 319,
-          discount: 0,
-          deliveryFee: 3,
-          total: 322,
-          currency: 'USD',
-          status: 'delivered',
-          paymentMethod: 'cod',
-          paymentStatus: 'paid',
-          orderDate: '2025-02-01T10:00:00Z',
-          statusHistory: [
-            { status: 'new', timestamp: '2025-02-01T10:00:00Z' },
-            { status: 'delivered', timestamp: '2025-02-01T15:30:00Z', note: 'Delivered in Aley' },
-          ],
-        },
-        {
-          id: 'OAA-2026-0884',
-          customer: {
-            fullName: 'Rami Mansour',
-            phone: '76 345 901',
-            cityArea: 'Chouf (Deir El Qamar)',
-            addressLine: 'Main Square, Bldg 12',
-          },
-          items: [
-            {
-              productId: 'prod-s25ultra',
-              productName: 'Samsung Galaxy S25 Ultra 512GB Titanium Gray',
-              brand: 'Samsung',
-              price: 1299,
-              quantity: 1,
-              image: 'https://images.unsplash.com/photo-1610945415295-d9bbf067e59c',
-              color: 'Titanium Gray',
-            },
-          ],
-          subtotal: 1299,
-          discount: 0,
-          deliveryFee: 2,
-          total: 1301,
-          currency: 'USD',
-          status: 'delivered',
-          paymentMethod: 'cod',
-          paymentStatus: 'paid',
-          orderDate: '2026-04-15T11:00:00Z',
-          statusHistory: [
-            { status: 'new', timestamp: '2026-04-15T11:00:00Z' },
-            { status: 'delivered', timestamp: '2026-04-15T16:45:00Z', note: 'Delivered in Chouf' },
-          ],
-          warrantyClaim: {
-            status: 'replaced',
-            claimedAt: '2026-09-18T13:20:00Z',
-            claimReference: 'WCL-2026-084',
-            resolution: 'Display assembly serviced & replaced under official warranty.',
-            resolutionAr: 'تمت معالجة المطالبة واستبدال وحدة الشاشة ضمن الكفالة الرسمية.',
-          },
-        },
-      ];
-      let added = false;
-      for (const sample of extraSamples) {
-        if (!existingIds.has(sample.id)) {
-          existingOrders.push(sample);
-          added = true;
-        }
-      }
-      if (added) {
-        setStorageItem(KEYS.ORDERS, JSON.stringify(existingOrders));
-      }
-      setStorageItem(KEYS.WARRANTY_SAMPLES_SEEDED, '1');
+      const realOnlyOrders = Array.isArray(existingOrders)
+        ? existingOrders.filter((o) => o && !SEEDED_SAMPLE_ORDER_IDS.has(o.id))
+        : [];
+      setStorageItem(KEYS.ORDERS, JSON.stringify(realOnlyOrders));
+      setStorageItem(KEYS.REAL_LEDGER_RESET, '1');
     } catch {
-      // ignore
+      setStorageItem(KEYS.ORDERS, JSON.stringify([]));
+      setStorageItem(KEYS.REAL_LEDGER_RESET, '1');
     }
   }
 }
@@ -381,15 +153,31 @@ export function getProducts(): Product[] {
     if (!raw) return INITIAL_PRODUCTS;
     const parsed: Product[] = JSON.parse(raw);
     const existingIds = new Set(parsed.map((p) => p.id));
+    const seedById = new Map(INITIAL_PRODUCTS.map((p) => [p.id, p]));
     let changed = false;
     const merged = parsed.map((p) => {
-      if (!Array.isArray(p.images)) return p;
-      const upgraded = p.images.map((img) => resolveFullResolutionImageUrl(img) || img);
-      if (upgraded.some((img, idx) => img !== p.images[idx])) {
-        changed = true;
-        return { ...p, images: upgraded };
+      let nextProd = p;
+      if (Array.isArray(p.images)) {
+        const upgraded = p.images.map((img) => resolveFullResolutionImageUrl(img) || img);
+        if (upgraded.some((img, idx) => img !== p.images[idx])) {
+          changed = true;
+          nextProd = { ...nextProd, images: upgraded };
+        }
       }
-      return p;
+      const seedMatch = seedById.get(p.id);
+      const matchesSeedMedia =
+        seedMatch &&
+        resolveFullResolutionImageUrl(nextProd.images?.[0] || '') ===
+          resolveFullResolutionImageUrl(seedMatch.images?.[0] || '');
+      if (
+        matchesSeedMedia &&
+        seedMatch?.colorImages &&
+        (!nextProd.colorImages || Object.keys(nextProd.colorImages).length === 0)
+      ) {
+        changed = true;
+        nextProd = { ...nextProd, colorImages: seedMatch.colorImages };
+      }
+      return nextProd;
     });
     for (const initProd of INITIAL_PRODUCTS) {
       if (!existingIds.has(initProd.id)) {
@@ -657,25 +445,8 @@ export function createOrder(orderData: Omit<Order, 'id' | 'orderDate' | 'statusH
   const orders = getOrders();
   const products = getProducts();
 
-  // Validate stock on server/storage
-  for (const item of orderData.items) {
-    const product = products.find((p) => p.id === item.productId);
-    if (!product || product.stock < item.quantity) {
-      throw new Error(`Insufficient stock for "${item.productName}". Available: ${product ? product.stock : 0}`);
-    }
-  }
-
-  // Deduct inventory
-  const updatedProducts = products.map((product) => {
-    const item = orderData.items.find((i) => i.productId === product.id);
-    if (item) {
-      return {
-        ...product,
-        stock: Math.max(0, product.stock - item.quantity),
-      };
-    }
-    return product;
-  });
+  // Validate aggregated stock and deduct across products and matching variants
+  const updatedProducts = applyOrderStockDelta(products, orderData.items, 'deduct');
   saveProducts(updatedProducts);
 
   const orderId = `OAA-2027-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -683,6 +454,10 @@ export function createOrder(orderData: Omit<Order, 'id' | 'orderDate' | 'statusH
 
   const newOrder: Order = {
     ...orderData,
+    discount: Number(orderData.discount) || 0,
+    deliveryFee: Number(orderData.deliveryFee) || 0,
+    currency: orderData.currency || 'USD',
+    paymentStatus: orderData.paymentStatus || (orderData.paymentMethod === 'store_pickup' ? 'pending' : 'pay_on_delivery'),
     id: orderId,
     orderDate: now,
     statusHistory: [
@@ -700,23 +475,31 @@ export function createOrder(orderData: Omit<Order, 'id' | 'orderDate' | 'statusH
   // Sync to Firestore in background
   if (typeof window !== 'undefined' && !isFirestoreInQuotaCooldown()) {
     setDoc(doc(db, 'orders', newOrder.id), {
-          id: newOrder.id,
-          customer: newOrder.customer,
-          items: newOrder.items,
-          subtotal: newOrder.subtotal,
-          deliveryFee: newOrder.deliveryFee || 0,
-          total: newOrder.total,
-          paymentMethod: newOrder.paymentMethod === 'cod' ? 'cod' : newOrder.paymentMethod === 'whish_money' ? 'whish_money' : 'store_pickup',
-          status: newOrder.status,
-          orderDate: newOrder.orderDate,
-          statusHistory: newOrder.statusHistory,
-        }).catch((err) => {
-          if (isFirestoreQuotaExceededError(err)) {
-            markFirestoreQuotaExceeded();
-            return;
-          }
-          console.warn('Firestore order sync:', err);
-        });
+      id: newOrder.id,
+      customer: newOrder.customer,
+      items: newOrder.items,
+      subtotal: newOrder.subtotal,
+      discount: newOrder.discount,
+      deliveryFee: newOrder.deliveryFee,
+      total: newOrder.total,
+      currency: newOrder.currency,
+      paymentMethod:
+        newOrder.paymentMethod === 'cod'
+          ? 'cod'
+          : newOrder.paymentMethod === 'whish_money'
+          ? 'whish_money'
+          : 'store_pickup',
+      paymentStatus: newOrder.paymentStatus,
+      status: newOrder.status,
+      orderDate: newOrder.orderDate,
+      statusHistory: newOrder.statusHistory,
+    }).catch((err) => {
+      if (isFirestoreQuotaExceededError(err)) {
+        markFirestoreQuotaExceeded();
+        return;
+      }
+      console.warn('Firestore order sync:', err);
+    });
   }
 
   return newOrder;
@@ -737,16 +520,7 @@ export function updateOrderStatus(orderId: string, newStatus: OrderStatus, note?
     oldStatus !== 'returned'
   ) {
     const products = getProducts();
-    const updatedProducts = products.map((product) => {
-      const item = currentOrder.items.find((i) => i.productId === product.id);
-      if (item) {
-        return {
-          ...product,
-          stock: product.stock + item.quantity,
-        };
-      }
-      return product;
-    });
+    const updatedProducts = applyOrderStockDelta(products, currentOrder.items, 'restore');
     saveProducts(updatedProducts);
   }
 
@@ -757,16 +531,7 @@ export function updateOrderStatus(orderId: string, newStatus: OrderStatus, note?
     newStatus !== 'returned'
   ) {
     const products = getProducts();
-    const updatedProducts = products.map((product) => {
-      const item = currentOrder.items.find((i) => i.productId === product.id);
-      if (item) {
-        return {
-          ...product,
-          stock: Math.max(0, product.stock - item.quantity),
-        };
-      }
-      return product;
-    });
+    const updatedProducts = applyOrderStockDelta(products, currentOrder.items, 'deduct');
     saveProducts(updatedProducts);
   }
 
@@ -989,35 +754,17 @@ export function addProductReview(
   if (productIndex === -1) return null;
 
   const product = products[productIndex];
-  const reviews = Array.isArray(product.reviews) ? [...product.reviews] : [];
-  const newReview: Review = {
-    id: `rev-${Date.now()}`,
-    userName: reviewData.userName.trim(),
-    rating: reviewData.rating,
-    comment: reviewData.comment.trim(),
-    date: new Date().toISOString().split('T')[0],
-    verifiedPurchase: true,
-  };
+  const { review, updatedProduct } = addProductReviewPure(product, reviewData);
 
-  reviews.unshift(newReview);
-  const newCount = reviews.length;
-  const newRating = Number((reviews.reduce((sum, r) => sum + r.rating, 0) / newCount).toFixed(1));
+  const nextProducts = [...products];
+  nextProducts[productIndex] = updatedProduct;
+  saveProducts(nextProducts);
 
-  const updatedProduct: Product = {
-    ...product,
-    reviews,
-    reviewCount: newCount,
-    rating: newRating,
-  };
-
-  products[productIndex] = updatedProduct;
-  saveProducts(products);
-
-  // Sync updated rating and reviewCount to Firestore
+  // Sync updated reviews, rating, and reviewCount to Firestore
   persistProductToCloud(updatedProduct).catch((err) =>
     console.warn('Firestore product review sync notice:', err)
   );
 
-  return { review: newReview, updatedProduct };
+  return { review, updatedProduct };
 }
 

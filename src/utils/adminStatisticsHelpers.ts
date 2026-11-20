@@ -52,43 +52,6 @@ function formatShortDateAr(dateKey: string): string {
   return `${parts[2]}/${parts[1]}`;
 }
 
-/**
- * Deterministic daily seed curve based on dateKey so rolling baseline trends remain
- * stable across renders (no jitter) while reflecting weekday/weekend shopping patterns.
- */
-function computeDeterministicDailyBaseline(dateKey: string): {
-  visits: number;
-  productViews: number;
-  ordersCount: number;
-  unitsSold: number;
-  revenueUsd: number;
-} {
-  let hash = 0;
-  for (let i = 0; i < dateKey.length; i++) {
-    hash = (hash * 31 + dateKey.charCodeAt(i)) % 1000003;
-  }
-
-  const parsed = new Date(`${dateKey}T12:00:00Z`);
-  const dayOfWeek = Number.isNaN(parsed.getTime()) ? 3 : parsed.getUTCDay();
-  const isWeekendPeak = dayOfWeek === 5 || dayOfWeek === 6 || dayOfWeek === 0;
-  const weekendBoost = isWeekendPeak ? 1.24 : 1.0;
-
-  const baseVisits = Math.round((135 + (hash % 95)) * weekendBoost);
-  const baseProductViews = Math.round(baseVisits * (1.85 + ((hash >> 3) % 45) / 100));
-  const baseOrders = Math.max(1, Math.round((2 + (hash % 5)) * (isWeekendPeak ? 1.3 : 1)));
-  const baseUnits = baseOrders + (hash % 4);
-  const avgUnitPrice = 145 + (hash % 210);
-  const baseRevenue = Math.round(baseUnits * avgUnitPrice);
-
-  return {
-    visits: baseVisits,
-    productViews: baseProductViews,
-    ordersCount: baseOrders,
-    unitsSold: baseUnits,
-    revenueUsd: baseRevenue,
-  };
-}
-
 export function generateDateKeysWindow(
   rangeDays: StatsRangeDays,
   endDate: Date = new Date()
@@ -115,16 +78,15 @@ export interface BuildDailyStatsParams {
 }
 
 /**
- * Combines live recorded orders, storefront visits, and search events across the requested
- * rolling daily window. In 'blended' mode (default), adds deterministic 30d historical baseline
- * activity so charts open populated with meaningful store patterns plus live activity deltas.
+ * Aggregates live recorded orders, storefront visits, and search events across the requested
+ * rolling daily window starting from a clean zero baseline (no synthetic/simulated data).
  */
 export function buildDailySalesAndTrafficSeries({
   orders,
   trafficStore,
   searchEvents,
   rangeDays,
-  dataMode = 'blended',
+  dataMode: _dataMode = 'live_only',
   now = new Date(),
 }: BuildDailyStatsParams): DailySalesTrafficPoint[] {
   const dateKeys = generateDateKeysWindow(rangeDays, now);
@@ -163,16 +125,11 @@ export function buildDailySalesAndTrafficSeries({
     const liveTraffic = trafficStore[dateKey] || { visits: 0, productViews: 0 };
     const liveSearches = searchCountByDate.get(dateKey) || 0;
 
-    const baseline =
-      dataMode === 'blended'
-        ? computeDeterministicDailyBaseline(dateKey)
-        : { visits: 0, productViews: 0, ordersCount: 0, unitsSold: 0, revenueUsd: 0 };
-
-    const revenueUsd = Math.round((baseline.revenueUsd + liveOrders.revenueUsd) * 100) / 100;
-    const unitsSold = baseline.unitsSold + liveOrders.unitsSold;
-    const ordersCount = baseline.ordersCount + liveOrders.ordersCount;
-    const visits = baseline.visits + liveTraffic.visits + liveSearches;
-    const productViews = baseline.productViews + liveTraffic.productViews + liveSearches;
+    const revenueUsd = Math.round(liveOrders.revenueUsd * 100) / 100;
+    const unitsSold = liveOrders.unitsSold;
+    const ordersCount = liveOrders.ordersCount;
+    const visits = liveTraffic.visits + liveSearches;
+    const productViews = liveTraffic.productViews + liveSearches;
     const conversionRate =
       visits > 0 ? Math.min(100, Math.round((ordersCount / visits) * 1000) / 10) : 0;
 
@@ -238,13 +195,13 @@ export function summarizeDailySalesAndTraffic(
     totalProductViews,
     avgConversionRate,
     avgOrderValueUsd,
-    peakSalesDate: peakPoint.dateKey,
+    peakSalesDate: peakPoint.revenueUsd > 0 ? peakPoint.dateKey : '',
   };
 }
 
 /**
  * Aggregates live order revenue and unit volume grouped by product category.
- * Uses catalog category distribution if zero active orders exist.
+ * Returns an empty list when zero active orders exist so charts begin cleanly at zero.
  */
 export function computeCategorySalesBreakdown(
   orders: readonly Order[],
@@ -285,24 +242,6 @@ export function computeCategorySalesBreakdown(
       }
 
       catMap.set(normalizedCat, existing);
-    }
-  }
-
-  if (catMap.size === 0 && products.length > 0) {
-    for (const p of products.slice(0, 12)) {
-      const label = (p.category || 'Electronics')
-        .replace(/-/g, ' ')
-        .replace(/\b\w/g, (c) => c.toUpperCase());
-      const existing = catMap.get(label) || {
-        categoryId: p.category || 'electronics',
-        categoryLabel: label,
-        revenueUsd: 0,
-        unitsSold: 0,
-        ordersCount: 0,
-      };
-      existing.revenueUsd += p.price || 0;
-      existing.unitsSold += 1;
-      catMap.set(label, existing);
     }
   }
 

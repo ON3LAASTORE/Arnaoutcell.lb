@@ -14,14 +14,14 @@ export const VideosPage: React.FC = () => {
     <div className="py-12 md:py-20 bg-white dark:bg-[#0A0F1D] min-h-[100dvh] w-full transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-14 space-y-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF3FF] border border-[#BAE6FD] text-[#007AFF] text-xs font-bold tracking-wider mb-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#EAF3FF] dark:bg-[#111A2E] border border-[#BAE6FD] dark:border-[#1E293B] text-[#007AFF] dark:text-[#38BDF8] text-xs font-bold tracking-wider mb-2">
             <Video className="w-3.5 h-3.5" />
             <span>{lang === 'ar' ? 'فيديوهات تقنية ومعاينات' : 'MARKETING & UNBOXING VIDEOS'}</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black text-[#172033]">
+          <h1 className="text-3xl sm:text-5xl font-black text-[#172033] dark:text-[#F8FAFC]">
             {lang === 'ar' ? 'فيديوهات وتجارب المنتجات الحية' : 'Product Reviews & Demos'}
           </h1>
-          <p className="text-[#64748B] text-xs sm:text-sm">
+          <p className="text-[#64748B] dark:text-slate-400 text-xs sm:text-sm">
             {lang === 'ar'
               ? `شاهد اختبارات الأداء المباشرة والمواصفات الواقعية للأجهزة المتوفرة لدى ${storeSettings.storeNameAr || 'ON AlAA STORE'} مع التوصيل لجميع مناطق لبنان.`
               : `Watch real performance tests, unboxings, and hands-on demos from ${storeSettings.storeName || 'ON AlAA STORE'} — Based in Chouf, Delivering to All Lebanon.`}
@@ -35,11 +35,11 @@ export const VideosPage: React.FC = () => {
             return (
               <div
                 key={video.id}
-                className="group rounded-3xl bg-white border border-[#DCE5F0] hover:border-[#007AFF] overflow-hidden shadow-xs hover:shadow-[0_4px_20px_-4px_rgba(0,122,255,0.12)] transition-all flex flex-col justify-between"
+                className="group rounded-3xl bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] dark:hover:border-[#38BDF8] overflow-hidden shadow-xs hover:shadow-[0_4px_20px_-4px_rgba(0,122,255,0.12)] transition-all flex flex-col justify-between"
               >
                 <div
                   onClick={() => setActiveVideo(video)}
-                  className="relative h-60 bg-[#F5F8FC] cursor-pointer overflow-hidden group"
+                  className="relative h-60 bg-[#F5F8FC] dark:bg-[#0E1726] cursor-pointer overflow-hidden group"
                 >
                   <LazyImage
                     src={video.thumbnail}
@@ -64,15 +64,15 @@ export const VideosPage: React.FC = () => {
 
                 <div className="p-6 flex-1 flex flex-col justify-between">
                   <div>
-                    <h3 className="font-bold text-[#172033] text-base group-hover:text-[#007AFF] transition-colors line-clamp-2">
+                    <h3 className="font-bold text-[#172033] dark:text-[#F8FAFC] text-base group-hover:text-[#007AFF] dark:group-hover:text-[#38BDF8] transition-colors line-clamp-2">
                       {lang === 'ar' ? video.titleAr || video.title : video.title}
                     </h3>
-                    <p className="text-xs text-[#64748B] line-clamp-2 mt-2 leading-relaxed">
+                    <p className="text-xs text-[#64748B] dark:text-slate-400 line-clamp-2 mt-2 leading-relaxed">
                       {video.description}
                     </p>
                   </div>
 
-                  <div className="mt-5 pt-3 border-t border-[#DCE5F0]">
+                  <div className="mt-5 pt-3 border-t border-[#DCE5F0] dark:border-[#1E293B]">
                     {linkedProduct ? (
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2 min-w-0">
@@ -82,12 +82,12 @@ export const VideosPage: React.FC = () => {
                             width={40}
                             height={40}
                             priority={false}
-                            wrapperClassName="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-[#F5F8FC] border border-[#DCE5F0]"
+                            wrapperClassName="w-10 h-10 rounded-lg overflow-hidden flex-shrink-0 bg-[#F5F8FC] dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B]"
                             className="w-full h-full object-cover"
                           />
                           <div className="truncate">
-                            <span className="text-[10px] text-[#64748B] block font-semibold">{linkedProduct.brand}</span>
-                            <span className="text-xs font-bold text-[#172033] block">
+                            <span className="text-[10px] text-[#64748B] dark:text-slate-400 block font-semibold">{linkedProduct.brand}</span>
+                            <span className="text-xs font-bold text-[#172033] dark:text-[#F8FAFC] block">
                               ${linkedProduct.price}
                             </span>
                           </div>
@@ -104,9 +104,9 @@ export const VideosPage: React.FC = () => {
                     ) : (
                       <button
                         onClick={() => setActiveVideo(video)}
-                        className="w-full py-2.5 rounded-xl bg-[#F5F8FC] hover:bg-[#EAF3FF] text-[#172033] hover:text-[#007AFF] text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer border border-[#DCE5F0] transition-colors"
+                        className="w-full py-2.5 rounded-xl bg-[#F5F8FC] dark:bg-[#0E1726] hover:bg-[#EAF3FF] dark:hover:bg-[#152033] text-[#172033] dark:text-slate-200 hover:text-[#007AFF] dark:hover:text-[#38BDF8] text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer border border-[#DCE5F0] dark:border-[#1E293B] transition-colors"
                       >
-                        <Play className="w-3.5 h-3.5 text-[#007AFF]" />
+                        <Play className="w-3.5 h-3.5 text-[#007AFF] dark:text-[#38BDF8]" />
                         <span>{lang === 'ar' ? 'تشغيل الفيديو' : 'Watch Video'}</span>
                       </button>
                     )}
@@ -120,15 +120,15 @@ export const VideosPage: React.FC = () => {
 
       {activeVideo && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
-          <div className="relative w-full max-w-4xl bg-white border border-[#DCE5F0] rounded-3xl overflow-hidden shadow-2xl">
-            <div className="flex items-center justify-between p-4 border-b border-[#DCE5F0] bg-[#F5F8FC]">
-              <div className="flex items-center gap-2 text-sm font-bold text-[#172033]">
-                <Video className="w-4 h-4 text-[#007AFF]" />
+          <div className="relative w-full max-w-4xl bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] rounded-3xl overflow-hidden shadow-2xl">
+            <div className="flex items-center justify-between p-4 border-b border-[#DCE5F0] dark:border-[#1E293B] bg-[#F5F8FC] dark:bg-[#0E1726]">
+              <div className="flex items-center gap-2 text-sm font-bold text-[#172033] dark:text-[#F8FAFC]">
+                <Video className="w-4 h-4 text-[#007AFF] dark:text-[#38BDF8]" />
                 <span className="line-clamp-1">{activeVideo.title}</span>
               </div>
               <button
                 onClick={() => setActiveVideo(null)}
-                className="p-1.5 rounded-xl hover:bg-black/5 text-[#64748B] hover:text-[#172033]"
+                className="p-1.5 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 text-[#64748B] dark:text-slate-400 hover:text-[#172033] dark:hover:text-white cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>

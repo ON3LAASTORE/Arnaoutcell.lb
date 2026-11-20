@@ -19,6 +19,7 @@ import {
   SearchAnalyticsSummary,
 } from '../../services/searchAnalyticsService';
 import { downloadCombinedInventoryAndSalesCsv } from '../../services/csvReportService';
+import { ConfirmDialog } from '../ConfirmDialog';
 
 export const AdminOverview: React.FC = () => {
   const { lang, products, storeSettings } = useShop();
@@ -65,16 +66,20 @@ export const AdminOverview: React.FC = () => {
     getSearchAnalyticsSummary(8)
   );
   const [exportNotice, setExportNotice] = React.useState<string>('');
+  const [confirmClearLogsOpen, setConfirmClearLogsOpen] = React.useState(false);
 
   const refreshSearchAnalytics = () => {
     setSearchSummary(getSearchAnalyticsSummary(8));
   };
 
   const handleClearAnalytics = () => {
-    if (confirm(lang === 'ar' ? 'هل أنت متأكد من مسح سجلات البحث؟' : 'Are you sure you want to clear search logs?')) {
-      clearSearchAnalytics();
-      setSearchSummary(getSearchAnalyticsSummary(8));
-    }
+    setConfirmClearLogsOpen(true);
+  };
+
+  const confirmClearAnalytics = () => {
+    clearSearchAnalytics();
+    setSearchSummary(getSearchAnalyticsSummary(8));
+    setConfirmClearLogsOpen(false);
   };
 
   const handleDownloadCombinedReport = () => {
@@ -399,6 +404,20 @@ export const AdminOverview: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <ConfirmDialog
+        isOpen={confirmClearLogsOpen}
+        lang={lang}
+        title={lang === 'ar' ? 'مسح سجلات البحث' : 'Clear Search Analytics'}
+        message={
+          lang === 'ar'
+            ? 'هل أنت متأكد من مسح كافة سجلات البحث المسجلة؟ لا يمكن التراجع عن هذا الإجراء.'
+            : 'Are you sure you want to clear all recorded search analytics logs? This cannot be undone.'
+        }
+        confirmLabel={lang === 'ar' ? 'مسح السجلات' : 'Clear Logs'}
+        onConfirm={confirmClearAnalytics}
+        onCancel={() => setConfirmClearLogsOpen(false)}
+      />
     </div>
   );
 };

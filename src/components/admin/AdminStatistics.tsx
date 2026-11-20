@@ -16,7 +16,6 @@ import {
   buildDailySalesAndTrafficSeries,
   computeCategorySalesBreakdown,
   dailyStatsToCsv,
-  StatsDataMode,
   StatsRangeDays,
   summarizeDailySalesAndTraffic,
 } from '../../utils/adminStatisticsHelpers';
@@ -31,7 +30,6 @@ export const AdminStatistics: React.FC = () => {
   const isAr = lang === 'ar';
 
   const [rangeDays, setRangeDays] = useState<StatsRangeDays>(14);
-  const [dataMode, setDataMode] = useState<StatsDataMode>('blended');
   const [salesMetric, setSalesMetric] = useState<SalesMetricMode>('revenue');
   const [showSalesBars, setShowSalesBars] = useState<boolean>(true);
   const [showTrafficLine, setShowTrafficLine] = useState<boolean>(true);
@@ -48,9 +46,9 @@ export const AdminStatistics: React.FC = () => {
         trafficStore,
         searchEvents,
         rangeDays,
-        dataMode,
+        dataMode: 'live_only',
       }),
-    [orders, trafficStore, searchEvents, rangeDays, dataMode]
+    [orders, trafficStore, searchEvents, rangeDays]
   );
 
   const summary = useMemo(() => summarizeDailySalesAndTraffic(dailySeries), [dailySeries]);
@@ -114,35 +112,10 @@ export const AdminStatistics: React.FC = () => {
             ))}
           </div>
 
-          {/* Blended vs Live Only Mode Toggle */}
-          <div
-            role="group"
-            aria-label={isAr ? 'مصدر البيانات' : 'Data source mode'}
-            className="inline-flex items-center p-1 bg-white border border-[#DCE5F0] rounded-xl"
-          >
-            <button
-              type="button"
-              onClick={() => setDataMode('blended')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer whitespace-nowrap ${
-                dataMode === 'blended'
-                  ? 'bg-[#172033] text-white'
-                  : 'text-[#64748B] hover:text-[#172033]'
-              }`}
-            >
-              {isAr ? 'السجل المتكامل' : 'Store History'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setDataMode('live_only')}
-              className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-colors cursor-pointer whitespace-nowrap ${
-                dataMode === 'live_only'
-                  ? 'bg-[#172033] text-white'
-                  : 'text-[#64748B] hover:text-[#172033]'
-              }`}
-            >
-              {isAr ? 'المباشر فقط' : 'Live Recorded'}
-            </button>
-          </div>
+          <span className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-[#15803D] text-xs font-bold whitespace-nowrap">
+            <span className="w-2 h-2 rounded-full bg-[#16A34A]" />
+            <span>{isAr ? 'بيانات حية حقيقية' : 'Live Real Data'}</span>
+          </span>
 
           <button
             type="button"

@@ -104,6 +104,19 @@ test('buildPdpColorSwatches maps miniature thumbnails and formatted price per co
   assert.equal(customSwatches[1].thumbnailUrl, 'https://example.com/white-titanium.jpg');
   assert.equal(customSwatches[1].isLightTone, false);
   assert.equal(customSwatches[1].formattedPrice, '$1299');
+
+  const multiImageLiveSwatches = buildPdpColorSwatches(
+    {
+      colors: ['Pop Planet White', 'Cosmic Purple'],
+      images: ['https://i.ibb.co/111/white.jpg', 'https://i.ibb.co/222/purple.jpg'],
+      colorImages: {},
+    },
+    599
+  );
+  assert.equal(multiImageLiveSwatches[0].thumbnailUrl, 'https://i.ibb.co/111/white.jpg');
+  assert.equal(multiImageLiveSwatches[0].isLightTone, false);
+  assert.equal(multiImageLiveSwatches[1].thumbnailUrl, 'https://i.ibb.co/222/purple.jpg');
+  assert.equal(multiImageLiveSwatches[1].isLightTone, false);
 });
 
 test('buildPdpSocialProof and getPdpServiceFeatures format EN and AR social proof cleanly', () => {

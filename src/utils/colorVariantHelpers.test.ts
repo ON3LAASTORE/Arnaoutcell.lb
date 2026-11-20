@@ -4,6 +4,7 @@ import {
   buildColorVariantConfigs,
   extractProductColorData,
   findVariantForColor,
+  resolveColorShowcaseImage,
   resolveExplicitColorImage,
   resolveProductImageForColor,
 } from './colorVariantHelpers';
@@ -104,3 +105,53 @@ test('extractProductColorData persists per-color images, sparse variant override
   assert.equal(result.variants[1].price, 1289);
   assert.equal(result.variants[1].image, 'https://example.com/white.jpg');
 });
+
+test('resolveColorShowcaseImage maps multi-image gallery products automatically when explicit colorImages is empty', () => {
+  const liveHashedGalleryProduct: Pick<Product, 'images' | 'colors' | 'colorImages' | 'variants'> = {
+    images: [
+      'https://i.ibb.co/aaa111/photo1.jpg',
+      'https://i.ibb.co/bbb222/photo2.jpg',
+      'https://i.ibb.co/ccc333/photo3.jpg',
+    ],
+    colors: ['Pop Planet White', 'Cosmic Purple'],
+    colorImages: {},
+    variants: [],
+  };
+
+  assert.equal(
+    resolveColorShowcaseImage(liveHashedGalleryProduct, 'Pop Planet White'),
+    'https://i.ibb.co/aaa111/photo1.jpg'
+  );
+  assert.equal(
+    resolveColorShowcaseImage(liveHashedGalleryProduct, 'Cosmic Purple'),
+    'https://i.ibb.co/bbb222/photo2.jpg'
+  );
+
+  const keywordMatchedProduct: Pick<Product, 'images' | 'colors' | 'colorImages' | 'variants'> = {
+    images: [
+      'https://example.com/reno-planet-silver.jpg',
+      'https://example.com/reno-planet-white.jpg',
+      'https://example.com/reno-planet-purple.jpg',
+    ],
+    colors: ['Pop Planet White', 'Cosmic Purple'],
+    colorImages: {},
+  };
+
+  // Discriminating token "white" / "purple" wins cleanly despite shared "planet" token
+  assert.equal(
+    resolveColorShowcaseImage(keywordMatchedProduct, 'Pop Planet White'),
+    'https://example.com/reno-planet-white.jpg'
+  );
+  assert.equal(
+    resolveColorShowcaseImage(keywordMatchedProduct, 'Cosmic Purple'),
+    'https://example.com/reno-planet-purple.jpg'
+  );
+
+  // Explicit partial map still wins and leaves unmapped colors undefined for default primary image fallback
+  assert.equal(resolveColorShowcaseImage(SAMPLE_PRODUCT, 'Natural Titanium'), undefined);
+  assert.equal(
+    resolveColorShowcaseImage(SAMPLE_PRODUCT, 'White Titanium'),
+    'https://example.com/white-titanium.jpg'
+  );
+});
+
