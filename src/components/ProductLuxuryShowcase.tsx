@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
   Check,
+  CheckCircle2,
   Heart,
   ShoppingBag,
   Sparkles,
@@ -28,6 +29,7 @@ import {
   buildLuxuryCarouselImages,
   computeLuxurySubtotal,
   findCarouselIndexForColor,
+  findColorForCarouselImage,
   formatLuxuryUsdPrice,
   getSidekickQuickPrompts,
   stepCarouselIndex,
@@ -35,6 +37,7 @@ import {
 
 interface ProductLuxuryShowcaseProps {
   product: Product;
+  initialVariantId?: string;
   lang: Language;
   mode: 'modal' | 'page';
   whatsappNumber?: string;
@@ -68,6 +71,7 @@ interface ProductLuxuryShowcaseProps {
 
 export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
   product,
+  initialVariantId,
   lang,
   mode,
   isFavorited,
@@ -75,29 +79,39 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
   onToggleWishlist,
   onToggleCompare,
   onAddToCart,
-  onDirectOrder,
   onWhatsAppInquiry,
   onOpenFullPage,
   onShare,
   shareCopied = false,
 }) => {
-  const initialColor = product.colors?.[0];
+  const capacityOptions = buildCapacityOptions(product);
+  const preselectedVariant = initialVariantId
+    ? product.variants?.find((v) => v.id === initialVariantId)
+    : undefined;
+  const initialColor =
+    preselectedVariant?.color && product.colors?.includes(preselectedVariant.color)
+      ? preselectedVariant.color
+      : product.colors?.[0];
   const initialColorImage = resolveColorShowcaseImage(product, initialColor);
   const carouselImages = buildLuxuryCarouselImages(product, initialColorImage);
-  const capacityOptions = buildCapacityOptions(product);
 
   const [carouselIndex, setCarouselIndex] = useState<number>(() =>
     findCarouselIndexForColor(product, carouselImages, initialColor)
   );
   const [selectedColor, setSelectedColor] = useState<string | undefined>(initialColor);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(() => {
+    if (preselectedVariant) return preselectedVariant;
     const colorVariant = initialColor ? findVariantForColor(product, initialColor) : undefined;
     const firstCapVariant = capacityOptions.find((opt) => !opt.isSpecDerived)?.variant;
     return firstCapVariant || colorVariant || product.variants?.[0];
   });
-  const [selectedCapacityId, setSelectedCapacityId] = useState<string | undefined>(
-    () => capacityOptions[0]?.id
-  );
+  const [selectedCapacityId, setSelectedCapacityId] = useState<string | undefined>(() => {
+    if (preselectedVariant) {
+      const capMatch = capacityOptions.find((opt) => opt.variant?.id === preselectedVariant.id);
+      if (capMatch) return capMatch.id;
+    }
+    return capacityOptions[0]?.id;
+  });
   const [quantity, setQuantity] = useState<number>(1);
   const [justAdded, setJustAdded] = useState<boolean>(false);
 
@@ -108,20 +122,31 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
   const [sidekickAnswer, setSidekickAnswer] = useState<string | null>(null);
   const [sidekickError, setSidekickError] = useState<string | null>(null);
   const [sidekickLastQuestion, setSidekickLastQuestion] = useState<string | null>(null);
+  const sidekickAbortRef = useRef<AbortController | null>(null);
 
-  // Re-sync when switching products
   useEffect(() => {
-    const nextColor = product.colors?.[0];
+    const nextCaps = buildCapacityOptions(product);
+    const matchedVariant = initialVariantId
+      ? product.variants?.find((v) => v.id === initialVariantId)
+      : undefined;
+    const nextColor =
+      matchedVariant?.color && product.colors?.includes(matchedVariant.color)
+        ? matchedVariant.color
+        : product.colors?.[0];
     const nextColorImg = resolveColorShowcaseImage(product, nextColor);
     const nextImages = buildLuxuryCarouselImages(product, nextColorImg);
-    const nextCaps = buildCapacityOptions(product);
     const nextColorVariant = nextColor ? findVariantForColor(product, nextColor) : undefined;
     const nextCapVariant = nextCaps.find((opt) => !opt.isSpecDerived)?.variant;
+    const matchedCap = matchedVariant
+      ? nextCaps.find((opt) => opt.variant?.id === matchedVariant.id)
+      : undefined;
 
+    sidekickAbortRef.current?.abort();
+    setSidekickLoading(false);
     setSelectedColor(nextColor);
     setCarouselIndex(findCarouselIndexForColor(product, nextImages, nextColor));
-    setSelectedVariant(nextCapVariant || nextColorVariant || product.variants?.[0]);
-    setSelectedCapacityId(nextCaps[0]?.id);
+    setSelectedVariant(matchedVariant || nextCapVariant || nextColorVariant || product.variants?.[0]);
+    setSelectedCapacityId(matchedCap?.id || nextCaps[0]?.id);
     setQuantity(1);
     setJustAdded(false);
     setIsSidekickOpen(false);
@@ -129,9 +154,11 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
     setSidekickAnswer(null);
     setSidekickError(null);
     setSidekickLastQuestion(null);
-  }, [product.id]);
+    return () => {
+      sidekickAbortRef.current?.abort();
+    };
+  }, [product.id, initialVariantId]);
 
-  // Also ensure active color stays reflected cleanly in carousel when product images/colorImages change
   const activeColorShowcase = resolveColorShowcaseImage(product, selectedColor);
   const activeImages = buildLuxuryCarouselImages(product, activeColorShowcase);
   const safeCarouselIdx =
@@ -189,12 +216,25 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
     }
   };
 
+  const handleCarouselStep = (delta: -1 | 1) => {
+    const nextIdx = stepCarouselIndex(safeCarouselIdx, delta, activeImages.length);
+    setCarouselIndex(nextIdx);
+    const matchedColor = findColorForCarouselImage(product, activeImages[nextIdx]);
+    if (matchedColor) {
+      setSelectedColor(matchedColor);
+      const colorVariant = findVariantForColor(product, matchedColor);
+      if (colorVariant && nonColorVariants.length === 0) {
+        setSelectedVariant(colorVariant);
+      }
+    }
+  };
+
   const handlePrevImage = () => {
-    setCarouselIndex((idx) => stepCarouselIndex(idx, -1, activeImages.length));
+    handleCarouselStep(-1);
   };
 
   const handleNextImage = () => {
-    setCarouselIndex((idx) => stepCarouselIndex(idx, 1, activeImages.length));
+    handleCarouselStep(1);
   };
 
   const handleAddClick = () => {
@@ -208,6 +248,10 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
     const cleanQ = promptText.trim();
     if (!cleanQ || sidekickLoading) return;
 
+    sidekickAbortRef.current?.abort();
+    const controller = new AbortController();
+    sidekickAbortRef.current = controller;
+
     setSidekickLastQuestion(cleanQ);
     setSidekickLoading(true);
     setSidekickError(null);
@@ -218,6 +262,7 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
       const response = await fetch('/api/sidekick/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           productName: rawTitle,
           brand: product.brand,
@@ -233,6 +278,7 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
         }),
       });
       const data = await response.json().catch(() => ({}));
+      if (controller.signal.aborted) return;
       if (!response.ok || !data?.success) {
         setSidekickError(
           data?.error ||
@@ -244,14 +290,19 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
       }
       setSidekickAnswer(data.answer);
       setSidekickInput('');
-    } catch {
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
+        return;
+      }
       setSidekickError(
         lang === 'ar'
           ? 'حدث خطأ في الاتصال بخادم المساعد.'
           : 'Network error while contacting Sidekick assistant.'
       );
     } finally {
-      setSidekickLoading(false);
+      if (!controller.signal.aborted) {
+        setSidekickLoading(false);
+      }
     }
   };
 
@@ -265,56 +316,128 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
       className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start bg-white dark:bg-[#0B1120]"
       data-testid={mode === 'modal' ? 'quickview-luxury-layout' : 'pdp-split-layout'}
     >
-      {/* Left Column: Clean Pure-White Product Image Carousel with Flanking ◀ ▶ Navigation */}
-      <div className="lg:col-span-6 relative bg-white dark:bg-[#0B1120] rounded-2xl flex items-center justify-center min-h-[250px] sm:min-h-[460px] p-3 sm:p-8 select-none">
-        {/* Left Carousel Arrow ◀ */}
-        {activeImages.length > 1 && (
-          <button
-            type="button"
-            onClick={handlePrevImage}
-            data-testid="pdp-carousel-prev"
-            aria-label={lang === 'ar' ? 'الصورة السابقة' : 'Previous image'}
-            className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white dark:bg-[#111A2E] border border-[#E2E8F0] dark:border-slate-700 text-[#0A0F2C] dark:text-white hover:border-[#0A0F2C] flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-        )}
+      {/* LEFT COLUMN: Clean Pure-White Gallery + Color Thumbnails + Disclaimer */}
+      <div className="lg:col-span-6 space-y-6 bg-white dark:bg-[#0B1120]">
+        {/* Large Clean Product Image Flanked by Subtle ◀ ▶ Navigation */}
+        <div className="relative bg-white dark:bg-white rounded-2xl border border-transparent dark:border-slate-800 flex items-center justify-center min-h-[260px] sm:min-h-[430px] p-3 sm:p-6 select-none">
+          {activeImages.length > 1 && (
+            <button
+              type="button"
+              onClick={handlePrevImage}
+              data-testid="pdp-carousel-prev"
+              aria-label={lang === 'ar' ? 'الصورة السابقة' : 'Previous image'}
+              className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white dark:bg-[#111A2E] border border-[#E2E8F0] dark:border-slate-700 text-[#0A0F2C] dark:text-white hover:border-[#0A0F2C] flex items-center justify-center transition-colors cursor-pointer shadow-xs"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          )}
 
-        {/* Centered Unobstructed Product Image on Pure White */}
-        <div
-          className="w-full h-[230px] sm:h-[420px] flex items-center justify-center px-10"
-          data-testid="pdp-hero-showcase"
-        >
-          <LazyImage
-            src={activeHeroImageUrl}
-            alt={`${rawTitle}${selectedColor ? ` - ${selectedColor}` : ''}`}
-            priority={true}
-            data-testid={mode === 'modal' ? 'quickview-main-image' : 'pdp-hero-image'}
-            wrapperClassName="w-full h-full flex items-center justify-center"
-            className="max-h-full max-w-full w-auto h-auto object-contain select-none"
-          />
+          <div
+            className="w-full h-[240px] sm:h-[400px] flex items-center justify-center px-10"
+            data-testid="pdp-hero-showcase"
+          >
+            <LazyImage
+              src={activeHeroImageUrl}
+              alt={`${rawTitle}${selectedColor ? ` - ${selectedColor}` : ''}`}
+              priority={true}
+              data-testid={mode === 'modal' ? 'quickview-main-image' : 'pdp-hero-image'}
+              wrapperClassName="w-full h-full flex items-center justify-center"
+              className="max-h-full max-w-full w-auto h-auto object-contain select-none"
+            />
+          </div>
+
+          {activeImages.length > 1 && (
+            <button
+              type="button"
+              onClick={handleNextImage}
+              data-testid="pdp-carousel-next"
+              aria-label={lang === 'ar' ? 'الصورة التالية' : 'Next image'}
+              className="absolute right-1 sm:right-2 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white dark:bg-[#111A2E] border border-[#E2E8F0] dark:border-slate-700 text-[#0A0F2C] dark:text-white hover:border-[#0A0F2C] flex items-center justify-center transition-colors cursor-pointer"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
-        {/* Right Carousel Arrow ▶ */}
-        {activeImages.length > 1 && (
-          <button
-            type="button"
-            onClick={handleNextImage}
-            data-testid="pdp-carousel-next"
-            aria-label={lang === 'ar' ? 'الصورة التالية' : 'Next image'}
-            className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full bg-white dark:bg-[#111A2E] border border-[#E2E8F0] dark:border-slate-700 text-[#0A0F2C] dark:text-white hover:border-[#0A0F2C] flex items-center justify-center transition-colors cursor-pointer"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
+        {/* Color Selector with Square Rounded Thumbnail Cards Below Hero Image */}
+        {colors.length > 0 && (
+          <div className="space-y-3" data-testid="pdp-color-swatches">
+            <div className="text-xs font-medium text-[#64748B] dark:text-slate-400">
+              {lang === 'ar' ? 'اللون:' : 'Color:'}{' '}
+              {selectedColor && (
+                <span
+                  className="font-semibold text-[#0A0F2C] dark:text-white"
+                  data-testid={
+                    mode === 'modal' ? 'quickview-active-color-label' : 'pdp-active-color-label'
+                  }
+                >
+                  {selectedColor}
+                </span>
+              )}
+            </div>
+
+            <div className="flex flex-wrap gap-3">
+              {colors.map((color) => {
+                const isSelected = selectedColor === color;
+                const thumbImg = resolveColorShowcaseImage(product, color) || activeImages[0];
+                return (
+                  <button
+                    key={color}
+                    type="button"
+                    onClick={() => handleSelectColor(color)}
+                    aria-pressed={isSelected}
+                    aria-label={color}
+                    title={color}
+                    data-testid={
+                      mode === 'modal'
+                        ? `quickview-color-btn-${color}`
+                        : `pdp-color-swatch-${color}`
+                    }
+                    className={`relative w-[68px] h-[68px] sm:w-[74px] sm:h-[74px] rounded-xl bg-white p-1.5 flex items-center justify-center transition-colors cursor-pointer ${
+                      isSelected
+                        ? 'border-2 border-[#0070F3]'
+                        : 'border border-[#E2E8F0] dark:border-slate-700 hover:border-[#0A0F2C]'
+                    }`}
+                  >
+                    <img
+                      src={resolveFullResolutionImageUrl(thumbImg)}
+                      alt={`${rawTitle} - ${color}`}
+                      referrerPolicy="no-referrer"
+                      className="w-full h-full object-contain rounded-lg"
+                    />
+                    {isSelected && (
+                      <span
+                        aria-hidden="true"
+                        data-testid={`pdp-color-check-${color}`}
+                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#0070F3] text-white flex items-center justify-center shadow-xs"
+                      >
+                        <Check className="w-3 h-3 stroke-[3]" />
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         )}
+
+        {/* Small Gray Reference Disclaimer */}
+        <p
+          className="text-[11px] leading-relaxed text-[#64748B] dark:text-slate-400 m-0"
+          data-testid="pdp-reference-disclaimer"
+        >
+          {lang === 'ar'
+            ? 'صور المنتج مرجعية فقط. قد يختلف المنتج الفعلي في المظهر أو اللون. يرجى الرجوع إلى رمز المنتج (SKU) والوصف والمواصفات الرسمية لضمان الدقة.'
+            : 'Product images are for reference only. The actual item may differ in appearance & colour. Please refer to the product code, SKU, and description from manufacturer website for accurate specifications.'}
+        </p>
       </div>
 
-      {/* Right Column: Clean Vertical Luxury Layout */}
+      {/* RIGHT COLUMN: Title -> 961 Sidekick -> CAPACITY -> Price/Qty/Subtotal -> Authenticity -> ADD TO CART + Circular Actions */}
       <div
         className="lg:col-span-6 space-y-5 bg-white dark:bg-[#0B1120]"
         data-testid="pdp-purchase-module"
       >
-        {/* 1. Product Title (Medium-Weight Deep Midnight Navy Heading) */}
+        {/* 1. Clean Dark Navy Title */}
         <h1
           className="text-[22px] sm:text-[26px] font-semibold text-[#0A0F2C] dark:text-[#F8FAFC] leading-[1.3] tracking-tight m-0"
           data-testid="pdp-product-title"
@@ -322,16 +445,15 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
           {rawTitle}
         </h1>
 
-        {/* 2. Compact AI Assistant Banner Card ("Ask Sidekick ->") */}
+        {/* 2. 961 Sidekick Banner Card */}
         <div
           className="rounded-xl border border-[#E2E8F0] dark:border-slate-700 overflow-hidden bg-white dark:bg-[#111A2E]"
           data-testid="pdp-sidekick-card"
         >
-          {/* Dark Navy Top Header Bar */}
           <div className="bg-[#0A0F2C] text-white px-4 py-1.5 flex items-center justify-between text-[11px] font-semibold tracking-wide">
             <span className="inline-flex items-center gap-1.5">
               <Sparkles className="w-3 h-3" />
-              <span>{lang === 'ar' ? 'مساعد المنتجات الذكي Sidekick' : 'Sidekick Product Assistant'}</span>
+              <span>961 Sidekick</span>
             </span>
             {isSidekickOpen && (
               <button
@@ -345,10 +467,11 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
             )}
           </div>
 
-          {/* White Card Body */}
-          <div className="px-4 py-3 flex items-center justify-between gap-3 bg-white dark:bg-[#111A2E]">
-            <p className="text-xs sm:text-[13.5px] font-medium text-[#0A0F2C] dark:text-slate-200 m-0">
-              {lang === 'ar' ? 'احصل على التفاصيل التي تهمك.' : 'Get the detail that matters.'}
+          <div className="px-4 py-3.5 flex items-center justify-between gap-4 bg-white dark:bg-[#111A2E]">
+            <p className="text-xs sm:text-[13px] font-medium text-[#0A0F2C] dark:text-slate-200 leading-snug m-0">
+              {lang === 'ar'
+                ? 'احصل على التفاصيل التي تهمك: المواصفات، التوافق، التوصيل، والكفالة بدون عناء البحث.'
+                : 'Get the detail that matters. Specifications, fit, delivery, and warranty—without the hunt.'}
             </p>
             <button
               type="button"
@@ -361,7 +484,6 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
             </button>
           </div>
 
-          {/* Interactive Expandable Sidekick Drawer */}
           {isSidekickOpen && (
             <div
               className="border-t border-[#E2E8F0] dark:border-slate-700 p-4 space-y-3 bg-[#F8FAFC] dark:bg-[#0B1120]"
@@ -417,10 +539,19 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
 
               {sidekickError && (
                 <div
-                  className="p-2.5 rounded-lg border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/30 text-xs text-rose-700 dark:text-rose-300"
+                  className="p-2.5 rounded-lg border border-rose-200 dark:border-rose-900 bg-rose-50 dark:bg-rose-950/30 text-xs text-rose-700 dark:text-rose-300 flex items-center justify-between gap-2"
                   data-testid="pdp-sidekick-error"
                 >
-                  {sidekickError}
+                  <span>{sidekickError}</span>
+                  {sidekickLastQuestion && (
+                    <button
+                      type="button"
+                      onClick={() => handleAskSidekick(sidekickLastQuestion)}
+                      className="px-2.5 py-1 rounded-md bg-rose-700 hover:bg-rose-800 text-white text-[11px] font-semibold shrink-0 cursor-pointer"
+                    >
+                      {lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -441,18 +572,56 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
           )}
         </div>
 
-        {/* 3. Clean Bold Dark Navy Price Display */}
-        <div className="pt-0.5">
-          <span
-            className="text-[28px] sm:text-[32px] font-bold text-[#0A0F2C] dark:text-white tracking-tight tabular-nums leading-none"
-            data-testid="pdp-luxury-price"
-          >
-            {formatLuxuryUsdPrice(activePrice)}
-          </span>
-        </div>
+        {/* 3. CAPACITY Selector */}
+        {capacityOptions.length > 0 && (
+          <div className="space-y-2.5 pt-0.5" data-testid="pdp-capacity-selector">
+            <div className="flex items-center justify-between text-[11px] font-bold uppercase tracking-[0.08em] text-[#0A0F2C] dark:text-slate-200">
+              <span>{lang === 'ar' ? 'السعة (CAPACITY)' : 'CAPACITY'}</span>
+              <span className="text-[11px] font-medium normal-case tracking-normal text-[#64748B] dark:text-slate-400 tabular-nums">
+                SKU: {activeSku}
+              </span>
+            </div>
 
-        {/* 4. Quantity Pill Stepper & Live Subtotal */}
-        <div className="space-y-2 pt-0.5">
+            <div className="flex flex-wrap gap-2.5">
+              {capacityOptions.map((option) => {
+                const isActiveCap = activeCapacityOption?.id === option.id;
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    aria-pressed={isActiveCap}
+                    data-testid={`pdp-capacity-btn-${option.label}`}
+                    onClick={() => handleSelectCapacity(option.id)}
+                    className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors cursor-pointer whitespace-nowrap ${
+                      isActiveCap
+                        ? 'border-[#0A0F2C] bg-[#0A0F2C] text-white dark:border-white dark:bg-white dark:text-[#0A0F2C]'
+                        : 'border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-[#111A2E] text-[#0A0F2C] dark:text-slate-200 hover:border-[#0A0F2C]'
+                    }`}
+                  >
+                    <span>{option.label}</span>
+                    {priceHasVariations && (
+                      <span className="ml-1.5 rtl:ml-0 rtl:mr-1.5 opacity-85 tabular-nums">
+                        {formatLuxuryUsdPrice(option.price)}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* 4. Bold Price + Quantity Counter (- 1 +) + Live Subtotal */}
+        <div className="space-y-3 pt-1">
+          <div>
+            <span
+              className="text-[28px] sm:text-[32px] font-bold text-[#0A0F2C] dark:text-white tracking-tight tabular-nums leading-none"
+              data-testid="pdp-luxury-price"
+            >
+              {formatLuxuryUsdPrice(activePrice)}
+            </span>
+          </div>
+
           <div
             className="inline-flex items-center gap-4 px-4 py-1.5 rounded-full border border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-[#111A2E]"
             data-testid="pdp-qty-stepper"
@@ -501,108 +670,23 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
           </div>
         </div>
 
-        {/* 5. Color Selector with Square Rounded Product Thumbnail Cards & Checkmark */}
-        {colors.length > 0 && (
-          <div className="space-y-2.5 pt-1" data-testid="pdp-color-swatches">
-            <div className="text-xs font-medium text-[#64748B] dark:text-slate-400">
-              {lang === 'ar' ? 'اللون:' : 'Color:'}{' '}
-              {selectedColor && (
-                <span
-                  className="font-semibold text-[#0A0F2C] dark:text-white"
-                  data-testid={
-                    mode === 'modal' ? 'quickview-active-color-label' : 'pdp-active-color-label'
-                  }
-                >
-                  {selectedColor}
-                </span>
-              )}
+        {/* 5. Product Authenticity Badge (Green Checkmark Card) */}
+        <div
+          className="rounded-xl border border-emerald-200 dark:border-emerald-800/70 bg-emerald-50/70 dark:bg-emerald-950/30 px-4 py-3 flex items-start gap-3"
+          data-testid="pdp-authenticity-badge"
+        >
+          <CheckCircle2 className="w-5 h-5 text-[#16A34A] dark:text-emerald-400 shrink-0 mt-0.5" />
+          <div className="space-y-0.5">
+            <div className="text-xs font-semibold text-[#0A0F2C] dark:text-emerald-200">
+              {lang === 'ar' ? 'أصالة المنتج مضمونة' : 'Product Authenticity'}
             </div>
-
-            <div className="flex flex-wrap gap-3">
-              {colors.map((color) => {
-                const isSelected = selectedColor === color;
-                const thumbImg = resolveColorShowcaseImage(product, color) || activeImages[0];
-                return (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => handleSelectColor(color)}
-                    aria-pressed={isSelected}
-                    aria-label={color}
-                    title={color}
-                    data-testid={
-                      mode === 'modal'
-                        ? `quickview-color-btn-${color}`
-                        : `pdp-color-swatch-${color}`
-                    }
-                    className={`relative w-[68px] h-[68px] rounded-xl bg-white p-1.5 flex items-center justify-center transition-none cursor-pointer ${
-                      isSelected
-                        ? 'border-2 border-[#0070F3]'
-                        : 'border border-[#E2E8F0] dark:border-slate-700 hover:border-[#0A0F2C]'
-                    }`}
-                  >
-                    <img
-                      src={resolveFullResolutionImageUrl(thumbImg)}
-                      alt={`${rawTitle} - ${color}`}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-contain rounded-lg"
-                    />
-                    {isSelected && (
-                      <span
-                        aria-hidden="true"
-                        data-testid={`pdp-color-check-${color}`}
-                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#0070F3] text-white flex items-center justify-center shadow-xs"
-                      >
-                        <Check className="w-3 h-3 stroke-[3]" />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+            <p className="text-[11px] text-[#475569] dark:text-emerald-300/80 leading-snug m-0">
+              {lang === 'ar'
+                ? 'جهاز أصلي 100% مختوم من الوكيل المعتمد مع كفالة رسمية في لبنان.'
+                : '100% Genuine & Factory Sealed — Backed by verified official warranty across Lebanon.'}
+            </p>
           </div>
-        )}
-
-        {/* 6. Capacity / Configuration Selector */}
-        {capacityOptions.length > 0 && (
-          <div className="space-y-2 pt-0.5" data-testid="pdp-capacity-selector">
-            <div className="text-xs font-medium text-[#64748B] dark:text-slate-400">
-              {lang === 'ar' ? 'السعة:' : 'Capacity:'}{' '}
-              {activeCapacityOption && (
-                <span className="font-semibold text-[#0A0F2C] dark:text-white">
-                  {activeCapacityOption.label}
-                </span>
-              )}
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              {capacityOptions.map((option) => {
-                const isActiveCap = activeCapacityOption?.id === option.id;
-                return (
-                  <button
-                    key={option.id}
-                    type="button"
-                    aria-pressed={isActiveCap}
-                    data-testid={`pdp-capacity-btn-${option.label}`}
-                    onClick={() => handleSelectCapacity(option.id)}
-                    className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-colors cursor-pointer whitespace-nowrap ${
-                      isActiveCap
-                        ? 'border-[#0A0F2C] bg-[#0A0F2C] text-white dark:border-white dark:bg-white dark:text-[#0A0F2C]'
-                        : 'border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-[#111A2E] text-[#0A0F2C] dark:text-slate-200 hover:border-[#0A0F2C]'
-                    }`}
-                  >
-                    <span>{option.label}</span>
-                    {priceHasVariations && (
-                      <span className="ml-1.5 rtl:ml-0 rtl:mr-1.5 opacity-85 tabular-nums">
-                        {formatLuxuryUsdPrice(option.price)}
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
+        </div>
 
         {/* Out of stock alert + Notify Me if 0 stock */}
         {isOutOfStock && (
@@ -615,14 +699,14 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
           </div>
         )}
 
-        {/* 7. Deep Midnight Navy Purchase Actions */}
-        <div className="space-y-2.5 pt-2">
+        {/* 6. Large Solid Deep Navy ADD TO CART Button + Circular WhatsApp & Wishlist Actions */}
+        <div className="space-y-4 pt-1">
           <button
             type="button"
             onClick={handleAddClick}
             disabled={isOutOfStock}
             data-testid="pdp-add-to-cart-btn"
-            className={`w-full h-12 px-6 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer ${
+            className={`w-full h-12 px-6 rounded-xl text-xs sm:text-sm font-bold uppercase tracking-[0.06em] flex items-center justify-center gap-2 transition-colors cursor-pointer ${
               isOutOfStock
                 ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
                 : justAdded
@@ -633,122 +717,109 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
             {justAdded ? (
               <>
                 <Check className="w-4 h-4 stroke-[2.5]" />
-                <span>{lang === 'ar' ? 'تمت الإضافة إلى السلة' : 'Added to Cart'}</span>
+                <span>{lang === 'ar' ? 'تمت الإضافة إلى السلة' : 'ADDED TO CART'}</span>
               </>
             ) : (
               <>
                 <ShoppingBag className="w-4 h-4" />
-                <span>{lang === 'ar' ? 'أضف إلى السلة' : 'Add to Cart'}</span>
+                <span>{lang === 'ar' ? 'أضف إلى السلة' : 'ADD TO CART'}</span>
               </>
             )}
           </button>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            <button
-              type="button"
-              onClick={() => onDirectOrder(product, quantity, selectedColor, selectedVariant)}
-              disabled={isOutOfStock}
-              className="h-10 px-4 rounded-xl border border-[#E2E8F0] dark:border-slate-700 hover:border-[#0A0F2C] text-xs font-semibold text-[#0A0F2C] dark:text-white bg-white dark:bg-[#111A2E] transition-colors cursor-pointer disabled:opacity-50"
-            >
-              {lang === 'ar' ? 'شراء مباشر' : 'Buy Now'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                onWhatsAppInquiry({
-                  fullTitle: selectedColor ? `${rawTitle} - ${selectedColor}` : rawTitle,
-                  activePrice,
-                  activeSku,
-                  selectedColor,
-                  selectedCapacity: activeCapacityOption?.label,
-                })
-              }
-              className="h-10 px-4 rounded-xl border border-[#E2E8F0] dark:border-slate-700 hover:border-[#16A34A] text-xs font-semibold text-[#0A0F2C] dark:text-emerald-300 bg-white dark:bg-[#111A2E] inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <WhatsApp3DIcon size={16} />
-              <span>{lang === 'ar' ? 'واتساب 70773067' : 'WhatsApp 70773067'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Quiet Utility Footer Row (Wishlist, Compare, Share, Full Page Link in Modal) */}
-        <div className="pt-2 border-t border-[#E2E8F0] dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs text-[#64748B] dark:text-slate-400">
-          <div className="flex flex-wrap items-center gap-4">
-            <button
-              type="button"
-              onClick={onToggleWishlist}
-              data-testid="pdp-wishlist-btn"
-              aria-label={
-                isFavorited
-                  ? lang === 'ar'
-                    ? 'إزالة من المفضلة'
-                    : 'Remove from Wishlist'
-                  : lang === 'ar'
-                  ? 'إضافة للمفضلة'
-                  : 'Add to Wishlist'
-              }
-              className={`inline-flex items-center gap-1.5 font-medium transition-colors cursor-pointer ${
-                isFavorited
-                  ? 'text-[#0A0F2C] dark:text-white font-semibold'
-                  : 'text-[#64748B] hover:text-[#0A0F2C] dark:text-slate-400 dark:hover:text-white'
-              }`}
-            >
-              <Heart className={`w-3.5 h-3.5 ${isFavorited ? 'fill-current text-rose-500' : ''}`} />
-              <span>
-                {isFavorited
-                  ? lang === 'ar'
-                    ? 'محفوظ في المفضلة'
-                    : 'Saved'
-                  : lang === 'ar'
-                  ? 'المفضلة'
-                  : 'Wishlist'}
-              </span>
-            </button>
-
-            <button
-              type="button"
-              onClick={onToggleCompare}
-              className={`inline-flex items-center gap-1.5 font-medium transition-colors cursor-pointer ${
-                isCompared
-                  ? 'text-[#0070F3]'
-                  : 'text-[#64748B] hover:text-[#0A0F2C] dark:text-slate-400 dark:hover:text-white'
-              }`}
-            >
-              <Scale className="w-3.5 h-3.5" />
-              <span>{lang === 'ar' ? 'مقارنة' : 'Compare'}</span>
-            </button>
-
-            {onShare && (
+          {/* Compact Circular WhatsApp & Heart Wishlist Icon Row */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
               <button
                 type="button"
-                onClick={onShare}
-                className="inline-flex items-center gap-1.5 font-medium text-[#64748B] hover:text-[#0A0F2C] dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer"
+                data-testid="pdp-whatsapp-btn"
+                aria-label={lang === 'ar' ? 'اطلب عبر واتساب' : 'Order or inquire on WhatsApp'}
+                title={lang === 'ar' ? 'واتساب 70773067' : 'WhatsApp 70773067'}
+                onClick={() =>
+                  onWhatsAppInquiry({
+                    fullTitle: selectedColor ? `${rawTitle} - ${selectedColor}` : rawTitle,
+                    activePrice,
+                    activeSku,
+                    selectedColor,
+                    selectedCapacity: activeCapacityOption?.label,
+                  })
+                }
+                className="w-11 h-11 rounded-full border border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-[#111A2E] hover:border-[#16A34A] flex items-center justify-center transition-colors cursor-pointer"
               >
-                <Share2 className="w-3.5 h-3.5" />
-                <span>
-                  {shareCopied
+                <WhatsApp3DIcon size={22} />
+              </button>
+
+              <button
+                type="button"
+                onClick={onToggleWishlist}
+                data-testid="pdp-wishlist-btn"
+                aria-pressed={isFavorited}
+                aria-label={
+                  isFavorited
                     ? lang === 'ar'
-                      ? 'تم النسخ'
-                      : 'Copied'
+                      ? 'إزالة من المفضلة'
+                      : 'Remove from Wishlist'
                     : lang === 'ar'
-                    ? 'مشاركة'
-                    : 'Share'}
-                </span>
+                    ? 'إضافة للمفضلة'
+                    : 'Add to Wishlist'
+                }
+                title={
+                  isFavorited
+                    ? lang === 'ar'
+                      ? 'محفوظ في المفضلة'
+                      : 'Saved to Wishlist'
+                    : lang === 'ar'
+                    ? 'أضف إلى المفضلة'
+                    : 'Save to Wishlist'
+                }
+                className={`w-11 h-11 rounded-full border flex items-center justify-center transition-colors cursor-pointer ${
+                  isFavorited
+                    ? 'border-rose-300 bg-rose-50 dark:bg-rose-950/40 dark:border-rose-800 text-rose-500'
+                    : 'border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-[#111A2E] hover:border-[#0A0F2C] text-[#0A0F2C] dark:text-slate-200'
+                }`}
+              >
+                <Heart className={`w-4 h-4 ${isFavorited ? 'fill-current text-rose-500' : ''}`} />
+              </button>
+
+              <button
+                type="button"
+                onClick={onToggleCompare}
+                aria-pressed={isCompared}
+                aria-label={lang === 'ar' ? 'مقارنة المنتج' : 'Compare product'}
+                title={lang === 'ar' ? 'مقارنة' : 'Compare'}
+                className={`w-11 h-11 rounded-full border flex items-center justify-center transition-colors cursor-pointer ${
+                  isCompared
+                    ? 'border-[#0070F3] bg-[#EAF3FF] dark:bg-blue-950/40 text-[#0070F3]'
+                    : 'border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-[#111A2E] hover:border-[#0A0F2C] text-[#64748B] hover:text-[#0A0F2C] dark:text-slate-400 dark:hover:text-white'
+                }`}
+              >
+                <Scale className="w-4 h-4" />
+              </button>
+
+              {onShare && (
+                <button
+                  type="button"
+                  onClick={onShare}
+                  aria-label={lang === 'ar' ? 'مشاركة المنتج' : 'Share product'}
+                  title={shareCopied ? (lang === 'ar' ? 'تم النسخ' : 'Link Copied') : (lang === 'ar' ? 'مشاركة' : 'Share')}
+                  className="w-11 h-11 rounded-full border border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-[#111A2E] hover:border-[#0A0F2C] text-[#64748B] hover:text-[#0A0F2C] dark:text-slate-400 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+                >
+                  {shareCopied ? <Check className="w-4 h-4 text-[#16A34A]" /> : <Share2 className="w-4 h-4" />}
+                </button>
+              )}
+            </div>
+
+            {onOpenFullPage && (
+              <button
+                type="button"
+                onClick={onOpenFullPage}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-[#0A0F2C] dark:text-slate-200 hover:underline cursor-pointer"
+              >
+                <span>{lang === 'ar' ? 'عرض التفاصيل الكاملة' : 'Full Product Details'}</span>
+                <ExternalLink className="w-3 h-3" />
               </button>
             )}
           </div>
-
-          {onOpenFullPage && (
-            <button
-              type="button"
-              onClick={onOpenFullPage}
-              className="inline-flex items-center gap-1 font-semibold text-[#0A0F2C] dark:text-slate-200 hover:underline cursor-pointer"
-            >
-              <span>{lang === 'ar' ? 'عرض المواصفات الكاملة' : 'Full Specifications'}</span>
-              <ExternalLink className="w-3 h-3" />
-            </button>
-          )}
         </div>
       </div>
     </div>

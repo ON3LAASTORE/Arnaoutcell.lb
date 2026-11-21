@@ -187,7 +187,15 @@ export const AdminInventory: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#DCE5F0] text-[#172033]">
-              {filtered.map((p) => {
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-10 px-4 text-center text-xs text-[#64748B]">
+                    {lang === 'ar'
+                      ? 'لا توجد أصناف مخزون مطابقة للبحث أو التصفية.'
+                      : 'No inventory items match the current filter.'}
+                  </td>
+                </tr>
+              ) : filtered.map((p) => {
                 const isLow = p.stock <= (p.lowStockThreshold || 3);
                 const isOut = p.stock <= 0;
                 const waitingCount = pendingCountByProduct[p.id] || 0;

@@ -442,7 +442,15 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
               </tr>
             </thead>
             <tbody className="divide-y divide-[#DCE5F0] text-[#172033]">
-              {filteredProducts.map((p) => (
+              {filteredProducts.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-10 px-4 text-center text-xs text-[#64748B]">
+                    {lang === 'ar'
+                      ? 'لا توجد منتجات مطابقة للبحث أو التصنيف المحدد.'
+                      : 'No products match the current search or category filter.'}
+                  </td>
+                </tr>
+              ) : filteredProducts.map((p) => (
                 <tr key={p.id} className="hover:bg-[#F5F8FC] transition-colors">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">

@@ -224,10 +224,21 @@ export function compactProductsForStorage(
       cleanColorImages = nextMap;
     }
 
+    const cleanVariants = Array.isArray(product.variants)
+      ? product.variants.map((variant) =>
+          typeof variant?.image === 'string' &&
+          variant.image.startsWith('data:') &&
+          variant.image.length > maxInlineImageChars
+            ? { ...variant, image: undefined }
+            : variant
+        )
+      : product.variants;
+
     return {
       ...product,
       images: cleanImages.length > 0 ? cleanImages : [fallbackImage],
       ...(cleanColorImages ? { colorImages: cleanColorImages } : {}),
+      ...(cleanVariants ? { variants: cleanVariants } : {}),
     };
   });
 }

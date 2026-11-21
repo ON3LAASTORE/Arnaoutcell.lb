@@ -59,24 +59,24 @@ export interface SampleWarrantyLookup {
 
 export const SAMPLE_WARRANTY_LOOKUPS: SampleWarrantyLookup[] = [
   {
-    query: 'OAA-2027-1001',
-    labelEn: 'Valid: OAA-2027-1001',
-    labelAr: 'سارية: OAA-2027-1001',
-  },
-  {
-    query: 'OAA-2025-0412',
-    labelEn: 'Expired: OAA-2025-0412',
-    labelAr: 'منتهية: OAA-2025-0412',
-  },
-  {
-    query: 'OAA-2026-0884',
-    labelEn: 'Claimed: OAA-2026-0884',
-    labelAr: 'مطالب بها: OAA-2026-0884',
-  },
-  {
     query: '195949038221',
-    labelEn: 'Serial / Barcode: 195949038221',
-    labelAr: 'سيريال / باركود: 195949038221',
+    labelEn: 'Barcode: 195949038221',
+    labelAr: 'باركود: 195949038221',
+  },
+  {
+    query: '6941289450128',
+    labelEn: 'Tecno 50C: 6941289450128',
+    labelAr: 'تكنو 50C: 6941289450128',
+  },
+  {
+    query: '880609539210',
+    labelEn: 'Galaxy S25U: 880609539210',
+    labelAr: 'جالاكسي S25U: 880609539210',
+  },
+  {
+    query: 'ANK-737-24K',
+    labelEn: 'SKU: ANK-737-24K',
+    labelAr: 'كود: ANK-737-24K',
   },
 ];
 

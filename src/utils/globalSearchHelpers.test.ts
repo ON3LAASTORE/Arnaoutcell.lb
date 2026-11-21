@@ -8,6 +8,9 @@ import {
   matchesProductSearchQuery,
   getFilterModeLabels,
   filterProductsByCategorySlug,
+  findProductSkuMatch,
+  findExactSkuProductMatch,
+  getSampleProductSkus,
 } from './globalSearchHelpers';
 import type { Product, Brand, Category } from '../types';
 
@@ -157,6 +160,35 @@ const mockProducts: Product[] = [
     warrantyMonths: 12,
     createdAt: '2026-03-01',
   },
+  {
+    id: 'p6',
+    name: 'Tecno Spark 50C - 4GB Ram - 128GB Storage',
+    nameAr: 'تكنو سبارك 50C',
+    brand: 'Tecno',
+    category: 'Smartphones',
+    subcategory: 'Budget Phones',
+    price: 190,
+    originalPrice: 190,
+    stock: 15,
+    rating: 4.8,
+    reviewCount: 5,
+    images: ['https://example.com/tecno.jpg'],
+    description: '120Hz 6.78-inch display smartphone',
+    specifications: [{ label: 'Display', value: '6.78-inch' }],
+    colors: ['Black', 'Gray'],
+    variants: [
+      { id: 'v-tecno-128', name: '128GB', price: 190, stock: 15, sku: 'TEC-SPK50C-128' },
+      { id: 'v-tecno-256', name: '256GB', price: 220, stock: 9, sku: 'TEC-SPK50C-256' },
+      { id: 'v-tecno-512', name: '512GB', price: 260, stock: 4, sku: 'TEC-SPK50C-512' },
+    ],
+    isNewArrival: true,
+    isSpecialOffer: false,
+    isPublished: true,
+    sku: 'TEC-SPK50C-128',
+    barcode: '6941289450128',
+    warrantyMonths: 12,
+    createdAt: '2026-11-18',
+  },
 ];
 
 const mockBrands: Brand[] = [
@@ -235,9 +267,9 @@ test('filterProductsByNameOrBrand respects mode="name"', () => {
 });
 
 test('filterProductsGlobally finds products by English and Arabic category names and respects mode="category"', () => {
-  // Query "Smartphones" finds p1 and p2 (excluding draft p4)
+  // Query "Smartphones" finds p1, p2, and p6 (excluding draft p4)
   const enCat = filterProductsGlobally(mockProducts, 'Smartphones', 'category', mockCategories);
-  assert.equal(enCat.length, 2);
+  assert.equal(enCat.length, 3);
   assert.ok(enCat.every((p) => p.category === 'Smartphones'));
 
   // Query "Audio" in category mode matches p5, whereas "iPhone" does not match category
@@ -248,9 +280,9 @@ test('filterProductsGlobally finds products by English and Arabic category names
   const nonCatQuery = filterProductsGlobally(mockProducts, 'iPhone', 'category', mockCategories);
   assert.equal(nonCatQuery.length, 0);
 
-  // Arabic category name match: "الهواتف" matches cat-phones -> p1, p2
+  // Arabic category name match: "الهواتف" matches cat-phones -> p1, p2, p6
   const arCat = filterProductsGlobally(mockProducts, 'الهواتف', 'category', mockCategories);
-  assert.equal(arCat.length, 2);
+  assert.equal(arCat.length, 3);
 });
 
 test('filterProductsGlobally finds products by subcategory and SKU in mode="all"', () => {
@@ -267,7 +299,7 @@ test('getUniqueMatchingCategories finds matching categories in EN/AR and counts 
   const enMatches = getUniqueMatchingCategories(mockProducts, mockCategories, 'Smartphones');
   assert.equal(enMatches.length, 1);
   assert.equal(enMatches[0].slug, 'smartphones');
-  assert.equal(enMatches[0].count, 2); // excludes draft p4
+  assert.equal(enMatches[0].count, 3); // excludes draft p4
 
   const arMatches = getUniqueMatchingCategories(mockProducts, mockCategories, 'شواحن');
   assert.equal(arMatches.length, 1);
@@ -296,20 +328,24 @@ test('getUniqueMatchingBrands finds brands and calculates accurate product count
   assert.equal(matching[0].count, 2);
 });
 
-test('getFilterModeLabels returns English and Arabic configurations for all 4 search scopes', () => {
+test('getFilterModeLabels returns English and Arabic configurations for all 5 search scopes including SKU', () => {
   const en = getFilterModeLabels('en');
-  assert.equal(en.length, 4);
+  assert.equal(en.length, 5);
   assert.equal(en[0].mode, 'all');
-  assert.equal(en[1].mode, 'name');
-  assert.equal(en[2].mode, 'brand');
-  assert.equal(en[3].mode, 'category');
+  assert.equal(en[1].mode, 'sku');
+  assert.equal(en[1].label, 'By SKU');
+  assert.equal(en[2].mode, 'name');
+  assert.equal(en[3].mode, 'brand');
+  assert.equal(en[4].mode, 'category');
 
   const ar = getFilterModeLabels('ar');
-  assert.equal(ar.length, 4);
+  assert.equal(ar.length, 5);
   assert.equal(ar[0].label, 'الكل');
-  assert.equal(ar[1].label, 'بالاسم');
-  assert.equal(ar[2].label, 'بالماركة');
-  assert.equal(ar[3].label, 'بالقسم');
+  assert.equal(ar[1].mode, 'sku');
+  assert.equal(ar[1].label, 'برمز SKU');
+  assert.equal(ar[2].label, 'بالاسم');
+  assert.equal(ar[3].label, 'بالماركة');
+  assert.equal(ar[4].label, 'بالقسم');
 });
 
 test('filterProductsByCategorySlug scopes products to chosen category or returns full list for "all"', () => {
@@ -322,4 +358,73 @@ test('filterProductsByCategorySlug scopes products to chosen category or returns
   assert.equal(chargersOnly.length, 1);
   assert.equal(chargersOnly[0].id, 'p3');
 });
+
+test('findProductSkuMatch resolves product SKUs, variant SKUs, barcodes, and compact formatting', () => {
+  const tecno = mockProducts.find((p) => p.id === 'p6')!;
+
+  const exactVariant = findProductSkuMatch(tecno, 'tec-spk50c-512');
+  assert.ok(exactVariant);
+  assert.equal(exactVariant.matchKind, 'exact');
+  assert.equal(exactVariant.matchSource, 'variant');
+  assert.equal(exactVariant.matchedSku, 'TEC-SPK50C-512');
+  assert.equal(exactVariant.matchedVariant?.id, 'v-tecno-512');
+  assert.equal(exactVariant.matchedVariant?.price, 260);
+
+  const compactMatch = findProductSkuMatch(tecno, 'tecspk50c256');
+  assert.ok(compactMatch);
+  assert.equal(compactMatch.matchKind, 'exact');
+  assert.equal(compactMatch.matchedVariant?.id, 'v-tecno-256');
+
+  const prefixMatch = findProductSkuMatch(tecno, 'TEC-SPK50C');
+  assert.ok(prefixMatch);
+  assert.equal(prefixMatch.matchKind, 'prefix');
+
+  const barcodeMatch = findProductSkuMatch(tecno, '6941289450128');
+  assert.ok(barcodeMatch);
+  assert.equal(barcodeMatch.matchKind, 'exact');
+  assert.equal(barcodeMatch.matchSource, 'barcode');
+});
+
+test('filterProductsGlobally supports mode="sku" and ranks exact SKU matches first', () => {
+  // Variant SKU lookup in sku mode
+  const variantSkuHits = filterProductsGlobally(mockProducts, 'TEC-SPK50C-512', 'sku', mockCategories);
+  assert.equal(variantSkuHits.length, 1);
+  assert.equal(variantSkuHits[0].id, 'p6');
+
+  // Product name does not trigger in sku mode
+  const nameInSkuMode = filterProductsGlobally(mockProducts, 'iPhone', 'sku', mockCategories);
+  assert.equal(nameInSkuMode.length, 0);
+
+  // Unpublished draft SKU never appears
+  const draftSkuHits = filterProductsGlobally(mockProducts, 'DRAFT-01', 'sku', mockCategories);
+  assert.equal(draftSkuHits.length, 0);
+
+  // Exact SKU lookup in "all" mode puts the matching SKU product #1
+  const exactInAll = filterProductsGlobally(mockProducts, 'ANK-PRIME-200', 'all', mockCategories);
+  assert.equal(exactInAll.length, 1);
+  assert.equal(exactInAll[0].id, 'p3');
+});
+
+test('findExactSkuProductMatch returns direct hit only for exact published SKU matches', () => {
+  const hit = findExactSkuProductMatch(mockProducts, '#TEC-SPK50C-256');
+  assert.ok(hit);
+  assert.equal(hit.product.id, 'p6');
+  assert.equal(hit.matchedVariant?.id, 'v-tecno-256');
+
+  // Partial SKU must NOT trigger direct exact jump
+  const partialHit = findExactSkuProductMatch(mockProducts, 'TEC-SPK50C');
+  assert.equal(partialHit, null);
+
+  // Unpublished draft SKU must NOT trigger direct exact jump
+  const draftHit = findExactSkuProductMatch(mockProducts, 'DRAFT-01');
+  assert.equal(draftHit, null);
+});
+
+test('getSampleProductSkus extracts unique published SKUs up to maxCount', () => {
+  const samples = getSampleProductSkus(mockProducts, 3);
+  assert.equal(samples.length, 3);
+  assert.ok(!samples.includes('DRAFT-01'));
+  assert.deepEqual(samples, ['IPH-16-PM', 'SAM-S25-U', 'ANK-PRIME-200']);
+});
+
 

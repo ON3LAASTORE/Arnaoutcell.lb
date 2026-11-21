@@ -63,4 +63,14 @@ test('filterHeaderSearchProducts scopes results by selected category slug and se
     'laptops'
   );
   assert.equal(mismatchedScope.length, 0);
+
+  const variantSkuMatch = filterHeaderSearchProducts(
+    INITIAL_PRODUCTS,
+    INITIAL_CATEGORIES,
+    'TEC-SPK50C-512',
+    'phones'
+  );
+  assert.equal(variantSkuMatch.length, 1);
+  assert.equal(variantSkuMatch[0].id, 'prod-tecno-spark-50c');
 });
+

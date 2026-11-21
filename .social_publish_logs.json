@@ -1,5 +1,24 @@
 [
   {
+    "id": "log-1795265890177",
+    "postId": "post-1795265890177",
+    "productId": "unknown",
+    "productName": "Test",
+    "platforms": [
+      "whatsapp"
+    ],
+    "results": {
+      "whatsapp": {
+        "success": true,
+        "message": "Ready for 1-click sharing via official whatsapp protocol.",
+        "timestamp": "2026-11-21T12:58:10.177Z"
+      }
+    },
+    "caption": "",
+    "imageUrl": "",
+    "createdAt": "2026-11-21T12:58:10.177Z"
+  },
+  {
     "id": "log-1793495324040",
     "postId": "post-1793495323937",
     "productId": "prod-acefast-t8",

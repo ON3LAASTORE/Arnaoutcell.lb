@@ -37,6 +37,10 @@ import {
   sendResendPasswordResetEmail,
   validateResetTokenRecord,
 } from './src/utils/passwordResetServerHelpers';
+import {
+  executeWithGeminiRetryAndFallback,
+  parseGeminiSdkError,
+} from './src/utils/geminiErrorHelpers';
 
 // Load environment variables (override stale process values when .env is updated)
 dotenv.config({ override: true });
@@ -1360,6 +1364,8 @@ async function startServer() {
       return;
     }
 
+    const safeCaption = typeof caption === 'string' ? caption : '';
+
     try {
       // Step 1: Create Media Container POST /{ig-user-id}/media
       const containerRes = await fetch(`https://graph.facebook.com/v21.0/${igUserId}/media`, {
@@ -1367,7 +1373,7 @@ async function startServer() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           image_url: publicImageUrl,
-          caption: caption,
+          caption: safeCaption,
           access_token: token,
         }),
       });
@@ -1441,7 +1447,7 @@ async function startServer() {
             timestamp: new Date().toISOString(),
           },
         },
-        caption,
+        caption: safeCaption,
         imageUrl: publicImageUrl,
         createdAt: new Date().toISOString(),
       };
@@ -1480,6 +1486,10 @@ async function startServer() {
       productUrl,
       fallbackImageUrl,
     } = req.body;
+
+    const safeCaption = typeof caption === 'string' ? caption : '';
+    const safeProductUrl =
+      typeof productUrl === 'string' && productUrl.trim() ? productUrl.trim() : 'https://onalaastore.com';
 
     if (!Array.isArray(platforms) || platforms.length === 0) {
       res.status(400).json({ success: false, error: 'At least one platform must be selected' });
@@ -1539,7 +1549,7 @@ async function startServer() {
           if (imageBuffer) {
             const formData = new FormData();
             formData.append('access_token', token);
-            formData.append('caption', caption || '');
+            formData.append('caption', safeCaption);
             const blob = new Blob([new Uint8Array(imageBuffer)], { type: 'image/png' });
             formData.append('source', blob, 'product-post.png');
 
@@ -1571,8 +1581,8 @@ async function startServer() {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
-                message: caption,
-                link: productUrl,
+                message: safeCaption,
+                link: safeProductUrl,
                 access_token: token,
               }),
             });
@@ -1631,7 +1641,7 @@ async function startServer() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               image_url: publicImageUrl,
-              caption: caption,
+              caption: safeCaption,
               access_token: token,
             }),
           });
@@ -1699,7 +1709,7 @@ async function startServer() {
           if (imageBuffer) {
             const formData = new FormData();
             formData.append('chat_id', chatId);
-            formData.append('caption', caption.slice(0, 1024)); // Telegram caption limit 1024 chars
+            formData.append('caption', safeCaption.slice(0, 1024)); // Telegram caption limit 1024 chars
             const blob = new Blob([new Uint8Array(imageBuffer)], { type: 'image/png' });
             formData.append('photo', blob, 'post.png');
 
@@ -1708,7 +1718,7 @@ async function startServer() {
               inline_keyboard: [
                 [
                   { text: '💬 Order via WhatsApp (70773067)', url: 'https://wa.me/96170773067' },
-                  { text: '🌐 View on Store', url: productUrl || 'https://onalaastore.com' }
+                  { text: '🌐 View on Store', url: safeProductUrl }
                 ]
               ]
             }));
@@ -1737,12 +1747,16 @@ async function startServer() {
               };
             }
           } else {
+            const tgText = [safeCaption, safeProductUrl ? `🔗 ${safeProductUrl}` : '']
+              .filter(Boolean)
+              .join('\n\n')
+              .slice(0, 4096);
             const tgRes = await fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 chat_id: chatId,
-                text: `${caption}\n\n🔗 ${productUrl}`,
+                text: tgText,
               }),
             });
             const tgData = await tgRes.json();
@@ -1791,7 +1805,7 @@ async function startServer() {
       productName: productName || 'Product',
       platforms,
       results,
-      caption,
+      caption: safeCaption,
       imageUrl: publicImageUrl,
       createdAt: new Date().toISOString(),
     };
@@ -1899,15 +1913,23 @@ async function startServer() {
         .filter(Boolean)
         .join('\n');
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-4-hydrogen',
-        contents: `Product Context:\n${productContext}\n\nShopper Question: ${cleanQuestion}`,
-        config: {
-          systemInstruction:
-            lang === 'ar'
-              ? 'أنت مساعد ON AlAA Sidekick المختص بالمنتجات التقنية في لبنان. أجب باختصار ودقة عالية (2-4 جمل أو نقاط موجزة) اعتماداً على مواصفات المنتج المقدمة فقط، وباللغة العربية الواضحة.'
-              : 'You are ON AlAA Sidekick, a concise luxury tech shopping advisor in Lebanon (based in Chouf, all-Lebanon delivery, WhatsApp 70773067). Answer in 2-4 crisp, helpful sentences based strictly on the provided product facts.',
-        },
+      const { result: response, modelUsed } = await executeWithGeminiRetryAndFallback({
+        primaryModel: 'gemini-4-hydrogen',
+        fallbackModel: 'gemini-3.1-flash-lite',
+        maxPrimaryAttempts: 2,
+        maxFallbackAttempts: 2,
+        baseDelayMs: 450,
+        invoke: (model) =>
+          ai.models.generateContent({
+            model,
+            contents: `Product Context:\n${productContext}\n\nShopper Question: ${cleanQuestion}`,
+            config: {
+              systemInstruction:
+                lang === 'ar'
+                  ? 'أنت مساعد ON AlAA Sidekick المختص بالمنتجات التقنية في لبنان. أجب باختصار ودقة عالية (2-4 جمل أو نقاط موجزة) اعتماداً على مواصفات المنتج المقدمة فقط، وباللغة العربية الواضحة.'
+                  : 'You are ON AlAA Sidekick, a concise luxury tech shopping advisor in Lebanon (based in Chouf, all-Lebanon delivery, WhatsApp 70773067). Answer in 2-4 crisp, helpful sentences based strictly on the provided product facts.',
+            },
+          }),
       });
 
       const answer = (response.text || '').trim();
@@ -1918,18 +1940,12 @@ async function startServer() {
         });
       }
 
-      return res.json({ success: true, answer });
+      return res.json({ success: true, answer, model: modelUsed });
     } catch (error: unknown) {
-      const errMsg = error instanceof Error ? error.message : 'Unable to reach Sidekick AI service.';
-      const status =
-        /403|PERMISSION_DENIED/i.test(errMsg)
-          ? 403
-          : /429|RESOURCE_EXHAUSTED/i.test(errMsg)
-          ? 429
-          : 500;
-      return res.status(status).json({
+      const parsed = parseGeminiSdkError(error);
+      return res.status(parsed.httpStatus).json({
         success: false,
-        error: errMsg,
+        error: parsed.userMessage,
       });
     }
   });

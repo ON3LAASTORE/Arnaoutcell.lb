@@ -206,25 +206,25 @@ export const ProductsPage: React.FC = () => {
           </div>
 
           {/* Controls: View toggle, Sort, Mobile filter button */}
-          <div className="flex items-center gap-3 self-start sm:self-auto">
+          <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto self-start sm:self-auto">
             {/* Mobile Filter Trigger */}
             <button
               onClick={() => setMobileFilterOpen(true)}
-              className="lg:hidden px-3.5 py-2 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] text-xs font-bold flex items-center gap-2 cursor-pointer"
+              className="lg:hidden px-3.5 py-2 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] text-[#172033] dark:text-[#F8FAFC] text-xs font-bold flex items-center gap-2 cursor-pointer shrink-0"
             >
               <Filter className="w-4 h-4 text-[#007AFF] dark:text-[#38BDF8]" />
               <span>{t.filterBy}</span>
             </button>
 
             {/* Enhanced Sort Dropdown */}
-            <div className="flex items-center gap-2 bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] dark:hover:border-[#007AFF] rounded-2xl px-3.5 py-2 text-xs transition-colors shadow-xs group">
-              <ArrowUpDown className="w-3.5 h-3.5 text-[#007AFF] group-hover:scale-110 transition-transform" />
+            <div className="flex items-center gap-2 bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] dark:hover:border-[#007AFF] rounded-2xl px-3.5 py-2 text-xs transition-colors shadow-xs group max-w-full min-w-0">
+              <ArrowUpDown className="w-3.5 h-3.5 text-[#007AFF] shrink-0 group-hover:scale-110 transition-transform" />
               <span className="text-[#64748B] dark:text-slate-400 font-semibold hidden md:inline">{t.sortBy}:</span>
               <select
                 value={sortOption}
                 onChange={(e) => setSortOption(e.target.value)}
                 aria-label={t.sortBy}
-                className="bg-transparent text-[#172033] dark:text-[#F8FAFC] font-extrabold focus:outline-none cursor-pointer pr-1"
+                className="bg-transparent text-[#172033] dark:text-[#F8FAFC] font-extrabold focus:outline-none cursor-pointer pr-1 min-w-0 max-w-[190px] sm:max-w-none truncate"
               >
                 {SORT_OPTIONS.map((opt) => (
                   <option

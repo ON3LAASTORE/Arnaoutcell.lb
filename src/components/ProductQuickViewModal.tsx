@@ -11,6 +11,7 @@ export const ProductQuickViewModal: React.FC = () => {
     lang,
     quickViewProduct,
     setQuickViewProduct,
+    selectedVariantId,
     addToCart,
     viewProductDetail,
     setCurrentView,
@@ -136,6 +137,7 @@ export const ProductQuickViewModal: React.FC = () => {
 
           <ProductLuxuryShowcase
             product={product}
+            initialVariantId={selectedVariantId || undefined}
             lang={lang}
             mode="modal"
             whatsappNumber={storeSettings.whatsapp}

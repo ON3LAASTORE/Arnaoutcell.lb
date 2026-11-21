@@ -17,6 +17,9 @@ import {
   SlidersHorizontal,
   Mic,
   QrCode,
+  Hash,
+  Clock,
+  Trash2,
 } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 import {
@@ -25,10 +28,23 @@ import {
   getUniqueMatchingBrands,
   getUniqueMatchingCategories,
   getFilterModeLabels,
+  findProductSkuMatch,
+  findExactSkuProductMatch,
+  getSampleProductSkus,
   SearchFilterMode,
   MatchedCategoryInfo,
 } from '../utils/globalSearchHelpers';
 import { addSearchHistoryTerm } from '../utils/quickSearchOverlayHelpers';
+import {
+  getRecentSkuSearches,
+  recordRecentSkuSearch,
+  removeRecentSkuSearch,
+  clearRecentSkuSearches,
+  resolveRecentSkuLookup,
+  RECENT_SKU_UPDATED_EVENT,
+  RecentSkuSearchEntry,
+  ResolvedRecentSkuLookup,
+} from '../utils/recentSkuSearches';
 import { trackSearchQuery } from '../services/searchAnalyticsService';
 import { Product } from '../types';
 
@@ -70,6 +86,9 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
   const [filterMode, setFilterMode] = useState<SearchFilterMode>('all');
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+  const [recentSkuEntries, setRecentSkuEntries] = useState<RecentSkuSearchEntry[]>(() =>
+    getRecentSkuSearches()
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -96,18 +115,37 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
 
   // Compute matching categories, brands, and products
   const matchingCategories = useMemo(() => {
-    if (filterMode === 'name' || filterMode === 'brand') return [];
+    if (filterMode === 'name' || filterMode === 'brand' || filterMode === 'sku') return [];
     return getUniqueMatchingCategories(scopedProducts, scopedCategories, query).slice(0, 4);
   }, [scopedProducts, scopedCategories, query, filterMode]);
 
   const matchingBrands = useMemo(() => {
-    if (filterMode === 'name' || filterMode === 'category') return [];
+    if (filterMode === 'name' || filterMode === 'category' || filterMode === 'sku') return [];
     return getUniqueMatchingBrands(scopedProducts, scopedBrands, query).slice(0, 4);
   }, [scopedProducts, scopedBrands, query, filterMode]);
 
   const matchingProducts = useMemo(() => {
     return filterProductsGlobally(scopedProducts, query, filterMode, categories).slice(0, 6);
   }, [scopedProducts, categories, query, filterMode]);
+
+  const resolvedRecentSkus = useMemo(() => {
+    return recentSkuEntries.map((entry) => resolveRecentSkuLookup(entry, products));
+  }, [recentSkuEntries, products]);
+
+  const sampleSkus = useMemo(() => {
+    const recentSkuSet = new Set(
+      resolvedRecentSkus.map((item) => item.displaySku.toLowerCase())
+    );
+    return getSampleProductSkus(scopedProducts, 6)
+      .filter((sku) => !recentSkuSet.has(sku.toLowerCase()))
+      .slice(0, 3);
+  }, [scopedProducts, resolvedRecentSkus]);
+
+  const exactSkuMatchForQuery = useMemo(() => {
+    const trimmed = query.trim();
+    if (!trimmed) return null;
+    return findExactSkuProductMatch(scopedProducts, trimmed);
+  }, [scopedProducts, query]);
 
   const totalInteractiveItems =
     matchingCategories.length + matchingBrands.length + matchingProducts.length;
@@ -116,6 +154,17 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
   useEffect(() => {
     setSelectedIndex(-1);
   }, [query, filterMode, selectedCategorySlug]);
+
+  // Keep recent SKU searches synced across desktop/mobile search instances & tabs
+  useEffect(() => {
+    const syncRecentSkus = () => setRecentSkuEntries(getRecentSkuSearches());
+    window.addEventListener(RECENT_SKU_UPDATED_EVENT, syncRecentSkus);
+    window.addEventListener('storage', syncRecentSkus);
+    return () => {
+      window.removeEventListener(RECENT_SKU_UPDATED_EVENT, syncRecentSkus);
+      window.removeEventListener('storage', syncRecentSkus);
+    };
+  }, []);
 
   // Click outside listener to dismiss dropdown
   useEffect(() => {
@@ -150,21 +199,80 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
   }, []);
 
-  const handleSelectProduct = (product: Product) => {
+  const handleSelectProduct = (product: Product, matchedVariantId?: string) => {
+    const trimmedQuery = query.trim();
+    const skuHit = trimmedQuery ? findProductSkuMatch(product, trimmedQuery) : null;
+    const resolvedVariant =
+      skuHit?.matchedVariant ||
+      (matchedVariantId && Array.isArray(product.variants)
+        ? product.variants.find((v) => v.id === matchedVariantId)
+        : undefined);
+    const canonicalSku =
+      skuHit?.matchedSku || resolvedVariant?.sku?.trim() || product.sku?.trim();
+
+    if ((skuHit || filterMode === 'sku') && canonicalSku) {
+      setRecentSkuEntries(
+        recordRecentSkuSearch({
+          sku: canonicalSku,
+          product,
+          variant: resolvedVariant,
+        })
+      );
+    }
+
     trackSearchQuery({
-      term: query.trim() || product.name,
+      term: trimmedQuery || product.sku || product.name,
       source: 'product_suggestion_click',
       selectedEntityTitle: product.name,
       categoryMatchesCount: matchingCategories.length,
       productMatchesCount: matchingProducts.length,
     });
-    if (query.trim()) {
-      addSearchHistoryTerm(query.trim());
+    if (trimmedQuery) {
+      addSearchHistoryTerm(trimmedQuery);
     }
-    viewProductDetail(product.id);
+    viewProductDetail(product.id, false, matchedVariantId);
     setIsOpen(false);
     setQuery('');
     if (onCloseMobileMenu) onCloseMobileMenu();
+  };
+
+  const handleSelectRecentSku = (lookup: ResolvedRecentSkuLookup) => {
+    setRecentSkuEntries(
+      recordRecentSkuSearch({
+        sku: lookup.displaySku,
+        product: lookup.product,
+        variant: lookup.variant,
+      })
+    );
+    addSearchHistoryTerm(lookup.displaySku);
+    trackSearchQuery({
+      term: lookup.displaySku,
+      source: 'product_suggestion_click',
+      selectedEntityTitle: lookup.product?.name || lookup.displaySku,
+      categoryMatchesCount: 0,
+      productMatchesCount: lookup.product ? 1 : 0,
+    });
+
+    if (lookup.product) {
+      viewProductDetail(lookup.product.id, false, lookup.variant?.id);
+      setIsOpen(false);
+      setQuery('');
+      if (onCloseMobileMenu) onCloseMobileMenu();
+      return;
+    }
+
+    setFilterMode('sku');
+    setQuery(lookup.displaySku);
+    setIsOpen(true);
+    inputRef.current?.focus();
+  };
+
+  const handleRemoveRecentSku = (sku: string) => {
+    setRecentSkuEntries(removeRecentSkuSearch(sku));
+  };
+
+  const handleClearRecentSkus = () => {
+    setRecentSkuEntries(clearRecentSkuSearches());
   };
 
   const handleSelectBrand = (brandName: string) => {
@@ -216,11 +324,47 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
         return;
       }
       const pIdx = selectedIndex - matchingCategories.length - matchingBrands.length;
-      handleSelectProduct(matchingProducts[pIdx]);
+      const picked = matchingProducts[pIdx];
+      const skuHit = findProductSkuMatch(picked, query);
+      handleSelectProduct(picked, skuHit?.matchedVariant?.id);
       return;
     }
 
     const trimmed = query.trim();
+
+    // Fast-path direct navigation when customer searches by an exact SKU (or single match in SKU mode)
+    if (trimmed && filterMode !== 'brand' && filterMode !== 'category') {
+      const exactSkuHit = findExactSkuProductMatch(scopedProducts, trimmed);
+      if (exactSkuHit) {
+        addSearchHistoryTerm(trimmed);
+        setRecentSkuEntries(
+          recordRecentSkuSearch({
+            sku: exactSkuHit.matchedSku,
+            product: exactSkuHit.product,
+            variant: exactSkuHit.matchedVariant,
+          })
+        );
+        trackSearchQuery({
+          term: trimmed,
+          source: isMobile ? 'mobile_input_submit' : 'desktop_input_submit',
+          selectedEntityTitle: exactSkuHit.product.name,
+          categoryMatchesCount: 0,
+          productMatchesCount: 1,
+        });
+        viewProductDetail(exactSkuHit.product.id, false, exactSkuHit.matchedVariant?.id);
+        setIsOpen(false);
+        setQuery('');
+        if (onCloseMobileMenu) onCloseMobileMenu();
+        return;
+      }
+
+      if (filterMode === 'sku' && matchingProducts.length === 1) {
+        const onlyProduct = matchingProducts[0];
+        const skuHit = findProductSkuMatch(onlyProduct, trimmed);
+        handleSelectProduct(onlyProduct, skuHit?.matchedVariant?.id);
+        return;
+      }
+    }
 
     if (selectedCategorySlug && selectedCategorySlug !== 'all') {
       if (trimmed) {
@@ -328,6 +472,13 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
   }, [categories, selectedCategorySlug]);
 
   const placeholderText = useMemo(() => {
+    if (filterMode === 'sku') {
+      return isArabic
+        ? 'أدخل رمز SKU (مثال: APL-IP16PM-256)...'
+        : isMobile
+        ? 'Enter SKU (e.g. APL-IP16PM-256)...'
+        : 'Enter SKU code (e.g. APL-IP16PM-256)...';
+    }
     if (filterMode === 'brand') {
       return isArabic
         ? 'ابحث بالماركة (Apple, Samsung, Anker...)'
@@ -344,10 +495,15 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
         : 'Search by product name...';
     }
     if (variant === 'navbar') {
-      return isArabic ? 'عمّ تبحث اليوم؟' : 'What are you looking for?';
+      if (isArabic) {
+        return 'ابحث بالاسم، الماركة، أو رمز SKU...';
+      }
+      return isMobile
+        ? 'Search product, brand, or SKU...'
+        : 'Search by name, brand, or SKU code...';
     }
-    return t.searchPlaceholder || 'Search by name, brand, or category...';
-  }, [filterMode, isArabic, variant, t.searchPlaceholder]);
+    return t.searchPlaceholder || 'Search by name, brand, category, or SKU...';
+  }, [filterMode, isArabic, isMobile, variant, t.searchPlaceholder]);
 
   const hasQuery = query.trim().length > 0;
   const hasResults =
@@ -658,11 +814,121 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
             </div>
           </div>
 
-          {/* Case 1: Empty Query - Show Quick Category & Brand Filters */}
+          {/* Case 1: Empty Query - Show Recent SKU Searches + Quick SKU Lookup + Category & Brand Filters */}
           {!hasQuery ? (
-            <div className="p-3 space-y-3.5">
+            <div className="p-3 space-y-3.5 max-h-[440px] overflow-y-auto">
+              {/* Recent SKU Searches (Last 5 stored locally) */}
+              {resolvedRecentSkus.length > 0 && (
+                <div data-testid="global-search-recent-skus">
+                  <div className="text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5">
+                      <Clock className="w-3 h-3 text-[#007AFF]" aria-hidden="true" />
+                      <span>
+                        {isArabic ? 'عمليات البحث الأخيرة (SKU)' : 'Recent Searches'}
+                      </span>
+                      <span className="text-[10px] font-semibold normal-case text-[#64748B] dark:text-slate-400 tabular-nums">
+                        ({resolvedRecentSkus.length}/5)
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={handleClearRecentSkus}
+                      data-testid="global-search-recent-skus-clear"
+                      aria-label={
+                        isArabic ? 'مسح سجل رموز SKU الأخيرة' : 'Clear recent SKU searches'
+                      }
+                      className="inline-flex items-center gap-1 text-[10px] font-semibold normal-case text-[#64748B] dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3 h-3" aria-hidden="true" />
+                      <span>{isArabic ? 'مسح' : 'Clear'}</span>
+                    </button>
+                  </div>
+                  <div className="space-y-1">
+                    {resolvedRecentSkus.map((item) => (
+                      <div
+                        key={item.entry.sku}
+                        data-testid={`global-search-recent-sku-item-${item.displaySku}`}
+                        className="flex items-center justify-between gap-1 rounded-xl bg-[#F5F8FC] dark:bg-[#162038] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] transition-colors group"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleSelectRecentSku(item)}
+                          className="flex-1 min-w-0 text-left rtl:text-right px-2.5 py-2 flex items-center justify-between gap-2 cursor-pointer"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-[#EAF3FF] dark:bg-[#1E3A5F] text-[#007AFF] dark:text-[#38BDF8] font-mono text-[11px] font-bold shrink-0">
+                              <Hash className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
+                              <span>{item.displaySku}</span>
+                            </span>
+                            {item.product && (
+                              <span className="text-xs font-medium text-[#172033] dark:text-[#F8FAFC] group-hover:text-[#007AFF] dark:group-hover:text-[#38BDF8] truncate">
+                                {isArabic ? item.displayTitleAr : item.displayTitle}
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            {typeof item.displayPrice === 'number' && (
+                              <span className="text-[11px] font-bold text-[#007AFF] dark:text-[#38BDF8] tabular-nums">
+                                ${item.displayPrice}
+                              </span>
+                            )}
+                            <ChevronIcon className="w-3.5 h-3.5 text-[#64748B] dark:text-slate-400 group-hover:text-[#007AFF] transition-colors" />
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveRecentSku(item.entry.sku)}
+                          data-testid={`global-search-recent-sku-remove-${item.displaySku}`}
+                          aria-label={
+                            isArabic
+                              ? `إزالة ${item.displaySku} من البحث الأخير`
+                              : `Remove ${item.displaySku} from recent searches`
+                          }
+                          className="pr-2.5 pl-1 rtl:pl-2.5 rtl:pr-1 py-2 text-[#94A3B8] hover:text-rose-500 transition-colors cursor-pointer shrink-0"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Quick SKU Lookup Examples */}
+              {sampleSkus.length > 0 && (
+                <div data-testid="global-search-sku-examples">
+                  <div className="text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5">
+                      <Hash className="w-3 h-3 text-[#007AFF]" />
+                      <span>{isArabic ? 'بحث سريع برمز SKU الفريد' : 'Quick Lookup by SKU Code'}</span>
+                    </span>
+                    <span className="text-[10px] font-medium normal-case text-[#64748B] dark:text-slate-400">
+                      {isArabic ? 'اضغط للتجربة' : 'Tap to search'}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {sampleSkus.map((sku) => (
+                      <button
+                        key={sku}
+                        type="button"
+                        data-testid={`global-search-sample-sku-${sku}`}
+                        onClick={() => {
+                          setFilterMode('sku');
+                          setQuery(sku);
+                          inputRef.current?.focus();
+                        }}
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-[#F5F8FC] dark:bg-[#162038] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] font-mono text-[11px] font-semibold text-[#172033] dark:text-[#F8FAFC] hover:text-[#007AFF] dark:hover:text-[#38BDF8] transition-colors cursor-pointer"
+                      >
+                        <Hash className="w-3 h-3 text-[#007AFF] shrink-0" />
+                        <span>{sku}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Quick Category Shortcuts */}
-              {featuredCategories.length > 0 && (
+              {featuredCategories.length > 0 && filterMode !== 'sku' && (
                 <div>
                   <div className="text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <Folder className="w-3 h-3 text-[#007AFF]" />
@@ -687,7 +953,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
               )}
 
               {/* Quick Brand Filter Shortcuts */}
-              {featuredBrands.length > 0 && (
+              {featuredBrands.length > 0 && filterMode !== 'sku' && (
                 <div>
                   <div className="text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <Tag className="w-3 h-3 text-[#007AFF]" />
@@ -711,11 +977,11 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
               )}
 
               {/* Helpful footer */}
-              <div className="pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B] text-[11px] text-[#64748B] dark:text-slate-400 flex items-center justify-between">
+              <div className="pt-2 border-t border-[#DCE5F0] dark:border-[#1E293B] text-[11px] text-[#64748B] dark:text-slate-400 flex items-center justify-between gap-2">
                 <span>
                   {isArabic
-                    ? 'اكتب اسم المنتج، الماركة، أو القسم للبحث الفوري'
-                    : 'Search by product name, brand, or category'}
+                    ? 'اكتب اسم المنتج، الماركة، القسم، أو رمز SKU الفريد للانتقال الفوري'
+                    : 'Enter a unique SKU code (press Enter to jump directly), product name, brand, or category'}
                 </span>
                 <span className="font-semibold text-[#007AFF] whitespace-nowrap">ON AlAA STORE</span>
               </div>
@@ -850,27 +1116,56 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
               {/* SECTION 3: MATCHING PRODUCTS */}
               {matchingProducts.length > 0 && (
                 <div className="p-2 bg-white dark:bg-[#0E1726]">
-                  <div className="px-2 py-1 text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-                    <Box className="w-3 h-3 text-[#007AFF]" />
-                    <span>{isArabic ? 'المنتجات المطابقة' : 'Matching Products'}</span>
+                  <div className="px-2 py-1 text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider flex items-center justify-between gap-2 mb-1">
+                    <span className="flex items-center gap-1.5">
+                      <Box className="w-3 h-3 text-[#007AFF]" />
+                      <span>
+                        {filterMode === 'sku'
+                          ? isArabic
+                            ? 'نتائج مطابقة لرمز SKU'
+                            : 'SKU Matches'
+                          : isArabic
+                          ? 'المنتجات المطابقة'
+                          : 'Matching Products'}
+                      </span>
+                    </span>
+                    {exactSkuMatchForQuery && (
+                      <span className="text-[10px] font-semibold normal-case text-emerald-600 dark:text-emerald-400">
+                        {isArabic ? 'اضغط Enter للانتقال الفوري' : 'Press Enter to open product'}
+                      </span>
+                    )}
                   </div>
                   <div className="space-y-1">
                     {matchingProducts.map((p, pIdx) => {
                       const globalIdx =
                         matchingCategories.length + matchingBrands.length + pIdx;
                       const isHighlighted = selectedIndex === globalIdx;
-                      const hasDiscount = p.originalPrice > p.price;
-                      const isLowStock = p.stock > 0 && p.stock <= (p.lowStockThreshold || 3);
-                      const isOutOfStock = p.stock === 0;
+                      const skuMatch = findProductSkuMatch(p, query);
+                      const displayPrice =
+                        skuMatch?.matchedVariant && Number.isFinite(skuMatch.matchedVariant.price)
+                          ? skuMatch.matchedVariant.price
+                          : p.price;
+                      const displayStock =
+                        skuMatch?.matchedVariant && typeof skuMatch.matchedVariant.stock === 'number'
+                          ? skuMatch.matchedVariant.stock
+                          : p.stock;
+                      const displaySku = skuMatch ? skuMatch.matchedSku : p.sku;
+                      const isExactSku = skuMatch?.matchKind === 'exact';
+                      const hasDiscount = !skuMatch?.matchedVariant && p.originalPrice > p.price;
+                      const isLowStock = displayStock > 0 && displayStock <= (p.lowStockThreshold || 3);
+                      const isOutOfStock = displayStock === 0;
 
                       return (
                         <button
                           key={p.id}
                           type="button"
-                          onClick={() => handleSelectProduct(p)}
+                          data-testid={`global-search-product-${p.id}`}
+                          onClick={() => handleSelectProduct(p, skuMatch?.matchedVariant?.id)}
                           className={`w-full text-left rtl:text-right p-2.5 rounded-xl transition-all flex items-center gap-3 cursor-pointer group ${
                             isHighlighted
                               ? 'bg-[#EAF3FF] dark:bg-[#1E293B] ring-1 ring-[#007AFF]/30'
+                              : isExactSku
+                              ? 'bg-[#F0F7FF] dark:bg-[#132238] ring-1 ring-[#007AFF]/25 hover:bg-[#E5F1FF] dark:hover:bg-[#192D4A]'
                               : 'hover:bg-[#F5F8FC] dark:hover:bg-[#162038]'
                           }`}
                         >
@@ -926,20 +1221,35 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
 
                             <p className="text-xs font-semibold text-[#172033] dark:text-[#F8FAFC] group-hover:text-[#007AFF] dark:group-hover:text-[#38BDF8] truncate leading-tight">
                               {isArabic ? p.nameAr || p.name : p.name}
+                              {skuMatch?.matchedVariant ? ` · ${skuMatch.matchedVariant.name}` : ''}
                             </p>
 
-                            <div className="flex items-center gap-2 mt-1">
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
                               <span className="text-xs font-extrabold text-[#007AFF] dark:text-[#38BDF8] tabular-nums">
-                                ${p.price}
+                                ${displayPrice}
                               </span>
                               {hasDiscount && (
                                 <span className="text-[10px] text-[#64748B] dark:text-slate-500 line-through tabular-nums">
                                   ${p.originalPrice}
                                 </span>
                               )}
-                              {p.sku && (
-                                <span className="text-[9px] text-[#64748B] dark:text-slate-500 ml-auto rtl:mr-auto font-mono">
-                                  SKU: {p.sku}
+                              {displaySku && (
+                                <span
+                                  data-testid={`global-search-result-sku-${p.id}`}
+                                  className={`inline-flex items-center gap-1 ml-auto rtl:mr-auto rtl:ml-0 px-1.5 py-0.5 rounded font-mono text-[10px] ${
+                                    isExactSku
+                                      ? 'bg-[#007AFF] text-white font-bold'
+                                      : skuMatch
+                                      ? 'bg-[#EAF3FF] dark:bg-[#1E3A5F] text-[#007AFF] dark:text-[#38BDF8] font-bold'
+                                      : 'bg-[#F5F8FC] dark:bg-[#111A2E] text-[#64748B] dark:text-slate-400'
+                                  }`}
+                                >
+                                  <span>SKU: {displaySku}</span>
+                                  {isExactSku && (
+                                    <span className="text-[9px] uppercase tracking-wider opacity-95">
+                                      · {isArabic ? 'مطابق' : 'Exact'}
+                                    </span>
+                                  )}
                                 </span>
                               )}
                             </div>
@@ -964,8 +1274,8 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
               </p>
               <p className="text-[11px] text-[#64748B] dark:text-slate-400 max-w-xs mx-auto mb-3">
                 {isArabic
-                  ? 'جرب البحث باسم المنتج أو الماركة (Apple, Samsung, Anker) أو القسم (Phones, Chargers).'
-                  : 'Try searching by product name, brand (Apple, Samsung, Anker), or category (Phones, Chargers).'}
+                  ? 'جرب البحث برمز SKU الفريد، اسم المنتج، الماركة (Apple, Samsung, Anker) أو القسم.'
+                  : 'Try searching by unique SKU code (e.g. APL-IP16PM-256), product name, brand, or category.'}
               </p>
               <button
                 type="button"
@@ -987,7 +1297,11 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                 className="w-full py-2 px-3 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
               >
                 <span>
-                  {isArabic
+                  {exactSkuMatchForQuery
+                    ? isArabic
+                      ? `فتح صفحة المنتج لرمز SKU: ${exactSkuMatchForQuery.matchedSku}`
+                      : `Open Product for SKU ${exactSkuMatchForQuery.matchedSku}`
+                    : isArabic
                     ? `عرض كافة النتائج لـ "${query}" في الكتالوج`
                     : `View all results for "${query}" in Catalog`}
                 </span>

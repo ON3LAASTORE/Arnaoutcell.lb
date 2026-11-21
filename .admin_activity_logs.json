@@ -1,5 +1,183 @@
 [
   {
+    "id": "audit-1795265895041-e2b5lf",
+    "action": "product_updated",
+    "titleEn": "Updated product: iPhone 17 Pro 256GB (Cosmic Orange)",
+    "titleAr": "تم تحديث المنتج: iPhone 17 Pro 256GB (Cosmic Orange)",
+    "category": "catalog",
+    "severity": "info",
+    "target": "iPhone 17 Pro 256GB (Cosmic Orange) (prod-xiaomirobotvac)",
+    "details": "Modified specifications/media for Apple item.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-21T12:58:15.041Z"
+  },
+  {
+    "id": "audit-1795265564306-c2tt35",
+    "action": "product_updated",
+    "titleEn": "Updated product: ACEFAST A135 DIGITAL ADAPTER",
+    "titleAr": "تم تحديث المنتج: ACEFAST A135 DIGITAL ADAPTER",
+    "category": "catalog",
+    "severity": "info",
+    "target": "ACEFAST A135 DIGITAL ADAPTER (prod-1795017753220)",
+    "details": "Modified specifications/media for ACEFAST item.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-21T12:52:44.306Z"
+  },
+  {
+    "id": "audit-1795265509131-iomsbk",
+    "action": "product_updated",
+    "titleEn": "Updated product: HOCO X102 TC-IPHONE",
+    "titleAr": "تم تحديث المنتج: HOCO X102 TC-IPHONE",
+    "category": "catalog",
+    "severity": "info",
+    "target": "HOCO X102 TC-IPHONE (prod-1793519795397)",
+    "details": "Modified specifications/media for Hoco item.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-21T12:51:49.131Z"
+  },
+  {
+    "id": "audit-1795265383553-bc8bwn",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-21T12:49:43.553Z"
+  },
+  {
+    "id": "audit-1795265375570-etio0s",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (admin)",
+    "details": "Invalid administrator password submitted during authentication check.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-21T12:49:35.570Z"
+  },
+  {
+    "id": "audit-1795263359470-l9krth",
+    "action": "product_deleted",
+    "titleEn": "Deleted product: Samsung Galaxy S25 Ultra 512GB Titanium Gray USED",
+    "titleAr": "تم حذف المنتج: سامسونج جالاكسي S25 الترا 512 جيجابايت - تيتانيوم رمادي",
+    "category": "catalog",
+    "severity": "warning",
+    "target": "Samsung Galaxy S25 Ultra 512GB Titanium Gray USED (prod-s25ultra)",
+    "details": "Removed Samsung item ($990) from storefront catalog.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-21T12:15:59.470Z"
+  },
+  {
+    "id": "audit-1795263343071-yf5jpe",
+    "action": "product_updated",
+    "titleEn": "Updated product: SAN MARIO POWERBANK 20,000MAH (b)",
+    "titleAr": "تم تحديث المنتج: SAN MARIO POWERBANK 20,000MAH (b)",
+    "category": "catalog",
+    "severity": "info",
+    "target": "SAN MARIO POWERBANK 20,000MAH (b) (prod-1794951898018)",
+    "details": "Modified specifications/media for Green Lion item.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-21T12:15:43.071Z"
+  },
+  {
+    "id": "audit-1795263271366-5lfx98",
+    "action": "product_updated",
+    "titleEn": "Updated product: Samsung Galaxy Z Fold 8 12GB RAM 256GB",
+    "titleAr": "تم تحديث المنتج: Samsung Galaxy Z Fold 8 12GB RAM 256GB",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Samsung Galaxy Z Fold 8 12GB RAM 256GB (prod-1794669822259)",
+    "details": "Modified specifications/media for Samsung item.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-21T12:14:31.366Z"
+  },
+  {
+    "id": "audit-1795263086224-f9r2ji",
+    "action": "product_updated",
+    "titleEn": "Updated product: Samsung Galaxy Z Fold 8 12GB RAM 256GB",
+    "titleAr": "تم تحديث المنتج: Samsung Galaxy Z Fold 8 12GB RAM 256GB",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Samsung Galaxy Z Fold 8 12GB RAM 256GB (prod-1794669822259)",
+    "details": "Modified specifications/media for Samsung item.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-21T12:11:26.224Z"
+  },
+  {
+    "id": "audit-1795263019497-3isvey",
+    "action": "product_updated",
+    "titleEn": "Updated product: Samsung Galaxy Z Fold 8 12GB RAM 256GB",
+    "titleAr": "تم تحديث المنتج: Samsung Galaxy Z Fold 8 12GB RAM 256GB",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Samsung Galaxy Z Fold 8 12GB RAM 256GB (prod-1794669822259)",
+    "details": "Price $1650 -> $1690",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-21T12:10:19.496Z"
+  },
+  {
     "id": "audit-1795172422602-p3n1so",
     "action": "product_updated",
     "titleEn": "Updated product: ACEFAST A135 DIGITAL ADAPTER",

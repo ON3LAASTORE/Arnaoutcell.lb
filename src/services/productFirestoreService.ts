@@ -304,8 +304,10 @@ export function subscribeToLiveProducts(
           originalPrice: Number(data.originalPrice) || Number(data.price) || 0,
           price: Number(data.price) || 0,
           discountPercentage: Number(data.discountPercentage) || 0,
-          stock: Number(data.stock) ?? 10,
-          lowStockThreshold: Number(data.lowStockThreshold) || 3,
+          stock: Number.isFinite(Number(data.stock)) ? Math.max(0, Number(data.stock)) : 10,
+          lowStockThreshold: Number.isFinite(Number(data.lowStockThreshold))
+            ? Math.max(0, Number(data.lowStockThreshold))
+            : 3,
           images: Array.isArray(data.images) && data.images.length > 0
             ? data.images.map((img: string) => resolveFullResolutionImageUrl(img) || img)
             : [DEFAULT_FULL_RES_FALLBACK_IMAGE],
@@ -316,16 +318,21 @@ export function subscribeToLiveProducts(
           colors: Array.isArray(data.colors) ? data.colors : [],
           colorImages: firestoreColorImages,
           variants: Array.isArray(data.variants) ? data.variants : [],
-          warrantyMonths: Number(data.warrantyMonths) || 12,
+          warrantyMonths:
+            Number.isFinite(Number(data.warrantyMonths)) && Number(data.warrantyMonths) > 0
+              ? Number(data.warrantyMonths)
+              : 12,
           warrantyTerms: data.warrantyTerms || undefined,
           isSpecialOffer: Boolean(data.isSpecialOffer),
           isFeatured: Boolean(data.isFeatured),
           isNewArrival: Boolean(data.isNewArrival),
           isBestSeller: Boolean(data.isBestSeller),
           isPublished: data.isPublished !== false,
-          rating: Number(data.rating) || 5.0,
-          reviewCount: Number(data.reviewCount) ?? (Array.isArray(data.reviews) ? data.reviews.length : 0),
-          soldCount: Number(data.soldCount) >= 0 ? Number(data.soldCount) : 0,
+          rating: Number.isFinite(Number(data.rating)) && Number(data.rating) > 0 ? Number(data.rating) : 5.0,
+          reviewCount: Number.isFinite(Number(data.reviewCount))
+            ? Math.max(0, Number(data.reviewCount))
+            : (Array.isArray(data.reviews) ? data.reviews.length : 0),
+          soldCount: Number.isFinite(Number(data.soldCount)) && Number(data.soldCount) >= 0 ? Number(data.soldCount) : 0,
           reviews: Array.isArray(data.reviews) ? sanitizeProductReviewsForStorage(data.reviews, 50) : [],
           createdAt: data.createdAt || new Date().toISOString(),
         });

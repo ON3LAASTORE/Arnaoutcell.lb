@@ -202,21 +202,35 @@ export function querySearchSuggestions(
       const nameEn = normalizeSearchTerm(p.name);
       const nameAr = normalizeSearchTerm(p.nameAr || '');
       const brand = normalizeSearchTerm(p.brand);
-      const sku = normalizeSearchTerm(p.sku);
+      const skuCandidates = [
+        p.sku || '',
+        p.barcode || '',
+        ...(Array.isArray(p.variants) ? p.variants.map((v) => v.sku || '') : []),
+      ]
+        .map((val) => normalizeSearchTerm(val))
+        .filter(Boolean);
+
+      const hasExactSku = skuCandidates.some((s) => s === normalizedQuery);
+      const hasPrefixSku = skuCandidates.some((s) => s.startsWith(normalizedQuery));
+      const hasContainsSku = skuCandidates.some((s) => s.includes(normalizedQuery));
 
       let score = 0;
-      if (nameEn.startsWith(normalizedQuery) || nameAr.startsWith(normalizedQuery)) {
+      if (hasExactSku) {
+        score = 120;
+      } else if (nameEn.startsWith(normalizedQuery) || nameAr.startsWith(normalizedQuery)) {
         score = 100;
+      } else if (hasPrefixSku) {
+        score = 92;
       } else if (matchesSearch(p.name, searchWords) || matchesSearch(p.nameAr || '', searchWords)) {
         score = 80;
       } else if (brand.startsWith(normalizedQuery)) {
         score = 75;
+      } else if (hasContainsSku) {
+        score = 68;
       } else if (matchesSearch(p.brand, searchWords)) {
         score = 60;
       } else if (matchesSearch(p.category, searchWords) || (p.subcategory && matchesSearch(p.subcategory, searchWords))) {
         score = 50;
-      } else if (sku.includes(normalizedQuery)) {
-        score = 45;
       } else if (p.specifications?.some((spec) => matchesSearch(spec.value, searchWords))) {
         score = 30;
       }

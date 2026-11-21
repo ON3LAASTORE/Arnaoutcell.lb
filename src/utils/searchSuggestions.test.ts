@@ -210,3 +210,35 @@ test('querySearchSuggestions matches brands via partial input', () => {
   assert.equal(result.brands.length, 1);
   assert.equal(result.brands[0].name, 'Oppo');
 });
+
+test('querySearchSuggestions matches variant SKUs and ranks exact SKU matches first', () => {
+  const productsWithVariantSku: Product[] = [
+    ...mockProducts,
+    {
+      id: 'p-6',
+      name: 'Tecno Spark 50C',
+      brand: 'Tecno',
+      category: 'phones',
+      sku: 'TEC-SPK50C-128',
+      originalPrice: 190,
+      price: 190,
+      stock: 10,
+      images: ['https://example.com/tecno.jpg'],
+      description: 'Budget hero',
+      specifications: [],
+      variants: [
+        { id: 'v-128', name: '128GB', price: 190, stock: 10, sku: 'TEC-SPK50C-128' },
+        { id: 'v-512', name: '512GB', price: 260, stock: 5, sku: 'TEC-SPK50C-512' },
+      ],
+      warrantyMonths: 12,
+      isPublished: true,
+      rating: 4.8,
+      reviewCount: 4,
+      createdAt: '2026-11-18',
+    },
+  ];
+  const variantSkuRes = querySearchSuggestions('TEC-SPK50C-512', productsWithVariantSku, mockCategories, mockBrands);
+  assert.equal(variantSkuRes.products.length, 1);
+  assert.equal(variantSkuRes.products[0].id, 'p-6');
+});
+

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { getOrders, updateOrderStatus } from '../../services/storageService';
 import { Order, OrderStatus } from '../../types';
@@ -23,6 +23,15 @@ export const AdminOrders: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState<Order | null>(null);
   const [statusUpdateMsg, setStatusUpdateMsg] = useState('');
+
+  useEffect(() => {
+    if (!selectedOrderForInvoice) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedOrderForInvoice(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [selectedOrderForInvoice]);
 
   const reloadOrders = () => {
     setOrders(getOrders());
@@ -140,7 +149,15 @@ export const AdminOrders: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#DCE5F0] text-[#172033]">
-              {filteredOrders.map((ord) => (
+              {filteredOrders.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-10 px-4 text-center text-xs text-[#64748B]">
+                    {lang === 'ar'
+                      ? 'لا توجد طلبات مسجلة مطابقة للبحث حتى الآن.'
+                      : 'No recorded orders match your current filter yet.'}
+                  </td>
+                </tr>
+              ) : filteredOrders.map((ord) => (
                 <tr key={ord.id} className="hover:bg-[#F5F8FC] transition-colors">
                   <td className="py-3 px-4">
                     <span className="font-mono font-bold text-[#007AFF] block">{ord.id}</span>
@@ -208,7 +225,12 @@ export const AdminOrders: React.FC = () => {
 
       {/* Invoice Modal */}
       {selectedOrderForInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 animate-in fade-in duration-200"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Invoice ${selectedOrderForInvoice.id}`}
+        >
           <div className="relative w-full max-w-2xl bg-white border border-[#DCE5F0] rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
             <div className="flex items-center justify-between pb-4 border-b border-[#DCE5F0]">
               <h2 className="text-base font-bold text-[#172033] flex items-center gap-2">

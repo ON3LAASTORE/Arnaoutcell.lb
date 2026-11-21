@@ -118,7 +118,8 @@ interface ShopContextType {
   currentView: string;
   setCurrentView: (view: string) => void;
   selectedProductId: string | null;
-  viewProductDetail: (productId: string, openAsModal?: boolean) => void;
+  selectedVariantId: string | null;
+  viewProductDetail: (productId: string, openAsModal?: boolean, variantId?: string) => void;
   selectedCategorySlug: string | null;
   selectCategory: (slug: string | null) => void;
   selectedBrandName: string | null;
@@ -206,6 +207,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     extractResetTokenFromLocation() ? 'admin' : 'home'
   );
   const [selectedProductId, setSelectedProductId] = useState<string | null>(null);
+  const [selectedVariantId, setSelectedVariantId] = useState<string | null>(null);
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
   const [selectedBrandName, setSelectedBrandName] = useState<string | null>(null);
   const [productCollectionPreset, setProductCollectionPreset] = useState<ProductCollectionPreset>('all');
@@ -594,15 +596,17 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const isInWishlist = (productId: string) => wishlist.includes(productId);
 
-  const viewProductDetail = (productId: string, openAsModal = true) => {
+  const viewProductDetail = (productId: string, openAsModal = true, variantId?: string) => {
     if (productId) {
       recordProductView(productId);
     }
     setSelectedProductId(productId);
+    setSelectedVariantId(variantId || null);
     const p = products.find((item) => item.id === productId);
     if (openAsModal && p) {
       setQuickViewProductState(p);
     } else {
+      setQuickViewProductState(null);
       setCurrentView('product-detail');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -726,6 +730,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         currentView,
         setCurrentView,
         selectedProductId,
+        selectedVariantId,
         viewProductDetail,
         selectedCategorySlug,
         selectCategory,

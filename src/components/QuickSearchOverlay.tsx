@@ -28,6 +28,8 @@ import {
   getUniqueMatchingBrands,
   getUniqueMatchingCategories,
   getFilterModeLabels,
+  findProductSkuMatch,
+  findExactSkuProductMatch,
   SearchFilterMode,
   MatchedCategoryInfo,
 } from '../utils/globalSearchHelpers';
@@ -38,6 +40,7 @@ import {
   clearSearchHistory,
   getPopularSearchKeywords,
 } from '../utils/quickSearchOverlayHelpers';
+import { recordRecentSkuSearch } from '../utils/recentSkuSearches';
 import {
   getSpeechRecognitionConstructor,
   getVoiceRecognitionLang,
@@ -165,12 +168,12 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
   );
 
   const matchingCategories = useMemo(() => {
-    if (filterMode === 'name' || filterMode === 'brand') return [];
+    if (filterMode === 'name' || filterMode === 'brand' || filterMode === 'sku') return [];
     return getUniqueMatchingCategories(products, categories, query).slice(0, 4);
   }, [products, categories, query, filterMode]);
 
   const matchingBrands = useMemo(() => {
-    if (filterMode === 'name' || filterMode === 'category') return [];
+    if (filterMode === 'name' || filterMode === 'category' || filterMode === 'sku') return [];
     return getUniqueMatchingBrands(products, brands, query).slice(0, 4);
   }, [products, brands, query, filterMode]);
 
@@ -193,8 +196,26 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
   }, []);
 
   const handleSelectProduct = useCallback(
-    (product: Product) => {
-      const historyTerm = query.trim() || (isArabic ? product.nameAr || product.name : product.name);
+    (product: Product, matchedVariantId?: string) => {
+      const trimmedQuery = query.trim();
+      const skuHit = trimmedQuery ? findProductSkuMatch(product, trimmedQuery) : null;
+      const resolvedVariant =
+        skuHit?.matchedVariant ||
+        (matchedVariantId && Array.isArray(product.variants)
+          ? product.variants.find((v) => v.id === matchedVariantId)
+          : undefined);
+      const canonicalSku =
+        skuHit?.matchedSku || resolvedVariant?.sku?.trim() || product.sku?.trim();
+
+      if ((skuHit || filterMode === 'sku') && canonicalSku) {
+        recordRecentSkuSearch({
+          sku: canonicalSku,
+          product,
+          variant: resolvedVariant,
+        });
+      }
+
+      const historyTerm = trimmedQuery || (isArabic ? product.nameAr || product.name : product.name);
       recordTermInHistory(historyTerm);
       trackSearchQuery({
         term: historyTerm,
@@ -203,12 +224,13 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
         categoryMatchesCount: matchingCategories.length,
         productMatchesCount: matchingProducts.length,
       });
-      viewProductDetail(product.id);
+      viewProductDetail(product.id, false, matchedVariantId);
       setQuery('');
       onClose();
     },
     [
       query,
+      filterMode,
       isArabic,
       recordTermInHistory,
       matchingCategories.length,
@@ -300,6 +322,37 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
         productMatchesCount: prodHits.length,
       });
 
+      // Fast-path direct navigation on exact SKU match
+      if (filterMode !== 'brand' && filterMode !== 'category') {
+        const exactSkuHit = findExactSkuProductMatch(products, trimmed);
+        if (exactSkuHit) {
+          recordRecentSkuSearch({
+            sku: exactSkuHit.matchedSku,
+            product: exactSkuHit.product,
+            variant: exactSkuHit.matchedVariant,
+          });
+          viewProductDetail(exactSkuHit.product.id, false, exactSkuHit.matchedVariant?.id);
+          setQuery('');
+          onClose();
+          return;
+        }
+        if (filterMode === 'sku' && prodHits.length === 1) {
+          const singleSkuHit = findProductSkuMatch(prodHits[0], trimmed);
+          const resolvedSku = singleSkuHit?.matchedSku || prodHits[0].sku?.trim();
+          if (resolvedSku) {
+            recordRecentSkuSearch({
+              sku: resolvedSku,
+              product: prodHits[0],
+              variant: singleSkuHit?.matchedVariant,
+            });
+          }
+          viewProductDetail(prodHits[0].id, false, singleSkuHit?.matchedVariant?.id);
+          setQuery('');
+          onClose();
+          return;
+        }
+      }
+
       const lower = trimmed.toLowerCase();
       const matchedBrand = brands.find((b) => b.name.toLowerCase() === lower);
       const matchedCategory = categories.find(
@@ -339,6 +392,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
       selectCategory,
       setCurrentView,
       setSearchQuery,
+      viewProductDetail,
     ]
   );
 
@@ -356,7 +410,9 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
         return;
       }
       const pIdx = selectedIndex - matchingCategories.length - matchingBrands.length;
-      handleSelectProduct(matchingProducts[pIdx]);
+      const picked = matchingProducts[pIdx];
+      const skuHit = findProductSkuMatch(picked, query);
+      handleSelectProduct(picked, skuHit?.matchedVariant?.id);
       return;
     }
 
@@ -530,6 +586,10 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                   ? isArabic
                     ? 'جاري الاستماع... انطق اسم المنتج'
                     : 'Listening... Speak product name'
+                  : filterMode === 'sku'
+                  ? isArabic
+                    ? 'أدخل رمز SKU للمنتج (مثال: APL-IP16PM-256)...'
+                    : 'Enter SKU code (e.g. APL-IP16PM-256)...'
                   : filterMode === 'brand'
                   ? isArabic
                     ? 'ابحث بالماركة (Apple, Samsung...)'
@@ -543,8 +603,8 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                     ? 'ابحث باسم المنتج أو الجهاز...'
                     : 'Search by product name...'
                   : isArabic
-                  ? 'ابحث بالاسم أو الماركة أو القسم...'
-                  : 'Search products, brands, categories...'
+                  ? 'ابحث بالاسم، الماركة، القسم، أو رمز SKU...'
+                  : 'Search products, brands, categories, or SKU...'
               }
               aria-label={t.searchPlaceholder || 'Search products by name, brand, or category'}
               className="flex-1 min-w-0 bg-transparent text-[#0F172A] dark:text-white placeholder-[#64748B] dark:placeholder-slate-400 text-[13px] sm:text-base font-medium py-3.5 sm:py-4 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
@@ -994,15 +1054,25 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                   {matchingProducts.map((p, pIdx) => {
                     const globalIdx = matchingCategories.length + matchingBrands.length + pIdx;
                     const isHighlighted = selectedIndex === globalIdx;
-                    const hasDiscount = p.originalPrice > p.price;
-                    const isLowStock = p.stock > 0 && p.stock <= (p.lowStockThreshold || 3);
-                    const isOutOfStock = p.stock === 0;
+                    const skuMatch = findProductSkuMatch(p, query);
+                    const displayPrice =
+                      skuMatch?.matchedVariant && Number.isFinite(skuMatch.matchedVariant.price)
+                        ? skuMatch.matchedVariant.price
+                        : p.price;
+                    const displayStock =
+                      skuMatch?.matchedVariant && typeof skuMatch.matchedVariant.stock === 'number'
+                        ? skuMatch.matchedVariant.stock
+                        : p.stock;
+                    const displaySku = skuMatch ? skuMatch.matchedSku : p.sku;
+                    const hasDiscount = !skuMatch?.matchedVariant && p.originalPrice > p.price;
+                    const isLowStock = displayStock > 0 && displayStock <= (p.lowStockThreshold || 3);
+                    const isOutOfStock = displayStock === 0;
 
                     return (
                       <button
                         key={p.id}
                         type="button"
-                        onClick={() => handleSelectProduct(p)}
+                        onClick={() => handleSelectProduct(p, skuMatch?.matchedVariant?.id)}
                         className={`w-full text-left rtl:text-right p-3 rounded-xl border transition-all flex items-center gap-3 cursor-pointer group ${
                           isHighlighted
                             ? 'bg-[#EFF6FF] dark:bg-[#162742] border-[#0070F3]'
@@ -1058,15 +1128,21 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
 
                           <p className="text-xs sm:text-sm font-semibold text-[#0F172A] dark:text-white group-hover:text-[#0070F3] dark:group-hover:text-[#38BDF8] truncate">
                             {isArabic ? p.nameAr || p.name : p.name}
+                            {skuMatch?.matchedVariant ? ` · ${skuMatch.matchedVariant.name}` : ''}
                           </p>
 
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center gap-2 mt-1 flex-wrap">
                             <span className="text-xs sm:text-sm font-extrabold text-[#0070F3] dark:text-[#38BDF8] tabular-nums">
-                              ${p.price}
+                              ${displayPrice}
                             </span>
                             {hasDiscount && (
                               <span className="text-[11px] text-[#94A3B8] line-through tabular-nums">
                                 ${p.originalPrice}
+                              </span>
+                            )}
+                            {displaySku && (
+                              <span className="ml-auto rtl:mr-auto rtl:ml-0 font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#F5F8FC] dark:bg-[#111A2E] text-[#64748B] dark:text-slate-400">
+                                SKU: {displaySku}
                               </span>
                             )}
                           </div>

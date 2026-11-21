@@ -182,12 +182,12 @@ test('evaluateSerialWarranty supports catalog coverage preview and custom purcha
   assert.ok(withCustomDate.items[0].calculation.remainingDays > 180);
 });
 
-test('SAMPLE_WARRANTY_LOOKUPS exposes Valid, Expired, Claimed, and Serial sample entries', () => {
+test('SAMPLE_WARRANTY_LOOKUPS exposes valid catalog Barcode and SKU sample entries', () => {
   assert.ok(SAMPLE_WARRANTY_LOOKUPS.length >= 4);
-  assert.ok(SAMPLE_WARRANTY_LOOKUPS.some((s) => s.query === 'OAA-2027-1001'));
-  assert.ok(SAMPLE_WARRANTY_LOOKUPS.some((s) => s.query === 'OAA-2025-0412'));
-  assert.ok(SAMPLE_WARRANTY_LOOKUPS.some((s) => s.query === 'OAA-2026-0884'));
   assert.ok(SAMPLE_WARRANTY_LOOKUPS.some((s) => s.query === '195949038221'));
+  assert.ok(SAMPLE_WARRANTY_LOOKUPS.some((s) => s.query === '6941289450128'));
+  assert.ok(SAMPLE_WARRANTY_LOOKUPS.some((s) => s.query === '880609539210'));
+  assert.ok(SAMPLE_WARRANTY_LOOKUPS.some((s) => s.query === 'ANK-737-24K'));
 });
 
 test('calculateWarrantyPeriod and evaluateOrderWarranty support Claimed status and item-scoped claims', () => {

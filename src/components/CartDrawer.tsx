@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useShop } from '../context/ShopContext';
 import { X, Trash2, ShoppingBag, ArrowRight, MessageSquare, ShieldCheck } from 'lucide-react';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
@@ -21,6 +21,17 @@ export const CartDrawer: React.FC = () => {
     generateWhatsAppOrderUrl,
   } = useShop();
 
+  useEffect(() => {
+    if (!isCartOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsCartOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isCartOpen, setIsCartOpen]);
+
   if (!isCartOpen) return null;
 
   const handleCheckout = () => {
@@ -42,7 +53,12 @@ export const CartDrawer: React.FC = () => {
       />
 
       <div className="fixed inset-y-0 right-0 rtl:right-auto rtl:left-0 max-w-full flex pl-0 sm:pl-10 rtl:pl-0 rtl:pr-0 sm:rtl:pr-10">
-        <div className="w-screen max-w-md bg-white dark:bg-[#0E1726] border-l rtl:border-l-0 rtl:border-r border-[#DCE5F0] dark:border-[#1E293B] shadow-2xl flex flex-col justify-between">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={lang === 'ar' ? 'سلة المشتريات' : 'Shopping Cart'}
+          className="w-screen max-w-md bg-white dark:bg-[#0E1726] border-l rtl:border-l-0 rtl:border-r border-[#DCE5F0] dark:border-[#1E293B] shadow-2xl flex flex-col justify-between"
+        >
           {/* Header */}
           <div className="p-5 border-b border-[#DCE5F0] dark:border-[#1E293B] flex items-center justify-between bg-[#F5F8FC] dark:bg-[#111A2E]">
             <div className="flex items-center gap-2">

@@ -5,7 +5,7 @@ import { openExternalUrl } from '../utils/navigation';
 import { addProductReview } from '../services/storageService';
 import { RecentlyViewedCarousel } from '../components/RecentlyViewedCarousel';
 import { ProductLuxuryShowcase } from '../components/ProductLuxuryShowcase';
-import { ProductDetailAccordion } from '../components/ProductDetailAccordion';
+import { ProductDetailTabs } from '../components/ProductDetailTabs';
 import { Product, ProductVariant } from '../types';
 
 export const ProductDetailPage: React.FC = () => {
@@ -15,6 +15,7 @@ export const ProductDetailPage: React.FC = () => {
     products,
     categories,
     selectedProductId,
+    selectedVariantId,
     addToCart,
     toggleWishlist,
     isInWishlist,
@@ -116,11 +117,15 @@ export const ProductDetailPage: React.FC = () => {
     e.preventDefault();
     if (!newReviewName.trim() || !newReviewComment.trim()) return;
 
-    const res = addProductReview(product.id, {
-      userName: newReviewName.trim(),
-      rating: newReviewRating,
-      comment: newReviewComment.trim(),
-    });
+    const res = addProductReview(
+      product.id,
+      {
+        userName: newReviewName.trim(),
+        rating: newReviewRating,
+        comment: newReviewComment.trim(),
+      },
+      product
+    );
 
     if (res) {
       refreshData();
@@ -169,6 +174,7 @@ export const ProductDetailPage: React.FC = () => {
         {/* Above-the-Fold Clean Minimalist Luxury Product Showcase */}
         <ProductLuxuryShowcase
           product={product}
+          initialVariantId={selectedVariantId || undefined}
           lang={lang}
           mode="page"
           whatsappNumber={storeSettings.whatsapp}
@@ -192,8 +198,8 @@ export const ProductDetailPage: React.FC = () => {
           shareCopied={copiedShare}
         />
 
-        {/* Below-the-Fold Full-Width Minimalist Collapsible Accordion */}
-        <ProductDetailAccordion
+        {/* Below-the-Fold Full-Width Tabbed Navigation (Description / Shipping & Exchange / Warranty) */}
+        <ProductDetailTabs
           product={product}
           lang={lang}
           storeNameAr={storeSettings.storeNameAr}

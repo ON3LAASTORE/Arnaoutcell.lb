@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useShop } from '../context/ShopContext';
-import { Product } from '../types';
 import { resolveStoreLogoUrl } from '../utils/storeSettingsHelpers';
+import { buildStructuredDataGraph, resolveSchemaUrl } from '../utils/seoSchemaHelpers';
 
 export const SEOHead: React.FC = () => {
   const {
@@ -18,6 +18,7 @@ export const SEOHead: React.FC = () => {
   useEffect(() => {
     if (typeof document === 'undefined') return;
 
+    const origin = window.location.origin;
     const storeName = storeSettings.storeName || 'ON AlAA STORE';
     const activeProduct = selectedProductId
       ? products.find((p) => p.id === selectedProductId)
@@ -29,9 +30,10 @@ export const SEOHead: React.FC = () => {
     let pageTitle = `${storeName} | Online Tech Store Based in Chouf • Delivery to All Lebanon`;
     let metaDescription =
       'Official ON AlAA STORE online electronics store based in Chouf. Shop authentic smartphones, laptops, GaN fast chargers, and audio gear with delivery available to all Lebanon.';
-    let canonicalUrl = window.location.origin + window.location.pathname;
+    let canonicalUrl = origin + window.location.pathname;
     let ogType = 'website';
-    let ogImage = resolveStoreLogoUrl(storeSettings.logoUrl);
+    const logoUrl = resolveStoreLogoUrl(storeSettings.logoUrl);
+    let ogImage = resolveSchemaUrl(logoUrl, origin) || `${origin}/on-alaa-store-profile.png`;
 
     // 1. Dynamic Titles & Descriptions by Route/View
     switch (currentView) {
@@ -42,10 +44,14 @@ export const SEOHead: React.FC = () => {
           metaDescription = lang === 'ar'
             ? `اشتري ${prodTitle} أونلاين من ${storeName} في الشوف. جهاز أصلي مع كفالة رسمية وسعر $${activeProduct.price} مع خدمة توصيل متاحة لجميع مناطق لبنان.`
             : `Buy ${activeProduct.name} by ${activeProduct.brand} online from ${storeName} based in Chouf. Genuine stock with official warranty, starting at $${activeProduct.price} fresh USD with delivery available to all Lebanon.`;
-          canonicalUrl = `${window.location.origin}/#/product/${activeProduct.id}`;
+          canonicalUrl = `${origin}/#/product/${activeProduct.id}`;
           ogType = 'product';
-          if (activeProduct.images && activeProduct.images.length > 0) {
-            ogImage = activeProduct.images[0];
+          const firstResolved =
+            activeProduct.images && activeProduct.images.length > 0
+              ? resolveSchemaUrl(activeProduct.images[0], origin)
+              : undefined;
+          if (firstResolved) {
+            ogImage = firstResolved;
           }
         }
         break;
@@ -61,56 +67,56 @@ export const SEOHead: React.FC = () => {
           pageTitle = `All Electronics & Tech Catalog | ${storeName}`;
           metaDescription = `Explore our comprehensive online catalog of smartphones, chargers, laptops, gaming gear, and tech accessories based in Chouf with delivery available to all Lebanon.`;
         }
-        canonicalUrl = `${window.location.origin}/#/products`;
+        canonicalUrl = `${origin}/#/products`;
         break;
 
       case 'categories':
-        pageTitle = `All 35 Electronic Departments | ${storeName}`;
-        metaDescription = `Discover all 35 specialized electronic and tech categories at ${storeName}. Online store based in Chouf delivering smartphones, GaN chargers, gaming gear, and audio to all Lebanon.`;
-        canonicalUrl = `${window.location.origin}/#/categories`;
+        pageTitle = `All ${categories.length} Electronic Departments | ${storeName}`;
+        metaDescription = `Discover all ${categories.length} specialized electronic and tech categories at ${storeName}. Online store based in Chouf delivering smartphones, GaN chargers, gaming gear, and audio to all Lebanon.`;
+        canonicalUrl = `${origin}/#/categories`;
         break;
 
       case 'brands':
         pageTitle = `Authorized Tech Brands | Apple, Samsung, Xiaomi, Anker | ${storeName}`;
         metaDescription = `Shop top global electronics brands in Lebanon: Apple, Samsung, Xiaomi, Anker, JBL, Baseus, and more. 100% genuine products delivered to all Lebanon.`;
-        canonicalUrl = `${window.location.origin}/#/brands`;
+        canonicalUrl = `${origin}/#/brands`;
         break;
 
       case 'offers':
         pageTitle = `Exclusive Tech Offers & Flash Deals | ${storeName}`;
         metaDescription = `Curated daily discounts and special offers on flagship smartphones, power banks, and accessories. Order online from our Chouf store with delivery across all Lebanon.`;
-        canonicalUrl = `${window.location.origin}/#/offers`;
+        canonicalUrl = `${origin}/#/offers`;
         break;
 
       case 'services':
         pageTitle = `Touch Telecom & Whish Money Hub | ${storeName}`;
         metaDescription = `Official digital wallet and telecom support at ${storeName} (Chouf): Touch & Alfa line renewal and Whish Money assistance open 10:00 AM – 1:00 AM daily.`;
-        canonicalUrl = `${window.location.origin}/#/services`;
+        canonicalUrl = `${origin}/#/services`;
         break;
 
       case 'track-order':
         pageTitle = `Track Your Order | All Lebanon Delivery | ${storeName}`;
         metaDescription = `Track your order in real-time. Enter your order ID (e.g., OAA-2027-1001) for instant fulfillment status and courier updates across all Lebanon.`;
-        canonicalUrl = `${window.location.origin}/#/track-order`;
+        canonicalUrl = `${origin}/#/track-order`;
         break;
 
       case 'cart':
       case 'checkout':
         pageTitle = `Secure Fresh Cash Checkout | ${storeName}`;
         metaDescription = `Complete your electronics purchase with Cash on Delivery (COD) or Whish Money. Dispatched from Chouf with delivery available to all Lebanon.`;
-        canonicalUrl = `${window.location.origin}/#/checkout`;
+        canonicalUrl = `${origin}/#/checkout`;
         break;
 
       case 'contact':
         pageTitle = `Contact Online Store (Chouf) | ${storeName} (70 773 067)`;
         metaDescription = `Contact ${storeName} — Online Store based in Chouf with delivery available to all Lebanon. Open 10:00 AM - 1:00 AM daily. Call or WhatsApp 70 773 067.`;
-        canonicalUrl = `${window.location.origin}/#/contact`;
+        canonicalUrl = `${origin}/#/contact`;
         break;
 
       default:
         pageTitle = `${storeName} | Online Tech Store Based in Chouf • All Lebanon Delivery`;
         metaDescription = `Premier online electronics store based in Chouf, Lebanon. Flagship smartphones, GaN fast chargers, audio gear, and delivery available to all Lebanon. Call or WhatsApp 70 773 067.`;
-        canonicalUrl = `${window.location.origin}/`;
+        canonicalUrl = `${origin}/`;
         break;
     }
 
@@ -118,7 +124,7 @@ export const SEOHead: React.FC = () => {
     document.documentElement.lang = lang;
     document.title = pageTitle;
 
-    // 3. Helper to update or create meta tags
+    // 3. Helper to update, create, or remove meta tags
     const setMetaTag = (attr: 'name' | 'property' | 'http-equiv', key: string, content: string) => {
       let element = document.querySelector(`meta[${attr}="${key}"]`);
       if (!element) {
@@ -127,6 +133,13 @@ export const SEOHead: React.FC = () => {
         document.head.appendChild(element);
       }
       element.setAttribute('content', content);
+    };
+
+    const removeMetaTag = (attr: 'name' | 'property', key: string) => {
+      const element = document.querySelector(`meta[${attr}="${key}"]`);
+      if (element) {
+        element.remove();
+      }
     };
 
     setMetaTag('http-equiv', 'content-language', lang);
@@ -143,6 +156,22 @@ export const SEOHead: React.FC = () => {
     setMetaTag('name', 'twitter:description', metaDescription);
     setMetaTag('name', 'twitter:image', ogImage);
 
+    if (currentView === 'product-detail' && activeProduct) {
+      setMetaTag('property', 'product:price:amount', Number(activeProduct.price).toFixed(2));
+      setMetaTag('property', 'product:price:currency', 'USD');
+      setMetaTag(
+        'property',
+        'product:availability',
+        activeProduct.stock > 0 ? 'in stock' : 'out of stock'
+      );
+      setMetaTag('property', 'product:brand', activeProduct.brand);
+    } else {
+      removeMetaTag('property', 'product:price:amount');
+      removeMetaTag('property', 'product:price:currency');
+      removeMetaTag('property', 'product:availability');
+      removeMetaTag('property', 'product:brand');
+    }
+
     // 4. Update Canonical Link
     let canonicalLink = document.querySelector('link[rel="canonical"]') as HTMLLinkElement | null;
     if (!canonicalLink) {
@@ -152,79 +181,20 @@ export const SEOHead: React.FC = () => {
     }
     canonicalLink.setAttribute('href', canonicalUrl);
 
-    // 5. Schema.org JSON-LD Structured Data
-    let schemaJson: Record<string, unknown>;
-
-    if (currentView === 'product-detail' && activeProduct) {
-      // Product Schema
-      schemaJson = {
-        '@context': 'https://schema.org',
-        '@type': 'Product',
-        name: activeProduct.name,
-        image: activeProduct.images || [ogImage],
-        description: activeProduct.description,
-        sku: activeProduct.sku,
-        mpn: activeProduct.id,
-        brand: {
-          '@type': 'Brand',
-          name: activeProduct.brand,
-        },
-        offers: {
-          '@type': 'Offer',
-          url: canonicalUrl,
-          priceCurrency: 'USD',
-          price: activeProduct.price,
-          priceValidUntil: '2027-12-31',
-          itemCondition: 'https://schema.org/NewCondition',
-          availability: activeProduct.stock > 0
-            ? 'https://schema.org/InStock'
-            : 'https://schema.org/OutOfStock',
-          seller: {
-            '@type': 'ElectronicsStore',
-            name: storeName,
-          },
-        },
-        aggregateRating: {
-          '@type': 'AggregateRating',
-          ratingValue: activeProduct.rating || 5.0,
-          reviewCount: activeProduct.reviewCount || 1,
-        },
-      };
-    } else {
-      // Online Electronics Store Schema
-      schemaJson = {
-        '@context': 'https://schema.org',
-        '@type': 'ElectronicsStore',
-        inLanguage: lang,
-        name: storeName,
-        alternateName: 'ON AlAA STORE',
-        description: metaDescription,
-        url: window.location.origin,
-        telephone: '+96170773067',
-        priceRange: '$$',
-        image: ogImage,
-        address: {
-          '@type': 'PostalAddress',
-          addressLocality: 'Chouf',
-          addressRegion: 'Mount Lebanon',
-          addressCountry: 'LB',
-        },
-        areaServed: {
-          '@type': 'Country',
-          name: 'Lebanon',
-        },
-        openingHoursSpecification: [
-          {
-            '@type': 'OpeningHoursSpecification',
-            dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
-            opens: storeSettings.openingSchedule?.openTime || '10:00',
-            closes: storeSettings.openingSchedule?.closeTime || '01:00',
-          },
-        ],
-        paymentAccepted: 'Cash on Delivery, Whish Money',
-        currenciesAccepted: 'USD, LBP',
-      };
-    }
+    // 5. Schema.org JSON-LD Structured Data (Product + Inventory ItemList + Store)
+    const schemaJson = buildStructuredDataGraph({
+      currentView,
+      activeProduct,
+      products,
+      activeCategory,
+      selectedBrandName,
+      lang,
+      storeSettings,
+      origin,
+      metaDescription,
+      canonicalUrl,
+      logoUrl,
+    });
 
     let scriptTag = document.getElementById('schema-structured-data') as HTMLScriptElement | null;
     if (!scriptTag) {

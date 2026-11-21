@@ -3,12 +3,15 @@ import assert from 'node:assert/strict';
 import {
   buildCapacityOptions,
   buildLuxuryCarouselImages,
+  buildQuickReadSummary,
   computeLuxurySubtotal,
   extractOverviewHighlights,
   findCarouselIndexForColor,
+  findColorForCarouselImage,
   formatLuxuryUsdPrice,
   getSidekickQuickPrompts,
   resolveAvailableAccordionSections,
+  splitDescriptionParagraphs,
   stepCarouselIndex,
   toggleAccordionSection,
 } from './productLuxuryDetailHelpers';
@@ -59,6 +62,8 @@ test('findCarouselIndexForColor locates the matching color image index in carous
   const carousel = buildLuxuryCarouselImages(product);
   assert.equal(findCarouselIndexForColor(product, carousel, 'White'), 0);
   assert.equal(findCarouselIndexForColor(product, carousel, 'Purple'), 1);
+  assert.equal(findColorForCarouselImage(product, 'https://example.com/purple.jpg'), 'Purple');
+  assert.equal(findColorForCarouselImage(product, 'https://example.com/other.jpg'), undefined);
 });
 
 test('buildCapacityOptions uses explicit non-color variants first and extracts storage spec fallback cleanly', () => {
@@ -150,4 +155,42 @@ test('toggleAccordionSection immutably toggles section keys open and closed', ()
   assert.equal(closedOverview.has('overview'), false);
   assert.equal(closedOverview.has('specs'), true);
 });
+
+test('splitDescriptionParagraphs splits double-newline structured copy cleanly', () => {
+  const copy =
+    'First paragraph about 120Hz display.\n\nSecond paragraph about IP68 & IP69 and 5200mAh battery.';
+  const paragraphs = splitDescriptionParagraphs(copy);
+  assert.equal(paragraphs.length, 2);
+  assert.equal(paragraphs[0].includes('120Hz display'), true);
+  assert.equal(paragraphs[1].includes('5200mAh'), true);
+  assert.deepEqual(splitDescriptionParagraphs(''), []);
+});
+
+test('buildQuickReadSummary distills lead sentence, top specs, and warranty into concise takeaways', () => {
+  const summary = buildQuickReadSummary(
+    {
+      name: 'Tecno Spark 50C - 4GB Ram - 128GB Storage',
+      nameAr: 'تكنو سبارك 50C',
+      brand: 'Tecno',
+      description:
+        'The TECNO SPARK 50C combines a 120Hz 6.78-inch display with a MediaTek Helio G81 octa-core processor. Built for daily endurance.',
+      descriptionAr: '',
+      specifications: [
+        { label: 'Display', value: '6.78-inch 120Hz' },
+        { label: 'Protection', value: 'IP68 & IP69' },
+        { label: 'Battery', value: '5200mAh' },
+      ],
+      warrantyMonths: 12,
+    },
+    'en'
+  );
+  assert.equal(
+    summary.headline,
+    'The TECNO SPARK 50C combines a 120Hz 6.78-inch display with a MediaTek Helio G81 octa-core processor.'
+  );
+  assert.equal(summary.takeaways.length, 4);
+  assert.equal(summary.takeaways[0], 'Display: 6.78-inch 120Hz');
+  assert.equal(summary.takeaways[3].includes('12-Month Official Agent Warranty'), true);
+});
+
 

@@ -103,6 +103,30 @@ export function findCarouselIndexForColor(
 }
 
 /**
+ * Finds the color name mapped to a given carousel image URL so arrow navigation keeps the color swatch synchronized.
+ */
+export function findColorForCarouselImage(
+  product: Pick<Product, 'colors' | 'images' | 'colorImages' | 'variants'>,
+  imageUrl?: string
+): string | undefined {
+  if (!imageUrl || !Array.isArray(product.colors) || product.colors.length === 0) {
+    return undefined;
+  }
+  const target = resolveFullResolutionImageUrl(imageUrl) || imageUrl;
+  for (const color of product.colors) {
+    const cleanColor = color.trim();
+    if (!cleanColor) continue;
+    const mapped = resolveColorShowcaseImage(product, cleanColor);
+    if (!mapped) continue;
+    const resolvedMapped = resolveFullResolutionImageUrl(mapped) || mapped;
+    if (resolvedMapped === target) {
+      return cleanColor;
+    }
+  }
+  return undefined;
+}
+
+/**
  * Computes cyclic wrap-around carousel index for ◀ / ▶ buttons.
  */
 export function stepCarouselIndex(
@@ -285,4 +309,76 @@ export function toggleAccordionSection(
   }
   return next;
 }
+
+export interface QuickReadSummary {
+  headline: string;
+  takeaways: string[];
+}
+
+/**
+ * Splits multi-paragraph product descriptions cleanly on blank lines or single newlines.
+ */
+export function splitDescriptionParagraphs(description: string | undefined): string[] {
+  if (!description || typeof description !== 'string') return [];
+  const trimmed = description.trim();
+  if (!trimmed) return [];
+  const doubleBreak = trimmed
+    .split(/\r?\n\s*\r?\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  if (doubleBreak.length > 1) return doubleBreak;
+  return trimmed
+    .split(/\r?\n/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Distills a product's full description, specifications, and warranty into a crisp Quick Read card.
+ */
+export function buildQuickReadSummary(
+  product: Pick<
+    Product,
+    'name' | 'nameAr' | 'brand' | 'description' | 'descriptionAr' | 'specifications' | 'warrantyMonths'
+  >,
+  lang: Language
+): QuickReadSummary {
+  const rawDesc =
+    lang === 'ar'
+      ? product.descriptionAr || product.description || ''
+      : product.description || product.descriptionAr || '';
+
+  const sentences = rawDesc
+    .trim()
+    .split(/(?<=[.!؟])(?:\s+|$)|\r?\n+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const headline = sentences[0]
+    ? sentences[0]
+    : lang === 'ar'
+    ? product.nameAr || product.name
+    : product.name;
+
+  const takeaways: string[] = [];
+  if (Array.isArray(product.specifications)) {
+    for (const spec of product.specifications) {
+      if (takeaways.length >= 4) break;
+      if (spec?.label?.trim() && spec?.value?.trim()) {
+        takeaways.push(`${spec.label.trim()}: ${spec.value.trim()}`);
+      }
+    }
+  }
+
+  const months = Number(product.warrantyMonths) || 0;
+  if (months > 0 && takeaways.length < 5) {
+    takeaways.push(
+      lang === 'ar'
+        ? `ضمان الوكيل الرسمي لمدة ${months} شهراً + التوصيل لجميع مناطق لبنان`
+        : `${months}-Month Official Agent Warranty & All-Lebanon Delivery`
+    );
+  }
+
+  return { headline, takeaways };
+}
+
 

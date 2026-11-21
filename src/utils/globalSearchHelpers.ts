@@ -1,12 +1,20 @@
-import { Product, Brand, Category } from '../types';
+import { Product, Brand, Category, ProductVariant } from '../types';
 import { normalizeSearchTerm, matchesSearch } from './searchSuggestions';
 
-export type SearchFilterMode = 'all' | 'name' | 'brand' | 'category';
+export type SearchFilterMode = 'all' | 'sku' | 'name' | 'brand' | 'category';
 
 export interface ScoredProductMatch {
   product: Product;
   score: number;
-  matchedBy: 'name' | 'brand' | 'category' | 'multiple';
+  matchedBy: 'name' | 'brand' | 'category' | 'sku' | 'multiple';
+}
+
+export interface SkuMatchDetails {
+  product: Product;
+  matchedSku: string;
+  matchSource: 'product' | 'variant' | 'barcode';
+  matchKind: 'exact' | 'prefix' | 'contains';
+  matchedVariant?: ProductVariant;
 }
 
 export interface MatchedBrandInfo {
@@ -25,6 +33,145 @@ export interface MatchedCategoryInfo {
   count: number;
   isExact: boolean;
   subcategories?: string[];
+}
+
+export function normalizeSkuToken(value: string = ''): string {
+  return value.trim().replace(/^#+/, '').toLowerCase();
+}
+
+export function normalizeSkuCompact(value: string = ''): string {
+  return value.trim().replace(/^#+/, '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+function classifySkuCandidateMatch(
+  candidate: string,
+  needle: string,
+  compactNeedle: string
+): 'exact' | 'prefix' | 'contains' | null {
+  const norm = normalizeSkuToken(candidate);
+  if (!norm || !needle) return null;
+  const compact = normalizeSkuCompact(candidate);
+
+  if (norm === needle || (compactNeedle.length >= 4 && compact === compactNeedle)) {
+    return 'exact';
+  }
+  if (
+    norm.startsWith(needle) ||
+    (compactNeedle.length >= 3 && compact.startsWith(compactNeedle))
+  ) {
+    return 'prefix';
+  }
+  if (
+    norm.includes(needle) ||
+    (compactNeedle.length >= 3 && compact.includes(compactNeedle))
+  ) {
+    return 'contains';
+  }
+  return null;
+}
+
+/**
+ * Inspects a product's primary SKU, variant SKUs, and barcode for exact, prefix, or partial matches.
+ * Variant SKUs are checked carefully so searching e.g. "TEC-SPK50C-512" resolves both the product and variant.
+ */
+export function findProductSkuMatch(
+  product: Product,
+  query: string
+): SkuMatchDetails | null {
+  const needle = normalizeSkuToken(query);
+  if (!needle) return null;
+  const compactNeedle = normalizeSkuCompact(query);
+
+  const candidates: Array<{
+    value: string;
+    source: 'product' | 'variant' | 'barcode';
+    variant?: ProductVariant;
+  }> = [];
+
+  // Check variant SKUs first when a product has variants so distinct variant SKUs resolve to their exact variant
+  if (Array.isArray(product.variants)) {
+    for (const variant of product.variants) {
+      if (variant.sku && variant.sku.trim()) {
+        candidates.push({ value: variant.sku.trim(), source: 'variant', variant });
+      }
+    }
+  }
+
+  if (product.sku && product.sku.trim()) {
+    candidates.push({ value: product.sku.trim(), source: 'product' });
+  }
+
+  if (product.barcode && product.barcode.trim()) {
+    candidates.push({ value: product.barcode.trim(), source: 'barcode' });
+  }
+
+  const rankPriority: Record<'exact' | 'prefix' | 'contains', number> = {
+    exact: 3,
+    prefix: 2,
+    contains: 1,
+  };
+
+  let best: SkuMatchDetails | null = null;
+  let bestRank = 0;
+
+  for (const candidate of candidates) {
+    const kind = classifySkuCandidateMatch(candidate.value, needle, compactNeedle);
+    if (!kind) continue;
+
+    const rank = rankPriority[kind] * 10 + (candidate.source === 'variant' ? 2 : 1);
+    if (!best || rank > bestRank) {
+      bestRank = rank;
+      best = {
+        product,
+        matchedSku: candidate.value,
+        matchSource: candidate.source,
+        matchKind: kind,
+        matchedVariant: candidate.variant,
+      };
+    }
+  }
+
+  return best;
+}
+
+/**
+ * Returns the exact published product + optional variant matching a typed SKU or barcode.
+ */
+export function findExactSkuProductMatch(
+  products: Product[],
+  query: string
+): SkuMatchDetails | null {
+  const needle = normalizeSkuToken(query);
+  if (!needle) return null;
+
+  for (const product of products) {
+    if (product.isPublished === false) continue;
+    const match = findProductSkuMatch(product, query);
+    if (match && match.matchKind === 'exact') {
+      return match;
+    }
+  }
+  return null;
+}
+
+/**
+ * Picks representative unique SKUs from published catalog products for quick UI examples.
+ */
+export function getSampleProductSkus(products: Product[], maxCount = 3): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const product of products) {
+    if (product.isPublished === false || !product.sku?.trim()) continue;
+    const sku = product.sku.trim();
+    const key = sku.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(sku);
+    if (result.length >= maxCount) break;
+  }
+
+  return result;
 }
 
 function resolveProductCategoryRecords(product: Product, categories: Category[]): Category[] {
@@ -87,7 +234,7 @@ function doesProductMatchCategory(
 }
 
 /**
- * Filters and ranks products by name, brand, or category based on query and filter mode.
+ * Filters and ranks products by SKU, name, brand, or category based on query and filter mode.
  */
 export function filterProductsGlobally(
   products: Product[],
@@ -107,7 +254,7 @@ export function filterProductsGlobally(
     const nameEn = normalizeSearchTerm(product.name);
     const nameAr = normalizeSearchTerm(product.nameAr || '');
     const brand = normalizeSearchTerm(product.brand);
-    const sku = normalizeSearchTerm(product.sku || '');
+    const skuMatch = findProductSkuMatch(product, query);
 
     const nameMatches =
       nameEn.includes(normalizedQuery) ||
@@ -127,11 +274,13 @@ export function filterProductsGlobally(
     );
     const categoryMatches = categoryMatchInfo.matches;
 
-    const skuMatches = mode === 'all' && sku.length > 0 && sku.includes(normalizedQuery);
+    const skuMatches = Boolean(skuMatch);
 
-    let matchType: 'name' | 'brand' | 'category' | 'multiple' | null = null;
+    let matchType: ScoredProductMatch['matchedBy'] | null = null;
 
-    if (mode === 'name' && nameMatches) {
+    if (mode === 'sku' && skuMatches) {
+      matchType = 'sku';
+    } else if (mode === 'name' && nameMatches) {
       matchType = 'name';
     } else if (mode === 'brand' && brandMatches) {
       matchType = 'brand';
@@ -145,18 +294,22 @@ export function filterProductsGlobally(
         (skuMatches ? 1 : 0);
 
       if (hitCount > 1) matchType = 'multiple';
+      else if (skuMatches) matchType = 'sku';
       else if (nameMatches) matchType = 'name';
       else if (brandMatches) matchType = 'brand';
       else if (categoryMatches) matchType = 'category';
-      else if (skuMatches) matchType = 'name';
     }
 
     if (!matchType) continue;
 
     let score = 0;
 
-    if (nameEn === normalizedQuery || nameAr === normalizedQuery || brand === normalizedQuery) {
+    if (skuMatch?.matchKind === 'exact') {
+      score += 120;
+    } else if (nameEn === normalizedQuery || nameAr === normalizedQuery || brand === normalizedQuery) {
       score += 100;
+    } else if (skuMatch?.matchKind === 'prefix') {
+      score += 92;
     } else if (nameEn.startsWith(normalizedQuery) || nameAr.startsWith(normalizedQuery)) {
       score += 85;
     } else if (brand.startsWith(normalizedQuery)) {
@@ -165,14 +318,14 @@ export function filterProductsGlobally(
       score += 74;
     } else if (nameMatches) {
       score += 65;
+    } else if (skuMatch?.matchKind === 'contains') {
+      score += 62;
     } else if (brandMatches) {
       score += 58;
     } else if (categoryMatchInfo.startsWith) {
       score += 54;
     } else if (categoryMatches) {
       score += 48;
-    } else if (skuMatches) {
-      score += 45;
     }
 
     // Boost in-stock products so customers find available devices first
@@ -198,7 +351,7 @@ export function filterProductsGlobally(
 }
 
 /**
- * Checks whether a single product matches a catalog search query across name, brand, category, or SKU.
+ * Checks whether a single product matches a catalog search query across name, brand, category, or SKU (including variant SKUs).
  */
 export function matchesProductSearchQuery(
   product: Product,
@@ -394,6 +547,7 @@ export function getFilterModeLabels(lang: 'en' | 'ar') {
   if (lang === 'ar') {
     return [
       { mode: 'all' as SearchFilterMode, label: 'الكل' },
+      { mode: 'sku' as SearchFilterMode, label: 'برمز SKU' },
       { mode: 'name' as SearchFilterMode, label: 'بالاسم' },
       { mode: 'brand' as SearchFilterMode, label: 'بالماركة' },
       { mode: 'category' as SearchFilterMode, label: 'بالقسم' },
@@ -401,6 +555,7 @@ export function getFilterModeLabels(lang: 'en' | 'ar') {
   }
   return [
     { mode: 'all' as SearchFilterMode, label: 'All' },
+    { mode: 'sku' as SearchFilterMode, label: 'By SKU' },
     { mode: 'name' as SearchFilterMode, label: 'By Name' },
     { mode: 'brand' as SearchFilterMode, label: 'By Brand' },
     { mode: 'category' as SearchFilterMode, label: 'By Category' },

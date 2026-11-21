@@ -28,10 +28,15 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
   };
 
   const handleUpdateDiscount = (product: Product, newDiscountPercent: number) => {
-    const discountedPrice = Math.round(product.originalPrice * (1 - newDiscountPercent / 100));
+    const clampedPercent = Number.isFinite(newDiscountPercent)
+      ? Math.min(90, Math.max(0, Math.round(newDiscountPercent)))
+      : 0;
+    const basePrice = product.originalPrice > 0 ? product.originalPrice : product.price;
+    const discountedPrice = Math.max(0, Math.round(basePrice * (1 - clampedPercent / 100)));
     const updated: Product = {
       ...product,
-      discountPercentage: newDiscountPercent,
+      originalPrice: basePrice,
+      discountPercentage: clampedPercent,
       price: discountedPrice,
     };
     saveProduct(updated);
@@ -97,7 +102,15 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-[#DCE5F0] text-[#172033]">
-              {filtered.map((p) => (
+              {filtered.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-10 px-4 text-center text-xs text-[#64748B]">
+                    {lang === 'ar'
+                      ? 'لا توجد منتجات مطابقة لبحث العروض.'
+                      : 'No products match the promotions search.'}
+                  </td>
+                </tr>
+              ) : filtered.map((p) => (
                 <tr key={p.id} className="hover:bg-[#F5F8FC] transition-colors">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">

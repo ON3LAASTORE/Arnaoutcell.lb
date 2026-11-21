@@ -36,10 +36,14 @@ import { recordAdminActivity } from './activityLogService';
 import { addProductReviewPure, applyOrderStockDelta } from '../utils/checkoutHelpers';
 
 const memoryStorageFallback = new Map<string, string>();
+const quotaFallbackKeys = new Set<string>();
 
 function getStorageItem(key: string): string | null {
   if (typeof window === 'undefined') {
     return memoryStorageFallback.get(key) ?? null;
+  }
+  if (quotaFallbackKeys.has(key)) {
+    return memoryStorageFallback.get(key) ?? localStorage.getItem(key) ?? null;
   }
   try {
     return localStorage.getItem(key) ?? memoryStorageFallback.get(key) ?? null;
@@ -57,7 +61,13 @@ function setStorageItem(
   if (typeof window === 'undefined') {
     return { ok: true, recovered: false, persistedValue: value };
   }
-  return safeStorageSetItem(window.localStorage, key, value, { onQuotaRecovery });
+  const result = safeStorageSetItem(window.localStorage, key, value, { onQuotaRecovery });
+  if (result.ok) {
+    quotaFallbackKeys.delete(key);
+  } else {
+    quotaFallbackKeys.add(key);
+  }
+  return result;
 }
 
 const KEYS = {
@@ -747,17 +757,28 @@ export function addTestimonial(testimonialData: Omit<Testimonial, 'id' | 'date'>
 
 export function addProductReview(
   productId: string,
-  reviewData: { userName: string; rating: number; comment: string }
+  reviewData: { userName: string; rating: number; comment: string },
+  fallbackProduct?: Product
 ): { review: Review; updatedProduct: Product } | null {
   const products = getProducts();
   const productIndex = products.findIndex((p) => p.id === productId);
-  if (productIndex === -1) return null;
+  const targetProduct =
+    productIndex !== -1
+      ? products[productIndex]
+      : fallbackProduct && fallbackProduct.id === productId
+      ? fallbackProduct
+      : null;
 
-  const product = products[productIndex];
-  const { review, updatedProduct } = addProductReviewPure(product, reviewData);
+  if (!targetProduct) return null;
+
+  const { review, updatedProduct } = addProductReviewPure(targetProduct, reviewData);
 
   const nextProducts = [...products];
-  nextProducts[productIndex] = updatedProduct;
+  if (productIndex !== -1) {
+    nextProducts[productIndex] = updatedProduct;
+  } else {
+    nextProducts.unshift(updatedProduct);
+  }
   saveProducts(nextProducts);
 
   // Sync updated reviews, rating, and reviewCount to Firestore

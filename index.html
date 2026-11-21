@@ -20,9 +20,166 @@
     <link rel="icon" type="image/png" sizes="64x64" href="/favicon.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
     <link rel="manifest" href="/site.webmanifest" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="ON AlAA STORE" />
     <meta property="og:image" content="/on-alaa-store-profile.png" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="ON AlAA STORE | Online Tech Store Lebanon" />
+    <meta name="twitter:description" content="ON AlAA STORE — Online Tech Store based in Chouf with fast delivery available to all Lebanon. Smartphones, laptops, gaming gear, smart accessories, and premium tech." />
     <meta name="twitter:image" content="/on-alaa-store-profile.png" />
+    <script id="schema-structured-data" type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "ElectronicsStore",
+            "@id": "/#organization",
+            "name": "ON AlAA STORE",
+            "alternateName": "متجر ON AlAA STORE",
+            "description": "ON AlAA STORE — Online Tech Store based in Chouf with fast delivery available to all Lebanon. Authentic smartphones, laptops, gaming gear, and tech accessories.",
+            "telephone": "+96170773067",
+            "priceRange": "$$",
+            "image": "/on-alaa-store-profile.png",
+            "address": {
+              "@type": "PostalAddress",
+              "addressLocality": "Chouf",
+              "addressRegion": "Mount Lebanon",
+              "addressCountry": "LB"
+            },
+            "areaServed": {
+              "@type": "Country",
+              "name": "Lebanon"
+            },
+            "openingHoursSpecification": [
+              {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+                "opens": "10:00",
+                "closes": "01:00"
+              }
+            ],
+            "paymentAccepted": "Cash on Delivery, Whish Money",
+            "currenciesAccepted": "USD, LBP"
+          },
+          {
+            "@type": "ItemList",
+            "@id": "/#inventory",
+            "name": "ON AlAA STORE Featured Electronics Inventory",
+            "numberOfItems": 4,
+            "itemListElement": [
+              {
+                "@type": "ListItem",
+                "position": 1,
+                "url": "/#/product/prod-iphone16promax",
+                "item": {
+                  "@type": "Product",
+                  "@id": "/#/product/prod-iphone16promax#product",
+                  "name": "Apple iPhone 16 Pro Max 256GB Desert Titanium",
+                  "sku": "APL-IP16PM-256",
+                  "mpn": "prod-iphone16promax",
+                  "gtin": "195949038221",
+                  "category": "Phones > Flagship Phones",
+                  "image": ["https://images.unsplash.com/photo-1592750475338-74b7b21085ab"],
+                  "description": "Powered by Apple A18 Pro chip with Apple Intelligence, titanium enclosure, and 48MP Fusion camera system.",
+                  "brand": { "@type": "Brand", "name": "Apple" },
+                  "offers": {
+                    "@type": "Offer",
+                    "url": "/#/product/prod-iphone16promax",
+                    "priceCurrency": "USD",
+                    "price": 1249,
+                    "priceValidUntil": "2027-12-31",
+                    "itemCondition": "https://schema.org/NewCondition",
+                    "availability": "https://schema.org/InStock",
+                    "seller": { "@type": "ElectronicsStore", "name": "ON AlAA STORE" }
+                  }
+                }
+              },
+              {
+                "@type": "ListItem",
+                "position": 2,
+                "url": "/#/product/prod-s25ultra",
+                "item": {
+                  "@type": "Product",
+                  "@id": "/#/product/prod-s25ultra#product",
+                  "name": "Samsung Galaxy S25 Ultra 512GB Titanium Gray",
+                  "sku": "SAM-S25U-512",
+                  "mpn": "prod-s25ultra",
+                  "gtin": "880609539210",
+                  "category": "Phones > Flagship Phones",
+                  "image": ["https://images.unsplash.com/photo-1610945265064-0e34e5519bbf"],
+                  "description": "Flagship smartphone powered by Snapdragon 8 Elite for Galaxy with integrated S-Pen and 200MP Quad Telephoto camera.",
+                  "brand": { "@type": "Brand", "name": "Samsung" },
+                  "offers": {
+                    "@type": "Offer",
+                    "url": "/#/product/prod-s25ultra",
+                    "priceCurrency": "USD",
+                    "price": 1299,
+                    "priceValidUntil": "2027-12-31",
+                    "itemCondition": "https://schema.org/NewCondition",
+                    "availability": "https://schema.org/InStock",
+                    "seller": { "@type": "ElectronicsStore", "name": "ON AlAA STORE" }
+                  }
+                }
+              },
+              {
+                "@type": "ListItem",
+                "position": 3,
+                "url": "/#/product/prod-macbookprom4",
+                "item": {
+                  "@type": "Product",
+                  "@id": "/#/product/prod-macbookprom4#product",
+                  "name": "Apple MacBook Pro 16\" M4 Pro 36GB / 512GB Space Black",
+                  "sku": "APL-MBP16-M4P",
+                  "mpn": "prod-macbookprom4",
+                  "gtin": "195949281729",
+                  "category": "Laptops > MacBooks",
+                  "image": ["https://images.unsplash.com/photo-1517336714731-489689fd1ca8"],
+                  "description": "M4 Pro laptop with Liquid Retina XDR display, 36GB Unified Memory, 512GB SSD, and Thunderbolt 5 connectivity.",
+                  "brand": { "@type": "Brand", "name": "Apple" },
+                  "offers": {
+                    "@type": "Offer",
+                    "url": "/#/product/prod-macbookprom4",
+                    "priceCurrency": "USD",
+                    "price": 2299,
+                    "priceValidUntil": "2027-12-31",
+                    "itemCondition": "https://schema.org/NewCondition",
+                    "availability": "https://schema.org/InStock",
+                    "seller": { "@type": "ElectronicsStore", "name": "ON AlAA STORE" }
+                  }
+                }
+              },
+              {
+                "@type": "ListItem",
+                "position": 4,
+                "url": "/#/product/prod-sonywh1000xm5",
+                "item": {
+                  "@type": "Product",
+                  "@id": "/#/product/prod-sonywh1000xm5#product",
+                  "name": "Sony WH-1000XM5 Wireless Noise-Cancelling Headphones",
+                  "sku": "SNY-WH1000XM5-BLK",
+                  "mpn": "prod-sonywh1000xm5",
+                  "gtin": "4548736132573",
+                  "category": "Headphones > Over-Ear ANC",
+                  "image": ["https://images.unsplash.com/photo-1505740420928-5e560c06d30e"],
+                  "description": "Wireless noise-cancelling headphones with dual processors, 8 microphones, 30mm driver unit, and 30-hour battery life.",
+                  "brand": { "@type": "Brand", "name": "Sony" },
+                  "offers": {
+                    "@type": "Offer",
+                    "url": "/#/product/prod-sonywh1000xm5",
+                    "priceCurrency": "USD",
+                    "price": 319,
+                    "priceValidUntil": "2027-12-31",
+                    "itemCondition": "https://schema.org/NewCondition",
+                    "availability": "https://schema.org/InStock",
+                    "seller": { "@type": "ElectronicsStore", "name": "ON AlAA STORE" }
+                  }
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
     <!-- High-priority preload for store profile emblem to ensure instant LCP render -->
     <link rel="preload" as="image" href="/on-alaa-store-profile.png" fetchpriority="high" />
     <!-- DNS prefetch & preconnect for external CDNs -->

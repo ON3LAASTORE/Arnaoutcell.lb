@@ -94,6 +94,9 @@ export function filterHeaderSearchProducts(
   }
 
   return pool.filter((p) => {
+    const variantSkus = Array.isArray(p.variants)
+      ? p.variants.map((v) => v.sku || '')
+      : [];
     const fields = [
       p.name,
       p.nameAr || '',
@@ -101,6 +104,8 @@ export function filterHeaderSearchProducts(
       p.category,
       p.subcategory || '',
       p.sku || '',
+      p.barcode || '',
+      ...variantSkus,
       p.description || '',
     ];
     return fields.some((field) => field.toLowerCase().includes(trimmed));
