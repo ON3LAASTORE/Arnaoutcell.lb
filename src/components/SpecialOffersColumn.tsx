@@ -6,12 +6,12 @@ import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import { ReactBitsColumns } from './animations/ReactBitsColumns';
 
 export const SpecialOffersColumn: React.FC = () => {
-  const { lang, products, setCurrentView, storeSettings } = useShop();
+  const { lang, offers, products, setCurrentView, storeSettings } = useShop();
 
   const [activeTab, setActiveTab] = useState<'all' | 'phones' | 'audio' | 'power' | 'rugged'>('all');
 
-  // Filter products on special offer
-  const offerProducts = products.filter((p) => p.isSpecialOffer && p.isPublished);
+  // Consume cached offers array from ShopContext (falling back cleanly to product filter if empty during boot)
+  const offerProducts = offers.length > 0 ? offers : products.filter((p) => p.isSpecialOffer && p.isPublished);
 
   // Filter by selected tab
   const filteredOffers = offerProducts.filter((p) => {

@@ -23,6 +23,7 @@ import { LazyImage } from './LazyImage';
 import { CameraErrorFeedback, mapCameraErrorToMessage } from '../utils/qrPayloadParser';
 import { findProductByQrPayload, ProductQrLookupResult } from '../utils/productQrLookupHelpers';
 import { DEFAULT_FULL_RES_FALLBACK_IMAGE, resolveFullResolutionImageUrl } from '../utils/imageResolutionHelpers';
+import { getProductColorOptions } from '../utils/colorVariantHelpers';
 import { Product } from '../types';
 
 interface NativeBarcodeResult {
@@ -408,7 +409,19 @@ export const ProductQrScannerModal: React.FC = () => {
 
   const handleQuickAddToCart = (product: Product) => {
     if (product.stock <= 0) return;
-    addToCart(product, 1, product.colors?.[0], product.variants?.[0]);
+    const firstColorOpt = getProductColorOptions(product)[0];
+    const firstCapVariant = (product.variants || []).find(
+      (v) => !v.id.startsWith('var-color-') && !v.color
+    ) || product.variants?.[0];
+    const isColorVariant = Boolean(firstCapVariant?.id.startsWith('var-color-'));
+    addToCart(
+      product,
+      1,
+      firstColorOpt?.name,
+      firstCapVariant,
+      firstColorOpt?.imageUrl || undefined,
+      isColorVariant ? 0 : firstColorOpt?.priceAdjustment
+    );
     handleClose();
   };
 

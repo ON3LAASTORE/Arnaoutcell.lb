@@ -148,4 +148,52 @@ describe('quickSearchOverlayHelpers', () => {
       true
     );
   });
+
+  it('splits highlighted match segments safely even with regex special characters', async () => {
+    const mod = await import('./quickSearchOverlayHelpers');
+    const segs = mod.splitHighlightedTextSegments('Apple AirPods Pro 2 USB-C', 'USB-C pro');
+    const matchedTexts = segs.filter((s) => s.isMatch).map((s) => s.text.toLowerCase());
+    assert.deepEqual(matchedTexts, ['pro', 'usb-c']);
+
+    // Short 1-char token does not fragment words aggressively
+    const plain = mod.splitHighlightedTextSegments('Anker 200W', 'a');
+    assert.equal(plain.length, 1);
+    assert.equal(plain[0].isMatch, false);
+  });
+
+  it('computes brand/category facet counts and refines/sorts overlay results accurately', async () => {
+    const mod = await import('./quickSearchOverlayHelpers');
+    const cats = [
+      { id: 'c1', name: 'Smartphones', nameAr: 'الهواتف', slug: 'smartphones', iconName: 'Smartphone', featured: true, displayOrder: 1 },
+      { id: 'c2', name: 'Audio', nameAr: 'سماعات', slug: 'audio', iconName: 'Headphones', featured: true, displayOrder: 2 },
+    ];
+    const items = [
+      { id: '1', name: 'iPhone 16 Pro', brand: 'Apple', category: 'Smartphones', price: 1199, stock: 5, isPublished: true },
+      { id: '2', name: 'AirPods Pro 2', brand: 'Apple', category: 'Audio', price: 239, stock: 8, isPublished: true },
+      { id: '3', name: 'Galaxy S25', brand: 'Samsung', category: 'Smartphones', price: 999, stock: 3, isPublished: true },
+      { id: '4', name: 'Draft Item', brand: 'Sony', category: 'Audio', price: 100, stock: 2, isPublished: false },
+    ] as unknown as Product[];
+
+    const facets = mod.computeOverlayFacetCounts(items, cats);
+    assert.deepEqual(facets.brands, [
+      { name: 'Apple', count: 2 },
+      { name: 'Samsung', count: 1 },
+    ]);
+    assert.equal(facets.categories[0].slug, 'smartphones');
+    assert.equal(facets.categories[0].count, 2);
+
+    const refined = mod.filterOverlayResultsByFacets(items, cats, {
+      selectedBrand: 'Apple',
+      selectedCategorySlug: 'audio',
+    });
+    assert.equal(refined.length, 1);
+    assert.equal(refined[0].id, '2');
+
+    const sortedLowHigh = mod.filterOverlayResultsByFacets(items, cats, { sortBy: 'price_asc' });
+    assert.deepEqual(
+      sortedLowHigh.map((p) => p.id),
+      ['2', '3', '1']
+    );
+  });
 });
+

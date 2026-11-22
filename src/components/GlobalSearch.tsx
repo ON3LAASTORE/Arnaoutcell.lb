@@ -177,12 +177,18 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Keyboard shortcut listener: '/' or 'Cmd+K' / 'Ctrl+K' focuses visible search input
+  // Keyboard shortcut listener: '/' focuses inline search input; Cmd/Ctrl+K opens QuickSearchOverlay when provided
   useEffect(() => {
     function handleGlobalKeyDown(e: KeyboardEvent) {
       const activeTag = document.activeElement?.tagName;
+      const isCmdK = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k';
+
+      if (isCmdK && onOpenQuickSearch) {
+        return;
+      }
+
       if (
-        (e.key === '/' || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) &&
+        (e.key === '/' || isCmdK) &&
         activeTag !== 'INPUT' &&
         activeTag !== 'TEXTAREA' &&
         activeTag !== 'SELECT'
@@ -197,7 +203,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
     }
     window.addEventListener('keydown', handleGlobalKeyDown);
     return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-  }, []);
+  }, [onOpenQuickSearch]);
 
   const handleSelectProduct = (product: Product, matchedVariantId?: string) => {
     const trimmedQuery = query.trim();

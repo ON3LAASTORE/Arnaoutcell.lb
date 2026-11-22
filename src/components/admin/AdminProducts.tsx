@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { useAdmin } from '../../context/AdminContext';
-import { Product, ProductSpec, ProductVariant } from '../../types';
+import { Product, ProductSpec } from '../../types';
 import { saveProduct, deleteProduct, readFileAsDataUrl } from '../../services/storageService';
 import { maybeTriggerRestockNotifications } from '../../services/stockNotificationService';
 import {
@@ -9,20 +9,22 @@ import {
   Search,
   Edit2,
   Trash2,
-  Upload,
   X,
   Share2,
   RotateCcw,
   Palette,
   ImagePlus,
+  HardDrive,
 } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
 import ProductImageUploader from './ProductImageUploader';
 import { DEFAULT_FULL_RES_FALLBACK_IMAGE, resolveFullResolutionImageUrl } from '../../utils/imageResolutionHelpers';
 import {
+  buildCapacityVariantConfigs,
   buildColorVariantConfigs,
+  CapacityVariantConfig,
   ColorVariantConfig,
-  extractProductColorData,
+  extractStructuredProductVariantsAndColors,
 } from '../../utils/colorVariantHelpers';
 import { optimizeUploadedImage } from '../../utils/imageCompression';
 import { validateImageFile } from '../../utils/imageUploadHelpers';
@@ -70,8 +72,9 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
   const [formDescAr, setFormDescAr] = useState('');
   const [formWarrantyMonths, setFormWarrantyMonths] = useState(12);
   const [formColorVariants, setFormColorVariants] = useState<ColorVariantConfig[]>([]);
-  const [formExistingVariants, setFormExistingVariants] = useState<ProductVariant[]>([]);
+  const [formCapacityVariants, setFormCapacityVariants] = useState<CapacityVariantConfig[]>([]);
   const [newColorInput, setNewColorInput] = useState('');
+  const [newCapacityInput, setNewCapacityInput] = useState('');
   const [colorUploadError, setColorUploadError] = useState<string | null>(null);
   const [formSpecs, setFormSpecs] = useState<ProductSpec[]>([]);
   const [specLabel, setSpecLabel] = useState('');
@@ -100,9 +103,13 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormDesc('');
     setFormDescAr('');
     setFormWarrantyMonths(12);
-    setFormColorVariants([{ color: 'Black' }, { color: 'Silver' }]);
-    setFormExistingVariants([]);
+    setFormColorVariants([
+      { id: 'color-black', color: 'Black', hex: '#111827', priceAdjustment: 0 },
+      { id: 'color-silver', color: 'Silver', hex: '#CBD5E1', priceAdjustment: 0 },
+    ]);
+    setFormCapacityVariants([]);
     setNewColorInput('');
+    setNewCapacityInput('');
     setColorUploadError(null);
     setFormSpecs([
       { label: 'Storage', value: '128GB' },
@@ -136,8 +143,9 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormDescAr(p.descriptionAr || '');
     setFormWarrantyMonths(p.warrantyMonths);
     setFormColorVariants(buildColorVariantConfigs(p));
-    setFormExistingVariants(Array.isArray(p.variants) ? p.variants : []);
+    setFormCapacityVariants(buildCapacityVariantConfigs(p));
     setNewColorInput('');
+    setNewCapacityInput('');
     setColorUploadError(null);
     setFormSpecs(p.specifications || []);
     setFormIsOffer(Boolean(p.isSpecialOffer));
@@ -173,12 +181,29 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
 
   const handleAddColor = (presetColor?: string) => {
     const candidate = (presetColor ?? newColorInput).trim();
-    if (!candidate) return;
+    if (!candidate) {
+      // Allow creating a blank editable color row when clicking "+ Add Color" with empty input
+      if (!presetColor) {
+        setFormColorVariants((prev) => [
+          ...prev,
+          {
+            id: `color-${Date.now()}-${prev.length + 1}`,
+            color: '',
+            priceAdjustment: 0,
+          },
+        ]);
+      }
+      return;
+    }
     const exists = formColorVariants.some(
       (row) => row.color.trim().toLowerCase() === candidate.toLowerCase()
     );
     if (!exists) {
-      setFormColorVariants((prev) => [...prev, { color: candidate }]);
+      const slug = candidate.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `${Date.now()}`;
+      setFormColorVariants((prev) => [
+        ...prev,
+        { id: `color-${slug}`, color: candidate, priceAdjustment: 0 },
+      ]);
     }
     if (!presetColor) {
       setNewColorInput('');
@@ -190,6 +215,71 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormColorVariants((prev) =>
       prev.map((row, idx) => (idx === index ? { ...row, ...patch } : row))
     );
+  };
+
+  const handleToggleColorCapacity = (colorIdx: number, capId: string) => {
+    setFormColorVariants((prev) =>
+      prev.map((row, idx) => {
+        if (idx !== colorIdx) return row;
+        const allCapIds = formCapacityVariants.map((c) => c.id);
+        const currentSelected =
+          row.availableCapacities && row.availableCapacities.length > 0
+            ? row.availableCapacities
+            : allCapIds;
+        const exists = currentSelected.includes(capId);
+        const nextSelected = exists
+          ? currentSelected.filter((id) => id !== capId)
+          : [...currentSelected, capId];
+        // If empty or all caps selected, omit restriction (defaults to all)
+        return {
+          ...row,
+          availableCapacities:
+            nextSelected.length === 0 || nextSelected.length >= allCapIds.length
+              ? undefined
+              : nextSelected,
+        };
+      })
+    );
+  };
+
+  const handleAddCapacity = (presetCap?: string) => {
+    const candidate = (presetCap ?? newCapacityInput).trim();
+    const label = candidate || `Option ${formCapacityVariants.length + 1}`;
+    const exists = formCapacityVariants.some(
+      (c) => c.name.trim().toLowerCase() === label.toLowerCase()
+    );
+    if (exists && presetCap) return;
+    const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `${Date.now()}`;
+    setFormCapacityVariants((prev) => [
+      ...prev,
+      {
+        id: `var-cap-${slug}-${prev.length + 1}`,
+        name: label,
+        price: Number(formPrice) || 0,
+        stock: Number(formStock) || 0,
+        sku: formSku.trim() ? `${formSku.trim()}-${slug.toUpperCase()}` : '',
+      },
+    ]);
+    if (!presetCap) setNewCapacityInput('');
+  };
+
+  const handleUpdateCapacity = (index: number, patch: Partial<CapacityVariantConfig>) => {
+    setFormCapacityVariants((prev) =>
+      prev.map((row, idx) => (idx === index ? { ...row, ...patch } : row))
+    );
+  };
+
+  const handleRemoveCapacity = (index: number) => {
+    const removed = formCapacityVariants[index];
+    setFormCapacityVariants((prev) => prev.filter((_, idx) => idx !== index));
+    if (removed) {
+      setFormColorVariants((prev) =>
+        prev.map((cRow) => ({
+          ...cRow,
+          availableCapacities: cRow.availableCapacities?.filter((id) => id !== removed.id),
+        }))
+      );
+    }
   };
 
   const handleColorFileUpload = async (
@@ -248,14 +338,14 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
         ? Math.round(((formOriginalPrice - formPrice) / formOriginalPrice) * 100)
         : 0;
 
-    const extractedColorData = extractProductColorData(
+    const extractedStructuredData = extractStructuredProductVariantsAndColors(
       formColorVariants,
+      formCapacityVariants,
       {
         price: formPrice,
         sku: formSku.trim(),
         stock: formStock,
-      },
-      formExistingVariants
+      }
     );
 
     const savedProduct: Product = {
@@ -281,9 +371,9 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
       descriptionAr:
         formDescAr.trim() || 'جهاز أصلي مع كفالة متجر ON AlAA STORE الرسمية (الشوف) وتوصيل سريع متاح لجميع مناطق لبنان.',
       specifications: formSpecs,
-      colors: extractedColorData.colors,
-      colorImages: extractedColorData.colorImages,
-      variants: extractedColorData.variants,
+      colors: extractedStructuredData.colors,
+      colorImages: extractedStructuredData.colorImages,
+      variants: extractedStructuredData.variants,
       rating: editingProduct ? editingProduct.rating : 5.0,
       reviewCount: editingProduct ? editingProduct.reviewCount : 1,
       isSpecialOffer: formIsOffer,
@@ -733,6 +823,178 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                 </div>
               </div>
 
+              {/* Capacity & Pricing (RAM / ROM) */}
+              <div
+                className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] space-y-3.5"
+                data-testid="admin-capacity-pricing-section"
+              >
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <HardDrive className="w-4 h-4 text-[#007AFF]" />
+                    <span className="text-xs font-bold text-[#172033]">
+                      {lang === 'ar'
+                        ? `السعة والأسعار (RAM / ROM) (${formCapacityVariants.length})`
+                        : `Capacity & Pricing (RAM / ROM) (${formCapacityVariants.length})`}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-[#64748B] font-medium">
+                    {lang === 'ar'
+                      ? 'خيارات التخزين والذاكرة مع السعر والمخزون لكل فئة'
+                      : 'Configure storage/RAM tiers with tier-specific pricing & SKU'}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {['128GB', '256GB', '512GB', '1TB', '8GB / 256GB'].map((capPreset) => {
+                      const alreadyAdded = formCapacityVariants.some(
+                        (c) => c.name.trim().toLowerCase() === capPreset.toLowerCase()
+                      );
+                      return (
+                        <button
+                          key={capPreset}
+                          type="button"
+                          onClick={() => handleAddCapacity(capPreset)}
+                          disabled={alreadyAdded}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer ${
+                            alreadyAdded
+                              ? 'bg-[#EAF3FF] border-[#007AFF]/40 text-[#007AFF] opacity-60 cursor-default'
+                              : 'bg-white border-[#DCE5F0] text-[#475569] hover:border-[#007AFF] hover:text-[#007AFF]'
+                          }`}
+                        >
+                          + {capPreset}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      data-testid="admin-new-capacity-input"
+                      placeholder={
+                        lang === 'ar'
+                          ? 'مثال: 128GB أو 8GB / 256GB'
+                          : 'Add capacity tier (e.g. 128GB, 256GB, 12GB / 512GB)'
+                      }
+                      value={newCapacityInput}
+                      onChange={(e) => setNewCapacityInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddCapacity();
+                        }
+                      }}
+                      className="flex-1 bg-white border border-[#DCE5F0] rounded-xl px-3 py-1.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
+                    />
+                    <button
+                      type="button"
+                      data-testid="admin-add-capacity-btn"
+                      onClick={() => handleAddCapacity()}
+                      className="px-3.5 py-1.5 bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold rounded-xl cursor-pointer transition-colors flex items-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>{lang === 'ar' ? 'إضافة سعة' : '+ Add Capacity'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {formCapacityVariants.length > 0 ? (
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-0.5">
+                    {formCapacityVariants.map((cap, idx) => (
+                      <div
+                        key={cap.id}
+                        data-testid={`admin-capacity-row-${idx}`}
+                        className="p-2.5 rounded-xl bg-white border border-[#DCE5F0] grid grid-cols-12 gap-2 items-center"
+                      >
+                        <div className="col-span-12 sm:col-span-4">
+                          <label className="text-[10px] text-[#64748B] font-semibold block mb-0.5">
+                            {lang === 'ar' ? 'السعة (RAM / ROM)' : 'Capacity Label'}
+                          </label>
+                          <input
+                            type="text"
+                            data-testid={`admin-capacity-name-${idx}`}
+                            value={cap.name}
+                            onChange={(e) => handleUpdateCapacity(idx, { name: e.target.value })}
+                            placeholder="e.g. 256GB"
+                            className="w-full bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2.5 py-1.5 text-xs font-bold text-[#172033] focus:outline-none focus:border-[#007AFF]"
+                          />
+                        </div>
+
+                        <div className="col-span-4 sm:col-span-3">
+                          <label className="text-[10px] text-[#64748B] font-semibold block mb-0.5">
+                            {lang === 'ar' ? 'السعر ($)' : 'Price ($)'}
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            data-testid={`admin-capacity-price-${idx}`}
+                            value={cap.price}
+                            onChange={(e) =>
+                              handleUpdateCapacity(idx, {
+                                price: e.target.value === '' ? 0 : Number(e.target.value),
+                              })
+                            }
+                            className="w-full bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2 py-1.5 text-xs font-mono font-bold text-[#007AFF] focus:outline-none focus:border-[#007AFF]"
+                          />
+                        </div>
+
+                        <div className="col-span-4 sm:col-span-2">
+                          <label className="text-[10px] text-[#64748B] font-semibold block mb-0.5">
+                            {lang === 'ar' ? 'المخزون' : 'Stock'}
+                          </label>
+                          <input
+                            type="number"
+                            min="0"
+                            data-testid={`admin-capacity-stock-${idx}`}
+                            value={cap.stock}
+                            onChange={(e) =>
+                              handleUpdateCapacity(idx, {
+                                stock: e.target.value === '' ? 0 : Number(e.target.value),
+                              })
+                            }
+                            className="w-full bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2 py-1.5 text-xs font-mono text-[#172033] focus:outline-none focus:border-[#007AFF]"
+                          />
+                        </div>
+
+                        <div className="col-span-3 sm:col-span-2">
+                          <label className="text-[10px] text-[#64748B] font-semibold block mb-0.5">
+                            SKU
+                          </label>
+                          <input
+                            type="text"
+                            data-testid={`admin-capacity-sku-${idx}`}
+                            value={cap.sku}
+                            onChange={(e) => handleUpdateCapacity(idx, { sku: e.target.value })}
+                            placeholder={formSku || 'SKU'}
+                            className="w-full bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2 py-1.5 text-[11px] font-mono text-[#172033] focus:outline-none focus:border-[#007AFF]"
+                          />
+                        </div>
+
+                        <div className="col-span-1 flex justify-end pt-3.5">
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCapacity(idx)}
+                            data-testid={`admin-remove-capacity-${idx}`}
+                            className="p-1.5 rounded-lg bg-[#F5F8FC] hover:bg-red-50 border border-[#DCE5F0] text-[#64748B] hover:text-[#DC2626] cursor-pointer"
+                            title="Remove capacity tier"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-[#64748B] text-center py-1.5">
+                    {lang === 'ar'
+                      ? 'لا توجد فئات سعة مضافة (يستخدم السعر الأساسي للمنتج).'
+                      : 'No separate RAM/ROM tiers configured yet (product uses its base price).'}
+                  </p>
+                )}
+              </div>
+
               {/* Color Variants & Dedicated Per-Color Images */}
               <div
                 className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] space-y-3.5"
@@ -744,17 +1006,17 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                     <span className="text-xs font-bold text-[#172033]">
                       {lang === 'ar'
                         ? `متغيرات الألوان وصور كل لون (${formColorVariants.length})`
-                        : `Color Variants & Per-Color Images (${formColorVariants.length})`}
+                        : `Color Variants (${formColorVariants.length})`}
                     </span>
                   </div>
                   <span className="text-[10px] text-[#64748B] font-medium">
                     {lang === 'ar'
-                      ? 'صورة مخصصة لكل لون (تعود للصورة الرئيسية عند عدم التحديد)'
-                      : 'Assign an image per color (falls back to main image if empty)'}
+                      ? 'أضف اسم اللون وصورته المخصصة وتعديل السعر الاختياري'
+                      : 'Assign color name, swatch color, dedicated image & optional price adjustment'}
                   </span>
                 </div>
 
-                {/* Quick Titanium / Standard Presets + Custom Color Input */}
+                {/* Quick Presets + Custom Color Input + "+ Add Color" Button */}
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-1.5">
                     {['Desert Titanium', 'Natural Titanium', 'White Titanium', 'Black Titanium'].map(
@@ -788,7 +1050,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                       placeholder={
                         lang === 'ar'
                           ? 'اسم اللون (مثال: White Titanium, Black, Midnight)'
-                          : 'Add color name (e.g. White Titanium, Burgundy, Silver)'
+                          : 'Color name (e.g. Desert Titanium, Burgundy, Black)'
                       }
                       value={newColorInput}
                       onChange={(e) => setNewColorInput(e.target.value)}
@@ -807,7 +1069,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                       className="px-3.5 py-1.5 bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold rounded-xl cursor-pointer transition-colors flex items-center gap-1.5"
                     >
                       <Plus className="w-3.5 h-3.5" />
-                      <span>{lang === 'ar' ? 'إضافة لون' : 'Add Color'}</span>
+                      <span>{lang === 'ar' ? '+ إضافة لون' : '+ Add Color'}</span>
                     </button>
                   </div>
                 </div>
@@ -819,21 +1081,25 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                 )}
 
                 {formColorVariants.length > 0 ? (
-                  <div className="space-y-2.5 max-h-80 overflow-y-auto pr-0.5">
+                  <div className="space-y-2.5 max-h-96 overflow-y-auto pr-0.5">
                     {formColorVariants.map((row, idx) => {
                       const previewSrc =
                         row.image || formImages[0] || DEFAULT_FULL_RES_FALLBACK_IMAGE;
                       const hasCustomImg = Boolean(row.image && row.image.trim());
+                      const priceAdjValue =
+                        typeof row.priceAdjustment === 'number' && Number.isFinite(row.priceAdjustment)
+                          ? row.priceAdjustment
+                          : 0;
 
                       return (
                         <div
-                          key={`${row.color}-${idx}`}
+                          key={row.id || `${idx}`}
                           data-testid={`admin-color-row-${idx}`}
                           className="p-3 rounded-xl bg-white border border-[#DCE5F0] space-y-2.5 shadow-2xs"
                         >
                           <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-                            {/* Per-Color Thumbnail Preview */}
-                            <div className="flex items-center gap-2.5 flex-shrink-0">
+                            {/* Square Thumbnail Preview */}
+                            <div className="flex items-center gap-2 flex-shrink-0">
                               <div className="w-12 h-12 rounded-xl border border-[#DCE5F0] bg-[#F8FAFC] overflow-hidden flex items-center justify-center p-1">
                                 <img
                                   src={resolveFullResolutionImageUrl(previewSrc)}
@@ -841,22 +1107,29 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                                   className="w-full h-full object-contain"
                                 />
                               </div>
-                              <div className="sm:hidden">
-                                <span
-                                  className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                                    hasCustomImg
-                                      ? 'bg-emerald-50 text-[#16A34A] border border-emerald-200'
-                                      : 'bg-slate-100 text-[#64748B]'
-                                  }`}
-                                >
-                                  {hasCustomImg ? 'Dedicated Image' : 'Uses Main Image'}
-                                </span>
+
+                              {/* Optional Fallback Hex Swatch Picker */}
+                              <div className="flex flex-col items-center gap-0.5">
+                                <input
+                                  type="color"
+                                  aria-label={`Hex swatch for ${row.color || `color ${idx + 1}`}`}
+                                  data-testid={`admin-color-hex-${idx}`}
+                                  value={/^#[0-9a-fA-F]{6}$/.test(row.hex || '') ? row.hex : '#0A0F2C'}
+                                  onChange={(e) =>
+                                    handleUpdateColorVariant(idx, { hex: e.target.value })
+                                  }
+                                  className="w-7 h-7 rounded-lg border border-[#DCE5F0] cursor-pointer p-0.5 bg-white"
+                                />
+                                <span className="text-[9px] text-[#64748B] font-mono">HEX</span>
                               </div>
                             </div>
 
-                            {/* Color Label & Per-Color Image URL + Upload */}
+                            {/* Color Name & Per-Color Image URL + Upload + Delete */}
                             <div className="flex-1 grid grid-cols-1 sm:grid-cols-12 gap-2 items-center">
                               <div className="sm:col-span-4">
+                                <label className="text-[10px] text-[#64748B] font-semibold block mb-0.5">
+                                  {lang === 'ar' ? 'اسم اللون *' : 'Color Name *'}
+                                </label>
                                 <input
                                   type="text"
                                   data-testid={`admin-color-label-${idx}`}
@@ -864,126 +1137,143 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                                   onChange={(e) =>
                                     handleUpdateColorVariant(idx, { color: e.target.value })
                                   }
-                                  placeholder="Color name"
+                                  placeholder="e.g. Black, Desert Titanium"
                                   className="w-full bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2.5 py-1.5 text-xs font-bold text-[#172033] focus:outline-none focus:border-[#007AFF]"
                                 />
                               </div>
 
-                              <div className="sm:col-span-8 flex items-center gap-1.5">
-                                <input
-                                  type="text"
-                                  data-testid={`admin-color-image-url-${idx}`}
-                                  value={row.image || ''}
-                                  onChange={(e) =>
-                                    handleUpdateColorVariant(idx, {
-                                      image: e.target.value,
-                                    })
-                                  }
-                                  placeholder={
-                                    lang === 'ar'
-                                      ? 'رابط صورة مخصصة لهذا اللون (اختياري)'
-                                      : 'Per-color image URL (optional, uses main image if blank)'
-                                  }
-                                  className="flex-1 bg-[#FFFFFF] border border-[#DCE5F0] rounded-lg px-2.5 py-1.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
-                                />
-
-                                <label
-                                  className="px-2.5 py-1.5 rounded-lg bg-[#EAF3FF] hover:bg-[#007AFF] text-[#007AFF] hover:text-white border border-[#BAE6FD] text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors flex-shrink-0"
-                                  title={lang === 'ar' ? 'رفع صورة لهذا اللون' : 'Upload image for this color'}
-                                >
-                                  <ImagePlus className="w-3.5 h-3.5" />
-                                  <span className="hidden md:inline">
-                                    {lang === 'ar' ? 'رفع' : 'Upload'}
-                                  </span>
-                                  <input
-                                    type="file"
-                                    accept="image/png, image/jpeg, image/webp"
-                                    className="hidden"
-                                    onChange={(e) => handleColorFileUpload(idx, e)}
-                                  />
+                              <div className="sm:col-span-8">
+                                <label className="text-[10px] text-[#64748B] font-semibold block mb-0.5">
+                                  {lang === 'ar' ? 'صورة اللون (رابط أو رفع)' : 'Color Image (URL or Upload)'}
                                 </label>
+                                <div className="flex items-center gap-1.5">
+                                  <input
+                                    type="text"
+                                    data-testid={`admin-color-image-url-${idx}`}
+                                    value={row.image || ''}
+                                    onChange={(e) =>
+                                      handleUpdateColorVariant(idx, {
+                                        image: e.target.value,
+                                      })
+                                    }
+                                    placeholder={
+                                      lang === 'ar'
+                                        ? 'رابط صورة مخصصة لهذا اللون'
+                                        : 'https://... image URL for this color'
+                                    }
+                                    className="flex-1 bg-[#FFFFFF] border border-[#DCE5F0] rounded-lg px-2.5 py-1.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
+                                  />
 
-                                {hasCustomImg && (
+                                  <label
+                                    className="px-2.5 py-1.5 rounded-lg bg-[#EAF3FF] hover:bg-[#007AFF] text-[#007AFF] hover:text-white border border-[#BAE6FD] text-[11px] font-bold flex items-center gap-1 cursor-pointer transition-colors flex-shrink-0"
+                                    title={lang === 'ar' ? 'رفع صورة لهذا اللون' : 'Upload image for this color'}
+                                  >
+                                    <ImagePlus className="w-3.5 h-3.5" />
+                                    <span className="hidden md:inline">
+                                      {lang === 'ar' ? 'رفع' : 'Upload'}
+                                    </span>
+                                    <input
+                                      type="file"
+                                      accept="image/png, image/jpeg, image/webp"
+                                      className="hidden"
+                                      onChange={(e) => handleColorFileUpload(idx, e)}
+                                    />
+                                  </label>
+
+                                  {hasCustomImg && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleUpdateColorVariant(idx, { image: '' })}
+                                      className="p-1.5 rounded-lg bg-[#F5F8FC] hover:bg-slate-200 border border-[#DCE5F0] text-[#64748B] cursor-pointer"
+                                      title="Clear dedicated image (revert to main image)"
+                                    >
+                                      <RotateCcw className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+
                                   <button
                                     type="button"
-                                    onClick={() => handleUpdateColorVariant(idx, { image: '' })}
-                                    className="p-1.5 rounded-lg bg-[#F5F8FC] hover:bg-slate-200 border border-[#DCE5F0] text-[#64748B] cursor-pointer"
-                                    title="Clear dedicated image (revert to main image)"
+                                    onClick={() => handleRemoveColor(idx)}
+                                    data-testid={`admin-remove-color-${idx}`}
+                                    className="p-1.5 rounded-lg bg-[#F5F8FC] hover:bg-red-50 border border-[#DCE5F0] text-[#64748B] hover:text-[#DC2626] cursor-pointer"
+                                    title="Remove color variant"
+                                    aria-label={`Remove color ${row.color || idx + 1}`}
                                   >
-                                    <RotateCcw className="w-3.5 h-3.5" />
+                                    <Trash2 className="w-3.5 h-3.5" />
                                   </button>
-                                )}
-
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveColor(idx)}
-                                  data-testid={`admin-remove-color-${idx}`}
-                                  className="p-1.5 rounded-lg bg-[#F5F8FC] hover:bg-red-50 border border-[#DCE5F0] text-[#64748B] hover:text-[#DC2626] cursor-pointer"
-                                  title="Remove color variant"
-                                >
-                                  <Trash2 className="w-3.5 h-3.5" />
-                                </button>
+                                </div>
                               </div>
                             </div>
                           </div>
 
-                          {/* Optional Per-Color Variant Overrides: Price / SKU / Stock */}
-                          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 pt-1 border-t border-[#F1F5F9] items-center">
-                            <span
-                              className={`hidden sm:inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold w-fit ${
-                                hasCustomImg
-                                  ? 'bg-emerald-50 text-[#16A34A] border border-emerald-200'
-                                  : 'bg-slate-100 text-[#64748B]'
-                              }`}
-                            >
-                              {hasCustomImg ? 'Custom Image' : 'Main Fallback'}
-                            </span>
-
-                            <div>
+                          {/* Optional Price Adjustment + Available Capacities + Legacy Per-Color Stock/SKU */}
+                          <div className="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-2 border-t border-[#F1F5F9] items-center">
+                            <div className="sm:col-span-4 flex items-center gap-2">
+                              <label
+                                htmlFor={`color-price-adj-${idx}`}
+                                className="text-[11px] font-semibold text-[#475569] whitespace-nowrap"
+                              >
+                                {lang === 'ar' ? 'تعديل السعر ($):' : 'Price Adj ($):'}
+                              </label>
                               <input
+                                id={`color-price-adj-${idx}`}
                                 type="number"
-                                min="0"
                                 step="any"
-                                data-testid={`admin-color-price-${idx}`}
-                                value={row.price ?? ''}
+                                data-testid={`admin-color-price-adj-${idx}`}
+                                value={priceAdjValue}
                                 onChange={(e) =>
                                   handleUpdateColorVariant(idx, {
-                                    price: e.target.value === '' ? undefined : Number(e.target.value),
+                                    priceAdjustment: e.target.value === '' ? 0 : Number(e.target.value),
                                   })
                                 }
-                                placeholder={`Price ($${formPrice})`}
-                                className="w-full bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2 py-1 text-[11px] text-[#172033] font-mono focus:outline-none focus:border-[#007AFF]"
+                                placeholder="0"
+                                className="w-24 bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2 py-1 text-xs font-mono font-bold text-[#172033] focus:outline-none focus:border-[#007AFF]"
                               />
                             </div>
 
-                            <div>
-                              <input
-                                type="text"
-                                data-testid={`admin-color-sku-${idx}`}
-                                value={row.sku ?? ''}
-                                onChange={(e) =>
-                                  handleUpdateColorVariant(idx, { sku: e.target.value })
-                                }
-                                placeholder={`SKU (${formSku || 'auto'})`}
-                                className="w-full bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2 py-1 text-[11px] text-[#172033] font-mono focus:outline-none focus:border-[#007AFF]"
-                              />
-                            </div>
-
-                            <div>
-                              <input
-                                type="number"
-                                min="0"
-                                data-testid={`admin-color-stock-${idx}`}
-                                value={row.stock ?? ''}
-                                onChange={(e) =>
-                                  handleUpdateColorVariant(idx, {
-                                    stock: e.target.value === '' ? undefined : Number(e.target.value),
-                                  })
-                                }
-                                placeholder={`Stock (${formStock})`}
-                                className="w-full bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2 py-1 text-[11px] text-[#172033] font-mono focus:outline-none focus:border-[#007AFF]"
-                              />
-                            </div>
+                            {formCapacityVariants.length > 0 ? (
+                              <div className="sm:col-span-8 flex flex-wrap items-center gap-1.5">
+                                <span className="text-[10px] font-semibold text-[#64748B] mr-1">
+                                  {lang === 'ar' ? 'السعات المتوفرة:' : 'Available Capacities:'}
+                                </span>
+                                {formCapacityVariants.map((cap) => {
+                                  const isChecked =
+                                    !row.availableCapacities ||
+                                    row.availableCapacities.length === 0 ||
+                                    row.availableCapacities.includes(cap.id);
+                                  return (
+                                    <label
+                                      key={cap.id}
+                                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-semibold border cursor-pointer transition-colors ${
+                                        isChecked
+                                          ? 'bg-[#EAF3FF] border-[#007AFF]/40 text-[#007AFF]'
+                                          : 'bg-white border-[#DCE5F0] text-[#64748B]'
+                                      }`}
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        checked={isChecked}
+                                        onChange={() => handleToggleColorCapacity(idx, cap.id)}
+                                        className="accent-[#007AFF] w-3 h-3"
+                                      />
+                                      <span>{cap.name || 'Tier'}</span>
+                                    </label>
+                                  );
+                                })}
+                              </div>
+                            ) : (
+                              <div className="sm:col-span-8 flex items-center justify-end">
+                                <span
+                                  className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold ${
+                                    hasCustomImg
+                                      ? 'bg-emerald-50 text-[#16A34A] border border-emerald-200'
+                                      : 'bg-slate-100 text-[#64748B]'
+                                  }`}
+                                >
+                                  {hasCustomImg ? 'Dedicated Image' : 'Uses Main Image Fallback'}
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       );
@@ -993,7 +1283,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                   <p className="text-[11px] text-[#64748B] text-center py-2">
                     {lang === 'ar'
                       ? 'لا توجد ألوان مضافة. أضف لوناً لربطه بصورة مخصصة.'
-                      : 'No color variants configured yet. Add a color above to assign its own image.'}
+                      : 'No color variants configured yet. Click "+ Add Color" above to assign color options and images.'}
                   </p>
                 )}
               </div>

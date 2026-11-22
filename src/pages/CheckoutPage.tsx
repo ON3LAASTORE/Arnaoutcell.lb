@@ -19,6 +19,7 @@ import { openExternalUrl } from '../utils/navigation';
 import {
   calculateOrderGrandTotal,
   resolveCartItemImage,
+  resolveCartItemUnitPrice,
   validateAndCalculatePromoDiscount,
 } from '../utils/checkoutHelpers';
 
@@ -121,16 +122,20 @@ export const CheckoutPage: React.FC = () => {
     try {
       setIsSubmitting(true);
 
-      const orderItems = cart.map((item) => ({
-        productId: item.product.id,
-        productName: item.product.name,
-        brand: item.product.brand,
-        price: item.selectedVariant ? item.selectedVariant.price : item.product.price,
-        quantity: item.quantity,
-        image: resolveCartItemImage(item),
-        color: item.selectedColor,
-        variantName: item.selectedVariant?.name,
-      }));
+      const orderItems = cart.map((item) => {
+        const resolvedImg = resolveCartItemImage(item);
+        return {
+          productId: item.product.id,
+          productName: item.product.name,
+          brand: item.product.brand,
+          price: resolveCartItemUnitPrice(item),
+          quantity: item.quantity,
+          image: resolvedImg,
+          color: item.selectedColor,
+          ...(item.selectedColorImage ? { colorImage: item.selectedColorImage } : {}),
+          variantName: item.selectedVariant?.name,
+        };
+      });
 
       submitOrder({
         customer: {
@@ -413,7 +418,14 @@ export const CheckoutPage: React.FC = () => {
                 {/* Items preview list */}
                 <div className="max-h-60 overflow-y-auto space-y-3 divide-y divide-[#DCE5F0] dark:divide-[#1E293B] pr-1">
                   {cart.map((item, idx) => {
-                    const price = item.selectedVariant ? item.selectedVariant.price : item.product.price;
+                    const price = resolveCartItemUnitPrice(item);
+                    const capacityLabel =
+                      item.selectedVariant?.name &&
+                      item.selectedVariant.name.trim().toLowerCase() !==
+                        (item.selectedColor || '').trim().toLowerCase()
+                        ? item.selectedVariant.name
+                        : undefined;
+                    const lineTotal = Number((price * item.quantity).toFixed(2));
                     return (
                       <div key={idx} className="pt-2 first:pt-0 flex items-center justify-between gap-3 text-xs">
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -431,12 +443,14 @@ export const CheckoutPage: React.FC = () => {
                               {lang === 'ar' ? item.product.nameAr || item.product.name : item.product.name}
                             </span>
                             <span className="text-[10px] text-[#64748B] dark:text-slate-400">
-                              x{item.quantity} {item.selectedColor ? `• ${item.selectedColor}` : ''}
+                              x{item.quantity}
+                              {item.selectedColor ? ` • ${item.selectedColor}` : ''}
+                              {capacityLabel ? ` • ${capacityLabel}` : ''}
                             </span>
                           </div>
                         </div>
                         <span className="font-black text-[#007AFF] dark:text-[#38BDF8] flex-shrink-0">
-                          ${price * item.quantity}
+                          ${lineTotal}
                         </span>
                       </div>
                     );

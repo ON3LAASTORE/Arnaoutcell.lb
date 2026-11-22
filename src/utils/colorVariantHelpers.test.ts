@@ -1,9 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
+  buildCapacityVariantConfigs,
   buildColorVariantConfigs,
+  calculateVariantUnitPrice,
   extractProductColorData,
+  extractStructuredProductVariantsAndColors,
   findVariantForColor,
+  getProductColorNames,
+  getProductColorOptions,
+  isCapacityAvailableForColor,
+  resolveAllowedCapacityForColor,
   resolveColorShowcaseImage,
   resolveExplicitColorImage,
   resolveProductImageForColor,
@@ -154,4 +161,74 @@ test('resolveColorShowcaseImage maps multi-image gallery products automatically 
     'https://example.com/white-titanium.jpg'
   );
 });
+
+test('getProductColorOptions and structured capacity/price helpers work seamlessly across legacy and structured colors', () => {
+  const structuredProduct: Pick<Product, 'images' | 'colors' | 'colorImages' | 'variants' | 'price' | 'sku' | 'stock'> = {
+    images: ['https://example.com/main.jpg'],
+    price: 190,
+    sku: 'TEC-50C',
+    stock: 15,
+    colors: [
+      {
+        id: 'color-black',
+        name: 'Obsidian Black',
+        hex: '#111827',
+        imageUrl: 'https://example.com/black.jpg',
+      },
+      {
+        id: 'color-gold',
+        name: 'Titanium Gold',
+        hex: '#D4AF37',
+        imageUrl: 'https://example.com/gold.jpg',
+        priceAdjustment: 20,
+        availableCapacities: ['var-cap-256'],
+      },
+    ],
+    colorImages: {},
+    variants: [
+      { id: 'var-cap-128', name: '128GB', price: 190, stock: 8, sku: 'TEC-128' },
+      { id: 'var-cap-256', name: '256GB', price: 230, stock: 7, sku: 'TEC-256' },
+    ],
+  };
+
+  assert.deepEqual(getProductColorNames(structuredProduct), ['Obsidian Black', 'Titanium Gold']);
+  const opts = getProductColorOptions(structuredProduct);
+  assert.equal(opts.length, 2);
+  assert.equal(opts[0].imageUrl, 'https://example.com/black.jpg');
+  assert.equal(opts[1].priceAdjustment, 20);
+  assert.deepEqual(opts[1].availableCapacities, ['var-cap-256']);
+
+  // Capacity restriction checks + auto-fallback
+  assert.equal(isCapacityAvailableForColor('var-cap-128', opts[0]), true);
+  assert.equal(isCapacityAvailableForColor('var-cap-128', opts[1]), false);
+  assert.equal(isCapacityAvailableForColor('var-cap-256', opts[1]), true);
+
+  const capacities = buildCapacityVariantConfigs(structuredProduct);
+  assert.equal(capacities.length, 2);
+  const autoSwitched = resolveAllowedCapacityForColor(capacities, 'var-cap-128', opts[1]);
+  assert.equal(autoSwitched?.id, 'var-cap-256');
+
+  // Price adjustment math
+  assert.equal(calculateVariantUnitPrice(190, opts[0]), 190);
+  assert.equal(calculateVariantUnitPrice(230, opts[1]), 250);
+  assert.equal(calculateVariantUnitPrice(10, { priceAdjustment: -25 }), 0);
+
+  // Admin round-trip hydration -> edit -> extract
+  const hydratedColors = buildColorVariantConfigs(structuredProduct);
+  assert.equal(hydratedColors[1].priceAdjustment, 20);
+  assert.deepEqual(hydratedColors[1].availableCapacities, ['var-cap-256']);
+
+  const extracted = extractStructuredProductVariantsAndColors(
+    hydratedColors,
+    capacities,
+    { price: 190, sku: 'TEC-50C', stock: 15 }
+  );
+  assert.equal(extracted.colors.length, 2);
+  assert.equal(extracted.colors[1].priceAdjustment, 20);
+  assert.deepEqual(extracted.colors[1].availableCapacities, ['var-cap-256']);
+  assert.equal(extracted.colorImages['Titanium Gold'], 'https://example.com/gold.jpg');
+  assert.equal(extracted.variants.length, 2);
+  assert.equal(extracted.variants[1].name, '256GB');
+});
+
 

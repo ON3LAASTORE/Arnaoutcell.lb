@@ -4,7 +4,7 @@ import { Trash2, ShoppingBag, ArrowRight, ShieldCheck, Tag } from 'lucide-react'
 import { WhatsApp3DIcon, Cart3DIcon } from '../components/icons/ThreeDIcons';
 import { LazyImage } from '../components/LazyImage';
 import { openExternalUrl } from '../utils/navigation';
-import { resolveCartItemImage } from '../utils/checkoutHelpers';
+import { resolveCartItemImage, resolveCartItemUnitPrice } from '../utils/checkoutHelpers';
 
 export const CartPage: React.FC = () => {
   const {
@@ -87,8 +87,15 @@ export const CartPage: React.FC = () => {
             <div className="bg-white dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] rounded-3xl overflow-hidden shadow-xs">
               <div className="divide-y divide-[#DCE5F0] dark:divide-[#1E293B]">
                 {cart.map((item, idx) => {
-                  const itemPrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
+                  const itemPrice = resolveCartItemUnitPrice(item);
                   const maxStock = item.selectedVariant ? item.selectedVariant.stock : item.product.stock;
+                  const capacityLabel =
+                    item.selectedVariant?.name &&
+                    item.selectedVariant.name.trim().toLowerCase() !==
+                      (item.selectedColor || '').trim().toLowerCase()
+                      ? item.selectedVariant.name
+                      : undefined;
+                  const lineTotal = Number((itemPrice * item.quantity).toFixed(2));
 
                   return (
                     <div key={idx} className="p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-4 sm:gap-6 justify-between">
@@ -109,10 +116,19 @@ export const CartPage: React.FC = () => {
                           <h3 className="font-bold text-[#172033] dark:text-[#F8FAFC] text-sm line-clamp-1">
                             {lang === 'ar' ? item.product.nameAr || item.product.name : item.product.name}
                           </h3>
-                          {item.selectedColor && (
-                            <span className="text-xs text-[#64748B] dark:text-slate-400 block mt-0.5">
-                              {lang === 'ar' ? 'اللون:' : 'Color:'} {item.selectedColor}
-                            </span>
+                          {(item.selectedColor || capacityLabel) && (
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-[#64748B] dark:text-slate-400 mt-0.5">
+                              {item.selectedColor && (
+                                <span>
+                                  {lang === 'ar' ? 'اللون:' : 'Color:'} {item.selectedColor}
+                                </span>
+                              )}
+                              {capacityLabel && (
+                                <span className="font-medium text-[#172033] dark:text-slate-200">
+                                  {capacityLabel}
+                                </span>
+                              )}
+                            </div>
                           )}
                           <span className="text-xs font-semibold text-[#64748B] dark:text-slate-400 block mt-0.5">
                             ${itemPrice} USD
@@ -155,7 +171,7 @@ export const CartPage: React.FC = () => {
                         </div>
 
                         <span className="text-base font-black text-[#007AFF] dark:text-[#38BDF8] min-w-[4rem] text-right rtl:text-left">
-                          ${itemPrice * item.quantity}
+                          ${lineTotal}
                         </span>
 
                         <button

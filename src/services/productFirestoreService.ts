@@ -3,6 +3,7 @@ import {
   doc,
   setDoc,
   deleteDoc,
+  getDoc,
   getDocs,
   onSnapshot,
 } from 'firebase/firestore';
@@ -18,14 +19,17 @@ import {
   isFirestoreInQuotaCooldown,
   isFirestoreQuotaExceededError,
   markFirestoreQuotaExceeded,
+  shouldLogFirestoreQuotaWarning,
 } from '../utils/firestoreQuotaHelpers';
 import {
   enforceFirestoreProductPayloadLimit,
   isFirestoreDocumentSizeError,
   sanitizeColorImagesForFirestore,
+  sanitizeProductColorsForFirestore,
   sanitizeProductImagesForFirestore,
 } from '../utils/firestorePayloadHelpers';
 import { sanitizeProductReviewsForStorage } from '../utils/checkoutHelpers';
+import { storefrontCache } from '../utils/storefrontCacheHelpers';
 
 const PRODUCTS_COLLECTION = 'products';
 
@@ -48,6 +52,7 @@ let currentSyncMeta: ProductSyncMetadata = {
 };
 
 const syncMetaListeners = new Set<(meta: ProductSyncMetadata) => void>();
+const singleProductInFlight = new Map<string, Promise<Product | null>>();
 let seedingPromise: Promise<void> | null = null;
 
 function updateSyncMeta(patch: Partial<ProductSyncMetadata>): void {
@@ -75,6 +80,88 @@ export function subscribeToProductSyncMeta(
   };
 }
 
+export function mapFirestoreDocToProduct(
+  docId: string,
+  data: Record<string, unknown>
+): Product {
+  const firestoreColorImages =
+    data.colorImages && typeof data.colorImages === 'object'
+      ? sanitizeColorImagesForFirestore(data.colorImages).colorImages
+      : {};
+  const firestoreColors = Array.isArray(data.colors)
+    ? (sanitizeProductColorsForFirestore(data.colors).colors as Product['colors'])
+    : [];
+
+  return {
+    id: docId,
+    name: typeof data.name === 'string' ? data.name : '',
+    nameAr: typeof data.nameAr === 'string' ? data.nameAr : '',
+    brand: typeof data.brand === 'string' ? data.brand : '',
+    category: typeof data.category === 'string' ? data.category : '',
+    subcategory: typeof data.subcategory === 'string' ? data.subcategory : '',
+    sku: typeof data.sku === 'string' && data.sku ? data.sku : docId,
+    barcode: typeof data.barcode === 'string' ? data.barcode : '',
+    originalPrice: Number(data.originalPrice) || Number(data.price) || 0,
+    price: Number(data.price) || 0,
+    discountPercentage: Number(data.discountPercentage) || 0,
+    stock: Number.isFinite(Number(data.stock)) ? Math.max(0, Number(data.stock)) : 10,
+    lowStockThreshold: Number.isFinite(Number(data.lowStockThreshold))
+      ? Math.max(0, Number(data.lowStockThreshold))
+      : 3,
+    images:
+      Array.isArray(data.images) && data.images.length > 0
+        ? data.images.map((img: string) => resolveFullResolutionImageUrl(img) || img)
+        : [DEFAULT_FULL_RES_FALLBACK_IMAGE],
+    videoUrl: typeof data.videoUrl === 'string' && data.videoUrl ? data.videoUrl : undefined,
+    description: typeof data.description === 'string' ? data.description : '',
+    descriptionAr: typeof data.descriptionAr === 'string' ? data.descriptionAr : '',
+    specifications: Array.isArray(data.specifications)
+      ? (data.specifications as Product['specifications'])
+      : [],
+    colors: firestoreColors,
+    colorImages: firestoreColorImages,
+    variants: Array.isArray(data.variants) ? (data.variants as Product['variants']) : [],
+    warrantyMonths:
+      Number.isFinite(Number(data.warrantyMonths)) && Number(data.warrantyMonths) > 0
+        ? Number(data.warrantyMonths)
+        : 12,
+    warrantyTerms:
+      typeof data.warrantyTerms === 'string' && data.warrantyTerms ? data.warrantyTerms : undefined,
+    isSpecialOffer: Boolean(data.isSpecialOffer),
+    offerExpiresAt:
+      typeof data.offerExpiresAt === 'string' && data.offerExpiresAt
+        ? data.offerExpiresAt
+        : undefined,
+    isFeatured: Boolean(data.isFeatured),
+    isNewArrival: Boolean(data.isNewArrival),
+    isBestSeller: Boolean(data.isBestSeller),
+    isPublished: data.isPublished !== false,
+    rating: Number.isFinite(Number(data.rating)) && Number(data.rating) > 0 ? Number(data.rating) : 5.0,
+    reviewCount: Number.isFinite(Number(data.reviewCount))
+      ? Math.max(0, Number(data.reviewCount))
+      : Array.isArray(data.reviews)
+      ? data.reviews.length
+      : 0,
+    soldCount:
+      Number.isFinite(Number(data.soldCount)) && Number(data.soldCount) >= 0
+        ? Number(data.soldCount)
+        : 0,
+    reviews: Array.isArray(data.reviews) ? sanitizeProductReviewsForStorage(data.reviews, 50) : [],
+    createdAt: typeof data.createdAt === 'string' && data.createdAt ? data.createdAt : new Date().toISOString(),
+  };
+}
+
+function mergeCloudWithInitialProducts(cloudProducts: Product[]): Product[] {
+  const cloudMap = new Map(cloudProducts.map((p) => [p.id, p]));
+  const mergedList: Product[] = [...cloudProducts];
+  for (const initP of INITIAL_PRODUCTS) {
+    if (!cloudMap.has(initP.id)) {
+      mergedList.push(initP);
+    }
+  }
+  return mergedList;
+}
+
 /**
  * Strips undefined properties to ensure Firestore compatibility.
  */
@@ -90,14 +177,16 @@ function cleanProductForFirestore(product: Product): Record<string, unknown> {
     discountPercentage: Number(product.discountPercentage) || 0,
     stock: Number(product.stock) >= 0 ? Number(product.stock) : 0,
     lowStockThreshold: Number(product.lowStockThreshold) || 3,
-    images: Array.isArray(product.images) && product.images.length > 0
-      ? product.images.slice(0, 20).map((img) => resolveFullResolutionImageUrl(img) || img)
-      : [DEFAULT_FULL_RES_FALLBACK_IMAGE],
+    images:
+      Array.isArray(product.images) && product.images.length > 0
+        ? product.images.slice(0, 20).map((img) => resolveFullResolutionImageUrl(img) || img)
+        : [DEFAULT_FULL_RES_FALLBACK_IMAGE],
     description: product.description || 'Genuine device with official warranty.',
     warrantyMonths: Number(product.warrantyMonths) || 12,
     isPublished: product.isPublished !== false,
     rating: Number(product.rating) || 5.0,
-    reviewCount: Number(product.reviewCount) || (Array.isArray(product.reviews) ? product.reviews.length : 0),
+    reviewCount:
+      Number(product.reviewCount) || (Array.isArray(product.reviews) ? product.reviews.length : 0),
     soldCount: Number(product.soldCount) >= 0 ? Number(product.soldCount) : 0,
     createdAt: product.createdAt || new Date().toISOString(),
   };
@@ -119,7 +208,7 @@ function cleanProductForFirestore(product: Product): Record<string, unknown> {
   if (product.offerExpiresAt) data.offerExpiresAt = product.offerExpiresAt;
 
   if (Array.isArray(product.colors)) {
-    data.colors = product.colors;
+    data.colors = sanitizeProductColorsForFirestore(product.colors).colors;
   }
   if (product.colorImages && typeof product.colorImages === 'object') {
     const cleanColorImages: Record<string, string> = {};
@@ -154,11 +243,186 @@ function cleanProductForFirestore(product: Product): Record<string, unknown> {
 }
 
 /**
- * Saves or updates a product in the cloud Firestore database.
- * Enforces Firestore's < 1 MiB document size ceiling prior to writing so
- * oversized inline Base64 images never trigger invalid-argument failures.
+ * Fetches storefront products using shared TTL cache + in-flight request deduplication (`getDocs`),
+ * avoiding open-ended real-time `onSnapshot` listeners for static catalog browsing.
+ */
+export async function fetchStorefrontProducts(options?: {
+  forceRefresh?: boolean;
+  fallbackProducts?: Product[];
+}): Promise<{ products: Product[]; fromCache: boolean; isStale: boolean }> {
+  const fallbackList =
+    options?.fallbackProducts && options.fallbackProducts.length > 0
+      ? options.fallbackProducts
+      : INITIAL_PRODUCTS;
+
+  const result = await storefrontCache.fetchWithCache<Product[]>(
+    'products',
+    async () => {
+      updateSyncMeta({ isConnecting: true, hasServerError: false });
+      try {
+        const snapshot = await getDocs(collection(db, PRODUCTS_COLLECTION));
+        const isFromCache = snapshot.metadata.fromCache;
+
+        if (snapshot.empty) {
+          if (!isFromCache && !isFirestoreInQuotaCooldown()) {
+            seedInitialProductsToCloud().catch(() => {});
+          }
+          updateSyncMeta({
+            fromCache: true,
+            hasPendingWrites: false,
+            isConnecting: false,
+            hasServerError: false,
+            isQuotaLimited: isFirestoreInQuotaCooldown(),
+            ...(isFromCache ? {} : { lastSyncedAt: new Date() }),
+          });
+          return fallbackList;
+        }
+
+        const cloudProducts: Product[] = [];
+        snapshot.forEach((docSnap) => {
+          cloudProducts.push(
+            mapFirestoreDocToProduct(docSnap.id, docSnap.data() as Record<string, unknown>)
+          );
+        });
+
+        updateSyncMeta({
+          fromCache: isFromCache,
+          hasPendingWrites: false,
+          isConnecting: false,
+          hasServerError: false,
+          isQuotaLimited: false,
+          ...(isFromCache ? {} : { lastSyncedAt: new Date() }),
+        });
+
+        return mergeCloudWithInitialProducts(cloudProducts);
+      } catch (error) {
+        const category = classifyFirestoreError(error);
+        if (category === 'quota') {
+          markFirestoreQuotaExceeded();
+          updateSyncMeta({
+            fromCache: true,
+            hasPendingWrites: false,
+            isConnecting: false,
+            hasServerError: false,
+            isQuotaLimited: true,
+          });
+          if (shouldLogFirestoreQuotaWarning('products')) {
+            console.warn('Firestore daily read quota reached; using local storefront catalog cache.');
+          }
+          throw error;
+        }
+
+        if (category === 'network') {
+          updateSyncMeta({
+            fromCache: true,
+            hasPendingWrites: false,
+            isConnecting: false,
+            hasServerError: false,
+          });
+          if (shouldLogFirestoreQuotaWarning('products_network')) {
+            console.warn('Storefront products fetch offline; using local catalog cache.');
+          }
+          throw error;
+        }
+
+        if (category === 'permission') {
+          updateSyncMeta({
+            fromCache: true,
+            hasPendingWrites: false,
+            isConnecting: false,
+            hasServerError: true,
+          });
+          handleFirestoreError(error, OperationType.LIST, PRODUCTS_COLLECTION);
+        }
+
+        updateSyncMeta({
+          fromCache: true,
+          hasPendingWrites: false,
+          isConnecting: false,
+          hasServerError: false,
+        });
+        throw error;
+      }
+    },
+    {
+      forceRefresh: options?.forceRefresh,
+      fallbackData: fallbackList,
+      fallbackSource: 'local',
+    }
+  );
+
+  if (result.fromCache) {
+    updateSyncMeta({
+      fromCache: true,
+      isConnecting: false,
+      isQuotaLimited: isFirestoreInQuotaCooldown(),
+    });
+  }
+
+  return {
+    products: result.data,
+    fromCache: result.fromCache,
+    isStale: result.isStale,
+  };
+}
+
+/**
+ * Resolves a single product by ID/SKU/barcode from the shared storefront cache first,
+ * only querying Firestore `/products/{productId}` if absent from cache and quota allows.
+ */
+export async function fetchProductByIdCachedOrCloud(
+  productId: string,
+  candidateProducts?: Product[]
+): Promise<Product | null> {
+  const normalized = typeof productId === 'string' ? productId.trim() : '';
+  if (!normalized) return null;
+
+  const cachedMatch = storefrontCache.findProduct(normalized, candidateProducts);
+  if (cachedMatch) {
+    return cachedMatch;
+  }
+
+  if (isFirestoreInQuotaCooldown()) {
+    return null;
+  }
+
+  const existingInFlight = singleProductInFlight.get(normalized);
+  if (existingInFlight) {
+    return existingInFlight;
+  }
+
+  const fetchPromise = (async (): Promise<Product | null> => {
+    try {
+      const snap = await getDoc(doc(db, PRODUCTS_COLLECTION, normalized));
+      if (!snap.exists()) return null;
+      const mapped = mapFirestoreDocToProduct(snap.id, snap.data() as Record<string, unknown>);
+      storefrontCache.upsertProduct(mapped, 'firestore');
+      return mapped;
+    } catch (error) {
+      if (isFirestoreQuotaExceededError(error)) {
+        markFirestoreQuotaExceeded();
+        updateSyncMeta({ fromCache: true, isQuotaLimited: true, hasServerError: false });
+        if (shouldLogFirestoreQuotaWarning('products')) {
+          console.warn('Firestore daily read quota reached; using local storefront catalog cache.');
+        }
+      }
+      return null;
+    } finally {
+      singleProductInFlight.delete(normalized);
+    }
+  })();
+
+  singleProductInFlight.set(normalized, fetchPromise);
+  return fetchPromise;
+}
+
+/**
+ * Saves or updates a product in the cloud Firestore database and immediately
+ * patches the shared storefront cache.
  */
 export async function persistProductToCloud(product: Product): Promise<void> {
+  storefrontCache.upsertProduct(product, 'mutation');
+
   if (isFirestoreInQuotaCooldown()) {
     return;
   }
@@ -178,7 +442,9 @@ export async function persistProductToCloud(product: Product): Promise<void> {
     if (isFirestoreQuotaExceededError(error)) {
       markFirestoreQuotaExceeded();
       updateSyncMeta({ fromCache: true, isQuotaLimited: true, hasServerError: false });
-      console.warn('Firestore write deferred due to daily quota limit; product saved locally.');
+      if (shouldLogFirestoreQuotaWarning('products_write')) {
+        console.warn('Firestore write deferred due to daily quota limit; product saved locally.');
+      }
       return;
     }
 
@@ -186,11 +452,19 @@ export async function persistProductToCloud(product: Product): Promise<void> {
       const strippedImages = sanitizeProductImagesForFirestore(payload.images, {
         stripAllDataUrls: true,
       }).images;
+      const strippedColors = sanitizeProductColorsForFirestore(payload.colors, {
+        stripAllDataUrls: true,
+      }).colors;
       const strippedColorImages = sanitizeColorImagesForFirestore(payload.colorImages, {
         stripAllDataUrls: true,
       }).colorImages;
       const emergencyPayload = enforceFirestoreProductPayloadLimit(
-        { ...payload, images: strippedImages, colorImages: strippedColorImages },
+        {
+          ...payload,
+          images: strippedImages,
+          colors: strippedColors,
+          colorImages: strippedColorImages,
+        },
         450_000
       ).payload;
 
@@ -214,9 +488,11 @@ export async function persistProductToCloud(product: Product): Promise<void> {
 }
 
 /**
- * Deletes a product from the cloud Firestore database.
+ * Deletes a product from the cloud Firestore database and immediately updates the shared cache.
  */
 export async function removeProductFromCloud(productId: string): Promise<void> {
+  storefrontCache.removeProduct(productId, 'mutation');
+
   if (isFirestoreInQuotaCooldown()) {
     return;
   }
@@ -227,7 +503,9 @@ export async function removeProductFromCloud(productId: string): Promise<void> {
     if (isFirestoreQuotaExceededError(error)) {
       markFirestoreQuotaExceeded();
       updateSyncMeta({ fromCache: true, isQuotaLimited: true, hasServerError: false });
-      console.warn('Firestore delete deferred due to daily quota limit; removed locally.');
+      if (shouldLogFirestoreQuotaWarning('products_write')) {
+        console.warn('Firestore delete deferred due to daily quota limit; removed locally.');
+      }
       return;
     }
     handleFirestoreError(error, OperationType.DELETE, `${PRODUCTS_COLLECTION}/${productId}`);
@@ -235,8 +513,8 @@ export async function removeProductFromCloud(productId: string): Promise<void> {
 }
 
 /**
- * Subscribes to real-time live product updates from Firestore.
- * Anyone visiting the website link will receive immediate live updates whenever products are added or edited.
+ * Subscribes to real-time live product updates from Firestore (reserved for Admin Dashboard live mode).
+ * Always cleans up on unmount or quota exhaustion.
  */
 export function subscribeToLiveProducts(
   onUpdate: (products: Product[]) => void,
@@ -286,67 +564,13 @@ export function subscribeToLiveProducts(
 
       const cloudProducts: Product[] = [];
       snapshot.forEach((docSnap) => {
-        const data = docSnap.data();
-        const firestoreColorImages =
-          data.colorImages && typeof data.colorImages === 'object'
-            ? sanitizeColorImagesForFirestore(data.colorImages).colorImages
-            : {};
-
-        cloudProducts.push({
-          id: docSnap.id,
-          name: data.name || '',
-          nameAr: data.nameAr || '',
-          brand: data.brand || '',
-          category: data.category || '',
-          subcategory: data.subcategory || '',
-          sku: data.sku || docSnap.id,
-          barcode: data.barcode || '',
-          originalPrice: Number(data.originalPrice) || Number(data.price) || 0,
-          price: Number(data.price) || 0,
-          discountPercentage: Number(data.discountPercentage) || 0,
-          stock: Number.isFinite(Number(data.stock)) ? Math.max(0, Number(data.stock)) : 10,
-          lowStockThreshold: Number.isFinite(Number(data.lowStockThreshold))
-            ? Math.max(0, Number(data.lowStockThreshold))
-            : 3,
-          images: Array.isArray(data.images) && data.images.length > 0
-            ? data.images.map((img: string) => resolveFullResolutionImageUrl(img) || img)
-            : [DEFAULT_FULL_RES_FALLBACK_IMAGE],
-          videoUrl: data.videoUrl || undefined,
-          description: data.description || '',
-          descriptionAr: data.descriptionAr || '',
-          specifications: Array.isArray(data.specifications) ? data.specifications : [],
-          colors: Array.isArray(data.colors) ? data.colors : [],
-          colorImages: firestoreColorImages,
-          variants: Array.isArray(data.variants) ? data.variants : [],
-          warrantyMonths:
-            Number.isFinite(Number(data.warrantyMonths)) && Number(data.warrantyMonths) > 0
-              ? Number(data.warrantyMonths)
-              : 12,
-          warrantyTerms: data.warrantyTerms || undefined,
-          isSpecialOffer: Boolean(data.isSpecialOffer),
-          isFeatured: Boolean(data.isFeatured),
-          isNewArrival: Boolean(data.isNewArrival),
-          isBestSeller: Boolean(data.isBestSeller),
-          isPublished: data.isPublished !== false,
-          rating: Number.isFinite(Number(data.rating)) && Number(data.rating) > 0 ? Number(data.rating) : 5.0,
-          reviewCount: Number.isFinite(Number(data.reviewCount))
-            ? Math.max(0, Number(data.reviewCount))
-            : (Array.isArray(data.reviews) ? data.reviews.length : 0),
-          soldCount: Number.isFinite(Number(data.soldCount)) && Number(data.soldCount) >= 0 ? Number(data.soldCount) : 0,
-          reviews: Array.isArray(data.reviews) ? sanitizeProductReviewsForStorage(data.reviews, 50) : [],
-          createdAt: data.createdAt || new Date().toISOString(),
-        });
+        cloudProducts.push(
+          mapFirestoreDocToProduct(docSnap.id, docSnap.data() as Record<string, unknown>)
+        );
       });
 
-      // Merge with initial products to guarantee all core showcase items are visible
-      const cloudMap = new Map(cloudProducts.map((p) => [p.id, p]));
-      const mergedList: Product[] = [...cloudProducts];
-      for (const initP of INITIAL_PRODUCTS) {
-        if (!cloudMap.has(initP.id)) {
-          mergedList.push(initP);
-        }
-      }
-
+      const mergedList = mergeCloudWithInitialProducts(cloudProducts);
+      storefrontCache.setProducts(mergedList, 'firestore');
       onUpdate(mergedList);
     },
     (error) => {
@@ -362,7 +586,9 @@ export function subscribeToLiveProducts(
           hasServerError: false,
           isQuotaLimited: true,
         });
-        console.warn('Firestore daily read quota reached; using local storefront catalog cache.');
+        if (shouldLogFirestoreQuotaWarning('products')) {
+          console.warn('Firestore daily read quota reached; using local storefront catalog cache.');
+        }
         if (unsubscribeFn) {
           try {
             unsubscribeFn();

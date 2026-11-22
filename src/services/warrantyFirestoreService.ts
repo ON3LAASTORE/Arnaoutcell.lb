@@ -23,6 +23,7 @@ import {
   isFirestoreQuotaExceededError,
   markFirestoreQuotaExceeded,
 } from '../utils/firestoreQuotaHelpers';
+import { storefrontCache } from '../utils/storefrontCacheHelpers';
 
 const FIRESTORE_QUERY_TIMEOUT_MS = 4500;
 
@@ -99,7 +100,18 @@ async function resolveProductsForOrder(
 
   await Promise.all(
     order.items.map(async (item) => {
-      if (!item.productId || !isValidFirestoreDocId(item.productId) || isFirestoreInQuotaCooldown()) return;
+      if (!item.productId) return;
+      // Check in-memory / localStorage storefront cache first before hitting Firestore
+      const cachedMatch = storefrontCache.findProduct(item.productId, catalog);
+      if (cachedMatch) {
+        const existingIdx = catalog.findIndex((p) => p.id === cachedMatch.id);
+        if (existingIdx < 0) {
+          catalog.push(cachedMatch);
+        }
+        return;
+      }
+
+      if (!isValidFirestoreDocId(item.productId) || isFirestoreInQuotaCooldown()) return;
       try {
         const snap = await withTimeout(getDoc(doc(db, 'products', item.productId)));
         if (snap.exists()) {
@@ -110,6 +122,7 @@ async function resolveProductsForOrder(
             snap.data() as Record<string, unknown>,
             fallback
           );
+          storefrontCache.upsertProduct(hydrated, 'firestore');
           const existingIdx = catalog.findIndex((p) => p.id === snap.id);
           if (existingIdx >= 0) {
             catalog[existingIdx] = hydrated;
@@ -204,110 +217,107 @@ export async function lookupWarrantyInFirestore(
     }
   }
 
-  // 3. Query Firestore `/products` collection by barcode ("Barcode or serial identifier")
-  const productsCol = collection(db, 'products');
-  if (!isFirestoreInQuotaCooldown()) {
-    try {
-    const barcodeSnap = await withTimeout(
-      getDocs(query(productsCol, where('barcode', '==', normalized), limit(1)))
-    );
-    if (!barcodeSnap.empty) {
-      const docSnap = barcodeSnap.docs[0];
-      const fallback = fallbackProducts.find((p) => p.id === docSnap.id);
-      const product = hydrateFirestoreProduct(
-        docSnap.id,
-        docSnap.data() as Record<string, unknown>,
-        fallback
-      );
-      return evaluateSerialWarranty({
-        query: normalized,
-        product,
-        matchType: 'serial_barcode',
-        dataSource: 'firestore',
-        customPurchaseDateIso,
-        nowDate,
-      });
-    }
-
-    // 4. Query Firestore `/products` by SKU
-    const skuSnap = await withTimeout(
-      getDocs(query(productsCol, where('sku', '==', upperQuery), limit(1)))
-    );
-    if (!skuSnap.empty) {
-      const docSnap = skuSnap.docs[0];
-      const fallback = fallbackProducts.find((p) => p.id === docSnap.id);
-      const product = hydrateFirestoreProduct(
-        docSnap.id,
-        docSnap.data() as Record<string, unknown>,
-        fallback
-      );
-      return evaluateSerialWarranty({
-        query: upperQuery,
-        product,
-        matchType: 'sku',
-        dataSource: 'firestore',
-        customPurchaseDateIso,
-        nowDate,
-      });
-    }
-
-    // 5. Direct Firestore `/products/{productId}` point lookup
-    if (isValidFirestoreDocId(lowerQuery)) {
-      const prodDocSnap = await withTimeout(getDoc(doc(db, 'products', lowerQuery)));
-      if (prodDocSnap.exists()) {
-        const fallback = fallbackProducts.find((p) => p.id === prodDocSnap.id);
-        const product = hydrateFirestoreProduct(
-          prodDocSnap.id,
-          prodDocSnap.data() as Record<string, unknown>,
-          fallback
-        );
-        return evaluateSerialWarranty({
-          query: prodDocSnap.id,
-          product,
-          matchType: 'product_id',
-          dataSource: 'firestore',
-          customPurchaseDateIso,
-          nowDate,
-        });
-      }
-    }
-  } catch (error) {
-    if (isFirestoreQuotaExceededError(error)) {
-      markFirestoreQuotaExceeded();
-    } else if (isPermissionDeniedError(error)) {
-      try {
-        handleFirestoreError(error, OperationType.GET, 'products');
-      } catch {
-        // Fall back to synced product catalog below
-      }
-    }
-  }
-  }
-
-  // 6. Offline / unseeded catalog fallback across synced products
-  const catalogMatch = fallbackProducts.find(
-    (p) =>
-      (p.barcode && p.barcode.trim().toLowerCase() === lowerQuery) ||
-      p.sku.trim().toUpperCase() === upperQuery ||
-      p.id.trim().toLowerCase() === lowerQuery
-  );
-
-  if (catalogMatch) {
+  // 3. Check cached storefront catalog FIRST (0 Firestore reads if product is already cached)
+  const cachedProductMatch = storefrontCache.findProduct(normalized, fallbackProducts);
+  if (cachedProductMatch) {
     const matchType =
-      catalogMatch.barcode && catalogMatch.barcode.trim().toLowerCase() === lowerQuery
+      cachedProductMatch.barcode && cachedProductMatch.barcode.trim().toLowerCase() === lowerQuery
         ? 'serial_barcode'
-        : catalogMatch.sku.trim().toUpperCase() === upperQuery
+        : cachedProductMatch.sku.trim().toUpperCase() === upperQuery
         ? 'sku'
         : 'product_id';
 
     return evaluateSerialWarranty({
       query: normalized,
-      product: catalogMatch,
+      product: cachedProductMatch,
       matchType,
       dataSource: 'local_cache',
       customPurchaseDateIso,
       nowDate,
     });
+  }
+
+  // 4. Cache miss: Query Firestore `/products` collection by barcode ("Barcode or serial identifier")
+  const productsCol = collection(db, 'products');
+  if (!isFirestoreInQuotaCooldown()) {
+    try {
+      const barcodeSnap = await withTimeout(
+        getDocs(query(productsCol, where('barcode', '==', normalized), limit(1)))
+      );
+      if (!barcodeSnap.empty) {
+        const docSnap = barcodeSnap.docs[0];
+        const fallback = fallbackProducts.find((p) => p.id === docSnap.id);
+        const product = hydrateFirestoreProduct(
+          docSnap.id,
+          docSnap.data() as Record<string, unknown>,
+          fallback
+        );
+        storefrontCache.upsertProduct(product, 'firestore');
+        return evaluateSerialWarranty({
+          query: normalized,
+          product,
+          matchType: 'serial_barcode',
+          dataSource: 'firestore',
+          customPurchaseDateIso,
+          nowDate,
+        });
+      }
+
+      // 5. Query Firestore `/products` by SKU
+      const skuSnap = await withTimeout(
+        getDocs(query(productsCol, where('sku', '==', upperQuery), limit(1)))
+      );
+      if (!skuSnap.empty) {
+        const docSnap = skuSnap.docs[0];
+        const fallback = fallbackProducts.find((p) => p.id === docSnap.id);
+        const product = hydrateFirestoreProduct(
+          docSnap.id,
+          docSnap.data() as Record<string, unknown>,
+          fallback
+        );
+        storefrontCache.upsertProduct(product, 'firestore');
+        return evaluateSerialWarranty({
+          query: upperQuery,
+          product,
+          matchType: 'sku',
+          dataSource: 'firestore',
+          customPurchaseDateIso,
+          nowDate,
+        });
+      }
+
+      // 6. Direct Firestore `/products/{productId}` point lookup
+      if (isValidFirestoreDocId(lowerQuery)) {
+        const prodDocSnap = await withTimeout(getDoc(doc(db, 'products', lowerQuery)));
+        if (prodDocSnap.exists()) {
+          const fallback = fallbackProducts.find((p) => p.id === prodDocSnap.id);
+          const product = hydrateFirestoreProduct(
+            prodDocSnap.id,
+            prodDocSnap.data() as Record<string, unknown>,
+            fallback
+          );
+          storefrontCache.upsertProduct(product, 'firestore');
+          return evaluateSerialWarranty({
+            query: prodDocSnap.id,
+            product,
+            matchType: 'product_id',
+            dataSource: 'firestore',
+            customPurchaseDateIso,
+            nowDate,
+          });
+        }
+      }
+    } catch (error) {
+      if (isFirestoreQuotaExceededError(error)) {
+        markFirestoreQuotaExceeded();
+      } else if (isPermissionDeniedError(error)) {
+        try {
+          handleFirestoreError(error, OperationType.GET, 'products');
+        } catch {
+          // Fall back to synced product catalog below
+        }
+      }
+    }
   }
 
   return null;

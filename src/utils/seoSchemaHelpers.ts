@@ -1,4 +1,5 @@
 import { Category, Language, Product, StoreSettings } from '../types';
+import { getProductColorNames, isStructuredColorOption } from './colorVariantHelpers';
 
 export interface ProductSchemaBuildOptions {
   origin: string;
@@ -48,6 +49,13 @@ export function collectProductSchemaImages(
 
   if (Array.isArray(product.images)) {
     product.images.forEach(add);
+  }
+  if (Array.isArray(product.colors)) {
+    product.colors.forEach((entry) => {
+      if (isStructuredColorOption(entry) && entry.imageUrl) {
+        add(entry.imageUrl);
+      }
+    });
   }
   if (product.colorImages && typeof product.colorImages === 'object') {
     Object.values(product.colorImages).forEach(add);
@@ -163,8 +171,9 @@ export function buildProductSchema(
     schema.gtin = product.barcode.trim();
   }
 
-  if (Array.isArray(product.colors) && product.colors.length > 0) {
-    schema.color = product.colors.length === 1 ? product.colors[0] : product.colors;
+  const colorNames = getProductColorNames(product);
+  if (colorNames.length > 0) {
+    schema.color = colorNames.length === 1 ? colorNames[0] : colorNames;
   }
 
   if (Array.isArray(product.specifications) && product.specifications.length > 0) {

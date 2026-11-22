@@ -1,10 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAdmin } from '../context/AdminContext';
+import { useShop } from '../context/ShopContext';
 import { AdminLogin } from '../components/admin/AdminLogin';
 import { AdminLayout } from '../components/admin/AdminLayout';
 import { AdminOverview } from '../components/admin/AdminOverview';
 import { ChunkErrorBoundary } from '../components/ChunkErrorBoundary';
 import { safeLazy } from '../utils/lazyImportHelpers';
+import { saveCategories, saveProducts } from '../services/storageService';
+import {
+  seedInitialProductsToCloud,
+  subscribeToLiveProducts,
+} from '../services/productFirestoreService';
+import {
+  seedInitialCategoriesToCloud,
+  subscribeToLiveCategories,
+} from '../services/categoryFirestoreService';
 
 // Code-split admin modules to prevent downloading entire admin suite on initial open
 const AdminStatistics = safeLazy(() => import('../components/admin/AdminStatistics'), 'AdminStatistics');
@@ -33,8 +43,44 @@ const AdminTabSpinner: React.FC = () => (
 
 export const AdminPage: React.FC = () => {
   const { isAuthenticated } = useAdmin();
+  const { refreshData } = useShop();
   const [activeTab, setActiveTab] = useState('overview');
   const [targetProductId, setTargetProductId] = useState<string | undefined>(undefined);
+
+  // Isolated Admin real-time sync: only runs while Admin Dashboard is mounted & authenticated,
+  // preserving storefront read quota and cleanly unsubscribing on unmount.
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    const unsubscribeProducts = subscribeToLiveProducts(
+      (liveProducts) => {
+        if (liveProducts && liveProducts.length > 0) {
+          saveProducts(liveProducts);
+          refreshData();
+        }
+      },
+      () => {
+        seedInitialProductsToCloud().catch(console.error);
+      }
+    );
+
+    const unsubscribeCategories = subscribeToLiveCategories(
+      (liveCategories) => {
+        if (liveCategories && liveCategories.length > 0) {
+          saveCategories(liveCategories);
+          refreshData();
+        }
+      },
+      () => {
+        seedInitialCategoriesToCloud().catch(console.error);
+      }
+    );
+
+    return () => {
+      unsubscribeProducts();
+      unsubscribeCategories();
+    };
+  }, [isAuthenticated, refreshData]);
 
   const handleShareProduct = (productId: string) => {
     setTargetProductId(productId);

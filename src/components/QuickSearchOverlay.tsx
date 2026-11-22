@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback, useDeferredValue } from 'react';
 import { createPortal } from 'react-dom';
 import { useShop } from '../context/ShopContext';
 import {
@@ -21,6 +21,10 @@ import {
   Mic,
   Square,
   QrCode,
+  ShoppingBag,
+  Check,
+  Eye,
+  ArrowUpDown,
 } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 import {
@@ -39,6 +43,10 @@ import {
   removeSearchHistoryTerm,
   clearSearchHistory,
   getPopularSearchKeywords,
+  splitHighlightedTextSegments,
+  computeOverlayFacetCounts,
+  filterOverlayResultsByFacets,
+  OverlaySortOption,
 } from '../utils/quickSearchOverlayHelpers';
 import { recordRecentSkuSearch } from '../utils/recentSkuSearches';
 import {
@@ -69,6 +77,8 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
     selectBrand,
     selectCategory,
     viewProductDetail,
+    setQuickViewProduct,
+    addToCart,
     setSearchQuery,
     setCurrentView,
     setIsQrScannerOpen,
@@ -79,9 +89,14 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
   const ChevronIcon = isArabic ? ChevronLeft : ChevronRight;
 
   const [query, setQuery] = useState('');
+  const deferredQuery = useDeferredValue(query);
   const [filterMode, setFilterMode] = useState<SearchFilterMode>('all');
+  const [selectedFacetBrand, setSelectedFacetBrand] = useState<string | null>(null);
+  const [selectedFacetCategorySlug, setSelectedFacetCategorySlug] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<OverlaySortOption>('relevance');
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [searchHistory, setSearchHistory] = useState<string[]>(() => getSearchHistory());
+  const [recentlyAddedId, setRecentlyAddedId] = useState<string | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [voiceInterim, setVoiceInterim] = useState('');
   const [voiceError, setVoiceError] = useState<string | null>(null);
@@ -89,6 +104,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
   const inputRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<SpeechRecognitionInstanceLike | null>(null);
+  const itemRefs = useRef<Record<number, HTMLElement | null>>({});
 
   const stopVoiceRecognition = useCallback((abort = false) => {
     const rec = recognitionRef.current;
@@ -112,11 +128,17 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
     setVoiceInterim('');
   }, []);
 
-  // Refresh history & auto-focus input whenever overlay opens; clean up voice listener on close
+  // Refresh history & auto-focus input whenever overlay opens; reset transient filters and stop voice on close
   useEffect(() => {
     if (!isOpen) {
       stopVoiceRecognition(true);
       setVoiceError(null);
+      setQuery('');
+      setFilterMode('all');
+      setSelectedFacetBrand(null);
+      setSelectedFacetCategorySlug(null);
+      setSortBy('relevance');
+      setSelectedIndex(-1);
       return;
     }
 
@@ -129,7 +151,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
 
     const focusTimer = window.setTimeout(() => {
       inputRef.current?.focus();
-    }, 30);
+    }, 25);
 
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -150,44 +172,163 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
 
   useEffect(() => {
     setSelectedIndex(-1);
-  }, [query, filterMode]);
+  }, [deferredQuery, filterMode, selectedFacetBrand, selectedFacetCategorySlug, sortBy]);
+
+  useEffect(() => {
+    if (selectedIndex >= 0) {
+      itemRefs.current[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [selectedIndex]);
 
   const popularKeywords = useMemo(
     () => getPopularSearchKeywords(lang, products, undefined, 8),
     [lang, products]
   );
 
-  const featuredCategories = useMemo(
-    () => categories.filter((c) => c.featured).slice(0, 6),
-    [categories]
-  );
+  const publishedCategoryKeys = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of products) {
+      if (p.isPublished !== false && p.category?.trim()) {
+        const raw = p.category.trim().toLowerCase();
+        set.add(raw);
+        set.add(raw.replace(/[^a-z0-9]+/g, '-'));
+      }
+    }
+    return set;
+  }, [products]);
 
-  const featuredBrands = useMemo(
-    () => brands.filter((b) => b.featured).slice(0, 6),
-    [brands]
-  );
+  const publishedBrandKeys = useMemo(() => {
+    const set = new Set<string>();
+    for (const p of products) {
+      if (p.isPublished !== false && p.brand?.trim()) {
+        set.add(p.brand.trim().toLowerCase());
+      }
+    }
+    return set;
+  }, [products]);
+
+  const featuredCategories = useMemo(() => {
+    const withInventory = categories.filter(
+      (c) =>
+        publishedCategoryKeys.has(c.name.toLowerCase()) ||
+        publishedCategoryKeys.has(c.slug.toLowerCase())
+    );
+    const featuredWithInventory = withInventory.filter((c) => c.featured);
+    const pool =
+      featuredWithInventory.length > 0
+        ? featuredWithInventory
+        : withInventory.length > 0
+        ? withInventory
+        : categories.filter((c) => c.featured);
+    return pool.slice(0, 6);
+  }, [categories, publishedCategoryKeys]);
+
+  const featuredBrands = useMemo(() => {
+    const withInventory = brands.filter((b) => publishedBrandKeys.has(b.name.toLowerCase()));
+    const featuredWithInventory = withInventory.filter((b) => b.featured);
+    const pool =
+      featuredWithInventory.length > 0
+        ? featuredWithInventory
+        : withInventory.length > 0
+        ? withInventory
+        : brands.filter((b) => b.featured);
+    return pool.slice(0, 6);
+  }, [brands, publishedBrandKeys]);
+
+  const hasQuery = deferredQuery.trim().length > 0;
+  const hasFacetFilter = Boolean(selectedFacetBrand || selectedFacetCategorySlug);
+  const isSearchActive = hasQuery || hasFacetFilter;
 
   const matchingCategories = useMemo(() => {
-    if (filterMode === 'name' || filterMode === 'brand' || filterMode === 'sku') return [];
-    return getUniqueMatchingCategories(products, categories, query).slice(0, 4);
-  }, [products, categories, query, filterMode]);
+    if (!hasQuery || filterMode === 'name' || filterMode === 'brand' || filterMode === 'sku') {
+      return [];
+    }
+    return getUniqueMatchingCategories(products, categories, deferredQuery).slice(0, 4);
+  }, [hasQuery, products, categories, deferredQuery, filterMode]);
 
   const matchingBrands = useMemo(() => {
-    if (filterMode === 'name' || filterMode === 'category' || filterMode === 'sku') return [];
-    return getUniqueMatchingBrands(products, brands, query).slice(0, 4);
-  }, [products, brands, query, filterMode]);
+    if (!hasQuery || filterMode === 'name' || filterMode === 'category' || filterMode === 'sku') {
+      return [];
+    }
+    return getUniqueMatchingBrands(products, brands, deferredQuery).slice(0, 4);
+  }, [hasQuery, products, brands, deferredQuery, filterMode]);
 
-  const matchingProducts = useMemo(() => {
-    return filterProductsGlobally(products, query, filterMode, categories).slice(0, 8);
-  }, [products, categories, query, filterMode]);
+  const baseMatchingProducts = useMemo(() => {
+    if (!isSearchActive) return [];
+    if (hasQuery) {
+      return filterProductsGlobally(products, deferredQuery, filterMode, categories);
+    }
+    // Browsing directly by brand or category facet inside the overlay
+    return products.filter((p) => p.isPublished !== false);
+  }, [isSearchActive, hasQuery, products, deferredQuery, filterMode, categories]);
+
+  const availableFacets = useMemo(() => {
+    if (!isSearchActive) return { brands: [], categories: [] };
+    return computeOverlayFacetCounts(baseMatchingProducts, categories);
+  }, [isSearchActive, baseMatchingProducts, categories]);
+
+  const refinedProducts = useMemo(() => {
+    if (!isSearchActive) return [];
+    return filterOverlayResultsByFacets(baseMatchingProducts, categories, {
+      selectedBrand: selectedFacetBrand,
+      selectedCategorySlug: selectedFacetCategorySlug,
+      sortBy,
+    });
+  }, [
+    isSearchActive,
+    baseMatchingProducts,
+    categories,
+    selectedFacetBrand,
+    selectedFacetCategorySlug,
+    sortBy,
+  ]);
+
+  const visibleProducts = useMemo(() => refinedProducts.slice(0, 12), [refinedProducts]);
+
+  const selectedFacetCategoryRecord = useMemo(() => {
+    if (!selectedFacetCategorySlug) return null;
+    return categories.find((c) => c.slug === selectedFacetCategorySlug) || null;
+  }, [categories, selectedFacetCategorySlug]);
 
   const totalInteractiveItems =
-    matchingCategories.length + matchingBrands.length + matchingProducts.length;
+    matchingCategories.length + matchingBrands.length + visibleProducts.length;
 
-  const filterTabs = getFilterModeLabels(lang);
-  const hasQuery = query.trim().length > 0;
+  const scopeTabs = useMemo(() => {
+    return getFilterModeLabels(lang).map((tab) => {
+      if (tab.mode === 'name') {
+        return {
+          ...tab,
+          label: isArabic ? 'بالكلمة / الاسم' : 'By Keyword',
+        };
+      }
+      return tab;
+    });
+  }, [lang, isArabic]);
+
   const hasResults =
-    matchingCategories.length > 0 || matchingBrands.length > 0 || matchingProducts.length > 0;
+    matchingCategories.length > 0 ||
+    matchingBrands.length > 0 ||
+    visibleProducts.length > 0;
+
+  const renderHighlightedText = useCallback(
+    (text: string) => {
+      if (!hasQuery || !text) return text;
+      const segments = splitHighlightedTextSegments(text, deferredQuery);
+      return segments.map((seg, idx) =>
+        seg.isMatch ? (
+          <mark
+            key={idx}
+            className="bg-[#EAF3FF] dark:bg-[#1E3A5F] text-[#0070F3] dark:text-[#38BDF8] font-bold rounded-xs px-0.5"
+          >
+            {seg.text}
+          </mark>
+        ) : (
+          <React.Fragment key={idx}>{seg.text}</React.Fragment>
+        )
+      );
+    },
+    [hasQuery, deferredQuery]
+  );
 
   const recordTermInHistory = useCallback((term: string) => {
     const clean = term.trim();
@@ -222,10 +363,12 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
         source: 'product_suggestion_click',
         selectedEntityTitle: product.name,
         categoryMatchesCount: matchingCategories.length,
-        productMatchesCount: matchingProducts.length,
+        productMatchesCount: refinedProducts.length,
       });
       viewProductDetail(product.id, false, matchedVariantId);
       setQuery('');
+      setSelectedFacetBrand(null);
+      setSelectedFacetCategorySlug(null);
       onClose();
     },
     [
@@ -234,10 +377,35 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
       isArabic,
       recordTermInHistory,
       matchingCategories.length,
-      matchingProducts.length,
+      refinedProducts.length,
       viewProductDetail,
       onClose,
     ]
+  );
+
+  const handleQuickAddToCart = useCallback(
+    (e: React.MouseEvent, product: Product) => {
+      e.stopPropagation();
+      if (product.stock <= 0) return;
+      addToCart(product, 1);
+      setRecentlyAddedId(product.id);
+      window.setTimeout(() => {
+        setRecentlyAddedId((prev) => (prev === product.id ? null : prev));
+      }, 1500);
+    },
+    [addToCart]
+  );
+
+  const handleQuickViewFromOverlay = useCallback(
+    (e: React.MouseEvent, product: Product) => {
+      e.stopPropagation();
+      if (query.trim()) {
+        recordTermInHistory(query.trim());
+      }
+      onClose();
+      setQuickViewProduct(product);
+    },
+    [query, recordTermInHistory, onClose, setQuickViewProduct]
   );
 
   const handleSelectBrand = useCallback(
@@ -249,11 +417,13 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
         source: 'desktop_input_submit',
         selectedEntityTitle: brandName,
         categoryMatchesCount: matchingCategories.length,
-        productMatchesCount: matchingProducts.length,
+        productMatchesCount: refinedProducts.length,
       });
       selectBrand(brandName);
       setCurrentView('products');
       setQuery('');
+      setSelectedFacetBrand(null);
+      setSelectedFacetCategorySlug(null);
       onClose();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
@@ -261,7 +431,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
       query,
       recordTermInHistory,
       matchingCategories.length,
-      matchingProducts.length,
+      refinedProducts.length,
       selectBrand,
       setCurrentView,
       onClose,
@@ -278,11 +448,13 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
         source: 'category_suggestion_click',
         selectedEntityTitle: cat.name,
         categoryMatchesCount: matchingCategories.length,
-        productMatchesCount: matchingProducts.length,
+        productMatchesCount: refinedProducts.length,
       });
       selectCategory(cat.slug);
       setCurrentView('products');
       setQuery('');
+      setSelectedFacetBrand(null);
+      setSelectedFacetCategorySlug(null);
       onClose();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
@@ -291,7 +463,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
       isArabic,
       recordTermInHistory,
       matchingCategories.length,
-      matchingProducts.length,
+      refinedProducts.length,
       selectCategory,
       setCurrentView,
       onClose,
@@ -302,6 +474,16 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
     (rawTerm: string, source: 'desktop_input_submit' | 'trending_term_click' = 'desktop_input_submit') => {
       const trimmed = rawTerm.trim();
       if (!trimmed) {
+        if (selectedFacetBrand) {
+          handleSelectBrand(selectedFacetBrand);
+          return;
+        }
+        if (selectedFacetCategorySlug) {
+          selectCategory(selectedFacetCategorySlug);
+          setCurrentView('products');
+          onClose();
+          return;
+        }
         selectCategory(null);
         setSearchQuery('');
         setCurrentView('products');
@@ -333,6 +515,8 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
           });
           viewProductDetail(exactSkuHit.product.id, false, exactSkuHit.matchedVariant?.id);
           setQuery('');
+          setSelectedFacetBrand(null);
+          setSelectedFacetCategorySlug(null);
           onClose();
           return;
         }
@@ -348,6 +532,8 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
           }
           viewProductDetail(prodHits[0].id, false, singleSkuHit?.matchedVariant?.id);
           setQuery('');
+          setSelectedFacetBrand(null);
+          setSelectedFacetCategorySlug(null);
           onClose();
           return;
         }
@@ -367,17 +553,22 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
       } else if (filterMode === 'category' && (matchedCategory || catHits.length === 1)) {
         const target = matchedCategory || catHits[0];
         selectCategory(target.slug);
-      } else if (filterMode === 'all' && matchedBrand) {
+      } else if (filterMode === 'all' && matchedBrand && !selectedFacetCategorySlug) {
         selectBrand(matchedBrand.name);
-      } else if (filterMode === 'all' && matchedCategory) {
+      } else if (filterMode === 'all' && matchedCategory && !selectedFacetBrand) {
         selectCategory(matchedCategory.slug);
       } else {
-        selectCategory(null);
+        selectCategory(selectedFacetCategorySlug || null);
+        if (selectedFacetBrand) {
+          selectBrand(selectedFacetBrand);
+        }
         setSearchQuery(trimmed);
         setCurrentView('products');
       }
 
       setQuery('');
+      setSelectedFacetBrand(null);
+      setSelectedFacetCategorySlug(null);
       onClose();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
@@ -385,11 +576,14 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
       brands,
       categories,
       filterMode,
+      handleSelectBrand,
       onClose,
       products,
       recordTermInHistory,
       selectBrand,
       selectCategory,
+      selectedFacetBrand,
+      selectedFacetCategorySlug,
       setCurrentView,
       setSearchQuery,
       viewProductDetail,
@@ -410,7 +604,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
         return;
       }
       const pIdx = selectedIndex - matchingCategories.length - matchingBrands.length;
-      const picked = matchingProducts[pIdx];
+      const picked = visibleProducts[pIdx];
       const skuHit = findProductSkuMatch(picked, query);
       handleSelectProduct(picked, skuHit?.matchedVariant?.id);
       return;
@@ -439,6 +633,15 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
 
   const handleClearHistory = () => {
     setSearchHistory(clearSearchHistory());
+  };
+
+  const handleClearAllFilters = () => {
+    setQuery('');
+    setSelectedFacetBrand(null);
+    setSelectedFacetCategorySlug(null);
+    setSortBy('relevance');
+    setFilterMode('all');
+    inputRef.current?.focus();
   };
 
   const handleToggleVoiceSearch = () => {
@@ -511,7 +714,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={isArabic ? 'البحث السريع في المتجر' : 'Quick Store Search'}
+      aria-label={isArabic ? 'البحث السريع في المتجر' : 'Quick Store Search Overlay'}
       data-testid="quick-search-overlay"
       onMouseDown={(e) => {
         if (panelRef.current && !panelRef.current.contains(e.target as Node)) {
@@ -522,28 +725,28 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
     >
       <div
         ref={panelRef}
-        className="w-full max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-8 pb-12"
+        className="w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-5 sm:pt-8 pb-16"
       >
         {/* Top Overlay Header */}
-        <div className="flex items-center justify-between gap-4 mb-5 sm:mb-7">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <span className="w-9 h-9 rounded-xl bg-[#EFF6FF] dark:bg-[#132238] text-[#0070F3] dark:text-[#38BDF8] border border-[#DCE5F0] dark:border-[#1E3A5F] flex items-center justify-center shrink-0">
+        <div className="flex items-center justify-between gap-4 mb-5">
+          <div className="flex items-center gap-3 min-w-0">
+            <span className="w-9 h-9 rounded-xl bg-[#0A0F2C] dark:bg-[#132238] text-white dark:text-[#38BDF8] border border-[#E2E8F0] dark:border-[#1E3A5F] flex items-center justify-center shrink-0">
               <Search className="w-4 h-4" />
             </span>
             <div className="min-w-0">
-              <h2 className="text-sm sm:text-base font-bold text-[#0F172A] dark:text-white tracking-tight truncate">
-                {isArabic ? 'البحث السريع' : 'Quick Search'}
+              <h2 className="text-sm sm:text-base font-bold text-[#0A0F2C] dark:text-white tracking-tight truncate">
+                {isArabic ? 'البحث الفوري في المتجر' : 'Instant Product Search'}
               </h2>
               <p className="text-[11px] sm:text-xs text-[#64748B] dark:text-slate-400 truncate">
                 {isArabic
-                  ? 'ابحث عن الهواتف، الإكسسوارات، الماركات والأقسام'
-                  : 'Find phones, accessories, brands, and departments'}
+                  ? 'ابحث أثناء الكتابة بالماركة، القسم، الكلمة المفتاحية أو رمز SKU'
+                  : 'Search as you type by brand, category, keyword, or SKU'}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <kbd className="hidden sm:inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-semibold text-[#64748B] dark:text-slate-400 bg-[#F1F5F9] dark:bg-[#111A2E] border border-[#E5E7EB] dark:border-[#1E293B]">
+            <kbd className="hidden sm:inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-semibold text-[#64748B] dark:text-slate-400 bg-[#F1F5F9] dark:bg-[#111A2E] border border-[#E2E8F0] dark:border-[#1E293B]">
               ESC
             </kbd>
             <button
@@ -551,17 +754,17 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
               onClick={onClose}
               data-testid="quick-search-close-btn"
               aria-label={isArabic ? 'إغلاق البحث السريع' : 'Close quick search'}
-              className="w-10 h-10 rounded-xl bg-[#F5F8FC] dark:bg-[#111A2E] hover:bg-[#E2E8F0] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] text-[#1E293B] dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer"
+              className="w-10 h-10 rounded-xl bg-[#F8FAFC] dark:bg-[#111A2E] hover:bg-[#E2E8F0] dark:hover:bg-[#1E293B] border border-[#E2E8F0] dark:border-[#1E293B] text-[#0A0F2C] dark:text-slate-200 flex items-center justify-center transition-colors cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Full-Width Search Input Form */}
+        {/* Full-Width Search-As-You-Type Input Form */}
         <form onSubmit={handleSubmit} className="mb-4">
           <div
-            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 bg-[#F8FAFC] dark:bg-[#10182B] border rounded-2xl transition-all shadow-sm ${
+            className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 bg-[#F8FAFC] dark:bg-[#10182B] border rounded-2xl transition-all shadow-xs ${
               isListening
                 ? 'border-rose-500 ring-4 ring-rose-500/15 bg-white dark:bg-[#131F36]'
                 : 'border-[#DCE5F0] dark:border-[#1E293B] focus-within:bg-white dark:focus-within:bg-[#131F36] focus-within:border-[#0070F3] focus-within:ring-4 focus-within:ring-[#0070F3]/12'
@@ -592,34 +795,31 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                     : 'Enter SKU code (e.g. APL-IP16PM-256)...'
                   : filterMode === 'brand'
                   ? isArabic
-                    ? 'ابحث بالماركة (Apple, Samsung...)'
-                    : 'Search by brand (Apple, Samsung...)'
+                    ? 'ابحث بالماركة (Apple, Samsung, Anker, Tecno...)'
+                    : 'Type a brand (Apple, Samsung, Anker, Tecno...)'
                   : filterMode === 'category'
                   ? isArabic
-                    ? 'ابحث بالقسم (الهواتف، الشواحن...)'
-                    : 'Search by category (Phones, Chargers...)'
+                    ? 'ابحث بالقسم (الهواتف، الشواحن، السماعات...)'
+                    : 'Type a category (Smartphones, Audio, Chargers...)'
                   : filterMode === 'name'
                   ? isArabic
-                    ? 'ابحث باسم المنتج أو الجهاز...'
-                    : 'Search by product name...'
+                    ? 'ابحث بكلمة مفتاحية أو مواصفة (120Hz, 200W, Titanium...)'
+                    : 'Search by keyword, feature, or spec (120Hz, 200W, Titanium...)'
                   : isArabic
-                  ? 'ابحث بالاسم، الماركة، القسم، أو رمز SKU...'
-                  : 'Search products, brands, categories, or SKU...'
+                  ? 'ابحث أثناء الكتابة بالاسم، الماركة، القسم، الكلمة المفتاحية أو SKU...'
+                  : 'Search as you type: brand, category, keyword, or SKU...'
               }
-              aria-label={t.searchPlaceholder || 'Search products by name, brand, or category'}
-              className="flex-1 min-w-0 bg-transparent text-[#0F172A] dark:text-white placeholder-[#64748B] dark:placeholder-slate-400 text-[13px] sm:text-base font-medium py-3.5 sm:py-4 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
+              aria-label={t.searchPlaceholder || 'Search products by brand, category, or keyword'}
+              className="flex-1 min-w-0 bg-transparent text-[#0A0F2C] dark:text-white placeholder-[#64748B] dark:placeholder-slate-400 text-[13px] sm:text-base font-medium py-3.5 sm:py-4 focus:outline-none [&::-webkit-search-cancel-button]:hidden"
             />
 
-            {query && (
+            {(query || hasFacetFilter) && (
               <button
                 type="button"
-                onClick={() => {
-                  setQuery('');
-                  setSelectedIndex(-1);
-                  inputRef.current?.focus();
-                }}
-                aria-label={isArabic ? 'مسح نص البحث' : 'Clear search input'}
-                className="p-1.5 rounded-lg text-[#64748B] hover:text-[#0F172A] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
+                onClick={handleClearAllFilters}
+                data-testid="quick-search-clear-input-btn"
+                aria-label={isArabic ? 'مسح البحث والفلاتر' : 'Clear search and filters'}
+                className="p-2 rounded-lg text-[#64748B] hover:text-[#0A0F2C] dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -649,7 +849,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                   ? 'تحدث للبحث عن منتج'
                   : 'Speak product name to search'
               }
-              className={`relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl border transition-all cursor-pointer shrink-0 ${
+              className={`relative flex items-center justify-center w-10 h-10 rounded-xl border transition-all cursor-pointer shrink-0 ${
                 isListening
                   ? 'bg-rose-500 border-rose-500 text-white shadow-sm shadow-rose-500/30'
                   : 'bg-white dark:bg-[#162038] border-[#DCE5F0] dark:border-[#1E293B] text-[#475569] dark:text-slate-300 hover:text-[#0070F3] dark:hover:text-[#38BDF8] hover:border-[#0070F3]'
@@ -678,14 +878,15 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
               data-testid="quick-search-qr-btn"
               aria-label={isArabic ? 'مسح رمز QR للمنتج' : 'Scan Product QR Code'}
               title={isArabic ? 'مسح رمز QR للمنتج' : 'Scan Product QR Code'}
-              className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl border bg-white dark:bg-[#162038] border-[#DCE5F0] dark:border-[#1E293B] text-[#475569] dark:text-slate-300 hover:text-[#0070F3] dark:hover:text-[#38BDF8] hover:border-[#0070F3] transition-all cursor-pointer shrink-0"
+              className="flex items-center justify-center w-10 h-10 rounded-xl border bg-white dark:bg-[#162038] border-[#DCE5F0] dark:border-[#1E293B] text-[#475569] dark:text-slate-300 hover:text-[#0070F3] dark:hover:text-[#38BDF8] hover:border-[#0070F3] transition-all cursor-pointer shrink-0"
             >
               <QrCode className="w-4 h-4" />
             </button>
 
             <button
               type="submit"
-              className="bg-[#0070F3] hover:bg-[#0051D5] active:scale-[0.98] text-white text-xs sm:text-sm font-bold px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-xl transition-all cursor-pointer shadow-xs whitespace-nowrap shrink-0"
+              data-testid="quick-search-submit-btn"
+              className="bg-[#0A0F2C] hover:bg-[#16204A] dark:bg-[#0070F3] dark:hover:bg-[#0051D5] active:scale-[0.98] text-white text-xs sm:text-sm font-semibold px-4 sm:px-5 h-10 rounded-xl transition-all cursor-pointer whitespace-nowrap shrink-0"
             >
               {isArabic ? 'بحث' : 'Search'}
             </button>
@@ -744,28 +945,69 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
           )}
         </form>
 
-        {/* Search Scope Selector Tabs */}
-        <div className="flex flex-wrap items-center justify-between gap-2 pb-5 mb-6 border-b border-[#E5E7EB] dark:border-[#1E293B]">
-          <div className="flex items-center gap-1.5 text-xs font-semibold text-[#64748B] dark:text-slate-400">
+        {/* Search Scope Selector Tabs + Live Search-As-You-Type Summary */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-5 border-b border-[#E2E8F0] dark:border-[#1E293B]">
+          <div className="flex flex-wrap items-center gap-2 text-xs text-[#64748B] dark:text-slate-400">
             <SlidersHorizontal className="w-3.5 h-3.5 text-[#0070F3]" aria-hidden="true" />
-            <span>{isArabic ? 'نطاق البحث:' : 'Search scope:'}</span>
+            <span className="font-semibold">{isArabic ? 'نطاق البحث:' : 'Search by:'}</span>
+            {isSearchActive && (
+              <span
+                role="status"
+                aria-live="polite"
+                data-testid="quick-search-live-count"
+                className="inline-flex items-center flex-wrap gap-x-1.5 gap-y-0.5 pl-2 rtl:pl-0 rtl:pr-2 border-l rtl:border-l-0 rtl:border-r border-[#E2E8F0] dark:border-[#1E293B] text-xs font-medium text-[#0A0F2C] dark:text-slate-200 tabular-nums"
+              >
+                <span>
+                  {isArabic
+                    ? `${refinedProducts.length} منتج`
+                    : `${refinedProducts.length} ${refinedProducts.length === 1 ? 'product' : 'products'}`}
+                </span>
+                {hasQuery && matchingBrands.length > 0 && (
+                  <>
+                    <span aria-hidden="true" className="text-[#94A3B8]">·</span>
+                    <span>
+                      {isArabic
+                        ? `${matchingBrands.length} ماركة`
+                        : `${matchingBrands.length} ${matchingBrands.length === 1 ? 'brand' : 'brands'}`}
+                    </span>
+                  </>
+                )}
+                {hasQuery && matchingCategories.length > 0 && (
+                  <>
+                    <span aria-hidden="true" className="text-[#94A3B8]">·</span>
+                    <span>
+                      {isArabic
+                        ? `${matchingCategories.length} قسم`
+                        : `${matchingCategories.length} ${matchingCategories.length === 1 ? 'category' : 'categories'}`}
+                    </span>
+                  </>
+                )}
+              </span>
+            )}
           </div>
 
-          <div className="flex items-center gap-1 bg-[#F5F8FC] dark:bg-[#10182B] p-1 rounded-xl border border-[#DCE5F0] dark:border-[#1E293B] overflow-x-auto max-w-full">
-            {filterTabs.map((tab) => {
+          <div
+            role="tablist"
+            aria-label={isArabic ? 'نطاق البحث' : 'Search scope'}
+            className="flex flex-wrap items-center gap-1 bg-[#F1F5F9] dark:bg-[#10182B] p-1 rounded-xl border border-[#E2E8F0] dark:border-[#1E293B] w-full sm:w-auto"
+          >
+            {scopeTabs.map((tab) => {
               const isActive = filterMode === tab.mode;
               return (
                 <button
                   key={tab.mode}
                   type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  data-testid={`quick-search-scope-${tab.mode}`}
                   onClick={() => {
                     setFilterMode(tab.mode);
                     inputRef.current?.focus();
                   }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                  className={`px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                     isActive
-                      ? 'bg-[#0070F3] text-white shadow-xs'
-                      : 'text-[#64748B] dark:text-slate-400 hover:text-[#0F172A] dark:hover:text-white'
+                      ? 'bg-[#0A0F2C] dark:bg-[#0070F3] text-white shadow-xs'
+                      : 'text-[#64748B] dark:text-slate-400 hover:text-[#0A0F2C] dark:hover:text-white'
                   }`}
                 >
                   {tab.label}
@@ -775,8 +1017,8 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
           </div>
         </div>
 
-        {/* BODY STATE 1: Empty Query -> Search History + Popular Keywords + Quick Departments/Brands */}
-        {!hasQuery ? (
+        {/* BODY STATE 1: Empty Query & No Active Facet -> Discovery Hub */}
+        {!isSearchActive ? (
           <div className="space-y-8">
             {/* Search History */}
             <section
@@ -789,7 +1031,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                   className="text-xs font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400 flex items-center gap-2"
                 >
                   <Clock className="w-3.5 h-3.5 text-[#0070F3]" aria-hidden="true" />
-                  <span>{isArabic ? 'سجل البحث الأخير' : 'Search History'}</span>
+                  <span>{isArabic ? 'سجل البحث الأخير' : 'Recent Searches'}</span>
                 </h3>
 
                 {searchHistory.length > 0 && (
@@ -810,12 +1052,15 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                   {searchHistory.map((term) => (
                     <div
                       key={term}
-                      className="inline-flex items-center rounded-xl bg-[#F5F8FC] dark:bg-[#10182B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#0070F3] transition-colors group"
+                      className="inline-flex items-center rounded-xl bg-[#F8FAFC] dark:bg-[#10182B] border border-[#E2E8F0] dark:border-[#1E293B] hover:border-[#0070F3] transition-colors group"
                     >
                       <button
                         type="button"
-                        onClick={() => executeTermSearch(term, 'desktop_input_submit')}
-                        className="inline-flex items-center gap-1.5 pl-3 pr-2 py-2 text-xs sm:text-[13px] font-medium text-[#1E293B] dark:text-slate-200 group-hover:text-[#0070F3] dark:group-hover:text-[#38BDF8] cursor-pointer"
+                        onClick={() => {
+                          setQuery(term);
+                          inputRef.current?.focus();
+                        }}
+                        className="inline-flex items-center gap-1.5 pl-3 pr-2 py-2 text-xs sm:text-[13px] font-medium text-[#0A0F2C] dark:text-slate-200 group-hover:text-[#0070F3] dark:group-hover:text-[#38BDF8] cursor-pointer whitespace-nowrap"
                       >
                         <Clock className="w-3.5 h-3.5 text-[#94A3B8] shrink-0" aria-hidden="true" />
                         <span>{term}</span>
@@ -834,15 +1079,15 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                   ))}
                 </div>
               ) : (
-                <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400 py-2">
+                <p className="text-xs sm:text-[13px] text-[#64748B] dark:text-slate-400 py-1">
                   {isArabic
-                    ? 'ستظهر هنا عبارات البحث الأخيرة للوصول السريع إليها.'
-                    : 'Your recent searches will appear here for one-tap access.'}
+                    ? 'اكتب اسم المنتج أو الماركة أو القسم لتظهر النتائج فوراً أثناء الكتابة.'
+                    : 'Start typing a product, brand, category, or SKU to see instant live results.'}
                 </p>
               )}
             </section>
 
-            {/* Popular Keywords */}
+            {/* Popular Keywords (populates live search-as-you-type immediately) */}
             <section
               aria-labelledby="quick-search-popular-heading"
               data-testid="quick-search-popular-section"
@@ -853,7 +1098,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                   className="text-xs font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400 flex items-center gap-2"
                 >
                   <TrendingUp className="w-3.5 h-3.5 text-[#0070F3]" aria-hidden="true" />
-                  <span>{isArabic ? 'الكلمات الشائعة' : 'Popular Keywords'}</span>
+                  <span>{isArabic ? 'كلمات البحث الشائعة' : 'Popular Keywords'}</span>
                 </h3>
               </div>
 
@@ -862,8 +1107,12 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                   <button
                     key={item.term}
                     type="button"
-                    onClick={() => executeTermSearch(item.term, 'trending_term_click')}
-                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-[#0E1726] hover:bg-[#EFF6FF] dark:hover:bg-[#162742] border border-[#E5E7EB] dark:border-[#1E293B] hover:border-[#0070F3] text-xs sm:text-[13px] font-semibold text-[#1E293B] dark:text-slate-200 hover:text-[#0070F3] dark:hover:text-[#38BDF8] shadow-[0_2px_8px_rgba(0,0,0,0.03)] transition-all cursor-pointer"
+                    data-testid={`quick-search-keyword-${item.term}`}
+                    onClick={() => {
+                      setQuery(item.term);
+                      inputRef.current?.focus();
+                    }}
+                    className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white dark:bg-[#0E1726] hover:bg-[#EFF6FF] dark:hover:bg-[#162742] border border-[#E2E8F0] dark:border-[#1E293B] hover:border-[#0070F3] text-xs sm:text-[13px] font-semibold text-[#0A0F2C] dark:text-slate-200 hover:text-[#0070F3] dark:hover:text-[#38BDF8] transition-all cursor-pointer whitespace-nowrap"
                   >
                     <TrendingUp
                       className={`w-3.5 h-3.5 shrink-0 ${
@@ -877,24 +1126,29 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
               </div>
             </section>
 
-            {/* Quick Departments & Featured Brands */}
+            {/* Quick Departments & Featured Brands (Filter right inside overlay!) */}
             {(featuredCategories.length > 0 || featuredBrands.length > 0) && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-[#E5E7EB] dark:border-[#1E293B]">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-[#E2E8F0] dark:border-[#1E293B]">
                 {featuredCategories.length > 0 && (
                   <section>
                     <h3 className="text-xs font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400 flex items-center gap-2 mb-3">
                       <Folder className="w-3.5 h-3.5 text-[#0070F3]" aria-hidden="true" />
-                      <span>{isArabic ? 'أقسام مختارة' : 'Browse Departments'}</span>
+                      <span>{isArabic ? 'تصفح حسب القسم' : 'Browse by Category'}</span>
                     </h3>
                     <div className="grid grid-cols-2 gap-2">
                       {featuredCategories.map((cat) => (
                         <button
                           key={cat.id}
                           type="button"
-                          onClick={() => handleSelectCategory(cat)}
-                          className="p-2.5 rounded-xl bg-[#F8FAFC] dark:bg-[#10182B] hover:bg-[#EFF6FF] dark:hover:bg-[#162742] border border-[#E5E7EB] dark:border-[#1E293B] hover:border-[#0070F3] text-left rtl:text-right transition-all cursor-pointer group flex items-center justify-between gap-2"
+                          data-testid={`quick-search-browse-category-${cat.slug}`}
+                          onClick={() => {
+                            setSelectedFacetCategorySlug(cat.slug);
+                            setSelectedFacetBrand(null);
+                            inputRef.current?.focus();
+                          }}
+                          className="p-2.5 rounded-xl bg-[#F8FAFC] dark:bg-[#10182B] hover:bg-[#EFF6FF] dark:hover:bg-[#162742] border border-[#E2E8F0] dark:border-[#1E293B] hover:border-[#0070F3] text-left rtl:text-right transition-all cursor-pointer group flex items-center justify-between gap-2"
                         >
-                          <span className="text-xs font-semibold text-[#1E293B] dark:text-slate-200 group-hover:text-[#0070F3] dark:group-hover:text-[#38BDF8] truncate">
+                          <span className="text-xs font-semibold text-[#0A0F2C] dark:text-slate-200 group-hover:text-[#0070F3] dark:group-hover:text-[#38BDF8] truncate">
                             {isArabic ? cat.nameAr : cat.name}
                           </span>
                           <ChevronIcon className="w-3.5 h-3.5 text-[#94A3B8] group-hover:text-[#0070F3] shrink-0" />
@@ -908,17 +1162,22 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                   <section>
                     <h3 className="text-xs font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400 flex items-center gap-2 mb-3">
                       <Tag className="w-3.5 h-3.5 text-[#0070F3]" aria-hidden="true" />
-                      <span>{isArabic ? 'أشهر الماركات' : 'Featured Brands'}</span>
+                      <span>{isArabic ? 'تصفح حسب الماركة' : 'Browse by Brand'}</span>
                     </h3>
                     <div className="grid grid-cols-3 gap-2">
                       {featuredBrands.map((b) => (
                         <button
                           key={b.id}
                           type="button"
-                          onClick={() => handleSelectBrand(b.name)}
-                          className="p-2.5 rounded-xl bg-[#F8FAFC] dark:bg-[#10182B] hover:bg-[#EFF6FF] dark:hover:bg-[#162742] border border-[#E5E7EB] dark:border-[#1E293B] hover:border-[#0070F3] text-center transition-all cursor-pointer group"
+                          data-testid={`quick-search-browse-brand-${b.name}`}
+                          onClick={() => {
+                            setSelectedFacetBrand(b.name);
+                            setSelectedFacetCategorySlug(null);
+                            inputRef.current?.focus();
+                          }}
+                          className="p-2.5 rounded-xl bg-[#F8FAFC] dark:bg-[#10182B] hover:bg-[#EFF6FF] dark:hover:bg-[#162742] border border-[#E2E8F0] dark:border-[#1E293B] hover:border-[#0070F3] text-center transition-all cursor-pointer group"
                         >
-                          <span className="text-xs font-bold text-[#1E293B] dark:text-slate-200 group-hover:text-[#0070F3] dark:group-hover:text-[#38BDF8] truncate block">
+                          <span className="text-xs font-bold text-[#0A0F2C] dark:text-slate-200 group-hover:text-[#0070F3] dark:group-hover:text-[#38BDF8] truncate block">
                             {b.name}
                           </span>
                         </button>
@@ -930,8 +1189,136 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
             )}
           </div>
         ) : hasResults ? (
-          /* BODY STATE 2: Live Matching Results */
+          /* BODY STATE 2: Live Search-As-You-Type & Facet Refinement Results */
           <div className="space-y-6">
+            {/* Interactive Brand & Category Facet Refinement Bar + Sort */}
+            {(availableFacets.brands.length > 0 ||
+              availableFacets.categories.length > 0 ||
+              hasFacetFilter) && (
+              <div
+                className="p-3 rounded-xl bg-[#F8FAFC] dark:bg-[#0E1726] border border-[#E2E8F0] dark:border-[#1E293B] space-y-2.5"
+                data-testid="quick-search-facet-bar"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400">
+                      {isArabic ? 'تصفية فورية:' : 'Refine:'}
+                    </span>
+
+                    {selectedFacetBrand && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFacetBrand(null)}
+                        data-testid="quick-search-active-brand-chip"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0A0F2C] dark:bg-[#0070F3] text-white text-xs font-semibold cursor-pointer whitespace-nowrap"
+                      >
+                        <span>
+                          {isArabic ? 'الماركة:' : 'Brand:'} {selectedFacetBrand}
+                        </span>
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+
+                    {selectedFacetCategoryRecord && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFacetCategorySlug(null)}
+                        data-testid="quick-search-active-category-chip"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#0A0F2C] dark:bg-[#0070F3] text-white text-xs font-semibold cursor-pointer whitespace-nowrap"
+                      >
+                        <span>
+                          {isArabic
+                            ? selectedFacetCategoryRecord.nameAr
+                            : selectedFacetCategoryRecord.name}
+                        </span>
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
+
+                    {hasFacetFilter && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedFacetBrand(null);
+                          setSelectedFacetCategorySlug(null);
+                        }}
+                        className="text-xs font-semibold text-[#64748B] hover:text-rose-600 dark:text-slate-400 dark:hover:text-rose-400 underline cursor-pointer"
+                      >
+                        {isArabic ? 'إعادة ضبط' : 'Reset'}
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Quick Price Sort Toggle */}
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <ArrowUpDown className="w-3.5 h-3.5 text-[#64748B]" aria-hidden="true" />
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as OverlaySortOption)}
+                      aria-label={isArabic ? 'ترتيب النتائج' : 'Sort search results'}
+                      data-testid="quick-search-sort-select"
+                      className="text-xs font-semibold bg-white dark:bg-[#111A2E] text-[#0A0F2C] dark:text-slate-200 border border-[#E2E8F0] dark:border-[#1E293B] rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-[#0070F3] cursor-pointer"
+                    >
+                      <option value="relevance">{isArabic ? 'الأكثر تطابقاً' : 'Best Match'}</option>
+                      <option value="price_asc">{isArabic ? 'السعر: الأقل أولاً' : 'Price: Low → High'}</option>
+                      <option value="price_desc">{isArabic ? 'السعر: الأعلى أولاً' : 'Price: High → Low'}</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Clickable Brand & Category Refinement Buttons */}
+                {(availableFacets.brands.length > 1 ||
+                  availableFacets.categories.length > 1 ||
+                  (!hasFacetFilter &&
+                    (availableFacets.brands.length > 0 || availableFacets.categories.length > 0))) && (
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    {availableFacets.brands.slice(0, 6).map((b) => {
+                      const active =
+                        selectedFacetBrand?.toLowerCase() === b.name.toLowerCase();
+                      return (
+                        <button
+                          key={`facet-brand-${b.name}`}
+                          type="button"
+                          data-testid={`quick-search-facet-brand-${b.name}`}
+                          onClick={() =>
+                            setSelectedFacetBrand(active ? null : b.name)
+                          }
+                          className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap tabular-nums ${
+                            active
+                              ? 'bg-[#0070F3] text-white border-[#0070F3]'
+                              : 'bg-white dark:bg-[#111A2E] text-[#0A0F2C] dark:text-slate-200 border-[#E2E8F0] dark:border-[#1E293B] hover:border-[#0070F3]'
+                          }`}
+                        >
+                          {b.name} ({b.count})
+                        </button>
+                      );
+                    })}
+
+                    {availableFacets.categories.slice(0, 5).map((cat) => {
+                      const active = selectedFacetCategorySlug === cat.slug;
+                      return (
+                        <button
+                          key={`facet-cat-${cat.slug}`}
+                          type="button"
+                          data-testid={`quick-search-facet-cat-${cat.slug}`}
+                          onClick={() =>
+                            setSelectedFacetCategorySlug(active ? null : cat.slug)
+                          }
+                          className={`px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer whitespace-nowrap tabular-nums ${
+                            active
+                              ? 'bg-[#0A0F2C] dark:bg-[#0070F3] text-white border-[#0A0F2C] dark:border-[#0070F3]'
+                              : 'bg-white dark:bg-[#111A2E] text-[#475569] dark:text-slate-300 border-[#E2E8F0] dark:border-[#1E293B] hover:border-[#0A0F2C]'
+                          }`}
+                        >
+                          {isArabic ? cat.nameAr : cat.name} ({cat.count})
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* Matching Categories */}
             {matchingCategories.length > 0 && (
               <section>
@@ -945,12 +1332,15 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                     return (
                       <button
                         key={cat.id}
+                        ref={(el) => {
+                          itemRefs.current[catIdx] = el;
+                        }}
                         type="button"
                         onClick={() => handleSelectCategory(cat)}
                         className={`w-full text-left rtl:text-right p-3 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer group ${
                           isHighlighted
                             ? 'bg-[#EFF6FF] dark:bg-[#162742] border-[#0070F3] text-[#0070F3] dark:text-[#38BDF8]'
-                            : 'bg-white dark:bg-[#0E1726] border-[#E5E7EB] dark:border-[#1E293B] hover:border-[#0070F3]'
+                            : 'bg-white dark:bg-[#0E1726] border-[#E2E8F0] dark:border-[#1E293B] hover:border-[#0070F3]'
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
@@ -958,8 +1348,8 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                             <Folder className="w-4 h-4" />
                           </div>
                           <div className="min-w-0">
-                            <p className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-white truncate">
-                              {isArabic ? cat.nameAr : cat.name}
+                            <p className="text-xs sm:text-sm font-bold text-[#0A0F2C] dark:text-white truncate">
+                              {renderHighlightedText(isArabic ? cat.nameAr : cat.name)}
                             </p>
                             <p className="text-[11px] text-[#64748B] dark:text-slate-400 truncate">
                               {isArabic ? cat.name : cat.nameAr}
@@ -994,16 +1384,19 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                     return (
                       <button
                         key={b.name}
+                        ref={(el) => {
+                          itemRefs.current[globalIdx] = el;
+                        }}
                         type="button"
                         onClick={() => handleSelectBrand(b.name)}
                         className={`w-full text-left rtl:text-right p-3 rounded-xl border transition-all flex items-center justify-between gap-3 cursor-pointer group ${
                           isHighlighted
                             ? 'bg-[#EFF6FF] dark:bg-[#162742] border-[#0070F3]'
-                            : 'bg-white dark:bg-[#0E1726] border-[#E5E7EB] dark:border-[#1E293B] hover:border-[#0070F3]'
+                            : 'bg-white dark:bg-[#0E1726] border-[#E2E8F0] dark:border-[#1E293B] hover:border-[#0070F3]'
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-lg bg-[#F8FAFC] dark:bg-[#132238] border border-[#E5E7EB] dark:border-[#1E293B] flex items-center justify-center p-1 shrink-0 overflow-hidden">
+                          <div className="w-9 h-9 rounded-lg bg-[#F8FAFC] dark:bg-[#132238] border border-[#E2E8F0] dark:border-[#1E293B] flex items-center justify-center p-1 shrink-0 overflow-hidden">
                             {b.logo ? (
                               <LazyImage
                                 src={b.logo}
@@ -1019,8 +1412,8 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                             )}
                           </div>
                           <div className="min-w-0">
-                            <p className="text-xs sm:text-sm font-bold text-[#0F172A] dark:text-white truncate">
-                              {b.name}
+                            <p className="text-xs sm:text-sm font-bold text-[#0A0F2C] dark:text-white truncate">
+                              {renderHighlightedText(b.name)}
                             </p>
                             <p className="text-[11px] text-[#64748B] dark:text-slate-400 truncate">
                               {isArabic ? `تصفح منتجات ${b.name}` : `Explore ${b.name}`}
@@ -1043,18 +1436,28 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
               </section>
             )}
 
-            {/* Matching Products */}
-            {matchingProducts.length > 0 && (
+            {/* Matching Products (Search-As-You-Type Cards with Highlighting + Quick Add) */}
+            {visibleProducts.length > 0 && (
               <section>
-                <div className="text-xs font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400 flex items-center gap-2 mb-2.5">
-                  <Box className="w-3.5 h-3.5 text-[#0070F3]" aria-hidden="true" />
-                  <span>{isArabic ? 'المنتجات المطابقة' : 'Matching Products'}</span>
+                <div className="flex items-center justify-between gap-2 mb-2.5">
+                  <div className="text-xs font-bold uppercase tracking-wider text-[#64748B] dark:text-slate-400 flex items-center gap-2">
+                    <Box className="w-3.5 h-3.5 text-[#0070F3]" aria-hidden="true" />
+                    <span>{isArabic ? 'المنتجات المطابقة' : 'Matching Products'}</span>
+                  </div>
+                  {refinedProducts.length > visibleProducts.length && (
+                    <span className="text-[11px] font-medium text-[#64748B] dark:text-slate-400 tabular-nums">
+                      {isArabic
+                        ? `عرض ${visibleProducts.length} من ${refinedProducts.length}`
+                        : `Showing ${visibleProducts.length} of ${refinedProducts.length}`}
+                    </span>
+                  )}
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {matchingProducts.map((p, pIdx) => {
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5">
+                  {visibleProducts.map((p, pIdx) => {
                     const globalIdx = matchingCategories.length + matchingBrands.length + pIdx;
                     const isHighlighted = selectedIndex === globalIdx;
-                    const skuMatch = findProductSkuMatch(p, query);
+                    const skuMatch = hasQuery ? findProductSkuMatch(p, deferredQuery) : null;
                     const displayPrice =
                       skuMatch?.matchedVariant && Number.isFinite(skuMatch.matchedVariant.price)
                         ? skuMatch.matchedVariant.price
@@ -1067,106 +1470,198 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                     const hasDiscount = !skuMatch?.matchedVariant && p.originalPrice > p.price;
                     const isLowStock = displayStock > 0 && displayStock <= (p.lowStockThreshold || 3);
                     const isOutOfStock = displayStock === 0;
+                    const isJustAdded = recentlyAddedId === p.id;
+                    const productTitle = isArabic ? p.nameAr || p.name : p.name;
 
                     return (
-                      <button
+                      <div
                         key={p.id}
-                        type="button"
-                        onClick={() => handleSelectProduct(p, skuMatch?.matchedVariant?.id)}
-                        className={`w-full text-left rtl:text-right p-3 rounded-xl border transition-all flex items-center gap-3 cursor-pointer group ${
+                        ref={(el) => {
+                          itemRefs.current[globalIdx] = el;
+                        }}
+                        data-testid={`quick-search-result-${p.id}`}
+                        className={`rounded-xl border transition-all flex items-stretch gap-2 p-2.5 ${
                           isHighlighted
                             ? 'bg-[#EFF6FF] dark:bg-[#162742] border-[#0070F3]'
-                            : 'bg-white dark:bg-[#0E1726] border-[#E5E7EB] dark:border-[#1E293B] hover:border-[#0070F3]'
+                            : 'bg-white dark:bg-[#0E1726] border-[#E2E8F0] dark:border-[#1E293B] hover:border-[#0070F3]'
                         }`}
                       >
-                        <div className="w-14 h-14 rounded-xl bg-[#F8FAFC] dark:bg-[#111A2E] border border-[#E5E7EB] dark:border-[#1E293B] overflow-hidden flex-shrink-0 flex items-center justify-center relative p-1">
-                          {p.images && p.images[0] ? (
-                            <LazyImage
-                              src={p.images[0]}
-                              alt={p.name}
-                              priority={true}
-                              width={52}
-                              height={52}
-                              wrapperClassName="w-full h-full flex items-center justify-center"
-                              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
-                            />
-                          ) : (
-                            <Smartphone className="w-5 h-5 text-[#64748B]" />
-                          )}
-                        </div>
-
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 text-[11px] mb-0.5 truncate">
-                            <span className="font-bold text-[#0070F3] dark:text-[#38BDF8] truncate">
-                              {p.brand}
-                            </span>
-                            <span aria-hidden="true" className="text-[#94A3B8]">
-                              ·
-                            </span>
-                            <span className="text-[#64748B] dark:text-slate-400 truncate">
-                              {p.category}
-                            </span>
-                            <span aria-hidden="true" className="text-[#94A3B8]">
-                              ·
-                            </span>
-                            {isOutOfStock ? (
-                              <span className="font-semibold text-rose-500 whitespace-nowrap">
-                                {isArabic ? 'نفذت الكمية' : 'Out of stock'}
-                              </span>
-                            ) : isLowStock ? (
-                              <span className="font-semibold text-amber-600 dark:text-amber-400 inline-flex items-center gap-0.5 whitespace-nowrap">
-                                <AlertTriangle className="w-3 h-3" />
-                                <span>{isArabic ? 'كمية محدودة' : 'Low stock'}</span>
-                              </span>
+                        <button
+                          type="button"
+                          onClick={() => handleSelectProduct(p, skuMatch?.matchedVariant?.id)}
+                          className="flex-1 min-w-0 text-left rtl:text-right flex items-center gap-3 cursor-pointer group"
+                        >
+                          <div className="w-14 h-14 rounded-xl bg-[#F8FAFC] dark:bg-[#111A2E] border border-[#E2E8F0] dark:border-[#1E293B] overflow-hidden flex-shrink-0 flex items-center justify-center relative p-1">
+                            {p.images && p.images[0] ? (
+                              <LazyImage
+                                src={p.images[0]}
+                                alt={productTitle}
+                                priority={true}
+                                width={52}
+                                height={52}
+                                wrapperClassName="w-full h-full flex items-center justify-center"
+                                className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
+                              />
                             ) : (
-                              <span className="font-semibold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-0.5 whitespace-nowrap">
-                                <CheckCircle2 className="w-3 h-3" />
-                                <span>{isArabic ? 'متوفر' : 'In stock'}</span>
-                              </span>
+                              <Smartphone className="w-5 h-5 text-[#64748B]" />
                             )}
                           </div>
 
-                          <p className="text-xs sm:text-sm font-semibold text-[#0F172A] dark:text-white group-hover:text-[#0070F3] dark:group-hover:text-[#38BDF8] truncate">
-                            {isArabic ? p.nameAr || p.name : p.name}
-                            {skuMatch?.matchedVariant ? ` · ${skuMatch.matchedVariant.name}` : ''}
-                          </p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5 text-[11px] mb-0.5 truncate">
+                              <span className="font-bold text-[#0070F3] dark:text-[#38BDF8] truncate">
+                                {renderHighlightedText(p.brand)}
+                              </span>
+                              <span aria-hidden="true" className="text-[#94A3B8]">
+                                ·
+                              </span>
+                              <span className="text-[#64748B] dark:text-slate-400 truncate">
+                                {renderHighlightedText(p.category)}
+                              </span>
+                              <span aria-hidden="true" className="text-[#94A3B8]">
+                                ·
+                              </span>
+                              {isOutOfStock ? (
+                                <span className="font-semibold text-rose-500 whitespace-nowrap">
+                                  {isArabic ? 'نفذت الكمية' : 'Out of stock'}
+                                </span>
+                              ) : isLowStock ? (
+                                <span className="font-semibold text-amber-600 dark:text-amber-400 inline-flex items-center gap-0.5 whitespace-nowrap">
+                                  <AlertTriangle className="w-3 h-3" />
+                                  <span>{isArabic ? 'كمية محدودة' : 'Low stock'}</span>
+                                </span>
+                              ) : (
+                                <span className="font-semibold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-0.5 whitespace-nowrap">
+                                  <CheckCircle2 className="w-3 h-3" />
+                                  <span>{isArabic ? 'متوفر' : 'In stock'}</span>
+                                </span>
+                              )}
+                            </div>
 
-                          <div className="flex items-center gap-2 mt-1 flex-wrap">
-                            <span className="text-xs sm:text-sm font-extrabold text-[#0070F3] dark:text-[#38BDF8] tabular-nums">
-                              ${displayPrice}
-                            </span>
-                            {hasDiscount && (
-                              <span className="text-[11px] text-[#94A3B8] line-through tabular-nums">
-                                ${p.originalPrice}
+                            <p className="text-xs sm:text-sm font-semibold text-[#0A0F2C] dark:text-white group-hover:text-[#0070F3] dark:group-hover:text-[#38BDF8] truncate">
+                              {renderHighlightedText(productTitle)}
+                              {skuMatch?.matchedVariant ? ` · ${skuMatch.matchedVariant.name}` : ''}
+                            </p>
+
+                            <div className="flex items-center gap-2 mt-1 flex-wrap">
+                              <span className="text-xs sm:text-sm font-extrabold text-[#0A0F2C] dark:text-[#38BDF8] tabular-nums">
+                                ${displayPrice}
                               </span>
-                            )}
-                            {displaySku && (
-                              <span className="ml-auto rtl:mr-auto rtl:ml-0 font-mono text-[10px] px-1.5 py-0.5 rounded bg-[#F5F8FC] dark:bg-[#111A2E] text-[#64748B] dark:text-slate-400">
-                                SKU: {displaySku}
-                              </span>
-                            )}
+                              {hasDiscount && (
+                                <span className="text-[11px] text-[#94A3B8] line-through tabular-nums">
+                                  ${p.originalPrice}
+                                </span>
+                              )}
+                              {displaySku && (
+                                <span className="font-mono text-[10px] text-[#64748B] dark:text-slate-400">
+                                  SKU: {renderHighlightedText(displaySku)}
+                                </span>
+                              )}
+                            </div>
                           </div>
+                        </button>
+
+                        {/* Quick Actions: Quick View + 1-Click Add to Cart */}
+                        <div className="flex flex-col justify-center gap-1.5 shrink-0 border-l rtl:border-l-0 rtl:border-r border-[#E2E8F0] dark:border-[#1E293B] pl-2 rtl:pl-0 rtl:pr-2">
+                          <button
+                            type="button"
+                            onClick={(e) => handleQuickViewFromOverlay(e, p)}
+                            data-testid={`overlay-quick-view-${p.id}`}
+                            aria-label={isArabic ? `معاينة سريعة: ${productTitle}` : `Quick view ${productTitle}`}
+                            title={isArabic ? 'معاينة سريعة' : 'Quick View'}
+                            className="w-8 h-8 rounded-lg border border-[#E2E8F0] dark:border-[#1E293B] bg-[#F8FAFC] dark:bg-[#111A2E] hover:border-[#0070F3] text-[#475569] dark:text-slate-300 hover:text-[#0070F3] flex items-center justify-center transition-colors cursor-pointer"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isOutOfStock}
+                            onClick={(e) => handleQuickAddToCart(e, p)}
+                            data-testid={`overlay-quick-add-${p.id}`}
+                            aria-label={
+                              isOutOfStock
+                                ? isArabic
+                                  ? 'غير متوفر'
+                                  : 'Out of stock'
+                                : isArabic
+                                ? `أضف ${productTitle} إلى السلة`
+                                : `Add ${productTitle} to cart`
+                            }
+                            title={
+                              isOutOfStock
+                                ? isArabic
+                                  ? 'نفذت الكمية'
+                                  : 'Out of stock'
+                                : isArabic
+                                ? 'إضافة سريعة للسلة'
+                                : 'Quick add to cart'
+                            }
+                            className={`w-8 h-8 rounded-lg flex items-center justify-center transition-colors ${
+                              isOutOfStock
+                                ? 'bg-slate-100 dark:bg-slate-900 text-slate-400 cursor-not-allowed'
+                                : isJustAdded
+                                ? 'bg-[#16A34A] text-white cursor-pointer'
+                                : 'bg-[#0A0F2C] dark:bg-[#0070F3] hover:bg-[#16204A] dark:hover:bg-[#0051D5] text-white cursor-pointer'
+                            }`}
+                          >
+                            {isJustAdded ? (
+                              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                            ) : (
+                              <ShoppingBag className="w-3.5 h-3.5" />
+                            )}
+                          </button>
                         </div>
-
-                        <ChevronIcon className="w-4 h-4 text-[#94A3B8] group-hover:text-[#0070F3] shrink-0" />
-                      </button>
+                      </div>
                     );
                   })}
                 </div>
               </section>
             )}
 
-            {/* Footer CTA: View All Results */}
-            <div className="pt-4 border-t border-[#E5E7EB] dark:border-[#1E293B]">
+            {/* Footer CTA: View All Results in Storefront */}
+            <div className="pt-4 border-t border-[#E2E8F0] dark:border-[#1E293B]">
               <button
                 type="button"
-                onClick={() => executeTermSearch(query, 'desktop_input_submit')}
-                className="w-full py-3 px-4 rounded-xl bg-[#0070F3] hover:bg-[#0051D5] text-white text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+                data-testid="quick-search-view-all-btn"
+                onClick={() => {
+                  if (hasQuery && refinedProducts.length === 0) {
+                    if (matchingBrands.length > 0) {
+                      handleSelectBrand(matchingBrands[0].name);
+                      return;
+                    }
+                    if (matchingCategories.length > 0) {
+                      handleSelectCategory(matchingCategories[0]);
+                      return;
+                    }
+                  }
+                  executeTermSearch(query, 'desktop_input_submit');
+                }}
+                className="w-full py-3 px-4 rounded-xl bg-[#0A0F2C] hover:bg-[#16204A] dark:bg-[#0070F3] dark:hover:bg-[#0051D5] text-white text-xs sm:text-sm font-bold transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <span>
-                  {isArabic
-                    ? `عرض كافة النتائج لـ "${query}" في المتجر`
-                    : `View all results for "${query}" in Catalog`}
+                  {hasQuery
+                    ? refinedProducts.length > 0
+                      ? isArabic
+                        ? `عرض كافة النتائج لـ "${query}" في المتجر (${refinedProducts.length})`
+                        : `View all ${refinedProducts.length} results for "${query}" in Catalog`
+                      : matchingBrands.length > 0
+                      ? isArabic
+                        ? `استكشف منتجات ${matchingBrands[0].name} في المتجر`
+                        : `Explore ${matchingBrands[0].name} products in Catalog`
+                      : matchingCategories.length > 0
+                      ? isArabic
+                        ? `استكشف قسم ${matchingCategories[0].nameAr || matchingCategories[0].name} في المتجر`
+                        : `Explore ${matchingCategories[0].name} in Catalog`
+                      : isArabic
+                      ? `البحث عن "${query}" في المتجر`
+                      : `Search "${query}" in Catalog`
+                    : selectedFacetBrand
+                    ? isArabic
+                      ? `عرض كافة منتجات ${selectedFacetBrand} في المتجر`
+                      : `Explore all ${selectedFacetBrand} products in Store`
+                    : isArabic
+                    ? 'عرض كافة منتجات القسم في المتجر'
+                    : 'Explore this department in Store'}
                 </span>
                 <ArrowIcon className="w-4 h-4" />
               </button>
@@ -1174,26 +1669,44 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
           </div>
         ) : (
           /* BODY STATE 3: No Results */
-          <div className="py-12 text-center bg-[#F8FAFC] dark:bg-[#0E1726] rounded-2xl border border-[#E5E7EB] dark:border-[#1E293B] px-4">
+          <div
+            data-testid="quick-search-empty-state"
+            className="py-12 text-center bg-[#F8FAFC] dark:bg-[#0E1726] rounded-2xl border border-[#E2E8F0] dark:border-[#1E293B] px-4"
+          >
             <div className="w-12 h-12 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-500 flex items-center justify-center mx-auto mb-3">
               <Search className="w-6 h-6" />
             </div>
-            <p className="text-sm font-bold text-[#0F172A] dark:text-white mb-1">
-              {isArabic ? `لم نجد نتائج تطابق "${query}"` : `No results matching "${query}"`}
+            <p className="text-sm font-bold text-[#0A0F2C] dark:text-white mb-1">
+              {hasQuery
+                ? isArabic
+                  ? `لم نجد نتائج تطابق "${query}"`
+                  : `No results matching "${query}"`
+                : isArabic
+                ? 'لا توجد منتجات مطابقة للفلاتر المختارة'
+                : 'No products match the selected filters'}
             </p>
             <p className="text-xs text-[#64748B] dark:text-slate-400 max-w-md mx-auto mb-4">
               {isArabic
-                ? 'جرب البحث باسم المنتج، الماركة (Apple, Samsung, Anker)، أو اختر من الكلمات الشائعة.'
-                : 'Try searching by product name, brand (Apple, Samsung, Anker), or pick a popular keyword.'}
+                ? 'جرب مسح الفلاتر أو البحث باسم المنتج، الماركة (Apple, Samsung, Anker)، أو القسم.'
+                : 'Try clearing active filters or searching by product keyword, brand (Apple, Samsung, Anker), or category.'}
             </p>
-            <button
-              type="button"
-              onClick={() => executeTermSearch(query, 'desktop_input_submit')}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0070F3] hover:bg-[#0051D5] text-white text-xs font-bold transition-colors cursor-pointer"
-            >
-              <span>{isArabic ? 'البحث في كامل الكتالوج' : 'Search Full Catalog'}</span>
-              <ArrowIcon className="w-3.5 h-3.5" />
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <button
+                type="button"
+                onClick={handleClearAllFilters}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-[#E2E8F0] dark:border-[#1E293B] bg-white dark:bg-[#111A2E] hover:border-[#0070F3] text-[#0A0F2C] dark:text-white text-xs font-bold transition-colors cursor-pointer"
+              >
+                <span>{isArabic ? 'مسح البحث والفلاتر' : 'Reset Search & Filters'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => executeTermSearch(query, 'desktop_input_submit')}
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#0A0F2C] dark:bg-[#0070F3] hover:bg-[#16204A] dark:hover:bg-[#0051D5] text-white text-xs font-bold transition-colors cursor-pointer"
+              >
+                <span>{isArabic ? 'تصفح كامل الكتالوج' : 'Browse Full Catalog'}</span>
+                <ArrowIcon className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
       </div>

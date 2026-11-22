@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useShop } from '../context/ShopContext';
 import { ProductCard } from '../components/ProductCard';
 import { openExternalUrl } from '../utils/navigation';
 import { addProductReview } from '../services/storageService';
+import { fetchProductByIdCachedOrCloud } from '../services/productFirestoreService';
 import { RecentlyViewedCarousel } from '../components/RecentlyViewedCarousel';
 import { ProductLuxuryShowcase } from '../components/ProductLuxuryShowcase';
 import { ProductDetailTabs } from '../components/ProductDetailTabs';
@@ -30,7 +31,11 @@ export const ProductDetailPage: React.FC = () => {
     refreshData,
   } = useShop();
 
-  const product = products.find((p) => p.id === selectedProductId) || products[0];
+  const [cloudResolvedProduct, setCloudResolvedProduct] = useState<Product | null>(null);
+  const cachedMatch = selectedProductId
+    ? products.find((p) => p.id === selectedProductId)
+    : undefined;
+  const product = cachedMatch || cloudResolvedProduct || products[0];
 
   const [copiedShare, setCopiedShare] = useState(false);
 
@@ -40,12 +45,42 @@ export const ProductDetailPage: React.FC = () => {
   const [newReviewComment, setNewReviewComment] = useState('');
   const [reviewSubmitted, setReviewSubmitted] = useState(false);
 
+  const productsRef = useRef(products);
+  productsRef.current = products;
+
+  useEffect(() => {
+    let active = true;
+    const targetId = selectedProductId?.trim();
+    if (!targetId) {
+      setCloudResolvedProduct(null);
+      return;
+    }
+
+    const inCache = productsRef.current.find((p) => p.id === targetId);
+    if (inCache) {
+      setCloudResolvedProduct(null);
+      return;
+    }
+
+    fetchProductByIdCachedOrCloud(targetId, productsRef.current)
+      .then((found) => {
+        if (!active || !found) return;
+        setCloudResolvedProduct(found);
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+    };
+  }, [selectedProductId]);
+
   useEffect(() => {
     setCopiedShare(false);
     setReviewSubmitted(false);
     if (product?.id) {
       recordProductView(product.id);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product?.id]);
 
   if (!product) return null;
@@ -54,18 +89,22 @@ export const ProductDetailPage: React.FC = () => {
     prod: Product,
     qty: number,
     selectedColor?: string,
-    selectedVariant?: ProductVariant
+    selectedVariant?: ProductVariant,
+    selectedColorImage?: string,
+    colorPriceAdjustment?: number
   ) => {
-    addToCart(prod, qty, selectedColor, selectedVariant);
+    addToCart(prod, qty, selectedColor, selectedVariant, selectedColorImage, colorPriceAdjustment);
   };
 
   const handleDirectOrder = (
     prod: Product,
     qty: number,
     selectedColor?: string,
-    selectedVariant?: ProductVariant
+    selectedVariant?: ProductVariant,
+    selectedColorImage?: string,
+    colorPriceAdjustment?: number
   ) => {
-    addToCart(prod, qty, selectedColor, selectedVariant);
+    addToCart(prod, qty, selectedColor, selectedVariant, selectedColorImage, colorPriceAdjustment);
     setCurrentView('checkout');
   };
 

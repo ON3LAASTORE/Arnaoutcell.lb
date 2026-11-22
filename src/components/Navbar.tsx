@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useShop } from '../context/ShopContext';
 import {
+  Search,
   ShoppingCart,
   Menu,
   X,
@@ -46,6 +47,8 @@ export const Navbar: React.FC = () => {
     compareList,
     setIsCompareModalOpen,
     setIsQrScannerOpen,
+    isQuickSearchOpen,
+    setIsQuickSearchOpen,
   } = useShop();
 
   const toggleLanguage = () => setLang(lang === 'ar' ? 'en' : 'ar');
@@ -54,7 +57,6 @@ export const Navbar: React.FC = () => {
 
   const [categoriesDropdownOpen, setCategoriesDropdownOpen] = useState<boolean>(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
-  const [quickSearchOpen, setQuickSearchOpen] = useState<boolean>(false);
 
   const categoriesDropdownRef = useRef<HTMLDivElement>(null);
 
@@ -104,6 +106,13 @@ export const Navbar: React.FC = () => {
     };
 
     const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        setCategoriesDropdownOpen(false);
+        setMobileMenuOpen(false);
+        setIsQuickSearchOpen(!isQuickSearchOpen);
+        return;
+      }
       if (event.key === 'Escape') {
         setCategoriesDropdownOpen(false);
         setMobileMenuOpen(false);
@@ -116,7 +125,7 @@ export const Navbar: React.FC = () => {
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, []);
+  }, [isQuickSearchOpen, setIsQuickSearchOpen]);
 
   return (
     <header
@@ -146,11 +155,24 @@ export const Navbar: React.FC = () => {
           <GlobalSearch
             variant="navbar"
             className="hidden md:block flex-1 max-w-2xl"
-            onOpenQuickSearch={() => setQuickSearchOpen(true)}
+            onOpenQuickSearch={() => setIsQuickSearchOpen(true)}
           />
 
-          {/* Right Side: Streamlined Actions (Minimal Cart + Mobile Menu Trigger) */}
-          <div className="flex items-center gap-3 shrink-0">
+          {/* Right Side: Streamlined Actions (Quick Search + Cart + Mobile Menu Trigger) */}
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                setIsQuickSearchOpen(true);
+              }}
+              data-testid="mobile-overlay-search-btn"
+              aria-label={isArabic ? 'فتح نافذة البحث السريع' : 'Open Quick Search Overlay'}
+              className="md:hidden p-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/[0.08] border border-white/10 transition-colors cursor-pointer"
+            >
+              <Search className="w-5 h-5 text-[#00BAF2]" />
+            </button>
+
             <button
               type="button"
               onClick={() => setIsCartOpen(true)}
@@ -187,7 +209,7 @@ export const Navbar: React.FC = () => {
           <GlobalSearch
             isMobile={true}
             variant="navbar"
-            onOpenQuickSearch={() => setQuickSearchOpen(true)}
+            onOpenQuickSearch={() => setIsQuickSearchOpen(true)}
             onCloseMobileMenu={() => setMobileMenuOpen(false)}
           />
         </div>
@@ -289,6 +311,21 @@ export const Navbar: React.FC = () => {
 
             {/* Clean Text Utility Links (No Pills) */}
             <div className="flex items-center gap-5 shrink-0 text-[12.5px] font-medium text-[#9CA3AF]">
+              <button
+                type="button"
+                data-testid="navbar-overlay-search-btn"
+                onClick={() => setIsQuickSearchOpen(true)}
+                aria-label={isArabic ? 'بحث سريع فوري' : 'Open Quick Search Overlay (Cmd/Ctrl+K)'}
+                title={isArabic ? 'البحث السريع (⌘K)' : 'Quick Search Overlay (⌘K)'}
+                className="inline-flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer whitespace-nowrap shrink-0"
+              >
+                <Search className="w-3.5 h-3.5 text-[#00BAF2]" />
+                <span>{isArabic ? 'بحث فوري' : 'Quick Search'}</span>
+                <kbd className="hidden lg:inline-block text-[10px] font-mono text-slate-400 border border-white/15 rounded px-1 py-0.2">
+                  ⌘K
+                </kbd>
+              </button>
+
               <button
                 type="button"
                 data-testid="navbar-qr-scanner-button"
@@ -480,8 +517,8 @@ export const Navbar: React.FC = () => {
 
       {/* Full-Screen Voice & Quick Search Overlay */}
       <QuickSearchOverlay
-        isOpen={quickSearchOpen}
-        onClose={() => setQuickSearchOpen(false)}
+        isOpen={isQuickSearchOpen}
+        onClose={() => setIsQuickSearchOpen(false)}
       />
     </header>
   );

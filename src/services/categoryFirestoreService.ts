@@ -14,8 +14,10 @@ import {
   isFirestoreInQuotaCooldown,
   isFirestoreQuotaExceededError,
   markFirestoreQuotaExceeded,
+  shouldLogFirestoreQuotaWarning,
 } from '../utils/firestoreQuotaHelpers';
 import { mergeDynamicCategories, sortDynamicCategories } from '../utils/categoryBannerHelpers';
+import { storefrontCache } from '../utils/storefrontCacheHelpers';
 
 const CATEGORIES_COLLECTION = 'categories';
 const LOCAL_CATEGORIES_KEY = 'arnaout_cell_categories_v2';
@@ -118,56 +120,80 @@ function mapSnapshotDocToCategory(docId: string, data: Record<string, unknown>):
 }
 
 /**
- * Fetches dynamic product categories from Firestore once, falling back cleanly
- * to cached/initial catalog categories when offline or quota-limited.
+ * Fetches dynamic product categories via the shared TTL cache + in-flight deduplication layer.
  */
-export async function fetchDynamicCategories(): Promise<Category[]> {
-  if (isFirestoreInQuotaCooldown()) {
-    return sortDynamicCategories(readLocalCategoryCache());
-  }
+export async function fetchDynamicCategoriesWithMeta(options?: {
+  forceRefresh?: boolean;
+}): Promise<{ categories: Category[]; fromCache: boolean; isStale: boolean }> {
+  const fallbackCategories = sortDynamicCategories(readLocalCategoryCache());
 
-  try {
-    const colRef = collection(db, CATEGORIES_COLLECTION);
-    const snapshot = await getDocs(colRef);
+  const result = await storefrontCache.fetchWithCache<Category[]>(
+    'categories',
+    async () => {
+      try {
+        const colRef = collection(db, CATEGORIES_COLLECTION);
+        const snapshot = await getDocs(colRef);
 
-    if (snapshot.empty) {
-      if (!snapshot.metadata.fromCache) {
-        seedInitialCategoriesToCloud().catch((err) => {
-          console.warn('Category cloud seed skipped:', err);
+        if (snapshot.empty) {
+          if (!snapshot.metadata.fromCache && !isFirestoreInQuotaCooldown()) {
+            seedInitialCategoriesToCloud().catch(() => {});
+          }
+          return fallbackCategories;
+        }
+
+        const cloudCategories: Category[] = [];
+        snapshot.forEach((docSnap) => {
+          cloudCategories.push(mapSnapshotDocToCategory(docSnap.id, docSnap.data()));
         });
+
+        const merged = mergeDynamicCategories(cloudCategories, INITIAL_CATEGORIES);
+        writeLocalCategoryCache(merged);
+        return merged;
+      } catch (error) {
+        const category = classifyFirestoreError(error);
+        if (category === 'quota') {
+          markFirestoreQuotaExceeded();
+          if (shouldLogFirestoreQuotaWarning('categories')) {
+            console.warn('Firestore daily read quota reached; using cached storefront categories.');
+          }
+          throw error;
+        }
+        if (category === 'network') {
+          if (shouldLogFirestoreQuotaWarning('categories_network')) {
+            console.warn('Dynamic categories fetch offline; using cached storefront categories.');
+          }
+          throw error;
+        }
+        if (category === 'permission') {
+          handleFirestoreError(error, OperationType.LIST, CATEGORIES_COLLECTION);
+        }
+        throw error;
       }
-      return sortDynamicCategories(readLocalCategoryCache());
+    },
+    {
+      forceRefresh: options?.forceRefresh,
+      fallbackData: fallbackCategories,
+      fallbackSource: 'local',
     }
+  );
 
-    const cloudCategories: Category[] = [];
-    snapshot.forEach((docSnap) => {
-      cloudCategories.push(mapSnapshotDocToCategory(docSnap.id, docSnap.data()));
-    });
+  return {
+    categories: sortDynamicCategories(result.data),
+    fromCache: result.fromCache,
+    isStale: result.isStale,
+  };
+}
 
-    const merged = mergeDynamicCategories(cloudCategories, INITIAL_CATEGORIES);
-    writeLocalCategoryCache(merged);
-    return merged;
-  } catch (error) {
-    const category = classifyFirestoreError(error);
-    if (category === 'quota') {
-      markFirestoreQuotaExceeded();
-      console.warn('Firestore daily read quota reached; using cached storefront categories.');
-      return sortDynamicCategories(readLocalCategoryCache());
-    }
-    if (category === 'network') {
-      console.warn('Dynamic categories fetch offline; using cached storefront categories.');
-      return sortDynamicCategories(readLocalCategoryCache());
-    }
-    if (category === 'permission') {
-      handleFirestoreError(error, OperationType.LIST, CATEGORIES_COLLECTION);
-    }
-    return sortDynamicCategories(readLocalCategoryCache());
-  }
+export async function fetchDynamicCategories(options?: {
+  forceRefresh?: boolean;
+}): Promise<Category[]> {
+  const { categories } = await fetchDynamicCategoriesWithMeta(options);
+  return categories;
 }
 
 /**
- * Subscribes to live Firestore updates for storefront categories so additions,
- * edits, or deletions sync immediately across HomePage and Shop filters.
+ * Subscribes to live Firestore updates for categories (reserved for Admin Dashboard live mode).
+ * Always cleans up on unmount or quota exhaustion.
  */
 export function subscribeToLiveCategories(
   onUpdate: (categories: Category[]) => void,
@@ -203,6 +229,7 @@ export function subscribeToLiveCategories(
 
       const merged = mergeDynamicCategories(cloudCategories, INITIAL_CATEGORIES);
       writeLocalCategoryCache(merged);
+      storefrontCache.setCategories(merged, 'firestore');
       onUpdate(merged);
     },
     (error) => {
@@ -210,6 +237,9 @@ export function subscribeToLiveCategories(
       const category = classifyFirestoreError(error);
       if (category === 'quota') {
         markFirestoreQuotaExceeded();
+        if (shouldLogFirestoreQuotaWarning('categories')) {
+          console.warn('Firestore daily read quota reached; using cached storefront categories.');
+        }
         if (unsubscribeFn) {
           try {
             unsubscribeFn();
@@ -240,6 +270,8 @@ export function subscribeToLiveCategories(
 }
 
 export async function persistCategoryToCloud(category: Category): Promise<void> {
+  storefrontCache.upsertCategory(category, 'mutation');
+
   if (isFirestoreInQuotaCooldown()) return;
   const payload = cleanCategoryForFirestore(category);
   const docId = String(payload.id || category.id);
@@ -250,7 +282,9 @@ export async function persistCategoryToCloud(category: Category): Promise<void> 
   } catch (error) {
     if (isFirestoreQuotaExceededError(error)) {
       markFirestoreQuotaExceeded();
-      console.warn('Firestore category write deferred due to daily quota limit; saved locally.');
+      if (shouldLogFirestoreQuotaWarning('categories_write')) {
+        console.warn('Firestore category write deferred due to daily quota limit; saved locally.');
+      }
       return;
     }
     handleFirestoreError(error, OperationType.WRITE, `${CATEGORIES_COLLECTION}/${docId}`);
@@ -258,6 +292,8 @@ export async function persistCategoryToCloud(category: Category): Promise<void> 
 }
 
 export async function removeCategoryFromCloud(categoryId: string): Promise<void> {
+  storefrontCache.removeCategory(categoryId, 'mutation');
+
   if (isFirestoreInQuotaCooldown()) return;
   const docRef = doc(db, CATEGORIES_COLLECTION, categoryId);
   try {
@@ -265,7 +301,9 @@ export async function removeCategoryFromCloud(categoryId: string): Promise<void>
   } catch (error) {
     if (isFirestoreQuotaExceededError(error)) {
       markFirestoreQuotaExceeded();
-      console.warn('Firestore category delete deferred due to daily quota limit; removed locally.');
+      if (shouldLogFirestoreQuotaWarning('categories_write')) {
+        console.warn('Firestore category delete deferred due to daily quota limit; removed locally.');
+      }
       return;
     }
     handleFirestoreError(error, OperationType.DELETE, `${CATEGORIES_COLLECTION}/${categoryId}`);

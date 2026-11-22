@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback, ReactNode } from 'react';
 import {
   Product,
   Category,
@@ -22,15 +22,9 @@ import {
   saveProducts,
   saveCategories,
 } from '../services/storageService';
-import {
-  subscribeToLiveProducts,
-  seedInitialProductsToCloud,
-} from '../services/productFirestoreService';
-import {
-  fetchDynamicCategories,
-  subscribeToLiveCategories,
-  seedInitialCategoriesToCloud,
-} from '../services/categoryFirestoreService';
+import { fetchDynamicCategories } from '../services/categoryFirestoreService';
+import { initializeStorefrontData } from '../services/storefrontDataService';
+import { deriveSpecialOfferProducts, storefrontCache } from '../utils/storefrontCacheHelpers';
 import {
   validateAddToCompare,
   toggleCompareList,
@@ -61,6 +55,7 @@ import { ProductCollectionPreset } from '../utils/navbarMenuHelpers';
 import { extractResetTokenFromLocation } from '../services/authService';
 import {
   PromoValidationResult,
+  resolveCartItemUnitPrice,
   validateAndCalculatePromoDiscount,
 } from '../utils/checkoutHelpers';
 
@@ -70,18 +65,30 @@ interface ShopContextType {
   isSwitchingLanguage: boolean;
   t: typeof translations.en;
   products: Product[];
+  offers: Product[];
   categories: Category[];
   categoriesLoading: boolean;
   categoriesError: string | null;
-  refreshCategories: () => Promise<void>;
+  refreshCategories: (force?: boolean) => Promise<void>;
   brands: Brand[];
   marketingVideos: MarketingVideo[];
   storeSettings: StoreSettings;
+  storefrontLoading: boolean;
+  storefrontStale: boolean;
+  storefrontError: string | null;
+  refreshStorefront: (force?: boolean) => Promise<void>;
   refreshData: () => void;
 
   // Cart
   cart: CartItem[];
-  addToCart: (product: Product, quantity?: number, color?: string, variant?: ProductVariant) => void;
+  addToCart: (
+    product: Product,
+    quantity?: number,
+    color?: string,
+    variant?: ProductVariant,
+    colorImage?: string,
+    colorPriceAdjustment?: number
+  ) => void;
   removeFromCart: (productId: string, color?: string, variantId?: string) => void;
   updateCartQuantity: (productId: string, quantity: number, color?: string, variantId?: string) => void;
   clearCart: () => void;
@@ -113,6 +120,8 @@ interface ShopContextType {
   setIsCompareModalOpen: (open: boolean) => void;
   isQrScannerOpen: boolean;
   setIsQrScannerOpen: (open: boolean) => void;
+  isQuickSearchOpen: boolean;
+  setIsQuickSearchOpen: (open: boolean) => void;
 
   // Navigation & Filtering
   currentView: string;
@@ -195,12 +204,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const setDarkMode = (dark: boolean) => setIsDarkMode(dark);
 
   const [products, setProducts] = useState<Product[]>([]);
+  const [offers, setOffers] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [categoriesLoading, setCategoriesLoading] = useState<boolean>(true);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [marketingVideos, setMarketingVideos] = useState<MarketingVideo[]>([]);
   const [storeSettings, setStoreSettings] = useState<StoreSettings>(() => getStoreSettings());
+  const [storefrontLoading, setStorefrontLoading] = useState<boolean>(true);
+  const [storefrontStale, setStorefrontStale] = useState<boolean>(false);
+  const [storefrontError, setStorefrontError] = useState<string | null>(null);
 
   // Views & Routing state
   const [currentView, setCurrentView] = useState<string>(() =>
@@ -265,6 +278,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   });
   const [isCompareModalOpen, setIsCompareModalOpen] = useState<boolean>(false);
   const [isQrScannerOpen, setIsQrScannerOpen] = useState<boolean>(false);
+  const [isQuickSearchOpen, setIsQuickSearchOpen] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -317,11 +331,30 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     return compareList.some((p) => p.id === productId);
   };
 
-  const refreshCategories = async () => {
+  const refreshData = useCallback(() => {
+    const cachedProducts = storefrontCache.readEntry<Product[]>('products')?.data;
+    const latestProducts = cachedProducts && cachedProducts.length > 0 ? cachedProducts : getProducts();
+    const cachedOffers = storefrontCache.readEntry<Product[]>('offers')?.data;
+    const latestOffers = cachedOffers ?? deriveSpecialOfferProducts(latestProducts);
+    const cachedCategories = storefrontCache.readEntry<Category[]>('categories')?.data;
+    const latestCategories =
+      cachedCategories && cachedCategories.length > 0 ? cachedCategories : getCategories();
+    const cachedBrands = storefrontCache.readEntry<Brand[]>('brands')?.data;
+    const latestBrands = cachedBrands && cachedBrands.length > 0 ? cachedBrands : getBrands();
+
+    setProducts(latestProducts);
+    setOffers(latestOffers);
+    setCategories(latestCategories);
+    setBrands(latestBrands);
+    setMarketingVideos(getMarketingVideos());
+    setStoreSettings(getStoreSettings());
+  }, []);
+
+  const refreshCategories = useCallback(async (force = false) => {
     setCategoriesLoading(true);
     setCategoriesError(null);
     try {
-      const liveCategories = await fetchDynamicCategories();
+      const liveCategories = await fetchDynamicCategories({ forceRefresh: force });
       if (liveCategories.length > 0) {
         setCategories(liveCategories);
         saveCategories(liveCategories);
@@ -331,13 +364,47 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     } finally {
       setCategoriesLoading(false);
     }
-  };
+  }, []);
 
-  // Initialize data on mount and subscribe to real-time live product and category updates
+  const refreshStorefront = useCallback(async (force = false) => {
+    setStorefrontLoading(true);
+    setCategoriesLoading(true);
+    setStorefrontError(null);
+    setCategoriesError(null);
+    try {
+      const snapshot = await initializeStorefrontData({ forceRefresh: force });
+      if (snapshot.products.length > 0) {
+        setProducts(snapshot.products);
+        setOffers(snapshot.offers);
+        saveProducts(snapshot.products);
+      }
+      if (snapshot.categories.length > 0) {
+        setCategories(snapshot.categories);
+        saveCategories(snapshot.categories);
+      }
+      if (snapshot.brands.length > 0) {
+        setBrands(snapshot.brands);
+      }
+      setStorefrontStale(snapshot.isStale);
+      if (snapshot.error) {
+        setStorefrontError(snapshot.error);
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unable to load storefront catalog.';
+      setStorefrontError(msg);
+      setCategoriesError(msg);
+      setStorefrontStale(true);
+    } finally {
+      setStorefrontLoading(false);
+      setCategoriesLoading(false);
+    }
+  }, []);
+
+  // Batched storefront initialization on mount using cache-first TTL + deduplicated getDocs
+  // (avoids multiple concurrent cold queries and open-ended storefront onSnapshot listeners)
   useEffect(() => {
     initStorage();
     refreshData();
-    void refreshCategories();
 
     if (typeof window !== 'undefined') {
       try {
@@ -352,39 +419,51 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     }
 
-    // Attach real-time cloud listeners for live updates across all devices
-    const unsubscribeProducts = subscribeToLiveProducts(
-      (liveProducts) => {
-        if (liveProducts && liveProducts.length > 0) {
-          setProducts(liveProducts);
-          saveProducts(liveProducts);
-        }
-      },
-      () => {
-        // If cloud database is empty, seed initial catalog
-        seedInitialProductsToCloud().catch(console.error);
-      }
-    );
+    let isMounted = true;
+    setStorefrontLoading(true);
+    setCategoriesLoading(true);
 
-    const unsubscribeCategories = subscribeToLiveCategories(
-      (liveCategories) => {
-        if (liveCategories && liveCategories.length > 0) {
-          setCategories(liveCategories);
-          saveCategories(liveCategories);
-          setCategoriesLoading(false);
-          setCategoriesError(null);
+    initializeStorefrontData()
+      .then((snapshot) => {
+        if (!isMounted) return;
+        if (snapshot.products.length > 0) {
+          setProducts(snapshot.products);
+          setOffers(snapshot.offers);
+          if (!snapshot.fromCache) {
+            saveProducts(snapshot.products);
+          }
         }
-      },
-      () => {
-        seedInitialCategoriesToCloud().catch(console.error);
-      }
-    );
+        if (snapshot.categories.length > 0) {
+          setCategories(snapshot.categories);
+          if (!snapshot.fromCache) {
+            saveCategories(snapshot.categories);
+          }
+        }
+        if (snapshot.brands.length > 0) {
+          setBrands(snapshot.brands);
+        }
+        setStorefrontStale(snapshot.isStale);
+        setStorefrontError(snapshot.error);
+        setCategoriesError(null);
+      })
+      .catch((err) => {
+        if (!isMounted) return;
+        const msg = err instanceof Error ? err.message : 'Unable to load storefront catalog.';
+        setStorefrontError(msg);
+        setCategoriesError(msg);
+        setStorefrontStale(true);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setStorefrontLoading(false);
+          setCategoriesLoading(false);
+        }
+      });
 
     return () => {
-      unsubscribeProducts();
-      unsubscribeCategories();
+      isMounted = false;
     };
-  }, []);
+  }, [refreshData]);
 
   // Keep HTML lang, dir, .rtl/.dir-transitioning classes, and localStorage synchronized globally
   useEffect(() => {
@@ -498,15 +577,16 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   };
 
-  const refreshData = () => {
-    setProducts(getProducts());
-    setCategories(getCategories());
-    setBrands(getBrands());
-    setMarketingVideos(getMarketingVideos());
-    setStoreSettings(getStoreSettings());
-  };
+  // State refresh handler lives above initialization effect so effects keep stable reference
 
-  const addToCart = (product: Product, quantity = 1, color?: string, variant?: ProductVariant) => {
+  const addToCart = (
+    product: Product,
+    quantity = 1,
+    color?: string,
+    variant?: ProductVariant,
+    colorImage?: string,
+    colorPriceAdjustment?: number
+  ) => {
     setCart((prev) => {
       const existingIndex = prev.findIndex(
         (item) =>
@@ -515,15 +595,35 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           item.selectedVariant?.id === variant?.id
       );
 
+      const hasAdj =
+        typeof colorPriceAdjustment === 'number' &&
+        Number.isFinite(colorPriceAdjustment) &&
+        colorPriceAdjustment !== 0;
+
       if (existingIndex > -1) {
         const updated = [...prev];
         const newQty = updated[existingIndex].quantity + quantity;
         // Don't exceed available stock
         const maxStock = variant ? variant.stock : product.stock;
-        updated[existingIndex].quantity = Math.min(newQty, maxStock);
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          quantity: Math.min(newQty, maxStock),
+          ...(colorImage ? { selectedColorImage: colorImage } : {}),
+          ...(hasAdj ? { colorPriceAdjustment } : {}),
+        };
         return updated;
       } else {
-        return [...prev, { product, quantity, selectedColor: color, selectedVariant: variant }];
+        return [
+          ...prev,
+          {
+            product,
+            quantity,
+            selectedColor: color,
+            selectedVariant: variant,
+            ...(colorImage ? { selectedColorImage: colorImage } : {}),
+            ...(hasAdj ? { colorPriceAdjustment } : {}),
+          },
+        ];
       }
     });
     setIsCartOpen(true);
@@ -569,8 +669,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const cartSubtotal = cart.reduce((sum, item) => {
-    const itemPrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
-    return sum + itemPrice * item.quantity;
+    const itemPrice = resolveCartItemUnitPrice(item);
+    return Number((sum + itemPrice * item.quantity).toFixed(2));
   }, 0);
 
   const promoResult = promoCode
@@ -661,9 +761,21 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const items = order.items || cart;
     items.forEach((item: any, idx: number) => {
       const name = item.productName || item.product?.name;
-      const price = item.price || (item.selectedVariant ? item.selectedVariant.price : item.product.price);
-      const color = item.color || item.selectedColor ? ` (${item.color || item.selectedColor})` : '';
-      text += `${idx + 1}. ${name}${color} x${item.quantity} - $${price * item.quantity}\n`;
+      const price =
+        typeof item.price === 'number'
+          ? item.price
+          : resolveCartItemUnitPrice(item);
+      const itemColor = item.color || item.selectedColor;
+      const itemVariant = item.variantName || item.selectedVariant?.name;
+      const variantDistinct =
+        itemVariant &&
+        itemVariant.trim().toLowerCase() !== (itemColor || '').trim().toLowerCase()
+          ? itemVariant
+          : undefined;
+      const detailsList = [itemColor, variantDistinct].filter(Boolean);
+      const detailsText = detailsList.length > 0 ? ` (${detailsList.join(' • ')})` : '';
+      const lineTotal = Number((price * item.quantity).toFixed(2));
+      text += `${idx + 1}. ${name}${detailsText} x${item.quantity} - $${lineTotal}\n`;
     });
 
     const discount = Number(order.discount) || 0;
@@ -690,6 +802,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         isSwitchingLanguage,
         t,
         products,
+        offers,
         categories,
         categoriesLoading,
         categoriesError,
@@ -697,6 +810,10 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         brands,
         marketingVideos,
         storeSettings,
+        storefrontLoading,
+        storefrontStale,
+        storefrontError,
+        refreshStorefront,
         refreshData,
         cart,
         addToCart,
@@ -727,6 +844,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setIsCompareModalOpen,
         isQrScannerOpen,
         setIsQrScannerOpen,
+        isQuickSearchOpen,
+        setIsQuickSearchOpen,
         currentView,
         setCurrentView,
         selectedProductId,

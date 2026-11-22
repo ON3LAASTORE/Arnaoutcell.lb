@@ -326,6 +326,22 @@ test('getUniqueMatchingBrands finds brands and calculates accurate product count
   assert.ok(matching.length >= 1);
   assert.equal(matching[0].name, 'Apple');
   assert.equal(matching[0].count, 2);
+
+  // When catalog products are loaded, brand count uses live product count rather than stale metadata
+  const brandsWithStaleMeta: Brand[] = [
+    { id: 'b-stale', name: 'Anker', logo: '', description: 'Charging leader', featured: true, productCount: 99 },
+    { id: 'b-live', name: 'Apple', logo: '', description: 'Cupertino chargers & tech', featured: true, productCount: 5 },
+  ];
+  const liveOnlyProducts = mockProducts.filter((p) => p.brand === 'Apple' && p.isPublished !== false);
+  const byCharging = getUniqueMatchingBrands(liveOnlyProducts, brandsWithStaleMeta, 'charg');
+  assert.equal(byCharging.length, 2);
+  // Apple has 2 live products; Anker has 0 live products so it must not display stale 99
+  const ankerHit = byCharging.find((b) => b.name === 'Anker');
+  assert.equal(ankerHit?.count, 0);
+
+  // Empty catalog falls back cleanly to configured metadata productCount
+  const fallbackOnly = getUniqueMatchingBrands([], brandsWithStaleMeta, 'anker');
+  assert.equal(fallbackOnly[0]?.count, 99);
 });
 
 test('getFilterModeLabels returns English and Arabic configurations for all 5 search scopes including SKU', () => {
@@ -426,5 +442,20 @@ test('getSampleProductSkus extracts unique published SKUs up to maxCount', () =>
   assert.ok(!samples.includes('DRAFT-01'));
   assert.deepEqual(samples, ['IPH-16-PM', 'SAM-S25-U', 'ANK-PRIME-200']);
 });
+
+test('filterProductsGlobally matches keywords in specifications, descriptions, and colors', () => {
+  const specHits = filterProductsGlobally(mockProducts, 'Snapdragon', 'all', mockCategories);
+  assert.equal(specHits.length, 1);
+  assert.equal(specHits[0].id, 'p2');
+
+  const descHits = filterProductsGlobally(mockProducts, 'noise cancellation', 'name', mockCategories);
+  assert.equal(descHits.length, 1);
+  assert.equal(descHits[0].id, 'p5');
+
+  const colorHits = filterProductsGlobally(mockProducts, 'Desert Titanium', 'all', mockCategories);
+  assert.equal(colorHits.length, 1);
+  assert.equal(colorHits[0].id, 'p1');
+});
+
 
 

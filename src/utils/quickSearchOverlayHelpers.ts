@@ -1,4 +1,4 @@
-import { Product } from '../types';
+import { Category, Product } from '../types';
 import {
   computeSearchAnalyticsSummary,
   getStoredSearchEvents,
@@ -213,3 +213,183 @@ export function getPopularSearchKeywords(
 
   return keywords.slice(0, limit);
 }
+
+export interface HighlightSegment {
+  text: string;
+  isMatch: boolean;
+}
+
+export type OverlaySortOption = 'relevance' | 'price_asc' | 'price_desc';
+
+export interface OverlayFacetBrand {
+  name: string;
+  count: number;
+}
+
+export interface OverlayFacetCategory {
+  slug: string;
+  name: string;
+  nameAr: string;
+  count: number;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+/**
+ * Splits a display string into alternating highlighted/plain segments for safe JSX rendering.
+ */
+export function splitHighlightedTextSegments(
+  text: string,
+  rawQuery: string
+): HighlightSegment[] {
+  if (!text) return [];
+  const tokens = rawQuery
+    .trim()
+    .split(/\s+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length >= 2);
+
+  if (tokens.length === 0) {
+    return [{ text, isMatch: false }];
+  }
+
+  const uniqueTokens = Array.from(new Set(tokens)).sort((a, b) => b.length - a.length);
+  const pattern = new RegExp(`(${uniqueTokens.map(escapeRegExp).join('|')})`, 'gi');
+  const parts = text.split(pattern);
+
+  if (parts.length <= 1) {
+    return [{ text, isMatch: false }];
+  }
+
+  const lowerTokens = uniqueTokens.map((t) => t.toLowerCase());
+  return parts
+    .filter((part) => part.length > 0)
+    .map((part) => ({
+      text: part,
+      isMatch: lowerTokens.includes(part.toLowerCase()),
+    }));
+}
+
+/**
+ * Extracts ranked brand and category refinement facets from a matched set of products.
+ */
+export function computeOverlayFacetCounts(
+  products: Product[],
+  categories: Category[] = []
+): {
+  brands: OverlayFacetBrand[];
+  categories: OverlayFacetCategory[];
+} {
+  const brandCounts = new Map<string, { name: string; count: number }>();
+  const categoryCounts = new Map<string, number>();
+
+  for (const product of products) {
+    if (product.isPublished === false) continue;
+
+    const brandName = product.brand?.trim();
+    if (brandName) {
+      const bKey = brandName.toLowerCase();
+      const existing = brandCounts.get(bKey);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        brandCounts.set(bKey, { name: brandName, count: 1 });
+      }
+    }
+
+    const catRaw = product.category?.trim();
+    if (catRaw) {
+      const cKey = normalizeSearchTerm(catRaw);
+      categoryCounts.set(cKey, (categoryCounts.get(cKey) || 0) + 1);
+    }
+  }
+
+  const sortedBrands = Array.from(brandCounts.values()).sort(
+    (a, b) => b.count - a.count || a.name.localeCompare(b.name)
+  );
+
+  const catLookup = new Map<string, Category>();
+  for (const c of categories) {
+    catLookup.set(normalizeSearchTerm(c.name), c);
+    catLookup.set(normalizeSearchTerm(c.slug), c);
+  }
+
+  const resolvedCats = new Map<string, OverlayFacetCategory>();
+  for (const [normKey, count] of categoryCounts.entries()) {
+    const meta = catLookup.get(normKey);
+    const slug = meta?.slug || normKey.replace(/[^a-z0-9]+/g, '-');
+    const existing = resolvedCats.get(slug);
+    if (existing) {
+      existing.count += count;
+    } else {
+      resolvedCats.set(slug, {
+        slug,
+        name: meta?.name || normKey,
+        nameAr: meta?.nameAr || meta?.name || normKey,
+        count,
+      });
+    }
+  }
+
+  const sortedCategories = Array.from(resolvedCats.values()).sort(
+    (a, b) => b.count - a.count || a.name.localeCompare(b.name)
+  );
+
+  return {
+    brands: sortedBrands,
+    categories: sortedCategories,
+  };
+}
+
+/**
+ * Refines search-as-you-type overlay results by selected Brand, Category, and sort order.
+ */
+export function filterOverlayResultsByFacets(
+  products: Product[],
+  categories: Category[] = [],
+  options: {
+    selectedBrand?: string | null;
+    selectedCategorySlug?: string | null;
+    sortBy?: OverlaySortOption;
+  } = {}
+): Product[] {
+  const { selectedBrand = null, selectedCategorySlug = null, sortBy = 'relevance' } = options;
+  let filtered = products.filter((p) => p.isPublished !== false);
+
+  if (selectedBrand && selectedBrand.trim()) {
+    const targetBrand = normalizeSearchTerm(selectedBrand);
+    filtered = filtered.filter((p) => normalizeSearchTerm(p.brand || '') === targetBrand);
+  }
+
+  if (selectedCategorySlug && selectedCategorySlug.trim() && selectedCategorySlug !== 'all') {
+    const targetSlug = normalizeSearchTerm(selectedCategorySlug);
+    const matchedCat = categories.find(
+      (c) =>
+        normalizeSearchTerm(c.slug) === targetSlug ||
+        normalizeSearchTerm(c.name) === targetSlug
+    );
+    const matchedNameNorm = matchedCat ? normalizeSearchTerm(matchedCat.name) : targetSlug;
+    const matchedSlugNorm = matchedCat ? normalizeSearchTerm(matchedCat.slug) : targetSlug;
+
+    filtered = filtered.filter((p) => {
+      const pCatNorm = normalizeSearchTerm(p.category || '');
+      return (
+        pCatNorm === matchedNameNorm ||
+        pCatNorm === matchedSlugNorm ||
+        pCatNorm.replace(/[^a-z0-9]+/g, '-') === matchedSlugNorm
+      );
+    });
+  }
+
+  if (sortBy === 'price_asc') {
+    return [...filtered].sort((a, b) => (Number(a.price) || 0) - (Number(b.price) || 0));
+  }
+  if (sortBy === 'price_desc') {
+    return [...filtered].sort((a, b) => (Number(b.price) || 0) - (Number(a.price) || 0));
+  }
+
+  return filtered;
+}
+

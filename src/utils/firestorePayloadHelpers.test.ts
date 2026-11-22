@@ -107,3 +107,45 @@ test('sanitizeProductImagesForFirestore deduplicates images and enforces fallbac
   const emptySanitized = sanitizeProductImagesForFirestore([]);
   assert.deepEqual(emptySanitized.images, [DEFAULT_FULL_RES_FALLBACK_IMAGE]);
 });
+
+test('enforceFirestoreProductPayloadLimit compacts oversized Base64 imageUrl inside structured colors while preserving schema fields', () => {
+  const oversizedColorImg = `data:image/png;base64,${'C'.repeat(1_200_000)}`;
+  const result = enforceFirestoreProductPayloadLimit({
+    id: 'prod-structured-colors',
+    name: 'Structured Color Device',
+    brand: 'Apple',
+    category: 'Smartphones',
+    sku: 'APL-SC-1',
+    price: 999,
+    stock: 4,
+    images: ['https://example.com/main.jpg'],
+    colors: [
+      {
+        id: 'color-1',
+        name: 'Natural Titanium',
+        hex: '#C5BFB0',
+        imageUrl: oversizedColorImg,
+        availableCapacities: ['var-cap-256'],
+        priceAdjustment: 30,
+      },
+      {
+        id: 'color-2',
+        name: 'Black Titanium',
+        imageUrl: 'https://example.com/black.jpg',
+      },
+    ],
+    description: 'Flagship phone.',
+    isPublished: true,
+  });
+
+  assert.equal(result.wasCompacted, true);
+  assert.equal(result.estimatedBytes <= FIRESTORE_SAFE_PRODUCT_MAX_BYTES, true);
+  const colors = result.payload.colors as Array<Record<string, unknown>>;
+  assert.equal(colors.length, 2);
+  assert.equal(colors[0].id, 'color-1');
+  assert.equal(colors[0].name, 'Natural Titanium');
+  assert.equal(colors[0].imageUrl, '');
+  assert.equal(colors[0].priceAdjustment, 30);
+  assert.deepEqual(colors[0].availableCapacities, ['var-cap-256']);
+  assert.equal(colors[1].imageUrl, 'https://example.com/black.jpg');
+});

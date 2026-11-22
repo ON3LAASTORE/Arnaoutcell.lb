@@ -229,7 +229,7 @@
         },
         "colors": {
           "type": "array",
-          "description": "Available color variants"
+          "description": "Available color variants as color names or structured objects ({ id, name, hex, imageUrl, availableCapacities, priceAdjustment })"
         },
         "colorImages": {
           "type": "object",

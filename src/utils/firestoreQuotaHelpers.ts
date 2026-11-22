@@ -156,6 +156,7 @@ export function getFirestoreQuotaCooldownRemainingMs(options?: {
 
 export function clearFirestoreQuotaCooldown(storage?: Storage | null): void {
   memoryQuotaCooldownUntil = 0;
+  lastLoggedCooldownByScope.clear();
   const resolvedStorage = storage !== undefined ? storage : getDefaultStorage();
   if (resolvedStorage) {
     try {
@@ -165,3 +166,28 @@ export function clearFirestoreQuotaCooldown(storage?: Storage | null): void {
     }
   }
 }
+
+const lastLoggedCooldownByScope = new Map<string, number>();
+
+/**
+ * Ensures quota fallback warnings emit at most once per cooldown window per scope,
+ * preventing repeated console noise across navigation or component re-renders.
+ */
+export function shouldLogFirestoreQuotaWarning(
+  scope: string = 'global',
+  storage?: Storage | null
+): boolean {
+  const cooldownUntil = getFirestoreQuotaCooldownUntil(storage);
+  const marker = cooldownUntil > 0 ? cooldownUntil : 1;
+  const previous = lastLoggedCooldownByScope.get(scope);
+  if (previous === marker) {
+    return false;
+  }
+  lastLoggedCooldownByScope.set(scope, marker);
+  return true;
+}
+
+export function resetFirestoreQuotaWarningLogs(): void {
+  lastLoggedCooldownByScope.clear();
+}
+

@@ -4,6 +4,7 @@ import {
   validateAndCalculatePromoDiscount,
   calculateOrderGrandTotal,
   resolveCartItemImage,
+  resolveCartItemUnitPrice,
   aggregateOrderItemQuantities,
   applyOrderStockDelta,
   sanitizeProductReviewsForStorage,
@@ -197,4 +198,47 @@ test('sanitizeProductReviewsForStorage and addProductReviewPure compute rating w
   ]);
   assert.equal(cleaned.length, 1);
   assert.equal(cleaned[0].rating, 5);
+});
+
+test('resolveCartItemUnitPrice combines capacity variant price with structured color priceAdjustment and prioritizes selectedColorImage', () => {
+  const product = makeProduct({
+    price: 190,
+    colors: [
+      { id: 'c-1', name: 'Midnight Black', imageUrl: 'https://example.com/black.png' },
+      { id: 'c-2', name: 'Desert Gold', imageUrl: 'https://example.com/gold.png', priceAdjustment: 25 },
+    ],
+    variants: [
+      { id: 'var-cap-1', name: '256GB', price: 230, stock: 5, sku: 'SKU-256' },
+    ],
+  });
+
+  assert.equal(
+    resolveCartItemUnitPrice({
+      product,
+      selectedColor: 'Desert Gold',
+      selectedVariant: product.variants![0],
+      colorPriceAdjustment: 25,
+    }),
+    255
+  );
+
+  // Even without explicit colorPriceAdjustment passed, lookup falls back to matching structured ProductColorOption
+  assert.equal(
+    resolveCartItemUnitPrice({
+      product,
+      selectedColor: 'Desert Gold',
+      selectedVariant: product.variants![0],
+    }),
+    255
+  );
+
+  assert.equal(
+    resolveCartItemImage({
+      product,
+      selectedColor: 'Desert Gold',
+      selectedColorImage: 'https://example.com/gold.png',
+      selectedVariant: product.variants![0],
+    }),
+    'https://example.com/gold.png'
+  );
 });

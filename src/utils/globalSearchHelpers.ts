@@ -1,4 +1,5 @@
 import { Product, Brand, Category, ProductVariant } from '../types';
+import { getProductColorOptions } from './colorVariantHelpers';
 import { normalizeSearchTerm, matchesSearch } from './searchSuggestions';
 
 export type SearchFilterMode = 'all' | 'sku' | 'name' | 'brand' | 'category';
@@ -274,13 +275,32 @@ export function filterProductsGlobally(
     );
     const categoryMatches = categoryMatchInfo.matches;
 
+    const specsText = Array.isArray(product.specifications)
+      ? product.specifications.map((s) => `${s.label || ''} ${s.value || ''}`).join(' ')
+      : '';
+    const colorsText = getProductColorOptions(product)
+      .map((c) => c.name)
+      .join(' ');
+    const keywordBlob = [
+      product.description || '',
+      product.descriptionAr || '',
+      specsText,
+      colorsText,
+    ]
+      .filter(Boolean)
+      .join(' ');
+    const normKeywordBlob = normalizeSearchTerm(keywordBlob);
+    const keywordMatches =
+      Boolean(normKeywordBlob) &&
+      (normKeywordBlob.includes(normalizedQuery) || matchesSearch(keywordBlob, searchWords));
+
     const skuMatches = Boolean(skuMatch);
 
     let matchType: ScoredProductMatch['matchedBy'] | null = null;
 
     if (mode === 'sku' && skuMatches) {
       matchType = 'sku';
-    } else if (mode === 'name' && nameMatches) {
+    } else if (mode === 'name' && (nameMatches || keywordMatches)) {
       matchType = 'name';
     } else if (mode === 'brand' && brandMatches) {
       matchType = 'brand';
@@ -291,13 +311,15 @@ export function filterProductsGlobally(
         (nameMatches ? 1 : 0) +
         (brandMatches ? 1 : 0) +
         (categoryMatches ? 1 : 0) +
-        (skuMatches ? 1 : 0);
+        (skuMatches ? 1 : 0) +
+        (keywordMatches ? 1 : 0);
 
       if (hitCount > 1) matchType = 'multiple';
       else if (skuMatches) matchType = 'sku';
       else if (nameMatches) matchType = 'name';
       else if (brandMatches) matchType = 'brand';
       else if (categoryMatches) matchType = 'category';
+      else if (keywordMatches) matchType = 'name';
     }
 
     if (!matchType) continue;
@@ -326,6 +348,8 @@ export function filterProductsGlobally(
       score += 54;
     } else if (categoryMatches) {
       score += 48;
+    } else if (keywordMatches) {
+      score += 38;
     }
 
     // Boost in-stock products so customers find available devices first
@@ -404,24 +428,26 @@ export function getUniqueMatchingBrands(
     brandMetaMap.set(b.name.toLowerCase(), b);
   }
 
+  const hasLoadedCatalog = products.some((p) => p.isPublished !== false);
   const seenBrands = new Set<string>();
-  const results: MatchedBrandInfo[] = [];
+  const results: Array<MatchedBrandInfo & { nameMatches: boolean }> = [];
 
   // 1. Check configured brands list
   for (const b of brands) {
     const normBrandName = normalizeSearchTerm(b.name);
-    const matches =
-      normBrandName.includes(normalizedQuery) ||
-      matchesSearch(b.name, searchWords) ||
-      (b.description && matchesSearch(b.description, searchWords));
+    const nameMatches =
+      normBrandName.includes(normalizedQuery) || matchesSearch(b.name, searchWords);
+    const descMatches = Boolean(b.description && matchesSearch(b.description, searchWords));
 
-    if (matches && !seenBrands.has(normBrandName)) {
+    if ((nameMatches || descMatches) && !seenBrands.has(normBrandName)) {
       seenBrands.add(normBrandName);
+      const liveCount = countMap.get(b.name.toLowerCase()) || 0;
       results.push({
         name: b.name,
-        count: countMap.get(b.name.toLowerCase()) || b.productCount || 0,
+        count: hasLoadedCatalog ? liveCount : b.productCount || 0,
         logo: b.logo,
         isExact: normBrandName === normalizedQuery,
+        nameMatches,
       });
     }
   }
@@ -440,14 +466,18 @@ export function getUniqueMatchingBrands(
         count: countMap.get(p.brand.toLowerCase()) || 0,
         logo: meta?.logo,
         isExact: normBrand === normalizedQuery,
+        nameMatches: true,
       });
     }
   }
 
-  return results.sort((a, b) => {
-    if (a.isExact !== b.isExact) return a.isExact ? -1 : 1;
-    return b.count - a.count;
-  });
+  return results
+    .sort((a, b) => {
+      if (a.isExact !== b.isExact) return a.isExact ? -1 : 1;
+      if (a.nameMatches !== b.nameMatches) return a.nameMatches ? -1 : 1;
+      return b.count - a.count;
+    })
+    .map(({ nameMatches: _nameMatches, ...rest }) => rest);
 }
 
 /**

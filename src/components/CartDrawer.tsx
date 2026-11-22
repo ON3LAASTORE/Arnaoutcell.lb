@@ -4,7 +4,7 @@ import { X, Trash2, ShoppingBag, ArrowRight, MessageSquare, ShieldCheck } from '
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import { LazyImage } from './LazyImage';
 import { openExternalUrl } from '../utils/navigation';
-import { resolveCartItemImage } from '../utils/checkoutHelpers';
+import { resolveCartItemImage, resolveCartItemUnitPrice } from '../utils/checkoutHelpers';
 
 export const CartDrawer: React.FC = () => {
   const {
@@ -83,8 +83,15 @@ export const CartDrawer: React.FC = () => {
           <div className="flex-1 overflow-y-auto p-5 divide-y divide-[#DCE5F0] dark:divide-[#1E293B] space-y-4">
             {cart.length > 0 ? (
               cart.map((item, idx) => {
-                const itemPrice = item.selectedVariant ? item.selectedVariant.price : item.product.price;
+                const itemPrice = resolveCartItemUnitPrice(item);
                 const maxStock = item.selectedVariant ? item.selectedVariant.stock : item.product.stock;
+                const capacityLabel =
+                  item.selectedVariant?.name &&
+                  item.selectedVariant.name.trim().toLowerCase() !==
+                    (item.selectedColor || '').trim().toLowerCase()
+                    ? item.selectedVariant.name
+                    : undefined;
+                const lineTotal = Number((itemPrice * item.quantity).toFixed(2));
 
                 return (
                   <div key={idx} className="pt-4 first:pt-0 flex gap-4 items-center">
@@ -101,14 +108,23 @@ export const CartDrawer: React.FC = () => {
                       <h4 className="text-xs font-bold text-[#172033] dark:text-[#F8FAFC] line-clamp-1">
                         {lang === 'ar' ? item.product.nameAr || item.product.name : item.product.name}
                       </h4>
-                      {item.selectedColor && (
-                        <span className="text-[10px] text-[#007AFF] dark:text-[#38BDF8] font-semibold block">
-                          {item.selectedColor}
-                        </span>
+                      {(item.selectedColor || capacityLabel) && (
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] font-semibold mt-0.5">
+                          {item.selectedColor && (
+                            <span className="text-[#007AFF] dark:text-[#38BDF8]">
+                              {item.selectedColor}
+                            </span>
+                          )}
+                          {capacityLabel && (
+                            <span className="text-[#475569] dark:text-slate-300">
+                              {capacityLabel}
+                            </span>
+                          )}
+                        </div>
                       )}
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-sm font-black text-[#007AFF] dark:text-[#38BDF8]">
-                          ${itemPrice * item.quantity}
+                          ${lineTotal}
                         </span>
 
                         {/* Quantity controls */}

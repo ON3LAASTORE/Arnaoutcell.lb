@@ -1,5 +1,9 @@
 import { CartItem, OrderItem, Product, Review } from '../types';
-import { resolveColorShowcaseImage } from './colorVariantHelpers';
+import {
+  calculateVariantUnitPrice,
+  getProductColorOptions,
+  resolveColorShowcaseImage,
+} from './colorVariantHelpers';
 import {
   DEFAULT_FULL_RES_FALLBACK_IMAGE,
   resolveFullResolutionImageUrl,
@@ -89,12 +93,48 @@ export function calculateOrderGrandTotal(
 }
 
 /**
- * Resolves the best display image for a cart item, prioritizing variant image,
- * then color-matched showcase image, then primary product image.
+ * Computes exact cart line unit price factoring selected capacity variant and color priceAdjustment.
+ */
+export function resolveCartItemUnitPrice(
+  item: Pick<CartItem, 'product' | 'selectedColor' | 'colorPriceAdjustment' | 'selectedVariant'>
+): number {
+  const basePrice = item.selectedVariant
+    ? Number(item.selectedVariant.price) || 0
+    : Number(item.product.price) || 0;
+
+  if (
+    typeof item.colorPriceAdjustment === 'number' &&
+    Number.isFinite(item.colorPriceAdjustment)
+  ) {
+    return calculateVariantUnitPrice(basePrice, undefined, item.colorPriceAdjustment);
+  }
+
+  if (item.selectedColor) {
+    const colorOpts = getProductColorOptions(item.product);
+    const matchedColor = colorOpts.find(
+      (opt) => opt.name.trim().toLowerCase() === item.selectedColor!.trim().toLowerCase()
+    );
+    if (matchedColor && (!item.selectedVariant || !item.selectedVariant.id.startsWith('var-color-'))) {
+      return calculateVariantUnitPrice(basePrice, matchedColor);
+    }
+  }
+
+  return Math.max(0, Math.round(basePrice * 100) / 100);
+}
+
+/**
+ * Resolves the best display image for a cart item, prioritizing explicit selectedColorImage,
+ * then variant image, then color-matched showcase image, then primary product image.
  */
 export function resolveCartItemImage(
-  item: Pick<CartItem, 'product' | 'selectedColor' | 'selectedVariant'>
+  item: Pick<CartItem, 'product' | 'selectedColor' | 'selectedColorImage' | 'selectedVariant'>
 ): string {
+  if (item.selectedColorImage && item.selectedColorImage.trim()) {
+    return (
+      resolveFullResolutionImageUrl(item.selectedColorImage) || item.selectedColorImage
+    );
+  }
+
   if (item.selectedVariant?.image && item.selectedVariant.image.trim()) {
     return resolveFullResolutionImageUrl(item.selectedVariant.image) || item.selectedVariant.image;
   }

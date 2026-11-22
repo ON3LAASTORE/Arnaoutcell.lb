@@ -5,6 +5,7 @@ import {
 } from './productCardHelpers';
 import {
   findVariantForColor,
+  getProductColorNames,
   resolveColorShowcaseImage,
 } from './colorVariantHelpers';
 
@@ -155,7 +156,7 @@ export function buildPdpColorSwatches(
   product: Pick<Product, 'colors' | 'images' | 'colorImages' | 'variants'>,
   activePrice: number
 ): PdpColorSwatch[] {
-  const colors = (product.colors || []).filter((c) => c.trim().length > 0);
+  const colors = getProductColorNames(product);
   if (colors.length === 0) return [];
 
   const images = (product.images || []).filter(Boolean);

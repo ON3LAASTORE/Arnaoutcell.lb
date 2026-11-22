@@ -49,9 +49,11 @@ export const ProductQuickViewModal: React.FC = () => {
     prod: Product,
     qty: number,
     selectedColor?: string,
-    selectedVariant?: ProductVariant
+    selectedVariant?: ProductVariant,
+    selectedColorImage?: string,
+    colorPriceAdjustment?: number
   ) => {
-    addToCart(prod, qty, selectedColor, selectedVariant);
+    addToCart(prod, qty, selectedColor, selectedVariant, selectedColorImage, colorPriceAdjustment);
     setQuickViewProduct(null);
   };
 
@@ -59,9 +61,11 @@ export const ProductQuickViewModal: React.FC = () => {
     prod: Product,
     qty: number,
     selectedColor?: string,
-    selectedVariant?: ProductVariant
+    selectedVariant?: ProductVariant,
+    selectedColorImage?: string,
+    colorPriceAdjustment?: number
   ) => {
-    addToCart(prod, qty, selectedColor, selectedVariant);
+    addToCart(prod, qty, selectedColor, selectedVariant, selectedColorImage, colorPriceAdjustment);
     setQuickViewProduct(null);
     setCurrentView('checkout');
   };

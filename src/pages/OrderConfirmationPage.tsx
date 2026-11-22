@@ -111,18 +111,26 @@ export const OrderConfirmationPage: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#DCE5F0] dark:divide-[#1E293B] text-[#172033] dark:text-[#F8FAFC]">
-                {order.items.map((item, idx) => (
-                  <tr key={idx}>
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-[#172033] dark:text-[#F8FAFC]">{item.productName}</div>
-                      {item.color && <div className="text-[10px] text-[#64748B] dark:text-slate-400">{item.color}</div>}
-                    </td>
-                    <td className="py-3 px-4 text-center font-bold">x{item.quantity}</td>
-                    <td className="py-3 px-4 text-right rtl:text-left font-black text-[#007AFF] dark:text-[#38BDF8]">
-                      ${item.price * item.quantity}
-                    </td>
-                  </tr>
-                ))}
+                {order.items.map((item, idx) => {
+                  const capacityLabel =
+                    item.variantName &&
+                    item.variantName.trim().toLowerCase() !== (item.color || '').trim().toLowerCase()
+                      ? item.variantName
+                      : undefined;
+                  const meta = [item.color, capacityLabel].filter(Boolean).join(' • ');
+                  return (
+                    <tr key={idx}>
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-[#172033] dark:text-[#F8FAFC]">{item.productName}</div>
+                        {meta && <div className="text-[10px] text-[#64748B] dark:text-slate-400">{meta}</div>}
+                      </td>
+                      <td className="py-3 px-4 text-center font-bold">x{item.quantity}</td>
+                      <td className="py-3 px-4 text-right rtl:text-left font-black text-[#007AFF] dark:text-[#38BDF8]">
+                        ${Number((item.price * item.quantity).toFixed(2))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

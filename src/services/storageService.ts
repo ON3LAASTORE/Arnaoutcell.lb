@@ -34,6 +34,7 @@ import {
 } from '../utils/firestoreQuotaHelpers';
 import { recordAdminActivity } from './activityLogService';
 import { addProductReviewPure, applyOrderStockDelta } from '../utils/checkoutHelpers';
+import { storefrontCache } from '../utils/storefrontCacheHelpers';
 
 const memoryStorageFallback = new Map<string, string>();
 const quotaFallbackKeys = new Set<string>();
@@ -211,6 +212,7 @@ export function saveProducts(products: Product[]): void {
     JSON.stringify(products),
     () => JSON.stringify(compactProductsForStorage(products))
   );
+  storefrontCache.setProducts(products, 'mutation');
 }
 
 export function saveProduct(product: Product): Product {
@@ -223,6 +225,7 @@ export function saveProduct(product: Product): Product {
     products.unshift(product);
   }
   saveProducts(products);
+  storefrontCache.upsertProduct(product, 'mutation');
 
   // Automatically persist to Firebase Firestore live cloud database
   persistProductToCloud(product).catch((err) => {
@@ -269,6 +272,7 @@ export function deleteProduct(productId: string): void {
   const deleted = currentProducts.find((p) => p.id === productId);
   const products = currentProducts.filter((p) => p.id !== productId);
   saveProducts(products);
+  storefrontCache.removeProduct(productId, 'mutation');
 
   // Automatically remove from Firebase Firestore live cloud database
   removeProductFromCloud(productId).catch((err) => {
@@ -315,6 +319,7 @@ export function getCategories(): Category[] {
 
 export function saveCategories(categories: Category[]): void {
   setStorageItem(KEYS.CATEGORIES, JSON.stringify(categories));
+  storefrontCache.setCategories(categories, 'mutation');
 }
 
 export function upsertCategory(category: Category): void {
@@ -327,6 +332,7 @@ export function upsertCategory(category: Category): void {
     categories.push(category);
   }
   saveCategories(categories);
+  storefrontCache.upsertCategory(category, 'mutation');
   persistCategoryToCloud(category).catch((err) => {
     console.warn('Live category cloud save notice:', err);
   });
@@ -347,6 +353,7 @@ export function deleteCategory(categoryId: string): void {
   const removed = current.find((c) => c.id === categoryId);
   const categories = current.filter((c) => c.id !== categoryId);
   saveCategories(categories);
+  storefrontCache.removeCategory(categoryId, 'mutation');
   removeCategoryFromCloud(categoryId).catch((err) => {
     console.warn('Live category deletion notice:', err);
   });
@@ -396,6 +403,7 @@ export function getBrands(): Brand[] {
 
 export function saveBrands(brands: Brand[], recordAudit: boolean = false): void {
   setStorageItem(KEYS.BRANDS, JSON.stringify(brands));
+  storefrontCache.setBrands(brands, 'mutation');
   if (recordAudit) {
     recordAdminActivity({
       action: 'brands_updated',

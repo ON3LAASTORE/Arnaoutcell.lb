@@ -15,12 +15,16 @@ import {
   Scale,
   Share2,
 } from 'lucide-react';
-import { Language, Product, ProductVariant } from '../types';
+import { Language, Product, ProductColorOption, ProductVariant } from '../types';
 import { LazyImage } from './LazyImage';
 import { NotifyMeControl } from './NotifyMeControl';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import {
+  calculateVariantUnitPrice,
   findVariantForColor,
+  getProductColorOptions,
+  isCapacityAvailableForColor,
+  resolveAllowedCapacityForColor,
   resolveColorShowcaseImage,
 } from '../utils/colorVariantHelpers';
 import { resolveFullResolutionImageUrl } from '../utils/imageResolutionHelpers';
@@ -49,13 +53,17 @@ interface ProductLuxuryShowcaseProps {
     product: Product,
     quantity: number,
     selectedColor?: string,
-    selectedVariant?: ProductVariant
+    selectedVariant?: ProductVariant,
+    selectedColorImage?: string,
+    colorPriceAdjustment?: number
   ) => void;
   onDirectOrder: (
     product: Product,
     quantity: number,
     selectedColor?: string,
-    selectedVariant?: ProductVariant
+    selectedVariant?: ProductVariant,
+    selectedColorImage?: string,
+    colorPriceAdjustment?: number
   ) => void;
   onWhatsAppInquiry: (context: {
     fullTitle: string;
@@ -85,32 +93,64 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
   shareCopied = false,
 }) => {
   const capacityOptions = buildCapacityOptions(product);
+  const colorOptions = getProductColorOptions(product);
   const preselectedVariant = initialVariantId
     ? product.variants?.find((v) => v.id === initialVariantId)
     : undefined;
-  const initialColor =
-    preselectedVariant?.color && product.colors?.includes(preselectedVariant.color)
-      ? preselectedVariant.color
-      : product.colors?.[0];
-  const initialColorImage = resolveColorShowcaseImage(product, initialColor);
+
+  const resolveInitialColor = (): string | undefined => {
+    if (
+      preselectedVariant?.color &&
+      colorOptions.some(
+        (opt) => opt.name.toLowerCase() === preselectedVariant.color!.trim().toLowerCase()
+      )
+    ) {
+      return (
+        colorOptions.find(
+          (opt) => opt.name.toLowerCase() === preselectedVariant.color!.trim().toLowerCase()
+        )?.name || preselectedVariant.color
+      );
+    }
+    return colorOptions[0]?.name;
+  };
+
+  const initialColor = resolveInitialColor();
+  const initialColorOption = colorOptions.find((opt) => opt.name === initialColor);
+  const initialColorImage =
+    initialColorOption?.imageUrl || resolveColorShowcaseImage(product, initialColor);
   const carouselImages = buildLuxuryCarouselImages(product, initialColorImage);
 
   const [carouselIndex, setCarouselIndex] = useState<number>(() =>
     findCarouselIndexForColor(product, carouselImages, initialColor)
   );
   const [selectedColor, setSelectedColor] = useState<string | undefined>(initialColor);
-  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(() => {
-    if (preselectedVariant) return preselectedVariant;
-    const colorVariant = initialColor ? findVariantForColor(product, initialColor) : undefined;
-    const firstCapVariant = capacityOptions.find((opt) => !opt.isSpecDerived)?.variant;
-    return firstCapVariant || colorVariant || product.variants?.[0];
-  });
   const [selectedCapacityId, setSelectedCapacityId] = useState<string | undefined>(() => {
     if (preselectedVariant) {
       const capMatch = capacityOptions.find((opt) => opt.variant?.id === preselectedVariant.id);
-      if (capMatch) return capMatch.id;
+      if (capMatch && isCapacityAvailableForColor(capMatch.id, initialColorOption)) {
+        return capMatch.id;
+      }
     }
-    return capacityOptions[0]?.id;
+    return resolveAllowedCapacityForColor(
+      capacityOptions,
+      capacityOptions[0]?.id,
+      initialColorOption
+    )?.id;
+  });
+  const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>(() => {
+    const allowedInitCap = resolveAllowedCapacityForColor(
+      capacityOptions,
+      preselectedVariant?.id,
+      initialColorOption
+    );
+    if (preselectedVariant && allowedInitCap?.variant?.id === preselectedVariant.id) {
+      return preselectedVariant;
+    }
+    if (allowedInitCap?.variant) {
+      return allowedInitCap.variant;
+    }
+    const colorVariant = initialColor ? findVariantForColor(product, initialColor) : undefined;
+    return colorVariant || product.variants?.[0];
   });
   const [quantity, setQuantity] = useState<number>(1);
   const [justAdded, setJustAdded] = useState<boolean>(false);
@@ -126,27 +166,34 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
 
   useEffect(() => {
     const nextCaps = buildCapacityOptions(product);
+    const nextColorOpts = getProductColorOptions(product);
     const matchedVariant = initialVariantId
       ? product.variants?.find((v) => v.id === initialVariantId)
       : undefined;
-    const nextColor =
-      matchedVariant?.color && product.colors?.includes(matchedVariant.color)
-        ? matchedVariant.color
-        : product.colors?.[0];
-    const nextColorImg = resolveColorShowcaseImage(product, nextColor);
+    const matchedColorOpt = matchedVariant?.color
+      ? nextColorOpts.find(
+          (opt) => opt.name.toLowerCase() === matchedVariant.color!.trim().toLowerCase()
+        )
+      : nextColorOpts[0];
+    const nextColor = matchedColorOpt?.name || nextColorOpts[0]?.name;
+    const nextColorImg =
+      matchedColorOpt?.imageUrl || resolveColorShowcaseImage(product, nextColor);
     const nextImages = buildLuxuryCarouselImages(product, nextColorImg);
     const nextColorVariant = nextColor ? findVariantForColor(product, nextColor) : undefined;
-    const nextCapVariant = nextCaps.find((opt) => !opt.isSpecDerived)?.variant;
-    const matchedCap = matchedVariant
-      ? nextCaps.find((opt) => opt.variant?.id === matchedVariant.id)
-      : undefined;
+    const allowedCap = resolveAllowedCapacityForColor(
+      nextCaps,
+      matchedVariant?.id || nextCaps[0]?.id,
+      matchedColorOpt
+    );
 
     sidekickAbortRef.current?.abort();
     setSidekickLoading(false);
     setSelectedColor(nextColor);
     setCarouselIndex(findCarouselIndexForColor(product, nextImages, nextColor));
-    setSelectedVariant(matchedVariant || nextCapVariant || nextColorVariant || product.variants?.[0]);
-    setSelectedCapacityId(matchedCap?.id || nextCaps[0]?.id);
+    setSelectedCapacityId(allowedCap?.id);
+    setSelectedVariant(
+      allowedCap?.variant || matchedVariant || nextColorVariant || product.variants?.[0]
+    );
     setQuantity(1);
     setJustAdded(false);
     setIsSidekickOpen(false);
@@ -159,7 +206,11 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
     };
   }, [product.id, initialVariantId]);
 
-  const activeColorShowcase = resolveColorShowcaseImage(product, selectedColor);
+  const activeColorOption = selectedColor
+    ? colorOptions.find((opt) => opt.name === selectedColor)
+    : colorOptions[0];
+  const activeColorShowcase =
+    activeColorOption?.imageUrl || resolveColorShowcaseImage(product, selectedColor);
   const activeImages = buildLuxuryCarouselImages(product, activeColorShowcase);
   const safeCarouselIdx =
     carouselIndex >= 0 && carouselIndex < activeImages.length ? carouselIndex : 0;
@@ -168,12 +219,25 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
   const activeCapacityOption =
     capacityOptions.find((opt) => opt.id === selectedCapacityId) || capacityOptions[0];
 
-  const activePrice =
+  const baseCapacityPrice =
     selectedVariant && Number.isFinite(selectedVariant.price) && selectedVariant.price >= 0
       ? selectedVariant.price
       : activeCapacityOption && Number.isFinite(activeCapacityOption.price)
       ? activeCapacityOption.price
       : Number(product.price) || 0;
+
+  const isColorOnlyVariantSelected = Boolean(
+    selectedVariant && selectedVariant.id.startsWith('var-color-')
+  );
+  const appliedColorAdjustment =
+    isColorOnlyVariantSelected || !activeColorOption
+      ? 0
+      : Number(activeColorOption.priceAdjustment) || 0;
+
+  const activePrice = calculateVariantUnitPrice(
+    baseCapacityPrice,
+    isColorOnlyVariantSelected ? undefined : activeColorOption
+  );
 
   const activeStock =
     typeof selectedVariant?.stock === 'number' && Number.isFinite(selectedVariant.stock)
@@ -185,14 +249,13 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
   const subtotalAmount = computeLuxurySubtotal(activePrice, quantity);
 
   const rawTitle = lang === 'ar' ? product.nameAr || product.name : product.name;
-  const colors = (product.colors || []).filter((c) => c.trim().length > 0);
   const nonColorVariants = (product.variants || []).filter(
     (v) => !v.id.startsWith('var-color-') && !v.color
   );
 
-  const handleSelectColor = (color: string) => {
-    setSelectedColor(color);
-    const targetImg = resolveColorShowcaseImage(product, color);
+  const handleSelectColor = (colorOpt: ProductColorOption) => {
+    setSelectedColor(colorOpt.name);
+    const targetImg = colorOpt.imageUrl || resolveColorShowcaseImage(product, colorOpt.name);
     const nextList = buildLuxuryCarouselImages(product, targetImg);
     if (targetImg) {
       const resolvedTarget = resolveFullResolutionImageUrl(targetImg) || targetImg;
@@ -202,13 +265,29 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
       setCarouselIndex(0);
     }
 
-    const colorVariant = findVariantForColor(product, color);
+    const allowedCap = resolveAllowedCapacityForColor(
+      capacityOptions,
+      selectedCapacityId,
+      colorOpt
+    );
+    if (allowedCap) {
+      if (allowedCap.id !== selectedCapacityId) {
+        setSelectedCapacityId(allowedCap.id);
+      }
+      if (allowedCap.variant) {
+        setSelectedVariant(allowedCap.variant);
+        return;
+      }
+    }
+
+    const colorVariant = findVariantForColor(product, colorOpt.name);
     if (colorVariant && nonColorVariants.length === 0) {
       setSelectedVariant(colorVariant);
     }
   };
 
   const handleSelectCapacity = (optionId: string) => {
+    if (!isCapacityAvailableForColor(optionId, activeColorOption)) return;
     setSelectedCapacityId(optionId);
     const found = capacityOptions.find((opt) => opt.id === optionId);
     if (found?.variant) {
@@ -219,10 +298,31 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
   const handleCarouselStep = (delta: -1 | 1) => {
     const nextIdx = stepCarouselIndex(safeCarouselIdx, delta, activeImages.length);
     setCarouselIndex(nextIdx);
-    const matchedColor = findColorForCarouselImage(product, activeImages[nextIdx]);
-    if (matchedColor) {
-      setSelectedColor(matchedColor);
-      const colorVariant = findVariantForColor(product, matchedColor);
+    const matchedColorName = findColorForCarouselImage(product, activeImages[nextIdx]);
+    if (matchedColorName) {
+      const matchedOpt = colorOptions.find(
+        (opt) => opt.name.toLowerCase() === matchedColorName.toLowerCase()
+      );
+      setSelectedColor(matchedOpt?.name || matchedColorName);
+
+      if (matchedOpt) {
+        const allowedCap = resolveAllowedCapacityForColor(
+          capacityOptions,
+          selectedCapacityId,
+          matchedOpt
+        );
+        if (allowedCap) {
+          if (allowedCap.id !== selectedCapacityId) {
+            setSelectedCapacityId(allowedCap.id);
+          }
+          if (allowedCap.variant) {
+            setSelectedVariant(allowedCap.variant);
+            return;
+          }
+        }
+      }
+
+      const colorVariant = findVariantForColor(product, matchedColorName);
       if (colorVariant && nonColorVariants.length === 0) {
         setSelectedVariant(colorVariant);
       }
@@ -239,7 +339,14 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
 
   const handleAddClick = () => {
     if (isOutOfStock) return;
-    onAddToCart(product, quantity, selectedColor, selectedVariant);
+    onAddToCart(
+      product,
+      quantity,
+      selectedColor,
+      selectedVariant,
+      activeColorShowcase || undefined,
+      appliedColorAdjustment
+    );
     setJustAdded(true);
     window.setTimeout(() => setJustAdded(false), 1600);
   };
@@ -360,10 +467,10 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
         </div>
 
         {/* Color Selector with Square Rounded Thumbnail Cards Below Hero Image */}
-        {colors.length > 0 && (
+        {colorOptions.length > 0 && (
           <div className="space-y-3" data-testid="pdp-color-swatches">
-            <div className="text-xs font-medium text-[#64748B] dark:text-slate-400">
-              {lang === 'ar' ? 'اللون:' : 'Color:'}{' '}
+            <div className="text-xs font-medium text-[#64748B] dark:text-slate-400 flex items-center gap-2 flex-wrap">
+              <span>{lang === 'ar' ? 'اللون:' : 'Color:'}</span>
               {selectedColor && (
                 <span
                   className="font-semibold text-[#0A0F2C] dark:text-white"
@@ -374,47 +481,83 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
                   {selectedColor}
                 </span>
               )}
+              {appliedColorAdjustment !== 0 && (
+                <span className="text-[11px] font-semibold text-[#0070F3]">
+                  ({appliedColorAdjustment > 0 ? '+' : '-'}$
+                  {Math.abs(appliedColorAdjustment)})
+                </span>
+              )}
             </div>
 
-            <div className="flex flex-wrap gap-3">
-              {colors.map((color) => {
-                const isSelected = selectedColor === color;
-                const thumbImg = resolveColorShowcaseImage(product, color) || activeImages[0];
+            <div className="flex flex-wrap items-start gap-3">
+              {colorOptions.map((colorOpt) => {
+                const isSelected = selectedColor === colorOpt.name;
+                const explicitThumb = colorOpt.imageUrl || resolveColorShowcaseImage(product, colorOpt.name);
+                const fallbackThumb = explicitThumb || activeImages[0];
+                const adj = Number(colorOpt.priceAdjustment) || 0;
+
                 return (
-                  <button
-                    key={color}
-                    type="button"
-                    onClick={() => handleSelectColor(color)}
-                    aria-pressed={isSelected}
-                    aria-label={color}
-                    title={color}
-                    data-testid={
-                      mode === 'modal'
-                        ? `quickview-color-btn-${color}`
-                        : `pdp-color-swatch-${color}`
-                    }
-                    className={`relative w-[68px] h-[68px] sm:w-[74px] sm:h-[74px] rounded-xl bg-white p-1.5 flex items-center justify-center transition-colors cursor-pointer ${
-                      isSelected
-                        ? 'border-2 border-[#0070F3]'
-                        : 'border border-[#E2E8F0] dark:border-slate-700 hover:border-[#0A0F2C]'
-                    }`}
-                  >
-                    <img
-                      src={resolveFullResolutionImageUrl(thumbImg)}
-                      alt={`${rawTitle} - ${color}`}
-                      referrerPolicy="no-referrer"
-                      className="w-full h-full object-contain rounded-lg"
-                    />
-                    {isSelected && (
-                      <span
-                        aria-hidden="true"
-                        data-testid={`pdp-color-check-${color}`}
-                        className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#0070F3] text-white flex items-center justify-center shadow-xs"
-                      >
-                        <Check className="w-3 h-3 stroke-[3]" />
+                  <div key={colorOpt.id} className="flex flex-col items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectColor(colorOpt)}
+                      aria-pressed={isSelected}
+                      aria-label={colorOpt.name}
+                      title={
+                        adj !== 0
+                          ? `${colorOpt.name} (${adj > 0 ? '+' : '-'}$${Math.abs(adj)})`
+                          : colorOpt.name
+                      }
+                      data-testid={
+                        mode === 'modal'
+                          ? `quickview-color-btn-${colorOpt.name}`
+                          : `pdp-color-swatch-${colorOpt.name}`
+                      }
+                      className={`relative w-[68px] h-[68px] sm:w-[74px] sm:h-[74px] rounded-xl bg-white p-1.5 flex items-center justify-center transition-colors cursor-pointer ${
+                        isSelected
+                          ? 'border-2 border-[#0070F3]'
+                          : 'border border-[#E2E8F0] dark:border-slate-700 hover:border-[#0A0F2C]'
+                      }`}
+                    >
+                      {explicitThumb ? (
+                        <img
+                          src={resolveFullResolutionImageUrl(explicitThumb)}
+                          alt={`${rawTitle} - ${colorOpt.name}`}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-contain rounded-lg"
+                        />
+                      ) : colorOpt.hex ? (
+                        <svg
+                          viewBox="0 0 48 48"
+                          className="w-full h-full rounded-lg border border-slate-200/80"
+                          aria-hidden="true"
+                        >
+                          <rect width="48" height="48" rx="8" fill={colorOpt.hex} />
+                        </svg>
+                      ) : (
+                        <img
+                          src={resolveFullResolutionImageUrl(fallbackThumb)}
+                          alt={`${rawTitle} - ${colorOpt.name}`}
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-contain rounded-lg"
+                        />
+                      )}
+                      {isSelected && (
+                        <span
+                          aria-hidden="true"
+                          data-testid={`pdp-color-check-${colorOpt.name}`}
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#0070F3] text-white flex items-center justify-center shadow-xs"
+                        >
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </span>
+                      )}
+                    </button>
+                    {adj !== 0 && (
+                      <span className="px-1.5 py-0.5 rounded bg-[#0A0F2C]/90 text-white text-[10px] font-bold leading-none whitespace-nowrap tabular-nums">
+                        {adj > 0 ? '+' : '-'}${Math.abs(adj)}
                       </span>
                     )}
-                  </button>
+                  </div>
                 );
               })}
             </div>
@@ -585,23 +728,43 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
             <div className="flex flex-wrap gap-2.5">
               {capacityOptions.map((option) => {
                 const isActiveCap = activeCapacityOption?.id === option.id;
+                const isAvailableForColor = isCapacityAvailableForColor(
+                  option.id,
+                  activeColorOption
+                );
+                const tierPrice = calculateVariantUnitPrice(
+                  option.price,
+                  isColorOnlyVariantSelected ? undefined : activeColorOption
+                );
+
                 return (
                   <button
                     key={option.id}
                     type="button"
+                    disabled={!isAvailableForColor}
+                    aria-disabled={!isAvailableForColor}
                     aria-pressed={isActiveCap}
+                    title={
+                      !isAvailableForColor
+                        ? lang === 'ar'
+                          ? 'غير متوفر بهذا اللون'
+                          : `Not available in ${selectedColor || 'this color'}`
+                        : option.label
+                    }
                     data-testid={`pdp-capacity-btn-${option.label}`}
                     onClick={() => handleSelectCapacity(option.id)}
-                    className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors cursor-pointer whitespace-nowrap ${
-                      isActiveCap
-                        ? 'border-[#0A0F2C] bg-[#0A0F2C] text-white dark:border-white dark:bg-white dark:text-[#0A0F2C]'
-                        : 'border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-[#111A2E] text-[#0A0F2C] dark:text-slate-200 hover:border-[#0A0F2C]'
+                    className={`px-4 py-2 rounded-full text-xs font-semibold border transition-colors whitespace-nowrap ${
+                      !isAvailableForColor
+                        ? 'border-[#E2E8F0] dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-600 line-through opacity-55 cursor-not-allowed'
+                        : isActiveCap
+                        ? 'border-[#0A0F2C] bg-[#0A0F2C] text-white dark:border-white dark:bg-white dark:text-[#0A0F2C] cursor-pointer'
+                        : 'border-[#E2E8F0] dark:border-slate-700 bg-white dark:bg-[#111A2E] text-[#0A0F2C] dark:text-slate-200 hover:border-[#0A0F2C] cursor-pointer'
                     }`}
                   >
                     <span>{option.label}</span>
                     {priceHasVariations && (
                       <span className="ml-1.5 rtl:ml-0 rtl:mr-1.5 opacity-85 tabular-nums">
-                        {formatLuxuryUsdPrice(option.price)}
+                        {formatLuxuryUsdPrice(tierPrice)}
                       </span>
                     )}
                   </button>

@@ -132,7 +132,25 @@ service cloud.firestore {
         && (!('descriptionAr' in data) || (data.descriptionAr is string && data.descriptionAr.size() <= 5000))
         && (!('specifications' in data) || (data.specifications is list && data.specifications.size() <= 60))
         && (!('variants' in data) || (data.variants is list && data.variants.size() <= 50))
-        && (!('colors' in data) || (data.colors is list && data.colors.size() <= 30 && (data.colors.size() == 0 || data.colors[0] is string)))
+        && (!('colors' in data) || (
+          data.colors is list
+          && data.colors.size() <= 30
+          && (
+            data.colors.size() == 0
+            || data.colors[0] is string
+            || (
+              data.colors[0] is map
+              && data.colors[0].keys().hasAll(['id', 'name', 'imageUrl'])
+              && data.colors[0].keys().hasOnly(['id', 'name', 'hex', 'imageUrl', 'availableCapacities', 'priceAdjustment'])
+              && data.colors[0].id is string && data.colors[0].id.size() > 0 && data.colors[0].id.size() <= 128
+              && data.colors[0].name is string && data.colors[0].name.size() > 0 && data.colors[0].name.size() <= 80
+              && data.colors[0].imageUrl is string && data.colors[0].imageUrl.size() <= 200000
+              && (!('hex' in data.colors[0]) || (data.colors[0].hex is string && data.colors[0].hex.size() <= 20))
+              && (!('availableCapacities' in data.colors[0]) || (data.colors[0].availableCapacities is list && data.colors[0].availableCapacities.size() <= 30))
+              && (!('priceAdjustment' in data.colors[0]) || (data.colors[0].priceAdjustment is number && data.colors[0].priceAdjustment >= -100000 && data.colors[0].priceAdjustment <= 100000))
+            )
+          )
+        ))
         && (!('colorImages' in data) || data.colorImages is map)
         && (!('warrantyMonths' in data) || (data.warrantyMonths is number && data.warrantyMonths >= 0 && data.warrantyMonths <= 120))
         && (!('warrantyTerms' in data) || (data.warrantyTerms is string && data.warrantyTerms.size() <= 2000))

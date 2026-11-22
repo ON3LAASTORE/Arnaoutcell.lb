@@ -20,6 +20,17 @@ export interface ProductVariant {
   image?: string;
 }
 
+export interface ProductColorOption {
+  id: string;
+  name: string;
+  hex?: string;
+  imageUrl: string;
+  availableCapacities?: string[];
+  priceAdjustment?: number;
+}
+
+export type ProductColorEntry = string | ProductColorOption;
+
 export interface ProductSpec {
   group?: string; // e.g. "Performance", "Display", "Battery"
   label: string;
@@ -55,7 +66,7 @@ export interface Product {
   descriptionAr?: string;
   specifications: ProductSpec[];
   variants?: ProductVariant[];
-  colors?: string[];
+  colors?: ProductColorEntry[];
   colorImages?: Record<string, string>;
   warrantyMonths: number;
   warrantyTerms?: string;
@@ -111,6 +122,8 @@ export interface CartItem {
   product: Product;
   quantity: number;
   selectedColor?: string;
+  selectedColorImage?: string;
+  colorPriceAdjustment?: number;
   selectedVariant?: ProductVariant;
 }
 
@@ -137,6 +150,7 @@ export interface OrderItem {
   quantity: number;
   image: string;
   color?: string;
+  colorImage?: string;
   variantName?: string;
 }
 

@@ -1,5 +1,23 @@
 [
   {
+    "id": "audit-1795356604319-3gtdmg",
+    "action": "product_updated",
+    "titleEn": "Updated product: OPPO Reno 16 5G - 12GB Ram - 256GB Storage",
+    "titleAr": "تم تحديث المنتج: OPPO Reno 16 5G - 12GB Ram - 256GB Storage",
+    "category": "catalog",
+    "severity": "info",
+    "target": "OPPO Reno 16 5G - 12GB Ram - 256GB Storage (prod-oppo-reno16-series-5g)",
+    "details": "Price $629 -> $675",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-22T14:10:04.319Z"
+  },
+  {
     "id": "audit-1795265895041-e2b5lf",
     "action": "product_updated",
     "titleEn": "Updated product: iPhone 17 Pro 256GB (Cosmic Orange)",

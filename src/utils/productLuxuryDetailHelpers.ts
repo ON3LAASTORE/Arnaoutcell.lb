@@ -1,5 +1,9 @@
 import { Language, Product, ProductVariant } from '../types';
-import { resolveColorShowcaseImage } from './colorVariantHelpers';
+import {
+  getProductColorNames,
+  isStructuredColorOption,
+  resolveColorShowcaseImage,
+} from './colorVariantHelpers';
 import {
   DEFAULT_FULL_RES_FALLBACK_IMAGE,
   resolveFullResolutionImageUrl,
@@ -39,10 +43,10 @@ export function computeLuxurySubtotal(unitPrice: number, quantity: number): numb
 
 /**
  * Builds the deduplicated list of product image URLs for the clean left-column carousel,
- * incorporating both gallery images and distinct explicit per-color images.
+ * incorporating gallery images, structured per-color imageUrl entries, and colorImages.
  */
 export function buildLuxuryCarouselImages(
-  product: Pick<Product, 'images' | 'colorImages' | 'variants'>,
+  product: Pick<Product, 'images' | 'colors' | 'colorImages' | 'variants'>,
   preferredColorImage?: string
 ): string[] {
   const urls: string[] = [];
@@ -62,6 +66,14 @@ export function buildLuxuryCarouselImages(
   if (Array.isArray(product.images)) {
     for (const img of product.images) {
       pushUnique(img);
+    }
+  }
+
+  if (Array.isArray(product.colors)) {
+    for (const entry of product.colors) {
+      if (isStructuredColorOption(entry) && entry.imageUrl) {
+        pushUnique(entry.imageUrl);
+      }
     }
   }
 
@@ -109,13 +121,12 @@ export function findColorForCarouselImage(
   product: Pick<Product, 'colors' | 'images' | 'colorImages' | 'variants'>,
   imageUrl?: string
 ): string | undefined {
-  if (!imageUrl || !Array.isArray(product.colors) || product.colors.length === 0) {
+  const colorNames = getProductColorNames(product);
+  if (!imageUrl || colorNames.length === 0) {
     return undefined;
   }
   const target = resolveFullResolutionImageUrl(imageUrl) || imageUrl;
-  for (const color of product.colors) {
-    const cleanColor = color.trim();
-    if (!cleanColor) continue;
+  for (const cleanColor of colorNames) {
     const mapped = resolveColorShowcaseImage(product, cleanColor);
     if (!mapped) continue;
     const resolvedMapped = resolveFullResolutionImageUrl(mapped) || mapped;

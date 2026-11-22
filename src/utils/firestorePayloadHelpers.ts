@@ -161,6 +161,93 @@ export function sanitizeColorImagesForFirestore(
   return { colorImages: cleanMap, strippedCount };
 }
 
+/**
+ * Normalizes product `colors` array (supporting both legacy string[] and structured ProductColorOption[]),
+ * capping strings and removing oversized inline Base64 data URIs inside `imageUrl`.
+ */
+export function sanitizeProductColorsForFirestore(
+  colors: unknown,
+  options?: {
+    maxInlineImageChars?: number;
+    maxEntries?: number;
+    stripAllDataUrls?: boolean;
+  }
+): { colors: Array<string | Record<string, unknown>>; strippedCount: number } {
+  if (!Array.isArray(colors)) {
+    return { colors: [], strippedCount: 0 };
+  }
+
+  const maxInlineChars = options?.maxInlineImageChars ?? FIRESTORE_MAX_INLINE_IMAGE_CHARS;
+  const maxEntries = options?.maxEntries ?? 30;
+  const stripAllDataUrls = options?.stripAllDataUrls === true;
+  const cleanList: Array<string | Record<string, unknown>> = [];
+  let strippedCount = 0;
+
+  for (const entry of colors.slice(0, maxEntries)) {
+    if (typeof entry === 'string') {
+      const clean = entry.trim().slice(0, 80);
+      if (clean) cleanList.push(clean);
+      continue;
+    }
+
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry)) continue;
+    const raw = entry as Record<string, unknown>;
+    const cleanName = typeof raw.name === 'string' ? raw.name.trim().slice(0, 80) : '';
+    if (!cleanName) continue;
+
+    const cleanId =
+      typeof raw.id === 'string' && raw.id.trim()
+        ? raw.id.trim().slice(0, 128)
+        : `color-${cleanList.length + 1}`;
+
+    let cleanImgUrl = '';
+    if (typeof raw.imageUrl === 'string' && raw.imageUrl.trim()) {
+      const resolved = resolveFullResolutionImageUrl(raw.imageUrl.trim()) || raw.imageUrl.trim();
+      const isDataUrl = resolved.startsWith('data:');
+      if (isDataUrl && (stripAllDataUrls || resolved.length > maxInlineChars)) {
+        strippedCount++;
+        cleanImgUrl = '';
+      } else {
+        cleanImgUrl = resolved;
+      }
+    }
+
+    const structured: Record<string, unknown> = {
+      id: cleanId,
+      name: cleanName,
+      imageUrl: cleanImgUrl,
+    };
+
+    if (typeof raw.hex === 'string' && raw.hex.trim()) {
+      structured.hex = raw.hex.trim().slice(0, 20);
+    }
+
+    if (Array.isArray(raw.availableCapacities)) {
+      const caps = raw.availableCapacities
+        .filter((c): c is string => typeof c === 'string' && c.trim().length > 0)
+        .slice(0, 30)
+        .map((c) => c.trim().slice(0, 128));
+      if (caps.length > 0) {
+        structured.availableCapacities = caps;
+      }
+    }
+
+    if (
+      typeof raw.priceAdjustment === 'number' &&
+      Number.isFinite(raw.priceAdjustment) &&
+      raw.priceAdjustment >= -100000 &&
+      raw.priceAdjustment <= 100000 &&
+      raw.priceAdjustment !== 0
+    ) {
+      structured.priceAdjustment = raw.priceAdjustment;
+    }
+
+    cleanList.push(structured);
+  }
+
+  return { colors: cleanList, strippedCount };
+}
+
 function truncateStringField(val: unknown, maxChars: number): string | undefined {
   if (typeof val !== 'string') return undefined;
   return val.length > maxChars ? val.slice(0, maxChars) : val;
@@ -213,6 +300,14 @@ export function enforceFirestoreProductPayloadLimit(
     wasCompacted = true;
   }
   working.images = sanitizedStep1.images;
+
+  if (working.colors !== undefined) {
+    const sanitizedColorArr1 = sanitizeProductColorsForFirestore(working.colors, {
+      maxInlineImageChars: FIRESTORE_MAX_INLINE_IMAGE_CHARS,
+    });
+    if (sanitizedColorArr1.strippedCount > 0) wasCompacted = true;
+    working.colors = sanitizedColorArr1.colors;
+  }
 
   if (working.colorImages !== undefined) {
     const sanitizedColors1 = sanitizeColorImagesForFirestore(working.colorImages, {
@@ -271,6 +366,11 @@ export function enforceFirestoreProductPayloadLimit(
     stripAllDataUrls: true,
   });
   working.images = sanitizedStep3.images;
+  if (working.colors !== undefined) {
+    working.colors = sanitizeProductColorsForFirestore(working.colors, {
+      stripAllDataUrls: true,
+    }).colors;
+  }
   if (working.colorImages !== undefined) {
     working.colorImages = sanitizeColorImagesForFirestore(working.colorImages, {
       stripAllDataUrls: true,
