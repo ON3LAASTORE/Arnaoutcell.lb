@@ -1,6 +1,7 @@
 import React from 'react';
 import { useShop } from '../../context/ShopContext';
 import { getOrders } from '../../services/storageService';
+import { OrderItem } from '../../types';
 import {
   DollarSign,
   ShoppingBag,
@@ -43,7 +44,7 @@ export const AdminOverview: React.FC = () => {
   const offerProducts = products.filter((p) => p.isSpecialOffer);
 
   // Best selling products based on actual orders
-  const salesMap: Record<string, { product: any; count: number; totalRev: number }> = {};
+  const salesMap: Record<string, { product: OrderItem; count: number; totalRev: number }> = {};
   orders.forEach((ord) => {
     if (ord.status !== 'cancelled' && ord.status !== 'returned') {
       ord.items.forEach((item) => {

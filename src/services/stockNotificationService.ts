@@ -22,6 +22,7 @@ import {
   isFirestoreQuotaExceededError,
   markFirestoreQuotaExceeded,
 } from '../utils/firestoreQuotaHelpers';
+import { getAdminApiHeaders } from './authService';
 
 export type { StockNotificationRecord, StockNotificationStatus } from '../utils/stockNotificationHelpers';
 export {
@@ -212,7 +213,11 @@ export async function fetchStockNotificationsOverview(): Promise<{
   // Server persistence store
   if (typeof fetch !== 'undefined') {
     try {
-      const res = await fetch('/api/notifications/list');
+      const res = await fetch('/api/notifications/list', {
+        method: 'GET',
+        headers: getAdminApiHeaders(),
+        credentials: 'same-origin',
+      });
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data.subscriptions)) {
@@ -314,7 +319,8 @@ export async function dispatchAutomatedRestockUpdates(
     try {
       const res = await fetch('/api/notifications/restock', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminApiHeaders({ 'Content-Type': 'application/json' }),
+        credentials: 'same-origin',
         body: JSON.stringify({
           productId: product.id,
           productName: product.name,

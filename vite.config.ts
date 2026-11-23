@@ -8,6 +8,7 @@ const rootDir = import.meta.dirname ?? path.dirname(fileURLToPath(import.meta.ur
 
 const isCloudRun = Boolean(process.env.K_SERVICE);
 const isHmrDisabled = process.env.DISABLE_HMR === 'true';
+const enableHmr = !isHmrDisabled && (!isCloudRun || process.env.ENABLE_HMR === 'true');
 
 export default defineConfig(() => {
   return {
@@ -21,24 +22,29 @@ export default defineConfig(() => {
       host: '0.0.0.0',
       port: 3000,
       strictPort: true,
-      // HMR configuration for Cloud Run & reverse proxies:
-      // When DISABLE_HMR is 'true', disable HMR to prevent WebSocket connection failures.
-      // Behind Cloud Run or an HTTPS reverse proxy, connect via secure WebSocket (wss) on port 443.
-      hmr: isHmrDisabled
-        ? false
-        : {
+      allowedHosts: true,
+      // Disable HMR behind Cloud Run reverse proxies unless ENABLE_HMR=true,
+      // preventing @vite/client WebSocket connection errors in preview iframes.
+      hmr: enableHmr
+        ? {
             protocol: (process.env.HMR_PROTOCOL as 'wss' | 'ws') || (isCloudRun ? 'wss' : undefined),
             clientPort: process.env.HMR_CLIENT_PORT
               ? Number(process.env.HMR_CLIENT_PORT)
               : (isCloudRun ? 443 : undefined),
-          },
-      // File watching polling fallback for containerized file systems
-      watch: isHmrDisabled
-        ? null
-        : {
+          }
+        : false,
+      watch: enableHmr
+        ? {
             usePolling: true,
             interval: 1000,
-          },
+          }
+        : null,
+    },
+    preview: {
+      host: '0.0.0.0',
+      port: 3000,
+      strictPort: true,
+      allowedHosts: true,
     },
     build: {
       target: 'es2020',

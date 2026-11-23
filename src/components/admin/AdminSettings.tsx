@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { useAdmin } from '../../context/AdminContext';
 import { saveStoreSettings } from '../../services/storageService';
@@ -7,7 +7,6 @@ import { StoreOpeningSchedule, StoreSettings } from '../../types';
 import { calculateScheduleDuration, checkStoreOpenStatus } from '../../utils/storeSchedule';
 import { DEFAULT_STORE_PROFILE_PICTURE, resolveStoreLogoUrl } from '../../utils/storeSettingsHelpers';
 import { optimizeUploadedImage } from '../../utils/imageCompression';
-import { StoreLogo } from '../StoreLogo';
 import {
   Settings,
   Truck,
@@ -25,9 +24,7 @@ import {
   X,
   Upload,
   Image as ImageIcon,
-  Trash2,
   Building2,
-  Sparkles,
   Save,
   Globe,
   Download,
@@ -72,7 +69,7 @@ interface AdminSettingsProps {
 
 export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) => {
   const { lang, storeSettings, refreshData } = useShop();
-  const { user, changePassword, hasRole } = useAdmin();
+  const { changePassword, hasRole } = useAdmin();
 
   // Sub-tabs: 'branding' (Store Information & Branding), 'security' (Security -> Change Password), 'delivery' (Delivery Zones)
   const [activeSubTab, setActiveSubTab] = useState<'branding' | 'security' | 'delivery'>('branding');
@@ -85,7 +82,6 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
 
   // Logo upload & management (defaults to saved Full HD profile emblem)
   const [logoUrl, setLogoUrl] = useState<string>(() => resolveStoreLogoUrl(storeSettings.logoUrl));
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [logoError, setLogoError] = useState<string>('');
   const [showCheckerboard, setShowCheckerboard] = useState<boolean>(true);
@@ -169,7 +165,6 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
       return;
     }
 
-    setLogoFile(file);
     setUploadProgress(15);
 
     // If SVG, perform deep sanitization
@@ -218,7 +213,6 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
 
   const handleResetOfficialLogo = () => {
     setLogoUrl(DEFAULT_STORE_PROFILE_PICTURE);
-    setLogoFile(null);
     setLogoError('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';

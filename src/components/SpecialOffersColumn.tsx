@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useShop } from '../context/ShopContext';
 import { ProductCard } from './ProductCard';
-import { Flame, Sparkles, ArrowRight, Tag, Smartphone, Headphones, BatteryCharging, Gamepad2 } from 'lucide-react';
+import { Flame, Sparkles, Tag, Smartphone, Headphones, BatteryCharging, Gamepad2 } from 'lucide-react';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import { ReactBitsColumns } from './animations/ReactBitsColumns';
 
 export const SpecialOffersColumn: React.FC = () => {
-  const { lang, offers, products, setCurrentView, storeSettings } = useShop();
+  const { lang, offers, products, storeSettings } = useShop();
 
   const [activeTab, setActiveTab] = useState<'all' | 'phones' | 'audio' | 'power' | 'rugged'>('all');
 

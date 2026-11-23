@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useShop } from '../context/ShopContext';
 import { Trash2, ShoppingBag, ArrowRight, ShieldCheck, Tag } from 'lucide-react';
-import { WhatsApp3DIcon, Cart3DIcon } from '../components/icons/ThreeDIcons';
+import { WhatsApp3DIcon } from '../components/icons/ThreeDIcons';
 import { LazyImage } from '../components/LazyImage';
 import { openExternalUrl } from '../utils/navigation';
 import { resolveCartItemImage, resolveCartItemUnitPrice } from '../utils/checkoutHelpers';
@@ -140,6 +140,7 @@ export const CartPage: React.FC = () => {
                       <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pt-3 sm:pt-0 border-t sm:border-t-0 border-[#DCE5F0] dark:border-[#1E293B]">
                         <div className="flex items-center bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] rounded-xl overflow-hidden">
                           <button
+                            type="button"
                             onClick={() =>
                               updateCartQuantity(
                                 item.product.id,
@@ -148,7 +149,8 @@ export const CartPage: React.FC = () => {
                                 item.selectedVariant?.id
                               )
                             }
-                            className="px-3 py-1.5 text-xs text-[#172033] dark:text-[#F8FAFC] hover:bg-slate-200 dark:hover:bg-[#1E293B] transition-colors"
+                            aria-label={`Decrease quantity for ${item.product.name}`}
+                            className="px-3 py-1.5 text-xs text-[#172033] dark:text-[#F8FAFC] hover:bg-slate-200 dark:hover:bg-[#1E293B] transition-colors cursor-pointer"
                           >
                             -
                           </button>
@@ -156,15 +158,18 @@ export const CartPage: React.FC = () => {
                             {item.quantity}
                           </span>
                           <button
+                            type="button"
+                            disabled={maxStock <= 0 || item.quantity >= maxStock}
                             onClick={() =>
                               updateCartQuantity(
                                 item.product.id,
-                                Math.min(maxStock, item.quantity + 1),
+                                item.quantity + 1,
                                 item.selectedColor,
                                 item.selectedVariant?.id
                               )
                             }
-                            className="px-3 py-1.5 text-xs text-[#172033] dark:text-[#F8FAFC] hover:bg-slate-200 dark:hover:bg-[#1E293B] transition-colors"
+                            aria-label={`Increase quantity for ${item.product.name}`}
+                            className="px-3 py-1.5 text-xs text-[#172033] dark:text-[#F8FAFC] hover:bg-slate-200 dark:hover:bg-[#1E293B] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             +
                           </button>
@@ -175,10 +180,12 @@ export const CartPage: React.FC = () => {
                         </span>
 
                         <button
+                          type="button"
                           onClick={() =>
                             removeFromCart(item.product.id, item.selectedColor, item.selectedVariant?.id)
                           }
-                          className="p-2 text-[#64748B] dark:text-slate-400 hover:text-[#DC2626] dark:hover:text-rose-400 transition-colors"
+                          aria-label={`Remove ${item.product.name} from cart`}
+                          className="p-2 text-[#64748B] dark:text-slate-400 hover:text-[#DC2626] dark:hover:text-rose-400 transition-colors cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>

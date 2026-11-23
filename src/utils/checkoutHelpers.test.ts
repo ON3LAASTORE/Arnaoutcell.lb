@@ -9,6 +9,10 @@ import {
   applyOrderStockDelta,
   sanitizeProductReviewsForStorage,
   addProductReviewPure,
+  resolveDefaultCartSelection,
+  stripUndefinedDeep,
+  sanitizeCartQuantity,
+  validateCartBeforeCheckout,
 } from './checkoutHelpers';
 import { Product } from '../types';
 
@@ -242,3 +246,113 @@ test('resolveCartItemUnitPrice combines capacity variant price with structured c
     'https://example.com/gold.png'
   );
 });
+
+test('resolveDefaultCartSelection resolves structured color, capacity, and fallback defaults accurately', () => {
+  const structuredProduct = makeProduct({
+    price: 190,
+    colors: [
+      {
+        id: 'color-black',
+        name: 'Black',
+        imageUrl: '/images/tecno_spark_black.jpg',
+        availableCapacities: ['var-256'],
+        priceAdjustment: 10,
+      },
+      {
+        id: 'color-gray',
+        name: 'Gray',
+        imageUrl: '/images/tecno_spark_gray.jpg',
+      },
+    ],
+    colorImages: undefined,
+    variants: [
+      { id: 'var-128', name: '128GB', price: 190, stock: 10, sku: 'SKU-128' },
+      { id: 'var-256', name: '256GB', price: 220, stock: 5, sku: 'SKU-256' },
+    ],
+  });
+
+  // Respects color restriction (Black only allows var-256) + includes thumbnail and price adjustment
+  const blackDefault = resolveDefaultCartSelection(structuredProduct);
+  assert.equal(blackDefault.selectedColor, 'Black');
+  assert.equal(blackDefault.selectedVariant?.id, 'var-256');
+  assert.equal(blackDefault.selectedColorImage, '/images/tecno_spark_black.jpg');
+  assert.equal(blackDefault.colorPriceAdjustment, 10);
+
+  // Respects explicit preferred variant
+  const explicitCap = resolveDefaultCartSelection(
+    structuredProduct,
+    structuredProduct.variants![1]
+  );
+  assert.equal(explicitCap.selectedVariant?.id, 'var-256');
+
+  // Handles legacy product with no colors and no variants cleanly
+  const plainProduct = makeProduct({
+    colors: undefined,
+    colorImages: undefined,
+    variants: undefined,
+  });
+  const plainDefault = resolveDefaultCartSelection(plainProduct);
+  assert.equal(plainDefault.selectedColor, undefined);
+  assert.equal(plainDefault.selectedVariant, undefined);
+  assert.equal(plainDefault.colorPriceAdjustment, 0);
+});
+
+test('stripUndefinedDeep removes undefined keys recursively while keeping zeros, booleans, and nested arrays intact', () => {
+  const cleaned = stripUndefinedDeep({
+    id: 'OAA-2027-1001',
+    discount: 0,
+    customer: {
+      fullName: 'Nadine Haddad',
+      alternatePhone: undefined,
+      notes: undefined,
+    },
+    items: [
+      {
+        productId: 'p1',
+        color: undefined,
+        variantName: '512GB',
+        colorImage: undefined,
+      },
+      undefined,
+    ],
+  });
+
+  assert.equal('alternatePhone' in cleaned.customer, false);
+  assert.equal('notes' in cleaned.customer, false);
+  assert.equal(cleaned.discount, 0);
+  assert.equal(cleaned.items.length, 1);
+  assert.equal('color' in (cleaned.items[0] as Record<string, unknown>), false);
+  assert.equal((cleaned.items[0] as Record<string, unknown>).variantName, '512GB');
+});
+
+test('sanitizeCartQuantity enforces integer bounds and handles zero/negative stock', () => {
+  assert.equal(sanitizeCartQuantity(3.8, 10), 3);
+  assert.equal(sanitizeCartQuantity(15, 5), 5);
+  assert.equal(sanitizeCartQuantity(2, 0), 0);
+  assert.equal(sanitizeCartQuantity(-2, 5), 0);
+  assert.equal(sanitizeCartQuantity('NaN', 5), 0);
+});
+
+test('validateCartBeforeCheckout rejects empty cart, out-of-stock items, and multi-variant overselling', () => {
+  const emptyRes = validateCartBeforeCheckout([], []);
+  assert.equal(emptyRes.valid, false);
+  assert.equal(emptyRes.issues[0].reason, 'empty_cart');
+
+  const product = makeProduct({ stock: 5 });
+  const overStockRes = validateCartBeforeCheckout(
+    [
+      { product, quantity: 3, selectedVariant: product.variants![0] },
+      { product, quantity: 4, selectedVariant: product.variants![1] },
+    ],
+    [product]
+  );
+  assert.equal(overStockRes.valid, false);
+  assert.equal(overStockRes.issues[0].reason, 'exceeds_stock');
+
+  const validRes = validateCartBeforeCheckout(
+    [{ product, quantity: 2, selectedVariant: product.variants![0] }],
+    [product]
+  );
+  assert.equal(validRes.valid, true);
+});
+

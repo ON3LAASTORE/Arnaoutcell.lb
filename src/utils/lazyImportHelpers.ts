@@ -56,12 +56,13 @@ function defaultDelay(ms: number): Promise<void> {
 export async function loadModuleWithRetry<
   TModule extends object,
   TKey extends keyof TModule,
+  TProps extends object = Record<string, unknown>,
 >(
   importer: () => Promise<TModule>,
   exportName: TKey,
-  options: SafeLazyOptions = {}
+  options: SafeLazyOptions<TProps> = {}
 ): Promise<{
-  default: TModule[TKey] extends ComponentType<any> ? TModule[TKey] : ComponentType<any>;
+  default: ComponentType<TProps>;
 }> {
   const {
     retries = 2,
@@ -81,7 +82,7 @@ export async function loadModuleWithRetry<
       if (!exported || (typeof exported !== 'function' && typeof exported !== 'object')) {
         throw new Error(`Module export "${String(exportName)}" was empty or invalid.`);
       }
-      return { default: exported as any };
+      return { default: exported as ComponentType<TProps> };
     } catch (error) {
       lastError = error;
       const shouldRetry = attempt < retries && isChunkLoadError(error);
@@ -95,7 +96,7 @@ export async function loadModuleWithRetry<
   }
 
   if (fallbackComponent) {
-    return { default: fallbackComponent as any };
+    return { default: fallbackComponent };
   }
 
   throw lastError;
@@ -109,10 +110,12 @@ export async function loadModuleWithRetry<
 export function safeLazy<
   TModule extends object,
   TKey extends keyof TModule,
+  TProps extends object = Record<string, unknown>,
 >(
   importer: () => Promise<TModule>,
   exportName: TKey,
-  options: SafeLazyOptions = {}
+  options: SafeLazyOptions<TProps> = {}
 ) {
-  return React.lazy(() => loadModuleWithRetry(importer, exportName, options));
+  return React.lazy(() => loadModuleWithRetry<TModule, TKey, TProps>(importer, exportName, options));
 }
+

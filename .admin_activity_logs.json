@@ -1,5 +1,180 @@
 [
   {
+    "id": "audit-1795439139195-3orq67",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (admin)",
+    "details": "Invalid administrator password submitted during authentication check.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-23T13:05:39.195Z"
+  },
+  {
+    "id": "audit-1795438956991-f3wg0j",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (admin)",
+    "details": "Invalid administrator password submitted during authentication check.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-23T13:02:36.991Z"
+  },
+  {
+    "id": "audit-1795438955955-0d27iy",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (admin)",
+    "details": "Invalid administrator password submitted during authentication check.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-23T13:02:35.955Z"
+  },
+  {
+    "id": "audit-1795438699704-c8vtxh",
+    "action": "product_created",
+    "titleEn": "Added new product: 9 IN 1 HUB DOCKING STATION",
+    "titleAr": "تمت إضافة منتج جديد: 9 IN 1 HUB DOCKING STATION",
+    "category": "catalog",
+    "severity": "info",
+    "target": "9 IN 1 HUB DOCKING STATION (prod-1795438698720)",
+    "details": "Brand: Green Lion • Category: Computers & Gaming • Price: $45 • Stock: 5",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-23T12:58:19.704Z"
+  },
+  {
+    "id": "audit-1795438237672-8pq5dw",
+    "action": "product_deleted",
+    "titleEn": "Deleted product: FRAGRANCE DIFFUSER 130ML CAR AND HOME DUAL USE DESIGN 7159",
+    "titleAr": "تم حذف المنتج: FRAGRANCE DIFFUSER 130ML CAR AND HOME DUAL USE DESIGN 7159",
+    "category": "catalog",
+    "severity": "warning",
+    "target": "FRAGRANCE DIFFUSER 130ML CAR AND HOME DUAL USE DESIGN 7159 (prod-1795008914883)",
+    "details": "Removed Green Lion item ($19) from storefront catalog.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-23T12:50:37.672Z"
+  },
+  {
+    "id": "audit-1795438196424-dpyhxs",
+    "action": "product_created",
+    "titleEn": "Added new product: CAR AND HOME FRAGRANCE",
+    "titleAr": "تمت إضافة منتج جديد: CAR AND HOME FRAGRANCE",
+    "category": "catalog",
+    "severity": "info",
+    "target": "CAR AND HOME FRAGRANCE (prod-1795438195339)",
+    "details": "Brand: Green Lion • Category: Car Accessories • Price: $19 • Stock: 15",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-23T12:49:56.424Z"
+  },
+  {
+    "id": "audit-1795437589766-8jghcg",
+    "action": "product_updated",
+    "titleEn": "Updated product: Apple iPhone 18 Pro Max 256GB E-SIM Burgundy",
+    "titleAr": "تم تحديث المنتج: أبل آيفون 16 برو ماكس 256 جيجابايت - تيتانيوم صحراوي",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Apple iPhone 18 Pro Max 256GB E-SIM Burgundy (prod-iphone16promax)",
+    "details": "Modified specifications/media for Apple item.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-23T12:39:49.766Z"
+  },
+  {
+    "id": "audit-1795437394787-e75mhj",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-23T12:36:34.787Z"
+  },
+  {
+    "id": "audit-1795437388836-8715c9",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (admin)",
+    "details": "Invalid administrator password submitted during authentication check.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-23T12:36:28.835Z"
+  },
+  {
+    "id": "audit-1795436212911-sw59b6",
+    "action": "product_created",
+    "titleEn": "Added new product: FRAGRANCE DIFFUSER 130ML CAR AND HOME DUAL USE DESIGN 7159",
+    "titleAr": "تمت إضافة منتج جديد: FRAGRANCE DIFFUSER 130ML CAR AND HOME DUAL USE DESIGN 7159",
+    "category": "catalog",
+    "severity": "info",
+    "target": "FRAGRANCE DIFFUSER 130ML CAR AND HOME DUAL USE DESIGN 7159 (prod-1795436212033)",
+    "details": "Brand: Green Lion • Category: Car Accessories • Price: $16 • Stock: 15",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-23T12:16:52.911Z"
+  },
+  {
     "id": "audit-1795356604319-3gtdmg",
     "action": "product_updated",
     "titleEn": "Updated product: OPPO Reno 16 5G - 12GB Ram - 256GB Storage",

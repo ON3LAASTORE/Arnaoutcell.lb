@@ -15,7 +15,6 @@ import {
   ExternalLink,
   Save,
   X,
-  Send,
   Eye,
   EyeOff,
   Zap,
@@ -23,7 +22,6 @@ import {
   RefreshCw,
   Trash2,
   KeyRound,
-  Check,
 } from 'lucide-react';
 import { ConfirmDialog } from '../../ConfirmDialog';
 
@@ -68,11 +66,11 @@ export const SocialAccountsManager: React.FC<SocialAccountsManagerProps> = ({ la
   const openEdit = (acc: SocialAccountConfig) => {
     setEditingAccount(acc);
     setFormHandle(acc.accountHandle || '');
-    setFormPageId((acc as any).pageId || acc.channelId || '');
+    setFormPageId(acc.pageId || acc.channelId || '');
     setFormPageAccessToken(acc.hasApiKey ? '••••••••••••••••' : '');
-    setFormInstagramId((acc as any).instagramAccountId || '');
+    setFormInstagramId(acc.instagramAccountId || '');
     setFormTelegramBotToken(acc.hasApiKey ? '••••••••••••••••' : '');
-    setFormTelegramChannelId((acc as any).telegramChannelId || acc.channelId || '');
+    setFormTelegramChannelId(acc.telegramChannelId || acc.channelId || '');
     setDirectEnabled(acc.directPublishEnabled);
     setShowKey(false);
     setTestingStatus(null);
@@ -83,7 +81,7 @@ export const SocialAccountsManager: React.FC<SocialAccountsManagerProps> = ({ la
     e.preventDefault();
     if (!editingAccount) return;
 
-    const payload: any = {
+    const payload: Parameters<typeof saveBackendSocialAccount>[0] = {
       platform: editingAccount.platform,
       displayName: editingAccount.displayName,
       accountHandle: formHandle.trim(),
@@ -217,6 +215,12 @@ export const SocialAccountsManager: React.FC<SocialAccountsManagerProps> = ({ la
       )}
 
       {/* Accounts Grid */}
+      {loading && accounts.length === 0 ? (
+        <div className="p-8 rounded-3xl border border-[#DCE5F0] bg-white text-center text-xs text-[#64748B] flex items-center justify-center gap-2">
+          <RefreshCw className="w-4 h-4 animate-spin text-[#007AFF]" />
+          <span>{isArabic ? 'جاري تحميل إعدادات القنوات...' : 'Loading channel connections...'}</span>
+        </div>
+      ) : null}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {accounts.map((acc) => (
           <div
@@ -271,7 +275,7 @@ export const SocialAccountsManager: React.FC<SocialAccountsManagerProps> = ({ la
                 <div className="text-[10px] bg-slate-50 border border-slate-200 rounded-xl p-2 space-y-1">
                   <div className="flex items-center justify-between text-[#64748B]">
                     <span>Page ID:</span>
-                    <span className="font-mono font-bold text-[#172033]">{(acc as any).pageId || 'Configured via .env'}</span>
+                    <span className="font-mono font-bold text-[#172033]">{acc.pageId || 'Configured via .env'}</span>
                   </div>
                   <div className="flex items-center justify-between text-[#64748B]">
                     <span>Meta Graph API:</span>
@@ -296,7 +300,7 @@ export const SocialAccountsManager: React.FC<SocialAccountsManagerProps> = ({ la
                   </div>
                   <div className="flex items-center justify-between text-[#64748B]">
                     <span>IG Account ID:</span>
-                    <span className="font-mono font-bold text-[#172033]">{(acc as any).instagramAccountId || 'Configured via backend'}</span>
+                    <span className="font-mono font-bold text-[#172033]">{acc.instagramAccountId || 'Configured via backend'}</span>
                   </div>
                   <div className="flex items-center justify-between text-[#64748B]">
                     <span>Official API:</span>

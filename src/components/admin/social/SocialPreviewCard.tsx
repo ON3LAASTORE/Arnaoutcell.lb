@@ -5,11 +5,7 @@ import { SocialPlatform, MarketingPost } from '../../../types/socialMarketing';
 import { resolveStoreLogoUrl } from '../../../utils/storeSettingsHelpers';
 import { DEFAULT_FULL_RES_FALLBACK_IMAGE, resolveFullResolutionImageUrl } from '../../../utils/imageResolutionHelpers';
 import {
-  MessageSquare,
-  Instagram,
-  Facebook,
   Send,
-  Twitter,
   Music2,
   CheckCircle2,
   Heart,

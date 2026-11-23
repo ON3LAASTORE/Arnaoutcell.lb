@@ -1,12 +1,18 @@
 import React, { useState } from 'react';
 import { useShop } from '../context/ShopContext';
 import { MarketingVideo } from '../types';
-import { Play, Video, ShoppingCart, X, Eye } from 'lucide-react';
+import { Play, Video, ShoppingCart, X, Eye, AlertTriangle, RefreshCw } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 
 export const VideoShowcase: React.FC = () => {
   const { lang, marketingVideos, products, viewProductDetail } = useShop();
   const [activeVideo, setActiveVideo] = useState<MarketingVideo | null>(null);
+  const [videoError, setVideoError] = useState(false);
+
+  const openVideoModal = (video: MarketingVideo) => {
+    setVideoError(false);
+    setActiveVideo(video);
+  };
 
   const publishedVideos = marketingVideos.filter((v) => v.isPublished);
 
@@ -44,9 +50,11 @@ export const VideoShowcase: React.FC = () => {
                 className="group rounded-2xl bg-white border border-[#DCE5F0] hover:border-[#007AFF] overflow-hidden shadow-xs hover:shadow-[0_8px_24px_-4px_rgba(0,122,255,0.12)] transition-all flex flex-col justify-between"
               >
                 {/* Thumbnail with Play Trigger */}
-                <div
-                  onClick={() => setActiveVideo(video)}
-                  className="relative h-56 bg-slate-900 cursor-pointer overflow-hidden group"
+                <button
+                  type="button"
+                  onClick={() => openVideoModal(video)}
+                  aria-label={`Play video: ${video.title}`}
+                  className="relative h-56 w-full text-left bg-slate-900 cursor-pointer overflow-hidden group"
                 >
                   <LazyImage
                     src={video.thumbnail}
@@ -71,7 +79,7 @@ export const VideoShowcase: React.FC = () => {
                       <span>{video.views.toLocaleString()} {lang === 'ar' ? 'مشاهدة' : 'views'}</span>
                     </div>
                   )}
-                </div>
+                </button>
 
                 {/* Content */}
                 <div className="p-5 flex-1 flex flex-col justify-between">
@@ -116,7 +124,8 @@ export const VideoShowcase: React.FC = () => {
                       </div>
                     ) : (
                       <button
-                        onClick={() => setActiveVideo(video)}
+                        type="button"
+                        onClick={() => openVideoModal(video)}
                         className="w-full py-2 rounded-lg bg-[#F5F8FC] hover:bg-[#EAF3FF] text-[#172033] text-xs font-semibold flex items-center justify-center gap-2 border border-[#DCE5F0] cursor-pointer"
                       >
                         <Play className="w-3.5 h-3.5 text-[#007AFF]" />
@@ -142,7 +151,12 @@ export const VideoShowcase: React.FC = () => {
                 <span className="line-clamp-1">{activeVideo.title}</span>
               </div>
               <button
-                onClick={() => setActiveVideo(null)}
+                type="button"
+                aria-label={lang === 'ar' ? 'إغلاق مشغل الفيديو' : 'Close video player'}
+                onClick={() => {
+                  setVideoError(false);
+                  setActiveVideo(null);
+                }}
                 className="p-1.5 rounded-xl hover:bg-slate-200 text-[#64748B] hover:text-[#172033] transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
@@ -150,19 +164,40 @@ export const VideoShowcase: React.FC = () => {
             </div>
 
             {/* Video Player */}
-            <div className="relative aspect-video bg-black">
-              <video
-                src={activeVideo.videoUrl}
-                poster={activeVideo.thumbnail}
-                width={1280}
-                height={720}
-                preload="metadata"
-                controls
-                autoPlay
-                className="w-full h-full object-contain"
-              >
-                Your browser does not support the video tag.
-              </video>
+            <div className="relative aspect-video bg-black flex items-center justify-center">
+              {videoError ? (
+                <div className="flex flex-col items-center justify-center gap-3 p-6 text-center text-white">
+                  <AlertTriangle className="w-8 h-8 text-amber-400" />
+                  <p className="text-sm font-bold">
+                    {lang === 'ar'
+                      ? 'تعذر تحميل ملف الفيديو حالياً.'
+                      : 'Unable to load this video clip right now.'}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => setVideoError(false)}
+                    className="px-4 py-2 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>{lang === 'ar' ? 'إعادة المحاولة' : 'Retry Video'}</span>
+                  </button>
+                </div>
+              ) : (
+                <video
+                  key={activeVideo.id}
+                  src={activeVideo.videoUrl}
+                  poster={activeVideo.thumbnail}
+                  width={1280}
+                  height={720}
+                  preload="metadata"
+                  controls
+                  autoPlay
+                  onError={() => setVideoError(true)}
+                  className="w-full h-full object-contain"
+                >
+                  Your browser does not support the video tag.
+                </video>
+              )}
             </div>
 
             {/* Modal Footer */}

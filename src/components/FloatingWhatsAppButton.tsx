@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useShop } from '../context/ShopContext';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
-import { MessageSquare, Sparkles, X, Send } from 'lucide-react';
+import { Sparkles, X } from 'lucide-react';
 import { openExternalUrl } from '../utils/navigation';
 
 export const FloatingWhatsAppButton: React.FC = () => {

@@ -56,6 +56,7 @@ import { extractResetTokenFromLocation } from '../services/authService';
 import {
   PromoValidationResult,
   resolveCartItemUnitPrice,
+  sanitizeCartQuantity,
   validateAndCalculatePromoDiscount,
 } from '../utils/checkoutHelpers';
 
@@ -121,7 +122,7 @@ interface ShopContextType {
   isQrScannerOpen: boolean;
   setIsQrScannerOpen: (open: boolean) => void;
   isQuickSearchOpen: boolean;
-  setIsQuickSearchOpen: (open: boolean) => void;
+  setIsQuickSearchOpen: React.Dispatch<React.SetStateAction<boolean>>;
 
   // Navigation & Filtering
   currentView: string;
@@ -148,7 +149,17 @@ interface ShopContextType {
   lastCompletedOrder: Order | null;
   setLastCompletedOrder: (order: Order | null) => void;
   submitOrder: (orderData: Omit<Order, 'id' | 'orderDate' | 'statusHistory'>) => Order;
-  generateWhatsAppOrderUrl: (order: Partial<Order> | { items: CartItem[]; customer?: any; total?: number }) => string;
+  generateWhatsAppOrderUrl: (
+    order:
+      | Partial<Order>
+      | {
+          items: CartItem[];
+          customer?: Partial<Order['customer']>;
+          total?: number;
+          discount?: number;
+          paymentMethod?: Order['paymentMethod'];
+        }
+  ) => string;
 
   // Theme / Dark Mode
   isDarkMode: boolean;
@@ -531,6 +542,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const setQuickViewProduct = (product: Product | null) => {
+    setSelectedVariantId(null);
     if (product?.id) {
       recordProductView(product.id);
     }
@@ -587,6 +599,12 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     colorImage?: string,
     colorPriceAdjustment?: number
   ) => {
+    const maxStock = variant ? variant.stock : product.stock;
+    const boundedInitialQty = sanitizeCartQuantity(quantity, maxStock);
+    if (boundedInitialQty <= 0) {
+      return;
+    }
+
     setCart((prev) => {
       const existingIndex = prev.findIndex(
         (item) =>
@@ -602,12 +620,13 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
       if (existingIndex > -1) {
         const updated = [...prev];
-        const newQty = updated[existingIndex].quantity + quantity;
-        // Don't exceed available stock
-        const maxStock = variant ? variant.stock : product.stock;
+        const nextQty = sanitizeCartQuantity(updated[existingIndex].quantity + boundedInitialQty, maxStock);
+        if (nextQty <= 0) {
+          return prev;
+        }
         updated[existingIndex] = {
           ...updated[existingIndex],
-          quantity: Math.min(newQty, maxStock),
+          quantity: nextQty,
           ...(colorImage ? { selectedColorImage: colorImage } : {}),
           ...(hasAdj ? { colorPriceAdjustment } : {}),
         };
@@ -617,7 +636,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           ...prev,
           {
             product,
-            quantity,
+            quantity: boundedInitialQty,
             selectedColor: color,
             selectedVariant: variant,
             ...(colorImage ? { selectedColorImage: colorImage } : {}),
@@ -643,23 +662,37 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const updateCartQuantity = (productId: string, quantity: number, color?: string, variantId?: string) => {
-    if (quantity <= 0) {
-      removeFromCart(productId, color, variantId);
-      return;
-    }
-    setCart((prev) =>
-      prev.map((item) => {
+    setCart((prev) => {
+      const target = prev.find(
+        (item) =>
+          item.product.id === productId &&
+          item.selectedColor === color &&
+          item.selectedVariant?.id === variantId
+      );
+      if (!target) return prev;
+      const maxStock = target.selectedVariant ? target.selectedVariant.stock : target.product.stock;
+      const clampedQty = sanitizeCartQuantity(quantity, maxStock);
+      if (clampedQty <= 0) {
+        return prev.filter(
+          (item) =>
+            !(
+              item.product.id === productId &&
+              item.selectedColor === color &&
+              item.selectedVariant?.id === variantId
+            )
+        );
+      }
+      return prev.map((item) => {
         if (
           item.product.id === productId &&
           item.selectedColor === color &&
           item.selectedVariant?.id === variantId
         ) {
-          const maxStock = item.selectedVariant ? item.selectedVariant.stock : item.product.stock;
-          return { ...item, quantity: Math.min(quantity, maxStock) };
+          return { ...item, quantity: clampedQty };
         }
         return item;
-      })
-    );
+      });
+    });
   };
 
   const clearCart = () => {
@@ -743,30 +776,38 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   // Generate WhatsApp Order link for store
-  const generateWhatsAppOrderUrl = (order: any): string => {
+  const generateWhatsAppOrderUrl = (
+    order:
+      | Partial<Order>
+      | {
+          items: CartItem[];
+          customer?: Partial<Order['customer']>;
+          total?: number;
+          discount?: number;
+          paymentMethod?: Order['paymentMethod'];
+        }
+  ): string => {
     const phone = storeSettings.whatsapp || '96170773067';
     let text = `*New Order Inquiry - ${storeSettings.storeName || 'ON AlAA STORE'} (${storeSettings.phone || '70 773 067'})* 🏠\n\n`;
 
-    if (order.id) {
+    if ('id' in order && order.id) {
       text += `*Order Reference:* ${order.id}\n`;
     }
     if (order.customer?.fullName) {
       text += `*Customer:* ${order.customer.fullName}\n`;
-      text += `*Phone:* ${order.customer.phone}\n`;
-      text += `*Area:* ${order.customer.cityArea}\n`;
-      text += `*Address:* ${order.customer.addressLine}\n\n`;
+      text += `*Phone:* ${order.customer.phone || ''}\n`;
+      text += `*Area:* ${order.customer.cityArea || ''}\n`;
+      text += `*Address:* ${order.customer.addressLine || ''}\n\n`;
     }
 
     text += `*Ordered Items:*\n`;
-    const items = order.items || cart;
-    items.forEach((item: any, idx: number) => {
-      const name = item.productName || item.product?.name;
-      const price =
-        typeof item.price === 'number'
-          ? item.price
-          : resolveCartItemUnitPrice(item);
-      const itemColor = item.color || item.selectedColor;
-      const itemVariant = item.variantName || item.selectedVariant?.name;
+    const items: Array<CartItem | Order['items'][number]> = order.items || cart;
+    items.forEach((item, idx: number) => {
+      const isOrderItem = 'productName' in item;
+      const name = isOrderItem ? item.productName : item.product?.name || 'Item';
+      const price = isOrderItem ? item.price : resolveCartItemUnitPrice(item);
+      const itemColor = isOrderItem ? item.color : item.selectedColor;
+      const itemVariant = isOrderItem ? item.variantName : item.selectedVariant?.name;
       const variantDistinct =
         itemVariant &&
         itemVariant.trim().toLowerCase() !== (itemColor || '').trim().toLowerCase()
@@ -784,7 +825,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
     const total = order.total !== undefined ? order.total : Math.max(0, cartSubtotal - cartDiscount);
     text += `\n*Total Amount:* $${total} USD`;
-    if (order.paymentMethod) {
+    if ('paymentMethod' in order && order.paymentMethod) {
       text += `\n*Payment Method:* ${order.paymentMethod.toUpperCase()}`;
     }
     text += `\n\n_Thank you for contacting ${storeSettings.storeName || 'ON AlAA STORE'} (Chouf • All Lebanon Delivery)!_`;

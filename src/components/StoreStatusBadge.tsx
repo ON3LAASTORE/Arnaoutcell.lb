@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Clock, Radio, Sparkles } from 'lucide-react';
+import { Clock } from 'lucide-react';
 import { checkStoreOpenStatus, ScheduleCalculationResult } from '../utils/storeSchedule';
 import type { StoreOpeningSchedule } from '../types';
 

@@ -79,7 +79,7 @@ export function buildGoogleMapsUrl(query: string): string {
 /**
  * Generates direct Live Route navigation URL using Plus Code or coordinates
  */
-export function buildLiveRouteUrl(destination = 'Chouf, Lebanon'): string {
+export function buildLiveRouteUrl(_destination = 'Chouf, Lebanon'): string {
   return `https://wa.me/96170773067`;
 }
 

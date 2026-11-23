@@ -220,19 +220,35 @@
         } catch (e) {}
       })();
 
-      // Gracefully silence transient WebSocket and WebChannel proxy disconnects in embedded iframes
-      window.addEventListener('unhandledrejection', function(event) {
-        var reason = event.reason;
-        var msg = reason ? (reason.message || String(reason)) : '';
-        if (
-          msg.indexOf('WebSocket') !== -1 ||
-          msg.indexOf('WebChannelConnection') !== -1 ||
-          msg.indexOf('Listen stream transport errored') !== -1 ||
-          msg.indexOf('failed to connect') !== -1
-        ) {
-          event.preventDefault();
+      // Gracefully silence transient WebSocket, @vite/client, and WebChannel proxy disconnects in embedded iframes
+      (function() {
+        function isTransientSocketMessage(msg) {
+          if (!msg) return false;
+          var lower = String(msg).toLowerCase();
+          return (
+            lower.indexOf('websocket') !== -1 ||
+            lower.indexOf('@vite/client') !== -1 ||
+            lower.indexOf('webchannelconnection') !== -1 ||
+            lower.indexOf('listen stream transport errored') !== -1 ||
+            lower.indexOf('failed to connect to websocket') !== -1
+          );
         }
-      });
+
+        window.addEventListener('unhandledrejection', function(event) {
+          var reason = event.reason;
+          var msg = reason ? (reason.message || String(reason)) : '';
+          if (isTransientSocketMessage(msg)) {
+            event.preventDefault();
+          }
+        });
+
+        window.addEventListener('error', function(event) {
+          var msg = (event && (event.message || (event.error && event.error.message))) || '';
+          if (isTransientSocketMessage(msg)) {
+            event.preventDefault();
+          }
+        });
+      })();
     </script>
   </head>
   <body class="m-0 p-0 overflow-x-hidden w-full min-h-[100dvh] bg-[#FFFFFF] dark:bg-[#0A0F1D] text-[#172033] dark:text-[#F8FAFC] antialiased selection:bg-[#007AFF] selection:text-white transition-colors duration-200">

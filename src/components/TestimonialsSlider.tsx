@@ -21,10 +21,7 @@ import {
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import {
   Testimonial,
-  getNextSlideIndex,
-  getPrevSlideIndex,
   getCardsPerView,
-  getTotalPages,
   calculateAverageRating,
 } from '../utils/testimonialHelpers';
 import {
@@ -40,7 +37,7 @@ import {
 export const TESTIMONIALS_DATA: Testimonial[] = [];
 
 export const TestimonialsSlider: React.FC = () => {
-  const { lang, storeSettings } = useShop();
+  const { lang } = useShop();
   const isArabic = lang === 'ar';
 
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
@@ -120,7 +117,6 @@ export const TestimonialsSlider: React.FC = () => {
     setTouchStartX(null);
   };
 
-  const totalPages = getTotalPages(testimonials.length, cardsPerView);
   const avgRating = calculateAverageRating(testimonials);
 
   // Handle new customer review / feedback submission

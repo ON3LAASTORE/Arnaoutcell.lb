@@ -33,7 +33,11 @@ import {
   markFirestoreQuotaExceeded,
 } from '../utils/firestoreQuotaHelpers';
 import { recordAdminActivity } from './activityLogService';
-import { addProductReviewPure, applyOrderStockDelta } from '../utils/checkoutHelpers';
+import {
+  addProductReviewPure,
+  applyOrderStockDelta,
+  stripUndefinedDeep,
+} from '../utils/checkoutHelpers';
 import { storefrontCache } from '../utils/storefrontCacheHelpers';
 
 const memoryStorageFallback = new Map<string, string>();
@@ -105,7 +109,7 @@ export function initStorage(): void {
         const stored = JSON.parse(raw);
         if (Array.isArray(stored)) {
           let hasOldReviews = false;
-          const cleaned = stored.map((p: any) => {
+          const cleaned = stored.map((p: Partial<Product>) => {
             if ((p.reviews && p.reviews.length > 0) || (p.reviewCount && p.reviewCount > 0)) {
               hasOldReviews = true;
               return { ...p, reviews: [], reviewCount: 0 };
@@ -492,32 +496,42 @@ export function createOrder(orderData: Omit<Order, 'id' | 'orderDate' | 'statusH
 
   // Sync to Firestore in background
   if (typeof window !== 'undefined' && !isFirestoreInQuotaCooldown()) {
-    setDoc(doc(db, 'orders', newOrder.id), {
-      id: newOrder.id,
-      customer: newOrder.customer,
-      items: newOrder.items,
-      subtotal: newOrder.subtotal,
-      discount: newOrder.discount,
-      deliveryFee: newOrder.deliveryFee,
-      total: newOrder.total,
-      currency: newOrder.currency,
-      paymentMethod:
-        newOrder.paymentMethod === 'cod'
-          ? 'cod'
-          : newOrder.paymentMethod === 'whish_money'
-          ? 'whish_money'
-          : 'store_pickup',
-      paymentStatus: newOrder.paymentStatus,
-      status: newOrder.status,
-      orderDate: newOrder.orderDate,
-      statusHistory: newOrder.statusHistory,
-    }).catch((err) => {
+    try {
+      const firestoreOrderPayload = stripUndefinedDeep({
+        id: newOrder.id,
+        customer: newOrder.customer,
+        items: newOrder.items,
+        subtotal: newOrder.subtotal,
+        discount: newOrder.discount,
+        deliveryFee: newOrder.deliveryFee,
+        total: newOrder.total,
+        currency: newOrder.currency,
+        paymentMethod:
+          newOrder.paymentMethod === 'cod'
+            ? 'cod'
+            : newOrder.paymentMethod === 'whish_money'
+            ? 'whish_money'
+            : 'store_pickup',
+        paymentStatus: newOrder.paymentStatus,
+        status: newOrder.status,
+        orderDate: newOrder.orderDate,
+        statusHistory: newOrder.statusHistory,
+      });
+
+      setDoc(doc(db, 'orders', newOrder.id), firestoreOrderPayload).catch((err) => {
+        if (isFirestoreQuotaExceededError(err)) {
+          markFirestoreQuotaExceeded();
+          return;
+        }
+        console.warn('Firestore order sync:', err);
+      });
+    } catch (err) {
       if (isFirestoreQuotaExceededError(err)) {
         markFirestoreQuotaExceeded();
-        return;
+      } else {
+        console.warn('Firestore order sync:', err);
       }
-      console.warn('Firestore order sync:', err);
-    });
+    }
   }
 
   return newOrder;

@@ -57,7 +57,8 @@ import {
   SpeechRecognitionInstanceLike,
 } from '../utils/voiceSearchHelpers';
 import { trackSearchQuery } from '../services/searchAnalyticsService';
-import { Product } from '../types';
+import { resolveDefaultCartSelection } from '../utils/checkoutHelpers';
+import { Product, ProductVariant } from '../types';
 
 interface QuickSearchOverlayProps {
   isOpen: boolean;
@@ -384,10 +385,22 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
   );
 
   const handleQuickAddToCart = useCallback(
-    (e: React.MouseEvent, product: Product) => {
+    (e: React.MouseEvent, product: Product, matchedVariant?: ProductVariant) => {
       e.stopPropagation();
-      if (product.stock <= 0) return;
-      addToCart(product, 1);
+      const effectiveStock =
+        matchedVariant && typeof matchedVariant.stock === 'number'
+          ? matchedVariant.stock
+          : product.stock;
+      if (effectiveStock <= 0) return;
+      const defaults = resolveDefaultCartSelection(product, matchedVariant);
+      addToCart(
+        product,
+        1,
+        defaults.selectedColor,
+        defaults.selectedVariant,
+        defaults.selectedColorImage,
+        defaults.colorPriceAdjustment
+      );
       setRecentlyAddedId(product.id);
       window.setTimeout(() => {
         setRecentlyAddedId((prev) => (prev === product.id ? null : prev));
@@ -1469,7 +1482,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                     const displaySku = skuMatch ? skuMatch.matchedSku : p.sku;
                     const hasDiscount = !skuMatch?.matchedVariant && p.originalPrice > p.price;
                     const isLowStock = displayStock > 0 && displayStock <= (p.lowStockThreshold || 3);
-                    const isOutOfStock = displayStock === 0;
+                    const isOutOfStock = displayStock <= 0;
                     const isJustAdded = recentlyAddedId === p.id;
                     const productTitle = isArabic ? p.nameAr || p.name : p.name;
 
@@ -1576,7 +1589,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                           <button
                             type="button"
                             disabled={isOutOfStock}
-                            onClick={(e) => handleQuickAddToCart(e, p)}
+                            onClick={(e) => handleQuickAddToCart(e, p, skuMatch?.matchedVariant)}
                             data-testid={`overlay-quick-add-${p.id}`}
                             aria-label={
                               isOutOfStock

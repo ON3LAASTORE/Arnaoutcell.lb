@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
 import { useShop } from '../context/ShopContext';
 import {
   Sparkles,
@@ -11,13 +10,6 @@ import {
   Pause,
   Volume2,
   VolumeX,
-  Camera,
-  Zap,
-  Smartphone,
-  CheckCircle,
-  X,
-  Layers,
-  ChevronRight,
 } from 'lucide-react';
 import { WhatsApp3DIcon, Orbit3DIcon } from './icons/ThreeDIcons';
 import { openExternalUrl } from '../utils/navigation';
@@ -27,8 +19,6 @@ import { ReactBitsPicture } from './animations/ReactBitsPicture';
 export const HeroSection: React.FC = () => {
   const {
     lang,
-    storeSettings,
-    setCurrentView,
     selectBrand,
     products,
     setQuickViewProduct,
@@ -38,8 +28,7 @@ export const HeroSection: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
-  const [videoLoaded, setVideoLoaded] = useState(false);
-  const [isInteractiveModalOpen, setIsInteractiveModalOpen] = useState(false);
+  const [videoError, setVideoError] = useState(false);
 
   // Reno 16 Series 5G product from inventory
   const renoProduct: Product | undefined =
@@ -341,66 +330,84 @@ export const HeroSection: React.FC = () => {
                     </div>
 
                     {/* High Quality 9:16 Video Player */}
-                    <video
-                      ref={videoRef}
-                      width={370}
-                      height={658}
-                      poster="/on-alaa-store-profile.png"
-                      loop
-                      muted={isMuted}
-                      playsInline
-                      preload="metadata"
-                      onLoadedData={() => setVideoLoaded(true)}
-                      className="w-full h-full object-cover object-center cursor-pointer"
-                      onClick={togglePlay}
-                    >
-                      <source src="/videos/oppo-reno16-series-5g.mp4" type="video/mp4" />
-                      <source
-                        src="/assets/aistudio/____..._________________________________________________OPPO_Reno16_F_5G__OPPOReno16Series__1__4ef3f86a.mp4"
-                        type="video/mp4"
-                      />
-                    </video>
+                    {videoError ? (
+                      <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-[#170E2E] to-[#0A0718] text-white gap-3">
+                        <img
+                          src="/on-alaa-store-profile.png"
+                          alt="OPPO Reno 16 Series 5G Preview"
+                          className="w-28 h-28 object-contain rounded-2xl border border-purple-400/30 bg-black/40 p-2"
+                        />
+                        <p className="text-xs font-bold text-purple-200">
+                          {lang === 'ar'
+                            ? 'المعاينة التفاعلية جاهزة — اضغط لاستكشاف السلسلة'
+                            : 'OPPO Reno 16 Series 5G • Official Showcase'}
+                        </p>
+                      </div>
+                    ) : (
+                      <video
+                        ref={videoRef}
+                        width={370}
+                        height={658}
+                        poster="/on-alaa-store-profile.png"
+                        loop
+                        muted={isMuted}
+                        playsInline
+                        preload="metadata"
+                        onError={() => {
+                          setVideoError(true);
+                          setIsPlaying(false);
+                        }}
+                        className="w-full h-full object-cover object-center cursor-pointer"
+                        onClick={togglePlay}
+                      >
+                        <source src="/videos/oppo-reno16-series-5g.mp4" type="video/mp4" />
+                      </video>
+                    )}
 
                     {/* Gradient Overlay for Edge Depth */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20 pointer-events-none z-10" />
 
                     {/* Custom Sleek Sound Toggle Overlay (Prominent button with state feedback) */}
-                    <button
-                      type="button"
-                      onClick={toggleMute}
-                      aria-label={isMuted ? 'Unmute video sound' : 'Mute video sound'}
-                      className={`absolute bottom-4 right-4 rtl:right-auto rtl:left-4 z-30 p-2.5 sm:p-3 rounded-full backdrop-blur-xl border transition-all cursor-pointer shadow-lg active:scale-95 flex items-center gap-2 group ${
-                        isMuted
-                          ? 'bg-black/75 hover:bg-black/90 text-slate-200 border-white/25 hover:border-purple-400/60'
-                          : 'bg-gradient-to-r from-purple-600 to-violet-600 text-white border-purple-300 shadow-purple-600/50'
-                      }`}
-                    >
-                      {isMuted ? (
-                        <>
-                          <VolumeX className="w-4 h-4 text-purple-300 group-hover:scale-110 transition-transform" />
-                          <span className="text-[10px] font-bold tracking-tight pr-1 rtl:pr-0 rtl:pl-1">
-                            {lang === 'ar' ? 'تشغيل الصوت' : 'Unmute'}
-                          </span>
-                        </>
-                      ) : (
-                        <>
-                          <Volume2 className="w-4 h-4 text-white animate-pulse" />
-                          <span className="text-[10px] font-bold tracking-tight pr-1 rtl:pr-0 rtl:pl-1">
-                            {lang === 'ar' ? 'الصوت يعمل' : 'Sound On'}
-                          </span>
-                        </>
-                      )}
-                    </button>
+                    {!videoError && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={toggleMute}
+                          aria-label={isMuted ? 'Unmute video sound' : 'Mute video sound'}
+                          className={`absolute bottom-4 right-4 rtl:right-auto rtl:left-4 z-30 p-2.5 sm:p-3 rounded-full backdrop-blur-xl border transition-all cursor-pointer shadow-lg active:scale-95 flex items-center gap-2 group ${
+                            isMuted
+                              ? 'bg-black/75 hover:bg-black/90 text-slate-200 border-white/25 hover:border-purple-400/60'
+                              : 'bg-gradient-to-r from-purple-600 to-violet-600 text-white border-purple-300 shadow-purple-600/50'
+                          }`}
+                        >
+                          {isMuted ? (
+                            <>
+                              <VolumeX className="w-4 h-4 text-purple-300 group-hover:scale-110 transition-transform" />
+                              <span className="text-[10px] font-bold tracking-tight pr-1 rtl:pr-0 rtl:pl-1">
+                                {lang === 'ar' ? 'تشغيل الصوت' : 'Unmute'}
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <Volume2 className="w-4 h-4 text-white animate-pulse" />
+                              <span className="text-[10px] font-bold tracking-tight pr-1 rtl:pr-0 rtl:pl-1">
+                                {lang === 'ar' ? 'الصوت يعمل' : 'Sound On'}
+                              </span>
+                            </>
+                          )}
+                        </button>
 
-                    {/* Play/Pause Minimal Indicator Overlay */}
-                    <button
-                      type="button"
-                      onClick={togglePlay}
-                      aria-label={isPlaying ? 'Pause video' : 'Play video'}
-                      className="absolute bottom-4 left-4 rtl:left-auto rtl:right-4 z-30 p-2.5 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-md transition-all cursor-pointer opacity-70 hover:opacity-100"
-                    >
-                      {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
-                    </button>
+                        {/* Play/Pause Minimal Indicator Overlay */}
+                        <button
+                          type="button"
+                          onClick={togglePlay}
+                          aria-label={isPlaying ? 'Pause video' : 'Play video'}
+                          className="absolute bottom-4 left-4 rtl:left-auto rtl:right-4 z-30 p-2.5 rounded-full bg-black/60 hover:bg-black/80 text-white border border-white/20 backdrop-blur-md transition-all cursor-pointer opacity-70 hover:opacity-100"
+                        >
+                          {isPlaying ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5 fill-current" />}
+                        </button>
+                      </>
+                    )}
 
                     {/* Glass Reflection Highlight */}
                     <div className="absolute top-0 right-0 w-2/3 h-full bg-gradient-to-bl from-white/10 via-transparent to-transparent pointer-events-none z-20" />

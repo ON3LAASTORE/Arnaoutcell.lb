@@ -61,7 +61,14 @@ export interface SocialAccountConfig {
   directPublishEnabled: boolean;
   channelId?: string; // Telegram channel, FB Page ID, etc.
   hasApiKey: boolean; // Indicates key is set without exposing the secret
+  hasToken?: boolean;
+  pageId?: string;
+  pageName?: string;
+  instagramAccountId?: string;
+  telegramChannelId?: string;
   lastSyncedAt?: string;
+  lastVerifiedAt?: string | null;
+  permissions?: string[];
   webhookUrl?: string;
   instructionsEn: string;
   instructionsAr: string;

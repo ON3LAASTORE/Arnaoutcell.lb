@@ -22,6 +22,7 @@ import {
   markFirestoreQuotaExceeded,
 } from '../utils/firestoreQuotaHelpers';
 import { safeStorageSetItem } from '../utils/storageQuotaHelpers';
+import { getAdminApiHeaders } from './authService';
 
 const ACTIVITY_LOG_STORAGE_KEY = 'onalaa_admin_activity_logs_v1';
 const ADMIN_ACTIVITY_COLLECTION = 'admin_activity_logs';
@@ -162,7 +163,7 @@ export async function recordAdminActivity(
     try {
       const response = await fetch('/api/admin/activity-logs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAdminApiHeaders({ 'Content-Type': 'application/json' }),
         credentials: 'same-origin',
         body: JSON.stringify(entry),
       });
@@ -216,6 +217,7 @@ export async function fetchAdminActivityLogs(): Promise<ActivityLogEntry[]> {
     try {
       const response = await fetch('/api/admin/activity-logs?limit=500', {
         method: 'GET',
+        headers: getAdminApiHeaders(),
         credentials: 'same-origin',
       });
       if (response.ok) {

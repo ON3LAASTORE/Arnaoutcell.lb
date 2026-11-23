@@ -12,7 +12,6 @@ import {
   Send,
   Check,
   Globe,
-  MapPin,
   Sparkles,
 } from 'lucide-react';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
@@ -20,7 +19,6 @@ import { StoreStatusBadge } from './StoreStatusBadge';
 import { LazyImage } from './LazyImage';
 import {
   CHOUF_STORE_DATA,
-  buildSendToPhoneUrl,
   buildLocationShareData,
 } from '../utils/storeLocatorHelpers';
 
@@ -31,7 +29,6 @@ export const StoreLocatorSection: React.FC = () => {
   const [copiedShareLink, setCopiedShareLink] = useState(false);
 
   const phone = storeSettings.phone || '70773067';
-  const whatsappPhone = storeSettings.whatsapp || '96170773067';
 
   const handleShareLocation = async () => {
     const shareData = buildLocationShareData(isArabic);

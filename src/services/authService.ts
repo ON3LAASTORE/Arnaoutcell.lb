@@ -10,7 +10,30 @@
 import bcrypt from 'bcryptjs';
 
 const LEGACY_AUTH_STORAGE_KEY = 'arnaout_admin_security_v2';
-const SESSION_TOKEN_KEY = 'arnaout_admin_session_token';
+const LEGACY_SESSION_TOKEN_KEY = 'arnaout_admin_session_token';
+
+// Held strictly in JS module memory (never written to localStorage or sessionStorage)
+let activeAdminApiToken: string | null = null;
+
+export function setAdminApiToken(token: string | null): void {
+  activeAdminApiToken = typeof token === 'string' && token.trim() ? token.trim() : null;
+}
+
+export function clearAdminApiToken(): void {
+  activeAdminApiToken = null;
+}
+
+export function getAdminApiToken(): string | null {
+  return activeAdminApiToken;
+}
+
+export function getAdminApiHeaders(extra?: Record<string, string>): Record<string, string> {
+  return {
+    'X-Requested-With': 'XMLHttpRequest',
+    ...(activeAdminApiToken ? { Authorization: `Bearer ${activeAdminApiToken}` } : {}),
+    ...(extra || {}),
+  };
+}
 
 // Convert ArrayBuffer / Uint8Array to Hex string
 function bytesToHex(bytes: Uint8Array): string {
@@ -70,6 +93,7 @@ export async function initializeAdminAuth(): Promise<{ initialized: boolean; alg
   if (typeof window !== 'undefined') {
     try {
       localStorage.removeItem(LEGACY_AUTH_STORAGE_KEY);
+      sessionStorage.removeItem(LEGACY_SESSION_TOKEN_KEY);
     } catch {
       // ignore
     }
@@ -112,7 +136,10 @@ export async function verifyAdminPassword(
   try {
     const response = await fetch('/api/admin/auth/verify', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
       credentials: 'same-origin',
       body: JSON.stringify({
         password: candidate,
@@ -121,11 +148,69 @@ export async function verifyAdminPassword(
       }),
     });
 
-    if (!response.ok) return false;
-    const data = (await response.json()) as { valid?: boolean };
-    return data.valid === true;
+    if (!response.ok) {
+      clearAdminApiToken();
+      return false;
+    }
+    const data = (await response.json()) as { valid?: boolean; token?: string };
+    if (data.valid === true) {
+      if (data.token) {
+        setAdminApiToken(data.token);
+      }
+      return true;
+    }
+    clearAdminApiToken();
+    return false;
   } catch {
     return false;
+  }
+}
+
+export async function exchangeFirebaseIdTokenForAdminSession(
+  getIdToken: () => Promise<string>
+): Promise<boolean> {
+  if (typeof fetch === 'undefined') return false;
+  try {
+    const idToken = await getIdToken();
+    if (!idToken) return false;
+
+    const response = await fetch('/api/admin/auth/firebase-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Requested-With': 'XMLHttpRequest',
+      },
+      credentials: 'same-origin',
+      body: JSON.stringify({ idToken }),
+    });
+
+    if (!response.ok) {
+      clearAdminApiToken();
+      return false;
+    }
+    const data = (await response.json()) as { success?: boolean; token?: string };
+    if (data.success && data.token) {
+      setAdminApiToken(data.token);
+      return true;
+    }
+    clearAdminApiToken();
+    return false;
+  } catch {
+    return false;
+  }
+}
+
+export async function logoutAdminSession(): Promise<void> {
+  clearAdminApiToken();
+  if (typeof fetch === 'undefined') return;
+  try {
+    await fetch('/api/admin/auth/logout', {
+      method: 'POST',
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+      credentials: 'same-origin',
+    });
+  } catch {
+    // Non-fatal network fallback
   }
 }
 
@@ -271,7 +356,7 @@ export async function changeAdminPassword(
   try {
     const response = await fetch('/api/admin/auth/change-password', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAdminApiHeaders({ 'Content-Type': 'application/json' }),
       credentials: 'same-origin',
       body: JSON.stringify({
         currentPassword: currentPass,
@@ -283,6 +368,7 @@ export async function changeAdminPassword(
 
     const data = (await response.json()) as {
       success: boolean;
+      token?: string;
       messageEn?: string;
       messageAr?: string;
     };
@@ -295,13 +381,8 @@ export async function changeAdminPassword(
       };
     }
 
-    if (typeof window !== 'undefined') {
-      try {
-        const newSessionToken = generateSalt(24);
-        sessionStorage.setItem(SESSION_TOKEN_KEY, newSessionToken);
-      } catch {
-        // ignore
-      }
+    if (data.token) {
+      setAdminApiToken(data.token);
     }
 
     return {

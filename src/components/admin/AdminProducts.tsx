@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { useAdmin } from '../../context/AdminContext';
 import { Product, ProductSpec } from '../../types';
-import { saveProduct, deleteProduct, readFileAsDataUrl } from '../../services/storageService';
+import { saveProduct, deleteProduct } from '../../services/storageService';
 import { maybeTriggerRestockNotifications } from '../../services/stockNotificationService';
 import {
   Plus,
@@ -154,18 +154,6 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormIsBestSeller(Boolean(p.isBestSeller));
     setFormIsPublished(p.isPublished);
     setIsModalOpen(true);
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      try {
-        const base64 = await readFileAsDataUrl(files[0]);
-        setFormImages((prev) => [...prev, base64]);
-      } catch (err) {
-        console.error('File read error', err);
-      }
-    }
   };
 
   const handleAddImageUrl = () => {
@@ -602,16 +590,20 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                         <Share2 className="w-3.5 h-3.5" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => openEditModal(p)}
-                        className="p-1.5 rounded-lg bg-[#F5F8FC] hover:bg-[#EAF3FF] border border-[#DCE5F0] text-[#007AFF] transition-colors"
+                        className="p-1.5 rounded-lg bg-[#F5F8FC] hover:bg-[#EAF3FF] border border-[#DCE5F0] text-[#007AFF] transition-colors cursor-pointer"
                         title="Edit"
+                        aria-label={`Edit ${p.name}`}
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
+                        type="button"
                         onClick={() => handleDelete(p.id, p.name)}
-                        className="p-1.5 rounded-lg bg-[#F5F8FC] hover:bg-red-50 border border-[#DCE5F0] text-[#DC2626] transition-colors"
+                        className="p-1.5 rounded-lg bg-[#F5F8FC] hover:bg-red-50 border border-[#DCE5F0] text-[#DC2626] transition-colors cursor-pointer"
                         title="Delete"
+                        aria-label={`Delete ${p.name}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -640,8 +632,10 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                   : 'Add New Product'}
               </h2>
               <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1.5 rounded-lg text-[#64748B] hover:text-[#172033] hover:bg-[#F5F8FC]"
+                aria-label={lang === 'ar' ? 'إغلاق النافذة' : 'Close product modal'}
+                className="p-1.5 rounded-lg text-[#64748B] hover:text-[#172033] hover:bg-[#F5F8FC] cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1186,6 +1180,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                                       onClick={() => handleUpdateColorVariant(idx, { image: '' })}
                                       className="p-1.5 rounded-lg bg-[#F5F8FC] hover:bg-slate-200 border border-[#DCE5F0] text-[#64748B] cursor-pointer"
                                       title="Clear dedicated image (revert to main image)"
+                                      aria-label={`Clear dedicated image for color ${row.color || idx + 1}`}
                                     >
                                       <RotateCcw className="w-3.5 h-3.5" />
                                     </button>
@@ -1303,7 +1298,8 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                       <button
                         type="button"
                         onClick={() => handleRemoveSpec(i)}
-                        className="text-[#64748B] hover:text-[#DC2626]"
+                        aria-label={`Remove specification ${sp.label}`}
+                        className="text-[#64748B] hover:text-[#DC2626] cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>

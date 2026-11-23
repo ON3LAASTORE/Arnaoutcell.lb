@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MarketingPost, SocialPlatform } from '../../../types/socialMarketing';
+import { MarketingPost, SocialPlatform, SocialPublishResult } from '../../../types/socialMarketing';
 import {
   getSavedMarketingPosts,
   deleteMarketingPost,
@@ -9,19 +9,15 @@ import {
 import {
   Search,
   Trash2,
-  Share2,
-  Calendar,
   CheckCircle2,
   Clock,
   ExternalLink,
   Edit2,
-  Layers,
   AlertTriangle,
   RotateCw,
   Info,
   Check,
   X,
-  Send,
 } from 'lucide-react';
 import { LazyImage } from '../../LazyImage';
 import { ConfirmDialog } from '../../ConfirmDialog';
@@ -65,7 +61,9 @@ export const SocialPostHistory: React.FC<SocialPostHistoryProps> = ({ onEditPost
       });
 
       const updatedResults = { ...(post.platformResults || {}), ...res.results };
-      const hasAnySuccess = Object.values(updatedResults).some((r: any) => r.success);
+      const hasAnySuccess = Object.values(updatedResults).some(
+        (r: SocialPublishResult | undefined) => Boolean(r?.success)
+      );
 
       const updatedPost: MarketingPost = {
         ...post,
@@ -84,7 +82,9 @@ export const SocialPostHistory: React.FC<SocialPostHistoryProps> = ({ onEditPost
   };
 
   const filteredPosts = posts.filter((p) => {
-    const hasFailures = Object.values(p.platformResults || {}).some((r: any) => !r.success);
+    const hasFailures = Object.values(p.platformResults || {}).some(
+      (r: SocialPublishResult | undefined) => Boolean(r && !r.success)
+    );
     const matchStatus =
       statusFilter === 'all'
         ? true

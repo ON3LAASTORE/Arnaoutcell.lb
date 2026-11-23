@@ -11,7 +11,8 @@ import {
   setLogLevel,
   Firestore,
 } from 'firebase/firestore';
-import firebaseConfig from '../firebase-applet-config.json';
+import rawFirebaseConfig from '../firebase-applet-config.json';
+import { resolveAndValidateFirebaseConfig } from './utils/firebaseConfigHelpers';
 import {
   clearFirestoreQuotaCooldown,
   isFirestoreInQuotaCooldown,
@@ -19,6 +20,17 @@ import {
   markFirestoreQuotaExceeded,
 } from './utils/firestoreQuotaHelpers';
 import { purgeStaleFirestoreWebStorageKeys } from './utils/storageQuotaHelpers';
+
+const firebaseConfig = resolveAndValidateFirebaseConfig(rawFirebaseConfig, {
+  VITE_FIREBASE_API_KEY: import.meta.env.VITE_FIREBASE_API_KEY,
+  VITE_FIREBASE_AUTH_DOMAIN: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  VITE_FIREBASE_PROJECT_ID: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  VITE_FIREBASE_STORAGE_BUCKET: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  VITE_FIREBASE_MESSAGING_SENDER_ID: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  VITE_FIREBASE_APP_ID: import.meta.env.VITE_FIREBASE_APP_ID,
+  VITE_FIREBASE_MEASUREMENT_ID: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
+  VITE_FIREBASE_DATABASE_ID: import.meta.env.VITE_FIREBASE_DATABASE_ID,
+});
 
 const app = initializeApp(firebaseConfig);
 
@@ -39,7 +51,7 @@ if (typeof window !== 'undefined') {
  * Storefront offline resilience is handled separately by our compacted storage cache.
  */
 function createFirestoreInstance(): Firestore {
-  const databaseId = firebaseConfig.firestoreDatabaseId;
+  const databaseId = firebaseConfig.firestoreDatabaseId || '(default)';
   const isBrowser = typeof window !== 'undefined';
 
   if (!isBrowser) {

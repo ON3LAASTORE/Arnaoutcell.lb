@@ -1,7 +1,9 @@
-import { CartItem, OrderItem, Product, Review } from '../types';
+import { CartItem, OrderItem, Product, ProductVariant, Review } from '../types';
 import {
   calculateVariantUnitPrice,
+  findVariantForColor,
   getProductColorOptions,
+  isCapacityAvailableForColor,
   resolveColorShowcaseImage,
 } from './colorVariantHelpers';
 import {
@@ -150,6 +152,85 @@ export function resolveCartItemImage(
   }
 
   return DEFAULT_FULL_RES_FALLBACK_IMAGE;
+}
+
+export interface DefaultCartSelection {
+  selectedColor?: string;
+  selectedVariant?: ProductVariant;
+  selectedColorImage?: string;
+  colorPriceAdjustment: number;
+}
+
+/**
+ * Resolves the default color, capacity/color variant, thumbnail image, and color price adjustment
+ * when adding a product via 1-click actions (ProductCard, QuickSearchOverlay) so cart items stay
+ * synchronized with Product Detail Page selections.
+ */
+export function resolveDefaultCartSelection(
+  product: Product,
+  preferredVariant?: ProductVariant
+): DefaultCartSelection {
+  const colorOptions = getProductColorOptions(product);
+  const allVariants = Array.isArray(product.variants) ? product.variants : [];
+  const nonColorVariants = allVariants.filter(
+    (v) => !v.id.startsWith('var-color-') && !v.color
+  );
+
+  let selectedColorOpt = colorOptions[0];
+  if (preferredVariant?.color) {
+    const matched = colorOptions.find(
+      (opt) => opt.name.trim().toLowerCase() === preferredVariant.color!.trim().toLowerCase()
+    );
+    if (matched) {
+      selectedColorOpt = matched;
+    }
+  }
+
+  const selectedColor = selectedColorOpt?.name || preferredVariant?.color;
+
+  let selectedVariant: ProductVariant | undefined;
+  if (preferredVariant) {
+    const isColorVariant =
+      preferredVariant.id.startsWith('var-color-') || Boolean(preferredVariant.color);
+    if (isColorVariant || isCapacityAvailableForColor(preferredVariant.id, selectedColorOpt)) {
+      selectedVariant = preferredVariant;
+    }
+  }
+
+  if (!selectedVariant && nonColorVariants.length > 0) {
+    selectedVariant =
+      nonColorVariants.find((v) => isCapacityAvailableForColor(v.id, selectedColorOpt)) ||
+      nonColorVariants[0];
+  }
+
+  if (!selectedVariant && selectedColor) {
+    selectedVariant = findVariantForColor(product, selectedColor);
+  }
+
+  if (!selectedVariant && allVariants.length > 0 && nonColorVariants.length === 0) {
+    selectedVariant = allVariants[0];
+  }
+
+  const selectedColorImage =
+    selectedColorOpt?.imageUrl || resolveColorShowcaseImage(product, selectedColor);
+
+  const isColorOnlyVariant = Boolean(
+    selectedVariant &&
+      (selectedVariant.id.startsWith('var-color-') ||
+        (selectedVariant.color && nonColorVariants.length === 0))
+  );
+
+  const colorPriceAdjustment =
+    isColorOnlyVariant || !selectedColorOpt
+      ? 0
+      : Number(selectedColorOpt.priceAdjustment) || 0;
+
+  return {
+    selectedColor,
+    selectedVariant,
+    selectedColorImage: selectedColorImage || undefined,
+    colorPriceAdjustment,
+  };
 }
 
 /**
@@ -305,4 +386,225 @@ export function addProductReviewPure(
       rating: newRating,
     },
   };
+}
+
+/**
+ * Recursively removes keys with `undefined` values from objects and nested arrays
+ * so Firestore setDoc/updateDoc calls never throw on optional fields.
+ */
+export function stripUndefinedDeep<T>(value: T): T {
+  if (Array.isArray(value)) {
+    return value
+      .filter((item) => item !== undefined)
+      .map((item) => stripUndefinedDeep(item)) as unknown as T;
+  }
+
+  if (value !== null && typeof value === 'object') {
+    const cleaned: Record<string, unknown> = {};
+    for (const [key, entry] of Object.entries(value as Record<string, unknown>)) {
+      if (entry !== undefined) {
+        cleaned[key] = stripUndefinedDeep(entry);
+      }
+    }
+    return cleaned as T;
+  }
+
+  return value;
+}
+
+/**
+ * Normalizes a requested cart quantity to a non-negative integer bounded by available stock.
+ * Returns 0 when the requested quantity is invalid/<=0 or when stock is exhausted.
+ */
+export function sanitizeCartQuantity(requestedQty: unknown, maxStock?: number): number {
+  const num = Number(requestedQty);
+  if (!Number.isFinite(num) || num <= 0) {
+    return 0;
+  }
+
+  const floored = Math.floor(num);
+  if (floored <= 0) {
+    return 0;
+  }
+
+  if (typeof maxStock === 'number' && Number.isFinite(maxStock)) {
+    const safeMax = Math.floor(maxStock);
+    if (safeMax <= 0) {
+      return 0;
+    }
+    return Math.min(floored, safeMax);
+  }
+
+  return floored;
+}
+
+export interface CartCheckoutValidationIssue {
+  productId: string;
+  productName: string;
+  reason: 'empty_cart' | 'missing' | 'out_of_stock' | 'exceeds_stock' | 'invalid_quantity' | 'invalid_price';
+  availableStock: number;
+  requestedQuantity: number;
+}
+
+export interface CartCheckoutValidationResult {
+  valid: boolean;
+  issues: CartCheckoutValidationIssue[];
+  messageEn: string;
+  messageAr: string;
+}
+
+/**
+ * Validates every cart line item (existence, price, quantity, and aggregated product/variant stock)
+ * against the live catalog before submitting an order.
+ */
+export function validateCartBeforeCheckout(
+  cart: readonly CartItem[],
+  products: readonly Product[]
+): CartCheckoutValidationResult {
+  if (!Array.isArray(cart) || cart.length === 0) {
+    return {
+      valid: false,
+      issues: [
+        {
+          productId: '',
+          productName: '',
+          reason: 'empty_cart',
+          availableStock: 0,
+          requestedQuantity: 0,
+        },
+      ],
+      messageEn: 'Your cart is empty. Add at least one item before checking out.',
+      messageAr: 'سلة التسوق فارغة. يرجى إضافة منتج واحد على الأقل قبل إتمام الطلب.',
+    };
+  }
+
+  const issues: CartCheckoutValidationIssue[] = [];
+  const totalQtyByProductId = new Map<string, number>();
+
+  for (const item of cart) {
+    if (!item?.product?.id) {
+      issues.push({
+        productId: '',
+        productName: 'Unknown item',
+        reason: 'missing',
+        availableStock: 0,
+        requestedQuantity: Number(item?.quantity) || 0,
+      });
+      continue;
+    }
+
+    const qty = Number(item.quantity);
+    if (!Number.isFinite(qty) || qty <= 0 || !Number.isInteger(qty)) {
+      issues.push({
+        productId: item.product.id,
+        productName: item.product.name,
+        reason: 'invalid_quantity',
+        availableStock: Math.max(0, Math.floor(Number(item.product.stock) || 0)),
+        requestedQuantity: Number.isFinite(qty) ? qty : 0,
+      });
+      continue;
+    }
+
+    totalQtyByProductId.set(
+      item.product.id,
+      (totalQtyByProductId.get(item.product.id) || 0) + qty
+    );
+
+    const liveProduct =
+      products.length > 0
+        ? products.find((p) => p.id === item.product.id)
+        : item.product;
+
+    if (!liveProduct || liveProduct.isPublished === false) {
+      issues.push({
+        productId: item.product.id,
+        productName: item.product.name,
+        reason: 'missing',
+        availableStock: 0,
+        requestedQuantity: qty,
+      });
+      continue;
+    }
+
+    const liveUnitPrice = resolveCartItemUnitPrice({
+      ...item,
+      product: liveProduct,
+    });
+    if (!Number.isFinite(liveUnitPrice) || liveUnitPrice <= 0) {
+      issues.push({
+        productId: liveProduct.id,
+        productName: liveProduct.name,
+        reason: 'invalid_price',
+        availableStock: Math.max(0, Math.floor(Number(liveProduct.stock) || 0)),
+        requestedQuantity: qty,
+      });
+      continue;
+    }
+
+    const productStock = Math.max(0, Math.floor(Number(liveProduct.stock) || 0));
+    if (productStock <= 0) {
+      issues.push({
+        productId: liveProduct.id,
+        productName: liveProduct.name,
+        reason: 'out_of_stock',
+        availableStock: 0,
+        requestedQuantity: qty,
+      });
+      continue;
+    }
+
+    const aggregatedQty = totalQtyByProductId.get(liveProduct.id) || qty;
+    if (aggregatedQty > productStock) {
+      issues.push({
+        productId: liveProduct.id,
+        productName: liveProduct.name,
+        reason: 'exceeds_stock',
+        availableStock: productStock,
+        requestedQuantity: aggregatedQty,
+      });
+      continue;
+    }
+
+    if (item.selectedVariant && Array.isArray(liveProduct.variants)) {
+      const liveVariant = liveProduct.variants.find(
+        (v: ProductVariant) => v.id === item.selectedVariant?.id
+      );
+      if (liveVariant && typeof liveVariant.stock === 'number' && Number.isFinite(liveVariant.stock)) {
+        const variantStock = Math.max(0, Math.floor(liveVariant.stock));
+        if (qty > variantStock) {
+          issues.push({
+            productId: liveProduct.id,
+            productName: `${liveProduct.name} (${liveVariant.name})`,
+            reason: variantStock === 0 ? 'out_of_stock' : 'exceeds_stock',
+            availableStock: variantStock,
+            requestedQuantity: qty,
+          });
+        }
+      }
+    }
+  }
+
+  if (issues.length === 0) {
+    return { valid: true, issues: [], messageEn: '', messageAr: '' };
+  }
+
+  const first = issues[0];
+  let messageEn = 'Some items in your cart need attention before checkout.';
+  let messageAr = 'بعض المنتجات في سلتك تحتاج إلى مراجعة قبل تأكيد الطلب.';
+
+  if (first.reason === 'out_of_stock') {
+    messageEn = `"${first.productName}" is currently out of stock.`;
+    messageAr = `المنتج "${first.productName}" غير متوفر حالياً في المخزون.`;
+  } else if (first.reason === 'exceeds_stock') {
+    messageEn = `Only ${first.availableStock} unit(s) available for "${first.productName}". Please adjust cart quantity.`;
+    messageAr = `المتوفر من "${first.productName}" هو ${first.availableStock} قطعة فقط. يرجى تعديل الكمية.`;
+  } else if (first.reason === 'missing') {
+    messageEn = `"${first.productName}" is no longer available in our catalog.`;
+    messageAr = `المنتج "${first.productName}" لم يعد متوفراً في المتجر.`;
+  } else if (first.reason === 'invalid_price' || first.reason === 'invalid_quantity') {
+    messageEn = `Invalid quantity or price detected for "${first.productName}".`;
+    messageAr = `الكمية أو السعر غير صالح للمنتج "${first.productName}".`;
+  }
+
+  return { valid: false, issues, messageEn, messageAr };
 }

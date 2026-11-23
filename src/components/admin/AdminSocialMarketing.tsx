@@ -12,12 +12,10 @@ import {
   generateSocialCaptions,
   generateProductHashtags,
   validateMarketingPost,
-  STORE_PHONE_DISPLAY,
 } from '../../utils/socialMarketingHelpers';
 import {
   persistMarketingPost,
   publishDirectViaBackend,
-  fetchBackendSocialAccounts,
   publishToInstagramDirectly,
 } from '../../services/socialMarketingService';
 import { SocialImageCanvas } from './social/SocialImageCanvas';
@@ -28,33 +26,22 @@ import {
   Share2,
   Sparkles,
   Send,
-  Download,
   Copy,
   Check,
   CheckCircle2,
   Clock,
-  Layers,
   Save,
-  Eye,
-  Sliders,
   Settings,
-  ShieldCheck,
-  MessageSquare,
   Instagram,
   Facebook,
   Twitter,
   Music2,
   Smartphone,
-  Globe,
-  FileText,
   AlertCircle,
   ExternalLink,
-  RotateCw,
   X,
-  Zap,
 } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
-import { WhatsApp3DIcon } from '../icons/ThreeDIcons';
 
 interface AdminSocialMarketingProps {
   initialProductId?: string;
@@ -246,7 +233,9 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
       });
 
       postPayload.platformResults = publishResponse.results;
-      const hasAnySuccess = Object.values(publishResponse.results).some((r: any) => r.success);
+      const hasAnySuccess = Object.values(publishResponse.results).some(
+        (r: SocialPublishResult) => r.success
+      );
       postPayload.status = hasAnySuccess ? 'published' : 'draft';
 
       await persistMarketingPost(postPayload);
@@ -594,16 +583,18 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
                   {isArabic ? 'قالب التصميم الجرافيكي:' : 'Graphic Theme:'}
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                  {[
-                    { id: 'modern_dark', label: 'Dark Titanium', bg: 'bg-slate-900 text-white' },
-                    { id: 'minimal_white', label: 'Minimal White', bg: 'bg-white text-slate-900 border border-slate-300' },
-                    { id: 'hot_deal', label: 'Hot Deals Red', bg: 'bg-gradient-to-r from-red-600 to-rose-700 text-white' },
-                    { id: 'coloros_purple', label: 'Reno 16 Violet', bg: 'bg-gradient-to-r from-purple-800 to-indigo-900 text-white' },
-                  ].map((tpl) => (
+                  {(
+                    [
+                      { id: 'modern_dark', label: 'Dark Titanium', bg: 'bg-slate-900 text-white' },
+                      { id: 'minimal_white', label: 'Minimal White', bg: 'bg-white text-slate-900 border border-slate-300' },
+                      { id: 'hot_deal', label: 'Hot Deals Red', bg: 'bg-gradient-to-r from-red-600 to-rose-700 text-white' },
+                      { id: 'coloros_purple', label: 'Reno 16 Violet', bg: 'bg-gradient-to-r from-purple-800 to-indigo-900 text-white' },
+                    ] as const
+                  ).map((tpl) => (
                     <button
                       key={tpl.id}
                       type="button"
-                      onClick={() => setTemplate(tpl.id as any)}
+                      onClick={() => setTemplate(tpl.id)}
                       className={`p-2.5 rounded-xl text-xs font-bold transition-all text-center cursor-pointer border ${tpl.bg} ${
                         template === tpl.id ? 'ring-2 ring-[#007AFF] ring-offset-2 scale-102' : 'opacity-80 hover:opacity-100'
                       }`}
@@ -731,22 +722,29 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
 
               {/* Platforms Checkboxes Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                {[
-                  { id: 'facebook', label: 'Facebook Page', icon: Facebook, color: 'text-[#1877F2]' },
-                  { id: 'instagram', label: 'Instagram Feed', icon: Instagram, color: 'text-rose-500' },
-                  { id: 'telegram', label: 'Telegram Channel', icon: Send, color: 'text-[#2AABEE]' },
-                  { id: 'whatsapp', label: 'WhatsApp Direct', icon: Smartphone, color: 'text-[#25D366]' },
-                  { id: 'whatsapp_status', label: 'WhatsApp Status', icon: Smartphone, color: 'text-[#25D366]' },
-                  { id: 'x', label: 'X (Twitter)', icon: Twitter, color: 'text-black' },
-                  { id: 'tiktok', label: 'TikTok Showcase', icon: Music2, color: 'text-slate-800' },
-                ].map((item) => {
-                  const isChecked = selectedPlatforms.includes(item.id as any);
+                {(
+                  [
+                    { id: 'facebook', label: 'Facebook Page', icon: Facebook, color: 'text-[#1877F2]' },
+                    { id: 'instagram', label: 'Instagram Feed', icon: Instagram, color: 'text-rose-500' },
+                    { id: 'telegram', label: 'Telegram Channel', icon: Send, color: 'text-[#2AABEE]' },
+                    { id: 'whatsapp', label: 'WhatsApp Direct', icon: Smartphone, color: 'text-[#25D366]' },
+                    { id: 'whatsapp_status', label: 'WhatsApp Status', icon: Smartphone, color: 'text-[#25D366]' },
+                    { id: 'x', label: 'X (Twitter)', icon: Twitter, color: 'text-black' },
+                    { id: 'tiktok', label: 'TikTok Showcase', icon: Music2, color: 'text-slate-800' },
+                  ] satisfies Array<{
+                    id: SocialPlatform;
+                    label: string;
+                    icon: React.ComponentType<{ className?: string }>;
+                    color: string;
+                  }>
+                ).map((item) => {
+                  const isChecked = selectedPlatforms.includes(item.id);
                   const Icon = item.icon;
                   return (
                     <button
                       key={item.id}
                       type="button"
-                      onClick={() => togglePlatform(item.id as any)}
+                      onClick={() => togglePlatform(item.id)}
                       className={`p-3 rounded-2xl border text-left rtl:text-right flex items-center justify-between transition-all cursor-pointer ${
                         isChecked
                           ? 'bg-[#EAF3FF] border-[#007AFF] text-[#007AFF] shadow-xs'
@@ -895,7 +893,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
                 {/* Platform Preview Selector */}
                 <select
                   value={activePreviewPlatform}
-                  onChange={(e) => setActivePreviewPlatform(e.target.value as any)}
+                  onChange={(e) => setActivePreviewPlatform(e.target.value as SocialPlatform)}
                   className="bg-[#F5F8FC] border border-[#DCE5F0] rounded-xl px-2.5 py-1 text-[11px] font-bold text-[#007AFF] focus:outline-none"
                 >
                   <option value="facebook">Facebook Feed</option>
@@ -966,7 +964,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
             </p>
 
             <div className="space-y-2 max-h-60 overflow-y-auto">
-              {Object.entries(publishResultModal.results).map(([plt, res]: [string, any]) => (
+              {Object.entries(publishResultModal.results).map(([plt, res]) => (
                 <div
                   key={plt}
                   className={`p-3 rounded-2xl border text-xs flex items-center justify-between gap-3 ${

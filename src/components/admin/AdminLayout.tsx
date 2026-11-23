@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import { useShop } from '../../context/ShopContext';
+import { AdminRole } from '../../types';
 import { formatCountdownMmSs } from '../../utils/adminSessionTimerHelpers';
 import {
   LayoutDashboard,
@@ -43,7 +44,13 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
 
   const countdownLabel = formatCountdownMmSs(sessionRemainingMs);
 
-  const navItems = [
+  const navItems: Array<{
+    id: string;
+    labelEn: string;
+    labelAr: string;
+    icon: React.ComponentType<{ className?: string }>;
+    roles: AdminRole[];
+  }> = [
     { id: 'overview', labelEn: 'Overview', labelAr: 'نظرة عامة', icon: LayoutDashboard, roles: ['super_admin', 'product_manager', 'order_manager', 'inventory_manager'] },
     { id: 'statistics', labelEn: 'Statistics', labelAr: 'الإحصائيات', icon: BarChart3, roles: ['super_admin', 'product_manager', 'order_manager'] },
     { id: 'products', labelEn: 'Products', labelAr: 'إدارة المنتجات', icon: Package, roles: ['super_admin', 'product_manager'] },
@@ -127,7 +134,7 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           {/* Nav Items */}
           <nav className="space-y-1">
             {navItems.map((item) => {
-              const allowed = hasRole(item.roles as any);
+              const allowed = hasRole(item.roles);
               if (!allowed) return null;
 
               const isActive = activeTab === item.id;

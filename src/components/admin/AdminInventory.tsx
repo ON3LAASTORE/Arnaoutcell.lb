@@ -10,7 +10,7 @@ import {
 } from '../../services/stockNotificationService';
 import { downloadInventoryCsvReport } from '../../services/csvReportService';
 import { Product } from '../../types';
-import { Warehouse, AlertTriangle, Search, BellRing, MailCheck, Download, Send } from 'lucide-react';
+import { Warehouse, AlertTriangle, AlertCircle, Search, BellRing, MailCheck, Download, Send, RefreshCw, X } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
 
 export const AdminInventory: React.FC = () => {
@@ -21,13 +21,23 @@ export const AdminInventory: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [feedback, setFeedback] = useState('');
+  const [inventoryError, setInventoryError] = useState('');
   const [subscriptions, setSubscriptions] = useState<StockNotificationRecord[]>([]);
   const [dispatchLogs, setDispatchLogs] = useState<RestockDispatchLogEntry[]>([]);
 
   const loadNotificationsOverview = useCallback(async () => {
-    const overview = await fetchStockNotificationsOverview();
-    setSubscriptions(overview.subscriptions);
-    setDispatchLogs(overview.logs);
+    try {
+      setInventoryError('');
+      const overview = await fetchStockNotificationsOverview();
+      setSubscriptions(overview.subscriptions);
+      setDispatchLogs(overview.logs);
+    } catch (err) {
+      setInventoryError(
+        err instanceof Error
+          ? err.message
+          : 'Failed to load restock notification queue.'
+      );
+    }
   }, []);
 
   useEffect(() => {
@@ -35,28 +45,37 @@ export const AdminInventory: React.FC = () => {
   }, [loadNotificationsOverview]);
 
   const handleAdjustStock = async (product: Product, delta: number) => {
-    const previousStock = product.stock;
-    const newStock = Math.max(0, previousStock + delta);
-    const updated: Product = {
-      ...product,
-      stock: newStock,
-    };
-    saveProduct(updated);
-    refreshData();
+    try {
+      setInventoryError('');
+      const previousStock = product.stock;
+      const newStock = Math.max(0, previousStock + delta);
+      const updated: Product = {
+        ...product,
+        stock: newStock,
+      };
+      saveProduct(updated);
+      refreshData();
 
-    const dispatchResult = await maybeTriggerRestockNotifications(previousStock, updated);
-    await loadNotificationsOverview();
+      const dispatchResult = await maybeTriggerRestockNotifications(previousStock, updated);
+      await loadNotificationsOverview();
 
-    if (dispatchResult && dispatchResult.dispatchedCount > 0) {
-      setFeedback(
-        lang === 'ar'
-          ? `تم تحديث مخزون ${product.name} إلى ${newStock} قطعة — تم إرسال تنبيه التوفر تلقائياً إلى ${dispatchResult.dispatchedCount} عملاء.`
-          : `Updated stock for ${product.name} to ${newStock} units — Automated restock update sent to ${dispatchResult.dispatchedCount} waiting subscriber(s)!`
+      if (dispatchResult && dispatchResult.dispatchedCount > 0) {
+        setFeedback(
+          lang === 'ar'
+            ? `تم تحديث مخزون ${product.name} إلى ${newStock} قطعة — تم إرسال تنبيه التوفر تلقائياً إلى ${dispatchResult.dispatchedCount} عملاء.`
+            : `Updated stock for ${product.name} to ${newStock} units — Automated restock update sent to ${dispatchResult.dispatchedCount} waiting subscriber(s)!`
+        );
+      } else {
+        setFeedback(`Updated stock for ${product.name} to ${newStock} units`);
+      }
+      setTimeout(() => setFeedback(''), 5000);
+    } catch (err) {
+      setInventoryError(
+        err instanceof Error
+          ? err.message
+          : `Failed to adjust stock for ${product.name}.`
       );
-    } else {
-      setFeedback(`Updated stock for ${product.name} to ${newStock} units`);
     }
-    setTimeout(() => setFeedback(''), 5000);
   };
 
   const filtered = products.filter((p) => {
@@ -142,6 +161,36 @@ export const AdminInventory: React.FC = () => {
         >
           <MailCheck className="w-4 h-4 flex-shrink-0" />
           <span>{feedback}</span>
+        </div>
+      )}
+
+      {inventoryError && (
+        <div
+          role="alert"
+          className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-[#DC2626] text-xs font-semibold flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <AlertCircle className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">{inventoryError}</span>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <button
+              type="button"
+              onClick={loadNotificationsOverview}
+              className="px-2.5 py-1 rounded-lg bg-white border border-red-200 text-[#DC2626] hover:bg-red-100 text-[11px] font-bold inline-flex items-center gap-1 cursor-pointer"
+            >
+              <RefreshCw className="w-3 h-3" />
+              <span>{lang === 'ar' ? 'إعادة المحاولة' : 'Retry'}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setInventoryError('')}
+              aria-label="Dismiss inventory error"
+              className="p-1 text-red-400 hover:text-red-700 cursor-pointer"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       )}
 

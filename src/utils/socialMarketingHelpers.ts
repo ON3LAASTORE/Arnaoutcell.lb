@@ -256,9 +256,8 @@ export function buildPlatformShareUrl(
   platform: SocialPlatform,
   text: string,
   url: string,
-  phone: string = STORE_PHONE_INTL
+  _phone: string = STORE_PHONE_INTL
 ): { shareUrl: string; isNativeApp: boolean; actionType: 'url' | 'copy_and_redirect' | 'download_and_share' } {
-  const cleanPhone = phone.replace(/[^0-9]/g, '');
 
   switch (platform) {
     case 'whatsapp':

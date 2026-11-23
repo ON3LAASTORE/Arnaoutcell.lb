@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useShop } from '../context/ShopContext';
-import { Scale, X, ArrowRight, Trash2, Smartphone } from 'lucide-react';
+import { Scale, X, ArrowRight, Trash2 } from 'lucide-react';
 import { MAX_COMPARE_LIMIT } from '../utils/compareHelpers';
 import { LazyImage } from './LazyImage';
 

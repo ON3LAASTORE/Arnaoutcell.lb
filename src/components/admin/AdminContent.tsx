@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { saveAnnouncementBar, saveMarketingVideos } from '../../services/storageService';
 import { MarketingVideo } from '../../types';
-import { Bell, Video, Plus, Trash2 } from 'lucide-react';
+import { Bell, Plus, Trash2 } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
 import { ConfirmDialog } from '../ConfirmDialog';
 

@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useShop } from '../context/ShopContext';
-import { X, Trash2, ShoppingBag, ArrowRight, MessageSquare, ShieldCheck } from 'lucide-react';
+import { X, Trash2, ShoppingBag, ArrowRight, ShieldCheck } from 'lucide-react';
 import { WhatsApp3DIcon } from './icons/ThreeDIcons';
 import { LazyImage } from './LazyImage';
 import { openExternalUrl } from '../utils/navigation';
@@ -100,6 +100,7 @@ export const CartDrawer: React.FC = () => {
                       alt={item.product.name}
                       width={64}
                       height={64}
+                      priority={idx < 4}
                       wrapperClassName="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-[#F5F8FC] dark:bg-[#0A0F1D] border border-[#DCE5F0] dark:border-[#1E293B]"
                       className="w-full h-full object-cover"
                     />
@@ -138,6 +139,7 @@ export const CartDrawer: React.FC = () => {
                                 item.selectedVariant?.id
                               )
                             }
+                            aria-label={`Decrease quantity for ${item.product.name}`}
                             className="px-2 py-0.5 text-xs text-[#172033] dark:text-[#F8FAFC] hover:bg-slate-200 dark:hover:bg-[#1E293B] transition-colors cursor-pointer"
                           >
                             -
@@ -146,15 +148,18 @@ export const CartDrawer: React.FC = () => {
                             {item.quantity}
                           </span>
                           <button
+                            type="button"
+                            disabled={maxStock <= 0 || item.quantity >= maxStock}
                             onClick={() =>
                               updateCartQuantity(
                                 item.product.id,
-                                Math.min(maxStock, item.quantity + 1),
+                                item.quantity + 1,
                                 item.selectedColor,
                                 item.selectedVariant?.id
                               )
                             }
-                            className="px-2 py-0.5 text-xs text-[#172033] dark:text-[#F8FAFC] hover:bg-slate-200 dark:hover:bg-[#1E293B] transition-colors cursor-pointer"
+                            aria-label={`Increase quantity for ${item.product.name}`}
+                            className="px-2 py-0.5 text-xs text-[#172033] dark:text-[#F8FAFC] hover:bg-slate-200 dark:hover:bg-[#1E293B] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
                           >
                             +
                           </button>
@@ -166,6 +171,7 @@ export const CartDrawer: React.FC = () => {
                       onClick={() =>
                         removeFromCart(item.product.id, item.selectedColor, item.selectedVariant?.id)
                       }
+                      aria-label={`Remove ${item.product.name} from cart`}
                       className="p-1.5 text-[#64748B] dark:text-slate-400 hover:text-[#DC2626] dark:hover:text-rose-400 transition-colors cursor-pointer"
                       title="Remove"
                     >

@@ -408,7 +408,10 @@ export const ProductsPage: React.FC = () => {
           </aside>
 
           {/* Product Listing Grid / Column */}
-          <main className="lg:col-span-3">
+          <section
+            aria-label={lang === 'ar' ? 'قائمة المنتجات' : 'Product catalog'}
+            className="lg:col-span-3"
+          >
             {/* Active filters pill list */}
             {hasActiveFilters && (
               <div className="flex flex-wrap items-center gap-2 mb-6">
@@ -512,12 +515,12 @@ export const ProductsPage: React.FC = () => {
                     : 'grid grid-cols-1 gap-4'
                 }
               >
-                {filteredProducts.map((product) => (
+                {filteredProducts.map((product, idx) => (
                   <ProductCard
                     key={product.id}
                     product={product}
                     layout={viewMode === 'grid' ? 'grid' : 'column'}
-                    priority={false}
+                    priority={idx < 8}
                   />
                 ))}
               </div>
@@ -540,7 +543,7 @@ export const ProductsPage: React.FC = () => {
                 </button>
               </div>
             )}
-          </main>
+          </section>
         </div>
       </div>
 

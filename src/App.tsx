@@ -11,7 +11,11 @@ import { safeLazy } from './utils/lazyImportHelpers';
 import { getDirectionTransitionClass } from './utils/languageToggleHelpers';
 import { recordStorefrontTrafficEvent } from './services/trafficAnalyticsService';
 
-const EmptyOverlayFallback: React.FC<any> = () => null;
+const EmptyOverlayFallback: React.FC = () => null;
+const EmptyScrollLinesFallback: React.FC<{
+  showTopIndicator?: boolean;
+  showVerticalGuideLines?: boolean;
+}> = () => null;
 
 // Lazy-loaded chrome, overlays, animations, and secondary pages (eliminates render-blocking JS from initial bundle)
 const Footer = safeLazy(() => import('./components/Footer'), 'Footer');
@@ -32,7 +36,7 @@ const FloatingWhatsAppButton = safeLazy(
 const GsapScrollLines = safeLazy(
   () => import('./components/animations/GsapScrollLines'),
   'GsapScrollLines',
-  { fallbackComponent: EmptyOverlayFallback }
+  { fallbackComponent: EmptyScrollLinesFallback }
 );
 const SpecialOffersColumn = safeLazy(
   () => import('./components/SpecialOffersColumn'),
@@ -176,7 +180,9 @@ const AppContent: React.FC = () => {
 
       <main className="flex-1 pb-16 md:pb-0">
         {currentView === 'home' ? (
-          <HomePage />
+          <ChunkErrorBoundary resetKey={currentView} label="home-page">
+            <HomePage />
+          </ChunkErrorBoundary>
         ) : (
           <ChunkErrorBoundary resetKey={currentView} label={`route-${currentView}`}>
             <React.Suspense fallback={<FastSpinner />}>
@@ -210,11 +216,19 @@ const AppContent: React.FC = () => {
       <ChunkErrorBoundary silent label="overlays">
         <React.Suspense fallback={null}>
           <MobileBottomNav />
-          {isCartOpen && <CartDrawer />}
+          {isCartOpen && (
+            <ChunkErrorBoundary label="cart-drawer">
+              <CartDrawer />
+            </ChunkErrorBoundary>
+          )}
           {quickViewProduct && <ProductQuickViewModal />}
           {compareList.length > 0 && <CompareFloatingBar />}
           {isCompareModalOpen && <ProductCompareModal />}
-          {isQrScannerOpen && <ProductQrScannerModal />}
+          {isQrScannerOpen && (
+            <ChunkErrorBoundary label="qr-scanner-modal">
+              <ProductQrScannerModal />
+            </ChunkErrorBoundary>
+          )}
           {currentView !== 'product-detail' && !quickViewProduct && <FloatingWhatsAppButton />}
         </React.Suspense>
       </ChunkErrorBoundary>

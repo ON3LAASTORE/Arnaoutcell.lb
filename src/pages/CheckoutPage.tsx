@@ -2,12 +2,9 @@ import React, { useState } from 'react';
 import { useShop } from '../context/ShopContext';
 import { PaymentMethod } from '../types';
 import {
-  ShieldCheck,
   Truck,
-  MapPin,
   Phone,
   Banknote,
-  MessageSquare,
   CheckCircle2,
   Lock,
   AlertCircle,
@@ -21,6 +18,7 @@ import {
   resolveCartItemImage,
   resolveCartItemUnitPrice,
   validateAndCalculatePromoDiscount,
+  validateCartBeforeCheckout,
 } from '../utils/checkoutHelpers';
 
 export const CheckoutPage: React.FC = () => {
@@ -28,6 +26,7 @@ export const CheckoutPage: React.FC = () => {
     lang,
     t,
     cart,
+    products,
     cartSubtotal,
     promoCode,
     applyPromoCode,
@@ -119,6 +118,12 @@ export const CheckoutPage: React.FC = () => {
       return;
     }
 
+    const cartValidation = validateCartBeforeCheckout(cart, products);
+    if (!cartValidation.valid) {
+      setErrorMessage(lang === 'ar' ? cartValidation.messageAr : cartValidation.messageEn);
+      return;
+    }
+
     try {
       setIsSubmitting(true);
 
@@ -131,20 +136,23 @@ export const CheckoutPage: React.FC = () => {
           price: resolveCartItemUnitPrice(item),
           quantity: item.quantity,
           image: resolvedImg,
-          color: item.selectedColor,
+          ...(item.selectedColor ? { color: item.selectedColor } : {}),
           ...(item.selectedColorImage ? { colorImage: item.selectedColorImage } : {}),
-          variantName: item.selectedVariant?.name,
+          ...(item.selectedVariant?.name ? { variantName: item.selectedVariant.name } : {}),
         };
       });
+
+      const trimmedAlternate = alternatePhone.trim();
+      const trimmedNotes = notes.trim();
 
       submitOrder({
         customer: {
           fullName: fullName.trim(),
           phone: phone.trim(),
-          alternatePhone: alternatePhone.trim() || undefined,
+          ...(trimmedAlternate ? { alternatePhone: trimmedAlternate } : {}),
           cityArea: lang === 'ar' ? selectedZone.nameAr : selectedZone.nameEn,
           addressLine: addressLine.trim(),
-          notes: notes.trim() || undefined,
+          ...(trimmedNotes ? { notes: trimmedNotes } : {}),
         },
         items: orderItems,
         subtotal: cartSubtotal,
@@ -158,8 +166,11 @@ export const CheckoutPage: React.FC = () => {
       });
 
       setCurrentView('order-confirmation');
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Failed to place order. Please try again.');
+    } catch (err: unknown) {
+      setErrorMessage(
+        err instanceof Error ? err.message : 'Failed to place order. Please try again.'
+      );
+    } finally {
       setIsSubmitting(false);
     }
   };

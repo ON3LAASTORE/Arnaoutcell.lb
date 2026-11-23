@@ -338,6 +338,19 @@ export const ProductQrScannerModal: React.FC = () => {
     e.target.value = '';
     if (!file) return;
 
+    const maxQrFileBytes = 10 * 1024 * 1024;
+    const isValidImage =
+      (typeof file.type === 'string' && file.type.startsWith('image/')) ||
+      /\.(png|jpe?g|webp|gif|bmp)$/i.test(file.name);
+    if (!isValidImage || file.size <= 0 || file.size > maxQrFileBytes) {
+      setImageScanNotice(
+        isArabic
+          ? 'يرجى اختيار ملف صورة صالح (PNG أو JPG أو WebP) بحجم لا يتجاوز 10MB.'
+          : 'Please choose a valid image file (PNG, JPG, or WebP) under 10MB.'
+      );
+      return;
+    }
+
     setIsProcessingImage(true);
     setImageScanNotice(null);
 

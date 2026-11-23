@@ -12,6 +12,9 @@ import {
   verifyAdminPassword,
   changeAdminPassword,
   initializeAdminAuth,
+  clearAdminApiToken,
+  exchangeFirebaseIdTokenForAdminSession,
+  logoutAdminSession,
 } from '../services/authService';
 import { safeStorageSetItem } from '../utils/storageQuotaHelpers';
 import { fetchAdminActivityLogs, recordAdminActivity } from '../services/activityLogService';
@@ -164,7 +167,6 @@ function readInitialAdminSnapshot(): InitialAuthSnapshot {
       if (state.isExpired) {
         localStorage.removeItem('arnaout_admin_user');
         localStorage.removeItem(ADMIN_LAST_ACTIVITY_STORAGE_KEY);
-        sessionStorage.removeItem('arnaout_admin_session_token');
         return {
           user: null,
           expiredUser: parsedUser,
@@ -227,6 +229,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
     if (initialSnapshot.expiredUser) {
       const stale = initialSnapshot.expiredUser;
+      logoutAdminSession().catch(() => {});
       fbSignOut(auth).catch(() => {});
       recordAdminActivity({
         action: 'auth_session_timeout',
@@ -317,12 +320,12 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     setShowTimeoutWarning(false);
     setSessionRemainingMs(0);
     setLogoutReason(reason === 'inactivity' ? 'inactivity' : null);
+    logoutAdminSession().catch(() => {});
     fbSignOut(auth).catch(() => {});
     if (typeof window !== 'undefined') {
       try {
         localStorage.removeItem('arnaout_admin_user');
         localStorage.removeItem(ADMIN_LAST_ACTIVITY_STORAGE_KEY);
-        sessionStorage.removeItem('arnaout_admin_session_token');
       } catch {
         // ignore
       }
@@ -459,6 +462,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       role: role || DEMO_USERS[trimmedUser]?.role || 'super_admin',
     });
     if (!isValid) {
+      clearAdminApiToken();
       fetchAdminActivityLogs().catch(() => {});
       return false;
     }
@@ -519,6 +523,9 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           stampActivity(Date.now());
         }
         setUser(adminProfile);
+        if (isAdminEmail) {
+          exchangeFirebaseIdTokenForAdminSession(() => fbUser.getIdToken()).catch(() => {});
+        }
       }
     });
     return () => unsubscribe();
@@ -542,6 +549,9 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setLogoutReason(null);
         stampActivity(Date.now());
         setUser(adminProfile);
+        if (isAdminEmail) {
+          await exchangeFirebaseIdTokenForAdminSession(() => result.user.getIdToken());
+        }
         recordAdminActivity({
           action: 'auth_login_success',
           titleEn: 'Administrator signed in via Google SSO',

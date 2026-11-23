@@ -231,8 +231,10 @@ export const AdminCategoriesBrands: React.FC = () => {
                     )}
                   </div>
                   <button
+                    type="button"
                     onClick={() => handleDeleteCategory(c.id, c.name)}
-                    className="p-1.5 text-[#64748B] hover:text-[#DC2626] transition-colors"
+                    aria-label={`Delete category ${c.name}`}
+                    className="p-1.5 text-[#64748B] hover:text-[#DC2626] transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
@@ -330,8 +332,10 @@ export const AdminCategoriesBrands: React.FC = () => {
                     <span className="font-bold text-[#172033] truncate">{b.name}</span>
                   </div>
                   <button
+                    type="button"
                     onClick={() => handleDeleteBrand(b.id, b.name)}
-                    className="p-1 text-[#64748B] hover:text-[#DC2626] transition-colors"
+                    aria-label={`Delete brand ${b.name}`}
+                    className="p-1 text-[#64748B] hover:text-[#DC2626] transition-colors cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

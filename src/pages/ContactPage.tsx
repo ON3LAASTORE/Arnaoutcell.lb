@@ -6,7 +6,6 @@ import {
   Send,
   CheckCircle,
   Truck,
-  Sparkles,
   Share2,
   Check,
   ShieldCheck,

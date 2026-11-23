@@ -3,7 +3,7 @@ import { useShop } from '../../context/ShopContext';
 import { getOrders, updateOrderStatus } from '../../services/storageService';
 import { Order, OrderStatus } from '../../types';
 import { downloadSalesOrdersCsvReport } from '../../services/csvReportService';
-import { Search, Printer, X, Download } from 'lucide-react';
+import { Search, Printer, X, Download, AlertCircle } from 'lucide-react';
 
 const ALL_STATUSES: OrderStatus[] = [
   'new',
@@ -23,6 +23,7 @@ export const AdminOrders: React.FC = () => {
   const [search, setSearch] = useState('');
   const [selectedOrderForInvoice, setSelectedOrderForInvoice] = useState<Order | null>(null);
   const [statusUpdateMsg, setStatusUpdateMsg] = useState('');
+  const [orderUpdateError, setOrderUpdateError] = useState('');
 
   useEffect(() => {
     if (!selectedOrderForInvoice) return;
@@ -39,11 +40,18 @@ export const AdminOrders: React.FC = () => {
   };
 
   const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
+    setOrderUpdateError('');
     const updated = updateOrderStatus(orderId, newStatus);
     if (updated) {
       reloadOrders();
       setStatusUpdateMsg(`Order ${orderId} updated to ${newStatus}. Inventory synced.`);
       setTimeout(() => setStatusUpdateMsg(''), 4000);
+    } else {
+      setOrderUpdateError(
+        lang === 'ar'
+          ? `تعذر تحديث حالة الطلب ${orderId}. يرجى تحديث الصفحة والمحاولة مرة أخرى.`
+          : `Failed to update status for order ${orderId}. Please refresh and try again.`
+      );
     }
   };
 
@@ -101,7 +109,32 @@ export const AdminOrders: React.FC = () => {
       {statusUpdateMsg && (
         <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[#16A34A] text-xs font-semibold flex items-center justify-between">
           <span>{statusUpdateMsg}</span>
-          <button onClick={() => setStatusUpdateMsg('')}>
+          <button
+            type="button"
+            onClick={() => setStatusUpdateMsg('')}
+            aria-label="Dismiss status message"
+            className="cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {orderUpdateError && (
+        <div
+          role="alert"
+          className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-[#DC2626] text-xs font-semibold flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{orderUpdateError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setOrderUpdateError('')}
+            aria-label="Dismiss order update error"
+            className="cursor-pointer"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -209,9 +242,11 @@ export const AdminOrders: React.FC = () => {
 
                   <td className="py-3 px-4 text-right rtl:text-left">
                     <button
+                      type="button"
                       onClick={() => setSelectedOrderForInvoice(ord)}
-                      className="p-1.5 rounded-lg bg-[#F5F8FC] hover:bg-[#EAF3FF] border border-[#DCE5F0] text-[#007AFF] transition-colors"
+                      className="p-1.5 rounded-lg bg-[#F5F8FC] hover:bg-[#EAF3FF] border border-[#DCE5F0] text-[#007AFF] transition-colors cursor-pointer"
                       title="View & Print Invoice"
+                      aria-label={`View and print invoice for order ${ord.id}`}
                     >
                       <Printer className="w-4 h-4" />
                     </button>
@@ -238,8 +273,10 @@ export const AdminOrders: React.FC = () => {
                 <span>Invoice: {selectedOrderForInvoice.id}</span>
               </h2>
               <button
+                type="button"
                 onClick={() => setSelectedOrderForInvoice(null)}
-                className="p-1.5 rounded-lg text-[#64748B] hover:text-[#172033]"
+                aria-label="Close invoice modal"
+                className="p-1.5 rounded-lg text-[#64748B] hover:text-[#172033] cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>

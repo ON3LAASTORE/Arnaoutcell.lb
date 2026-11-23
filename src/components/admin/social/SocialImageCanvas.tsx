@@ -9,7 +9,7 @@ import {
   getCanvasDimensions,
 } from '../../../utils/socialMarketingHelpers';
 import { useShop } from '../../../context/ShopContext';
-import { Download, RefreshCw, Sparkles, Layers, Maximize2 } from 'lucide-react';
+import { Download, RefreshCw, Sparkles, Layers } from 'lucide-react';
 
 interface SocialImageCanvasProps {
   product: Product;
@@ -26,7 +26,7 @@ export const SocialImageCanvas: React.FC<SocialImageCanvasProps> = ({
   settings,
   aspectRatio,
   template,
-  headlineOverride,
+  headlineOverride: _headlineOverride,
   onImageGenerated,
   lang = 'en',
 }) => {

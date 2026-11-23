@@ -1,4 +1,4 @@
-import express, { Request, Response } from 'express';
+import express, { NextFunction, Request, Response } from 'express';
 import http from 'http';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -11,6 +11,17 @@ import {
   verifyServerAdminLogin,
   rotateServerAdminPassword,
 } from './src/utils/adminAuthServerHelpers';
+import {
+  ADMIN_SESSION_COOKIE_NAME,
+  AdminSessionRole,
+  DEFAULT_SESSION_TTL_MS,
+  createAdminSessionToken,
+  extractBearerOrCookieToken,
+  isSameOriginMutationRequest,
+  resolveEphemeralOrEnvSecret,
+  verifyAdminSessionToken,
+  verifyFirebaseAdminIdToken,
+} from './src/utils/adminSessionHelpers';
 import {
   buildRestockNotificationEmail,
   buildStockNotificationDocId,
@@ -342,7 +353,103 @@ const restockStore = loadRestockStore();
 
 async function startServer() {
   const app = express();
+  app.set('trust proxy', 1);
   const PORT = parseInt(process.env.PORT || '3000', 10);
+  const adminSessionSecret = resolveEphemeralOrEnvSecret(process.env.ADMIN_SESSION_SECRET);
+
+  const resolveFirebaseProjectId = (): string => {
+    const envProject = process.env.VITE_FIREBASE_PROJECT_ID?.trim();
+    if (envProject) return envProject;
+    try {
+      const cfgRaw = fs.readFileSync(path.resolve(__dirname, 'firebase-applet-config.json'), 'utf8');
+      const cfg = JSON.parse(cfgRaw) as { projectId?: string };
+      if (typeof cfg?.projectId === 'string' && cfg.projectId.trim()) {
+        return cfg.projectId.trim();
+      }
+    } catch {
+      // Fallback to default project ID
+    }
+    return 'gen-lang-client-0031383285';
+  };
+
+  const resolveAdminSessionRole = (rawRole?: string): AdminSessionRole => {
+    if (rawRole === 'super_admin' || rawRole === 'manager' || rawRole === 'editor') {
+      return rawRole;
+    }
+    if (rawRole === 'order_manager' || rawRole === 'inventory_manager') {
+      return 'manager';
+    }
+    if (rawRole === 'product_manager') {
+      return 'editor';
+    }
+    return 'super_admin';
+  };
+
+  const isHttpsRequest = (req: Request): boolean => {
+    const forwardedProto = req.get('x-forwarded-proto')?.split(',')[0]?.trim().toLowerCase();
+    return Boolean(req.secure || req.protocol === 'https' || forwardedProto === 'https');
+  };
+
+  const setAdminSessionCookie = (req: Request, res: Response, token: string): void => {
+    const isHttps = isHttpsRequest(req);
+    const attrs = [
+      `${ADMIN_SESSION_COOKIE_NAME}=${encodeURIComponent(token)}`,
+      'Path=/',
+      `Max-Age=${Math.floor(DEFAULT_SESSION_TTL_MS / 1000)}`,
+      'HttpOnly',
+    ];
+    if (isHttps) {
+      attrs.push('Secure', 'SameSite=None', 'Partitioned');
+    } else {
+      attrs.push('SameSite=Lax');
+    }
+    res.setHeader('Set-Cookie', attrs.join('; '));
+  };
+
+  const clearAdminSessionCookie = (req: Request, res: Response): void => {
+    const isHttps = isHttpsRequest(req);
+    const attrs = [
+      `${ADMIN_SESSION_COOKIE_NAME}=`,
+      'Path=/',
+      'Max-Age=0',
+      'HttpOnly',
+    ];
+    if (isHttps) {
+      attrs.push('Secure', 'SameSite=None', 'Partitioned');
+    } else {
+      attrs.push('SameSite=Lax');
+    }
+    res.setHeader('Set-Cookie', attrs.join('; '));
+  };
+
+  const requireAdminAuth = (req: Request, res: Response, next: NextFunction): void => {
+    const { token, source } = extractBearerOrCookieToken({
+      authorization: typeof req.headers.authorization === 'string' ? req.headers.authorization : undefined,
+      cookie: typeof req.headers.cookie === 'string' ? req.headers.cookie : undefined,
+    });
+
+    if (!token || !source) {
+      res.status(401).json({ success: false, error: 'Administrator authentication required.' });
+      return;
+    }
+
+    if (
+      source === 'cookie' &&
+      !['GET', 'HEAD', 'OPTIONS'].includes(req.method.toUpperCase()) &&
+      !isSameOriginMutationRequest(req.headers)
+    ) {
+      res.status(403).json({ success: false, error: 'Cross-site mutation request rejected.' });
+      return;
+    }
+
+    const payload = verifyAdminSessionToken(token, adminSessionSecret);
+    if (!payload) {
+      res.status(401).json({ success: false, error: 'Invalid or expired administrator session.' });
+      return;
+    }
+
+    next();
+  };
 
   // Hash ADMIN_PASSWORD from .env into bcrypt store on boot (never stores plaintext)
   await ensureAdminCredentialRecord({
@@ -411,6 +518,18 @@ async function startServer() {
           },
           source: 'server',
         });
+
+        const token = createAdminSessionToken(
+          {
+            email: `${requestedUsername}@onalaastore.com`,
+            role: resolveAdminSessionRole(requestedRole),
+            authType: 'password',
+          },
+          adminSessionSecret
+        );
+        setAdminSessionCookie(req, res, token);
+        res.json({ valid: true, token });
+        return;
       } else {
         appendServerActivityLog({
           action: 'auth_login_failed',
@@ -429,13 +548,48 @@ async function startServer() {
         });
       }
 
-      res.json({ valid });
+      res.json({ valid: false });
     } catch {
       res.status(500).json({ valid: false, error: 'Authentication verification failed.' });
     }
   });
 
-  app.post('/api/admin/auth/change-password', async (req: Request, res: Response) => {
+  app.post('/api/admin/auth/firebase-session', async (req: Request, res: Response) => {
+    try {
+      const idToken = typeof req.body?.idToken === 'string' ? req.body.idToken.trim() : '';
+      if (!idToken) {
+        res.status(400).json({ success: false, error: 'Firebase ID token is required.' });
+        return;
+      }
+
+      const projectId = resolveFirebaseProjectId();
+      const claims = await verifyFirebaseAdminIdToken(idToken, projectId);
+      if (!claims || claims.email?.toLowerCase() !== 'optimatech.lb@gmail.com') {
+        res.status(403).json({ success: false, error: 'Unauthorized Firebase administrator account.' });
+        return;
+      }
+
+      const token = createAdminSessionToken(
+        {
+          email: claims.email,
+          role: 'super_admin',
+          authType: 'firebase',
+        },
+        adminSessionSecret
+      );
+      setAdminSessionCookie(req, res, token);
+      res.json({ success: true, token, email: claims.email, role: 'super_admin' });
+    } catch {
+      res.status(500).json({ success: false, error: 'Failed to verify Firebase admin session.' });
+    }
+  });
+
+  app.post('/api/admin/auth/logout', (req: Request, res: Response) => {
+    clearAdminSessionCookie(req, res);
+    res.json({ success: true });
+  });
+
+  app.post('/api/admin/auth/change-password', requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const currentPassword = typeof req.body?.currentPassword === 'string' ? req.body.currentPassword : '';
       const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
@@ -467,6 +621,18 @@ async function startServer() {
           },
           source: 'server',
         });
+
+        const token = createAdminSessionToken(
+          {
+            email: actorMeta?.email || `${actorMeta?.username || 'admin'}@onalaastore.com`,
+            role: resolveAdminSessionRole(actorMeta?.role),
+            authType: 'password',
+          },
+          adminSessionSecret
+        );
+        setAdminSessionCookie(req, res, token);
+        res.status(200).json({ ...result, token });
+        return;
       } else {
         appendServerActivityLog({
           action: 'password_change_failed',
@@ -486,7 +652,7 @@ async function startServer() {
         });
       }
 
-      res.status(result.success ? 200 : 400).json(result);
+      res.status(400).json(result);
     } catch {
       res.status(500).json({
         success: false,
@@ -776,7 +942,7 @@ async function startServer() {
   // =========================================================================
   // 0A. ADMIN SECURITY & SENSITIVE CHANGE ACTIVITY LOG ROUTES
   // =========================================================================
-  app.get('/api/admin/activity-logs', (req: Request, res: Response) => {
+  app.get('/api/admin/activity-logs', requireAdminAuth, (req: Request, res: Response) => {
     try {
       const limitParam = Math.min(MAX_SERVER_ACTIVITY_LOGS, Math.max(1, parseInt(String(req.query?.limit || '500'), 10) || 500));
       const search = typeof req.query?.search === 'string' ? req.query.search : '';
@@ -794,7 +960,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/admin/activity-logs', (req: Request, res: Response) => {
+  app.post('/api/admin/activity-logs', requireAdminAuth, (req: Request, res: Response) => {
     try {
       const body = (req.body || {}) as Partial<CreateActivityLogInput>;
       if (!body.action && !body.titleEn) {
@@ -870,7 +1036,7 @@ async function startServer() {
     }
   });
 
-  app.get('/api/notifications/list', (_req: Request, res: Response) => {
+  app.get('/api/notifications/list', requireAdminAuth, (_req: Request, res: Response) => {
     res.json({
       success: true,
       subscriptions: restockStore.subscriptions,
@@ -878,7 +1044,7 @@ async function startServer() {
     });
   });
 
-  app.post('/api/notifications/restock', async (req: Request, res: Response) => {
+  app.post('/api/notifications/restock', requireAdminAuth, async (req: Request, res: Response) => {
     try {
       const { productId, productName, productNameAr, productPrice, storeUrl, extraSubscribers } = req.body || {};
       if (typeof productId !== 'string' || !productId.trim()) {
@@ -1037,7 +1203,7 @@ async function startServer() {
   // =========================================================================
   // 2. SOCIAL ACCOUNTS MANAGEMENT (Safe public representation, NO SECRETS EXPOSED)
   // =========================================================================
-  app.get('/api/social/accounts', (_req: Request, res: Response) => {
+  app.get('/api/social/accounts', requireAdminAuth, (_req: Request, res: Response) => {
     const safeAccounts = Array.from(secureAccounts.values()).map((acc) => ({
       id: `acc-${acc.platform}`,
       platform: acc.platform,
@@ -1060,7 +1226,7 @@ async function startServer() {
   });
 
   // Connect or update credentials securely
-  app.post('/api/social/accounts/save', (req: Request, res: Response) => {
+  app.post('/api/social/accounts/save', requireAdminAuth, (req: Request, res: Response) => {
     const {
       platform,
       displayName,
@@ -1132,7 +1298,7 @@ async function startServer() {
   });
 
   // Verify connection with live Meta Graph API or Telegram API ping
-  app.post('/api/social/accounts/verify', async (req: Request, res: Response) => {
+  app.post('/api/social/accounts/verify', requireAdminAuth, async (req: Request, res: Response) => {
     const { platform } = req.body;
     const account = secureAccounts.get(platform);
 
@@ -1271,7 +1437,7 @@ async function startServer() {
   });
 
   // Disconnect account
-  app.post('/api/social/accounts/disconnect', (req: Request, res: Response) => {
+  app.post('/api/social/accounts/disconnect', requireAdminAuth, (req: Request, res: Response) => {
     const { platform } = req.body;
     const account = secureAccounts.get(platform);
     if (account) {
@@ -1285,7 +1451,7 @@ async function startServer() {
   });
 
   // Dedicated Instagram Status Endpoint for ON AlAA STORE
-  app.get('/api/social/instagram-status', (_req: Request, res: Response) => {
+  app.get('/api/social/instagram-status', requireAdminAuth, (_req: Request, res: Response) => {
     const igAcc = secureAccounts.get('instagram');
     const fbAcc = secureAccounts.get('facebook');
     const token = igAcc?.pageAccessToken || fbAcc?.pageAccessToken;
@@ -1306,7 +1472,7 @@ async function startServer() {
   });
 
   // Dedicated Instagram Direct Publishing for ON AlAA STORE
-  app.post('/api/social/publish-instagram', async (req: Request, res: Response) => {
+  app.post('/api/social/publish-instagram', requireAdminAuth, async (req: Request, res: Response) => {
     const {
       productId,
       productName,
@@ -1475,7 +1641,7 @@ async function startServer() {
   // =========================================================================
   // 3. DIRECT PUBLISHING API VIA OFFICIAL META GRAPH API & TELEGRAM API
   // =========================================================================
-  app.post('/api/social/publish-direct', async (req: Request, res: Response) => {
+  app.post('/api/social/publish-direct', requireAdminAuth, async (req: Request, res: Response) => {
     const {
       postId,
       productId,
@@ -1523,7 +1689,7 @@ async function startServer() {
       }
     }
 
-    const results: Record<string, any> = {};
+    const results: Record<string, SocialPublishLog['results'][string]> = {};
 
     for (const platform of platforms) {
       try {
@@ -1822,12 +1988,12 @@ async function startServer() {
   });
 
   // Get publishing history and logs
-  app.get('/api/social/logs', (_req: Request, res: Response) => {
+  app.get('/api/social/logs', requireAdminAuth, (_req: Request, res: Response) => {
     res.json({ success: true, logs: publishLogs });
   });
 
   // Developer & Meta API Setup Guide endpoint
-  app.get('/api/social/setup-docs', (_req: Request, res: Response) => {
+  app.get('/api/social/setup-docs', requireAdminAuth, (_req: Request, res: Response) => {
     res.json({
       success: true,
       metaApiVersion: 'v21.0',
@@ -1974,6 +2140,11 @@ async function startServer() {
     });
   });
 
+  // Unmatched /api/* routes always return JSON 404 rather than HTML SPA fallback
+  app.all('/api/*', (_req: Request, res: Response) => {
+    res.status(404).json({ success: false, error: 'API route not found' });
+  });
+
   const httpServer = http.createServer(app);
 
   // =========================================================================
@@ -1983,27 +2154,33 @@ async function startServer() {
     const { createServer: createViteServer } = await import('vite');
     const isHmrDisabled = process.env.DISABLE_HMR === 'true';
     const isCloudRun = Boolean(process.env.K_SERVICE);
+    const enableHmr = !isHmrDisabled && (!isCloudRun || process.env.ENABLE_HMR === 'true');
     const vite = await createViteServer({
       server: {
         middlewareMode: true,
-        hmr: isHmrDisabled
-          ? false
-          : {
+        hmr: enableHmr
+          ? {
               server: httpServer,
               protocol: (process.env.HMR_PROTOCOL as 'wss' | 'ws') || (isCloudRun ? 'wss' : undefined),
               clientPort: process.env.HMR_CLIENT_PORT
                 ? Number(process.env.HMR_CLIENT_PORT)
-                : (isCloudRun ? 443 : undefined),
-            },
+                : isCloudRun
+                ? 443
+                : undefined,
+            }
+          : false,
       },
       appType: 'spa',
     });
     app.use(vite.middlewares);
   } else {
+    const distDir = path.resolve(__dirname, 'dist');
+    const distIndexPath = path.resolve(distDir, 'index.html');
+
     // Serve hashed assets with aggressive 1-year immutable caching
     app.use(
       '/assets',
-      express.static(path.resolve(__dirname, 'dist', 'assets'), {
+      express.static(path.resolve(distDir, 'assets'), {
         maxAge: '1y',
         immutable: true,
       })
@@ -2011,7 +2188,7 @@ async function startServer() {
 
     // Serve public static files (logo, favicon, images) with 1-day cache
     app.use(
-      express.static(path.resolve(__dirname, 'dist'), {
+      express.static(distDir, {
         maxAge: '1d',
         setHeaders: (res, filePath) => {
           if (filePath.endsWith('index.html')) {
@@ -2022,10 +2199,34 @@ async function startServer() {
     );
 
     app.get('*', (_req: Request, res: Response) => {
+      if (!fs.existsSync(distIndexPath)) {
+        res.status(503).send('Production build unavailable. Please run npm run build.');
+        return;
+      }
       res.setHeader('Cache-Control', 'no-cache');
-      res.sendFile(path.resolve(__dirname, 'dist', 'index.html'));
+      res.sendFile(distIndexPath);
     });
   }
+
+  // Final Express error middleware returning JSON for /api/* routes
+  app.use((err: unknown, req: Request, res: Response, _next: NextFunction) => {
+    console.error('Unhandled server error:', err);
+    if (res.headersSent) {
+      return;
+    }
+    const status =
+      typeof (err as { status?: unknown })?.status === 'number'
+        ? Number((err as { status?: number }).status)
+        : 500;
+    if (req.path.startsWith('/api/')) {
+      res.status(status).json({
+        success: false,
+        error: err instanceof Error ? err.message : 'Internal server error.',
+      });
+      return;
+    }
+    res.status(status).send('Internal server error.');
+  });
 
   httpServer.listen(PORT, '0.0.0.0', () => {
     console.log(`🚀 ON AlAA STORE Server running on http://0.0.0.0:${PORT}`);

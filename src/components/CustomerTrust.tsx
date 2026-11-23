@@ -1,11 +1,11 @@
 import React from 'react';
 import { useShop } from '../context/ShopContext';
-import { ShieldCheck, Truck, MapPin, Headphones, RefreshCw, Check } from 'lucide-react';
+import { ShieldCheck, Truck, Headphones, RefreshCw, Check } from 'lucide-react';
 import { resolveStoreLogoUrl } from '../utils/storeSettingsHelpers';
 import { LazyImage } from './LazyImage';
 
 export const CustomerTrust: React.FC = () => {
-  const { lang, setCurrentView, storeSettings } = useShop();
+  const { lang, storeSettings } = useShop();
 
   const trustPoints = [
     {

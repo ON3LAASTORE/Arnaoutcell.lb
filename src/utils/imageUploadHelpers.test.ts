@@ -3,7 +3,6 @@ import assert from 'node:assert/strict';
 import {
   validateImageFile,
   formatFileSize,
-  DEFAULT_MAX_IMAGE_SIZE,
 } from './imageUploadHelpers.ts';
 
 test('validateImageFile accepts valid JPEG image under 2MB', () => {

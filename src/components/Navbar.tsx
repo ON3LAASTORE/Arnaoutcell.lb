@@ -110,7 +110,7 @@ export const Navbar: React.FC = () => {
         event.preventDefault();
         setCategoriesDropdownOpen(false);
         setMobileMenuOpen(false);
-        setIsQuickSearchOpen(!isQuickSearchOpen);
+        setIsQuickSearchOpen((prev) => !prev);
         return;
       }
       if (event.key === 'Escape') {
@@ -125,7 +125,7 @@ export const Navbar: React.FC = () => {
       document.removeEventListener('mousedown', handleMouseDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isQuickSearchOpen, setIsQuickSearchOpen]);
+  }, [setIsQuickSearchOpen]);
 
   return (
     <header

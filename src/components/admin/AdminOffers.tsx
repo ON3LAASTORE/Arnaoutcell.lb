@@ -138,6 +138,7 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
                         type="number"
                         min="0"
                         max="90"
+                        aria-label={`Discount percentage for ${p.name}`}
                         value={p.discountPercentage || 0}
                         onChange={(e) => handleUpdateDiscount(p, Number(e.target.value))}
                         className="w-16 bg-[#FFFFFF] border border-[#DCE5F0] rounded-lg px-2 py-1 text-xs text-[#DC2626] font-bold font-mono focus:outline-none focus:border-[#007AFF]"
@@ -166,9 +167,11 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
                   <td className="py-3 px-4 text-right rtl:text-left">
                     <div className="flex items-center justify-end gap-2">
                       <button
+                        type="button"
                         onClick={() => onShareProduct && onShareProduct(p.id)}
                         className="p-1.5 rounded-xl bg-[#EAF3FF] hover:bg-[#007AFF] hover:text-white border border-[#BAE6FD] text-[#007AFF] transition-colors cursor-pointer"
                         title={lang === 'ar' ? 'تسويق ونشر العرض' : 'Share Offer Campaign'}
+                        aria-label={`Share offer campaign for ${p.name}`}
                       >
                         <Share2 className="w-3.5 h-3.5" />
                       </button>

@@ -22,6 +22,7 @@ import {
   buildProductCardViewModel,
 } from '../utils/productCardHelpers';
 import { getWishlistButtonCopy } from '../utils/wishlistHelpers';
+import { resolveDefaultCartSelection } from '../utils/checkoutHelpers';
 import { NotifyMeControl } from './NotifyMeControl';
 
 interface ProductCardProps {
@@ -70,7 +71,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (vm.isOutOfStock) return;
-    addToCart(product, 1);
+    const defaults = resolveDefaultCartSelection(product);
+    addToCart(
+      product,
+      1,
+      defaults.selectedColor,
+      defaults.selectedVariant,
+      defaults.selectedColorImage,
+      defaults.colorPriceAdjustment
+    );
     setJustAdded(true);
     window.setTimeout(() => {
       setJustAdded(false);

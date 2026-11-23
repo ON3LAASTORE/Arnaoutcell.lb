@@ -9,6 +9,7 @@ import {
   isFirestoreQuotaExceededError,
   markFirestoreQuotaExceeded,
 } from '../utils/firestoreQuotaHelpers';
+import { getAdminApiHeaders } from './authService';
 
 const STORAGE_KEYS = {
   POSTS: 'arnaout_social_posts_v2',
@@ -435,7 +436,8 @@ export async function publishDirectViaBackend(params: {
   try {
     const res = await fetch('/api/social/publish-direct', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAdminApiHeaders({ 'Content-Type': 'application/json' }),
+      credentials: 'same-origin',
       body: JSON.stringify(params),
     });
 
@@ -471,7 +473,11 @@ export async function publishDirectViaBackend(params: {
  */
 export async function fetchBackendSocialAccounts(): Promise<SocialAccountConfig[]> {
   try {
-    const res = await fetch('/api/social/accounts');
+    const res = await fetch('/api/social/accounts', {
+      method: 'GET',
+      headers: getAdminApiHeaders(),
+      credentials: 'same-origin',
+    });
     if (res.ok) {
       const data = await res.json();
       if (data.success && Array.isArray(data.accounts)) {
@@ -495,7 +501,8 @@ export async function saveBackendSocialAccount(accountData: Partial<SocialAccoun
   try {
     const res = await fetch('/api/social/accounts/save', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAdminApiHeaders({ 'Content-Type': 'application/json' }),
+      credentials: 'same-origin',
       body: JSON.stringify(accountData),
     });
     return await res.json();
@@ -515,12 +522,13 @@ export async function verifyBackendSocialAccount(platform: SocialPlatform): Prom
   success: boolean;
   message?: string;
   error?: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }> {
   try {
     const res = await fetch('/api/social/accounts/verify', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAdminApiHeaders({ 'Content-Type': 'application/json' }),
+      credentials: 'same-origin',
       body: JSON.stringify({ platform }),
     });
     return await res.json();
@@ -539,7 +547,8 @@ export async function disconnectBackendSocialAccount(platform: SocialPlatform): 
   try {
     const res = await fetch('/api/social/accounts/disconnect', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAdminApiHeaders({ 'Content-Type': 'application/json' }),
+      credentials: 'same-origin',
       body: JSON.stringify({ platform }),
     });
     return await res.json();
@@ -551,12 +560,16 @@ export async function disconnectBackendSocialAccount(platform: SocialPlatform): 
 /**
  * Fetches publishing history logs from backend.
  */
-export async function fetchBackendPublishLogs(): Promise<any[]> {
+export async function fetchBackendPublishLogs(): Promise<Record<string, unknown>[]> {
   try {
-    const res = await fetch('/api/social/logs');
+    const res = await fetch('/api/social/logs', {
+      method: 'GET',
+      headers: getAdminApiHeaders(),
+      credentials: 'same-origin',
+    });
     if (res.ok) {
       const data = await res.json();
-      return data.logs || [];
+      return Array.isArray(data.logs) ? (data.logs as Record<string, unknown>[]) : [];
     }
   } catch {}
   return [];
@@ -578,7 +591,11 @@ export async function fetchInstagramStatus(): Promise<{
   directPublishSupported: boolean;
 }> {
   try {
-    const res = await fetch('/api/social/instagram-status');
+    const res = await fetch('/api/social/instagram-status', {
+      method: 'GET',
+      headers: getAdminApiHeaders(),
+      credentials: 'same-origin',
+    });
     if (res.ok) {
       return await res.json();
     }
@@ -620,7 +637,8 @@ export async function publishToInstagramDirectly(params: {
   try {
     const res = await fetch('/api/social/publish-instagram', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAdminApiHeaders({ 'Content-Type': 'application/json' }),
+      credentials: 'same-origin',
       body: JSON.stringify(params),
     });
     return await res.json();
