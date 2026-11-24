@@ -22,22 +22,26 @@ export const AdminCustomers: React.FC = () => {
     }
   > = {};
 
-  orders.forEach((o) => {
-    const key = o.customer.phone.trim();
+  (orders || []).forEach((o) => {
+    if (!o) return;
+    const phone = o.customer?.phone?.trim() || '';
+    const fullName = o.customer?.fullName?.trim() || '';
+    const key = phone || fullName || o.id;
+    if (!key) return;
     if (!customerMap[key]) {
       customerMap[key] = {
-        name: o.customer.fullName,
-        phone: o.customer.phone,
-        area: o.customer.cityArea,
-        address: o.customer.addressLine,
+        name: fullName || 'Customer',
+        phone: phone || '—',
+        area: o.customer?.cityArea || '—',
+        address: o.customer?.addressLine || '',
         ordersCount: 0,
         totalSpend: 0,
-        lastOrder: o.orderDate,
+        lastOrder: o.orderDate || '',
       };
     }
     customerMap[key].ordersCount += 1;
     if (o.status !== 'cancelled' && o.status !== 'returned') {
-      customerMap[key].totalSpend += o.total;
+      customerMap[key].totalSpend += Number(o.total) || 0;
     }
   });
 
@@ -107,7 +111,9 @@ export const AdminCustomers: React.FC = () => {
                     </td>
                     <td className="py-3 px-4 font-mono font-black text-[#172033]">${c.totalSpend} USD</td>
                     <td className="py-3 px-4 text-right rtl:text-left text-[#64748B] font-mono text-[11px]">
-                      {new Date(c.lastOrder).toLocaleDateString()}
+                      {c.lastOrder && !Number.isNaN(Date.parse(c.lastOrder))
+                        ? new Date(c.lastOrder).toLocaleDateString()
+                        : '—'}
                     </td>
                   </tr>
                 ))

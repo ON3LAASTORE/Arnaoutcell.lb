@@ -10,9 +10,13 @@ import {
   ensureAdminCredentialRecord,
   verifyServerAdminLogin,
   rotateServerAdminPassword,
+  ensureAdminUsersRegistry,
+  verifyServerAdminUserLogin,
+  rotateServerAdminUserPassword,
 } from './src/utils/adminAuthServerHelpers';
 import {
   ADMIN_SESSION_COOKIE_NAME,
+  AdminSessionPayload,
   AdminSessionRole,
   DEFAULT_SESSION_TTL_MS,
   createAdminSessionToken,
@@ -210,6 +214,7 @@ function savePublishLogs(logs: SocialPublishLog[]) {
 let publishLogs: SocialPublishLog[] = loadPublishLogs();
 
 const ADMIN_CREDENTIALS_FILE = path.resolve(__dirname, '.admin_credentials.json');
+const ADMIN_USERS_FILE = path.resolve(__dirname, '.admin_users.json');
 const ADMIN_ACTIVITY_LOGS_FILE = path.resolve(__dirname, '.admin_activity_logs.json');
 const ADMIN_RESET_TOKENS_FILE = path.resolve(__dirname, '.admin_reset_tokens.json');
 const ADMIN_EMAIL_OUTBOX_FILE = path.resolve(__dirname, '.admin_email_outbox.json');
@@ -448,6 +453,7 @@ async function startServer() {
       return;
     }
 
+    (req as Request & { adminSession?: AdminSessionPayload }).adminSession = payload;
     next();
   };
 
@@ -455,6 +461,10 @@ async function startServer() {
   await ensureAdminCredentialRecord({
     credentialsFilePath: ADMIN_CREDENTIALS_FILE,
     envAdminPassword: process.env.ADMIN_PASSWORD,
+  });
+  await ensureAdminUsersRegistry({
+    usersFilePath: ADMIN_USERS_FILE,
+    envAlaaPassword: process.env.ADMIN_ALAA_PASSWORD,
   });
 
   // Enable gzip/deflate compression for all API and static responses (> 1KB)
@@ -465,7 +475,7 @@ async function startServer() {
   app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
   // =========================================================================
-  // 0. ADMIN AUTHENTICATION ROUTES (bcrypt-hashed .env credentials)
+  // 0. ADMIN AUTHENTICATION ROUTES (bcrypt-hashed .env & portal user credentials)
   // =========================================================================
   app.get('/api/admin/auth/status', async (_req: Request, res: Response) => {
     try {
@@ -473,8 +483,12 @@ async function startServer() {
         credentialsFilePath: ADMIN_CREDENTIALS_FILE,
         envAdminPassword: process.env.ADMIN_PASSWORD,
       });
+      const registry = await ensureAdminUsersRegistry({
+        usersFilePath: ADMIN_USERS_FILE,
+        envAlaaPassword: process.env.ADMIN_ALAA_PASSWORD,
+      });
       res.json({
-        initialized: Boolean(record),
+        initialized: Boolean(record || registry?.alaa),
         algorithm: 'bcrypt',
       });
     } catch {
@@ -493,6 +507,70 @@ async function startServer() {
 
       if (!candidate) {
         res.status(400).json({ valid: false, error: 'Password is required.' });
+        return;
+      }
+
+      // Check per-user bcrypt account registry first (e.g. 'Alaa' -> super_admin + full_stock)
+      const userAccountCheck = await verifyServerAdminUserLogin({
+        username: requestedUsername,
+        candidate,
+        usersFilePath: ADMIN_USERS_FILE,
+        envAlaaPassword: process.env.ADMIN_ALAA_PASSWORD,
+      });
+
+      if (userAccountCheck.accountFound) {
+        if (userAccountCheck.valid && userAccountCheck.user) {
+          const verifiedUser = userAccountCheck.user;
+          appendServerActivityLog({
+            action: 'auth_login_success',
+            titleEn: `Administrator signed in (${verifiedUser.username})`,
+            titleAr: `تم تسجيل دخول المدير (${verifiedUser.username}) بنجاح`,
+            category: 'security',
+            severity: 'info',
+            target: `Admin Portal (${verifiedUser.username})`,
+            details: `Verified bcrypt authentication succeeded for ${verifiedUser.role} with permissions: ${verifiedUser.permissions.join(', ')}.`,
+            actor: {
+              name: verifiedUser.name,
+              username: verifiedUser.username,
+              role: verifiedUser.role,
+              email: verifiedUser.email,
+            },
+            source: 'server',
+          });
+
+          const token = createAdminSessionToken(
+            {
+              email: verifiedUser.email,
+              role: resolveAdminSessionRole(verifiedUser.role),
+              authType: 'password',
+            },
+            adminSessionSecret
+          );
+          setAdminSessionCookie(req, res, token);
+          res.json({
+            valid: true,
+            token,
+            user: verifiedUser,
+          });
+          return;
+        }
+
+        appendServerActivityLog({
+          action: 'auth_login_failed',
+          titleEn: 'Failed administrator login attempt',
+          titleAr: 'محاولة تسجيل دخول فاشلة للمدير',
+          category: 'security',
+          severity: 'warning',
+          target: `Admin Portal (${requestedUsername})`,
+          details: 'Invalid administrator password submitted for provisioned user account.',
+          actor: {
+            name: requestedUsername === 'alaa' ? 'Alaa' : requestedUsername,
+            username: requestedUsername,
+            role: requestedRole as ActivityLogEntry['actor']['role'],
+          },
+          source: 'server',
+        });
+        res.json({ valid: false });
         return;
       }
 
@@ -564,21 +642,42 @@ async function startServer() {
 
       const projectId = resolveFirebaseProjectId();
       const claims = await verifyFirebaseAdminIdToken(idToken, projectId);
-      if (!claims || claims.email?.toLowerCase() !== 'optimatech.lb@gmail.com') {
+      const claimEmail = claims?.email?.toLowerCase();
+      const isAuthorizedFirebaseAdmin =
+        claimEmail === 'optimatech.lb@gmail.com' || claimEmail === 'alaa@onalaastore.com';
+
+      if (!claims || !isAuthorizedFirebaseAdmin) {
         res.status(403).json({ success: false, error: 'Unauthorized Firebase administrator account.' });
         return;
       }
 
       const token = createAdminSessionToken(
         {
-          email: claims.email,
+          email: claims.email!,
           role: 'super_admin',
           authType: 'firebase',
         },
         adminSessionSecret
       );
       setAdminSessionCookie(req, res, token);
-      res.json({ success: true, token, email: claims.email, role: 'super_admin' });
+      res.json({
+        success: true,
+        token,
+        email: claims.email,
+        role: 'super_admin',
+        ...(claimEmail === 'alaa@onalaastore.com'
+          ? {
+              user: {
+                id: claims.sub || 'admin-alaa',
+                username: 'Alaa',
+                name: 'Alaa',
+                email: claims.email,
+                role: 'super_admin',
+                permissions: ['full_stock', 'full_admin'],
+              },
+            }
+          : {}),
+      });
     } catch {
       res.status(500).json({ success: false, error: 'Failed to verify Firebase admin session.' });
     }
@@ -595,14 +694,29 @@ async function startServer() {
       const newPassword = typeof req.body?.newPassword === 'string' ? req.body.newPassword : '';
       const confirmPassword = typeof req.body?.confirmPassword === 'string' ? req.body.confirmPassword : '';
       const actorMeta = req.body?.actor as Partial<ActivityLogEntry['actor']> | undefined;
+      const session = (req as Request & { adminSession?: AdminSessionPayload }).adminSession;
 
-      const result = await rotateServerAdminPassword({
-        currentPassword,
-        newPassword,
-        confirmPassword,
-        credentialsFilePath: ADMIN_CREDENTIALS_FILE,
-        envAdminPassword: process.env.ADMIN_PASSWORD,
-      });
+      const sessionEmail = session?.email?.toLowerCase() || '';
+      const actorUsername = typeof actorMeta?.username === 'string' ? actorMeta.username.trim().toLowerCase() : '';
+      const targetUserRegistryKey =
+        actorUsername === 'alaa' || sessionEmail === 'alaa@onalaastore.com' ? 'alaa' : '';
+
+      const result = targetUserRegistryKey
+        ? await rotateServerAdminUserPassword({
+            username: targetUserRegistryKey,
+            currentPassword,
+            newPassword,
+            confirmPassword,
+            usersFilePath: ADMIN_USERS_FILE,
+            envAlaaPassword: process.env.ADMIN_ALAA_PASSWORD,
+          })
+        : await rotateServerAdminPassword({
+            currentPassword,
+            newPassword,
+            confirmPassword,
+            credentialsFilePath: ADMIN_CREDENTIALS_FILE,
+            envAdminPassword: process.env.ADMIN_PASSWORD,
+          });
 
       if (result.success) {
         appendServerActivityLog({
@@ -611,11 +725,11 @@ async function startServer() {
           titleAr: 'تم تغيير كلمة مرور المدير',
           category: 'security',
           severity: 'critical',
-          target: `Administrator Account (${actorMeta?.username || 'admin'})`,
+          target: `Administrator Account (${actorMeta?.username || targetUserRegistryKey || 'admin'})`,
           details: 'Administrator credential rotated via Settings → Security and re-hashed with bcrypt (12 rounds).',
           actor: {
-            name: actorMeta?.name || '3Laa Hassan',
-            username: actorMeta?.username || 'admin',
+            name: actorMeta?.name || (targetUserRegistryKey === 'alaa' ? 'Alaa' : '3Laa Hassan'),
+            username: actorMeta?.username || (targetUserRegistryKey === 'alaa' ? 'Alaa' : 'admin'),
             role: actorMeta?.role || 'super_admin',
             ...(actorMeta?.email ? { email: actorMeta.email } : {}),
           },
@@ -624,7 +738,11 @@ async function startServer() {
 
         const token = createAdminSessionToken(
           {
-            email: actorMeta?.email || `${actorMeta?.username || 'admin'}@onalaastore.com`,
+            email:
+              actorMeta?.email ||
+              (targetUserRegistryKey === 'alaa'
+                ? 'alaa@onalaastore.com'
+                : `${actorMeta?.username || 'admin'}@onalaastore.com`),
             role: resolveAdminSessionRole(actorMeta?.role),
             authType: 'password',
           },
@@ -640,11 +758,11 @@ async function startServer() {
           titleAr: 'فشل محاولة تحديث كلمة مرور المدير',
           category: 'security',
           severity: 'warning',
-          target: `Administrator Account (${actorMeta?.username || 'admin'})`,
+          target: `Administrator Account (${actorMeta?.username || targetUserRegistryKey || 'admin'})`,
           details: result.messageEn || 'Password update rejected by security validation.',
           actor: {
-            name: actorMeta?.name || '3Laa Hassan',
-            username: actorMeta?.username || 'admin',
+            name: actorMeta?.name || (targetUserRegistryKey === 'alaa' ? 'Alaa' : '3Laa Hassan'),
+            username: actorMeta?.username || (targetUserRegistryKey === 'alaa' ? 'Alaa' : 'admin'),
             role: actorMeta?.role || 'super_admin',
             ...(actorMeta?.email ? { email: actorMeta.email } : {}),
           },
@@ -2152,21 +2270,29 @@ async function startServer() {
   // =========================================================================
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
-    const isHmrDisabled = process.env.DISABLE_HMR === 'true';
-    const isCloudRun = Boolean(process.env.K_SERVICE);
-    const enableHmr = !isHmrDisabled && (!isCloudRun || process.env.ENABLE_HMR === 'true');
+    const isCloudRun = Boolean(process.env.K_SERVICE || process.env.CLOUD_RUN_JOB);
+    const isHmrDisabled =
+      process.env.DISABLE_HMR === 'true' ||
+      (isCloudRun && process.env.ENABLE_HMR !== 'true');
+    const enableHmr = !isHmrDisabled;
+    const hmrProtocol =
+      (process.env.HMR_PROTOCOL as 'wss' | 'ws' | undefined) ||
+      (isCloudRun ? 'wss' : undefined);
+    const hmrClientPort = process.env.HMR_CLIENT_PORT
+      ? Number(process.env.HMR_CLIENT_PORT)
+      : isCloudRun
+        ? 443
+        : undefined;
+
     const vite = await createViteServer({
       server: {
         middlewareMode: true,
-        hmr: enableHmr
+        hmr: enableHmr ? { overlay: true } : false,
+        ws: enableHmr
           ? {
               server: httpServer,
-              protocol: (process.env.HMR_PROTOCOL as 'wss' | 'ws') || (isCloudRun ? 'wss' : undefined),
-              clientPort: process.env.HMR_CLIENT_PORT
-                ? Number(process.env.HMR_CLIENT_PORT)
-                : isCloudRun
-                ? 443
-                : undefined,
+              ...(hmrProtocol ? { protocol: hmrProtocol } : {}),
+              ...(hmrClientPort ? { clientPort: hmrClientPort } : {}),
             }
           : false,
       },

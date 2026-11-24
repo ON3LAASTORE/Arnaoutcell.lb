@@ -20,16 +20,23 @@ import {
   markFirestoreQuotaExceeded,
 } from './utils/firestoreQuotaHelpers';
 import { purgeStaleFirestoreWebStorageKeys } from './utils/storageQuotaHelpers';
+import {
+  emitPermissionDenied,
+  inferPermissionDeniedFromFirestoreError,
+  isFirestorePermissionDeniedError,
+} from './utils/permissionDeniedHelpers';
+
+const viteEnv = ((import.meta as { env?: Record<string, string | undefined> }).env ?? {});
 
 const firebaseConfig = resolveAndValidateFirebaseConfig(rawFirebaseConfig, {
-  VITE_FIREBASE_API_KEY: import.meta.env.VITE_FIREBASE_API_KEY,
-  VITE_FIREBASE_AUTH_DOMAIN: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  VITE_FIREBASE_PROJECT_ID: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  VITE_FIREBASE_STORAGE_BUCKET: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  VITE_FIREBASE_MESSAGING_SENDER_ID: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  VITE_FIREBASE_APP_ID: import.meta.env.VITE_FIREBASE_APP_ID,
-  VITE_FIREBASE_MEASUREMENT_ID: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
-  VITE_FIREBASE_DATABASE_ID: import.meta.env.VITE_FIREBASE_DATABASE_ID,
+  VITE_FIREBASE_API_KEY: viteEnv.VITE_FIREBASE_API_KEY,
+  VITE_FIREBASE_AUTH_DOMAIN: viteEnv.VITE_FIREBASE_AUTH_DOMAIN,
+  VITE_FIREBASE_PROJECT_ID: viteEnv.VITE_FIREBASE_PROJECT_ID,
+  VITE_FIREBASE_STORAGE_BUCKET: viteEnv.VITE_FIREBASE_STORAGE_BUCKET,
+  VITE_FIREBASE_MESSAGING_SENDER_ID: viteEnv.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  VITE_FIREBASE_APP_ID: viteEnv.VITE_FIREBASE_APP_ID,
+  VITE_FIREBASE_MEASUREMENT_ID: viteEnv.VITE_FIREBASE_MEASUREMENT_ID,
+  VITE_FIREBASE_DATABASE_ID: viteEnv.VITE_FIREBASE_DATABASE_ID,
 });
 
 const app = initializeApp(firebaseConfig);
@@ -164,6 +171,22 @@ export function handleFirestoreError(
   operationType: OperationType,
   path: string | null
 ): never {
+  if (isFirestorePermissionDeniedError(error)) {
+    emitPermissionDenied(
+      inferPermissionDeniedFromFirestoreError(
+        error,
+        operationType,
+        path,
+        auth.currentUser
+          ? {
+              email: auth.currentUser.email || undefined,
+              name: auth.currentUser.displayName || undefined,
+            }
+          : null
+      )
+    );
+  }
+
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {

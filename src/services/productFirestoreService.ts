@@ -2,13 +2,14 @@ import {
   collection,
   doc,
   setDoc,
+  updateDoc,
   deleteDoc,
   getDoc,
   getDocs,
   onSnapshot,
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
-import { Product } from '../types';
+import { auth, db, handleFirestoreError, OperationType } from '../firebase';
+import { FirestoreInventoryRecord, Product } from '../types';
 import { INITIAL_PRODUCTS } from '../data/initialData';
 import {
   DEFAULT_FULL_RES_FALLBACK_IMAGE,
@@ -30,8 +31,13 @@ import {
 } from '../utils/firestorePayloadHelpers';
 import { sanitizeProductReviewsForStorage } from '../utils/checkoutHelpers';
 import { storefrontCache } from '../utils/storefrontCacheHelpers';
+import {
+  emitPermissionDenied,
+  inferPermissionDeniedFromFirestoreError,
+} from '../utils/permissionDeniedHelpers';
 
 const PRODUCTS_COLLECTION = 'products';
+const INVENTORY_COLLECTION = 'inventory';
 
 export interface ProductSyncMetadata {
   fromCache: boolean;
@@ -122,7 +128,7 @@ export function mapFirestoreDocToProduct(
     colorImages: firestoreColorImages,
     variants: Array.isArray(data.variants) ? (data.variants as Product['variants']) : [],
     warrantyMonths:
-      Number.isFinite(Number(data.warrantyMonths)) && Number(data.warrantyMonths) > 0
+      Number.isFinite(Number(data.warrantyMonths)) && Number(data.warrantyMonths) >= 0
         ? Number(data.warrantyMonths)
         : 12,
     warrantyTerms:
@@ -162,50 +168,97 @@ function mergeCloudWithInitialProducts(cloudProducts: Product[]): Product[] {
   return mergedList;
 }
 
+function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return fallback;
+  return Math.min(max, Math.max(min, num));
+}
+
 /**
- * Strips undefined properties to ensure Firestore compatibility.
+ * Strips undefined properties and enforces firestore.rules `isValidProduct` bounds.
  */
-function cleanProductForFirestore(product: Product): Record<string, unknown> {
+export function cleanProductForFirestore(product: Product): Record<string, unknown> {
+  const safeId = (product.id || '').trim().slice(0, 128) || `prod-${Date.now()}`;
+  const safeName = (product.name || '').trim().slice(0, 255) || 'Unnamed Product';
+  const safeBrand = (product.brand || '').trim().slice(0, 64) || 'ON AlAA STORE';
+  const safeCategory = (product.category || '').trim().slice(0, 64) || 'Electronics';
+  const safeSku = (product.sku || safeId).trim().slice(0, 64) || safeId.slice(0, 64);
+  const safePrice = clampNumber(product.price, 0, 1_000_000, 0);
+  const safeOriginalPrice = clampNumber(
+    product.originalPrice ?? safePrice,
+    0,
+    1_000_000,
+    safePrice
+  );
+  const safeImages =
+    Array.isArray(product.images) && product.images.length > 0
+      ? product.images
+          .filter((img): img is string => typeof img === 'string' && img.trim().length > 0)
+          .slice(0, 30)
+          .map((img) => resolveFullResolutionImageUrl(img.trim()) || img.trim())
+      : [];
+
   const data: Record<string, unknown> = {
-    id: product.id,
-    name: product.name,
-    brand: product.brand,
-    category: product.category,
-    sku: product.sku,
-    price: Number(product.price) || 0,
-    originalPrice: Number(product.originalPrice) || Number(product.price) || 0,
-    discountPercentage: Number(product.discountPercentage) || 0,
-    stock: Number(product.stock) >= 0 ? Number(product.stock) : 0,
-    lowStockThreshold: Number(product.lowStockThreshold) || 3,
-    images:
-      Array.isArray(product.images) && product.images.length > 0
-        ? product.images.slice(0, 20).map((img) => resolveFullResolutionImageUrl(img) || img)
-        : [DEFAULT_FULL_RES_FALLBACK_IMAGE],
-    description: product.description || 'Genuine device with official warranty.',
-    warrantyMonths: Number(product.warrantyMonths) || 12,
+    id: safeId,
+    name: safeName,
+    brand: safeBrand,
+    category: safeCategory,
+    sku: safeSku,
+    price: safePrice,
+    originalPrice: safeOriginalPrice,
+    discountPercentage: Math.round(clampNumber(product.discountPercentage, 0, 100, 0)),
+    stock: Math.round(clampNumber(product.stock, 0, 1_000_000, 0)),
+    lowStockThreshold: Math.round(clampNumber(product.lowStockThreshold, 0, 100_000, 3)),
+    images: safeImages.length > 0 ? safeImages : [DEFAULT_FULL_RES_FALLBACK_IMAGE],
+    description:
+      (product.description || '').trim().slice(0, 5000) ||
+      'Genuine device with official warranty.',
+    warrantyMonths: Math.round(clampNumber(product.warrantyMonths, 0, 120, 12)),
     isPublished: product.isPublished !== false,
-    rating: Number(product.rating) || 5.0,
-    reviewCount:
-      Number(product.reviewCount) || (Array.isArray(product.reviews) ? product.reviews.length : 0),
-    soldCount: Number(product.soldCount) >= 0 ? Number(product.soldCount) : 0,
-    createdAt: product.createdAt || new Date().toISOString(),
+    rating: clampNumber(product.rating, 0, 5, 5.0),
+    reviewCount: Math.round(
+      clampNumber(
+        product.reviewCount,
+        0,
+        100_000,
+        Array.isArray(product.reviews) ? product.reviews.length : 0
+      )
+    ),
+    soldCount: Math.round(clampNumber(product.soldCount, 0, 1_000_000, 0)),
+    createdAt:
+      (typeof product.createdAt === 'string' && product.createdAt.trim()
+        ? product.createdAt.trim()
+        : new Date().toISOString()
+      ).slice(0, 64),
   };
 
   if (Array.isArray(product.reviews) && product.reviews.length > 0) {
     data.reviews = sanitizeProductReviewsForStorage(product.reviews, 50);
   }
 
-  if (product.nameAr) data.nameAr = product.nameAr;
-  if (product.subcategory) data.subcategory = product.subcategory;
-  if (product.barcode) data.barcode = product.barcode;
-  if (product.videoUrl) data.videoUrl = product.videoUrl;
-  if (product.descriptionAr) data.descriptionAr = product.descriptionAr;
-  if (product.warrantyTerms) data.warrantyTerms = product.warrantyTerms;
+  if (product.nameAr && product.nameAr.trim()) data.nameAr = product.nameAr.trim().slice(0, 255);
+  if (product.subcategory && product.subcategory.trim()) {
+    data.subcategory = product.subcategory.trim().slice(0, 64);
+  }
+  if (product.barcode && product.barcode.trim()) {
+    data.barcode = product.barcode.trim().slice(0, 64);
+  }
+  if (product.videoUrl && product.videoUrl.trim()) {
+    data.videoUrl = product.videoUrl.trim().slice(0, 512);
+  }
+  if (product.descriptionAr && product.descriptionAr.trim()) {
+    data.descriptionAr = product.descriptionAr.trim().slice(0, 5000);
+  }
+  if (product.warrantyTerms && product.warrantyTerms.trim()) {
+    data.warrantyTerms = product.warrantyTerms.trim().slice(0, 2000);
+  }
   if (typeof product.isSpecialOffer === 'boolean') data.isSpecialOffer = product.isSpecialOffer;
   if (typeof product.isFeatured === 'boolean') data.isFeatured = product.isFeatured;
   if (typeof product.isNewArrival === 'boolean') data.isNewArrival = product.isNewArrival;
   if (typeof product.isBestSeller === 'boolean') data.isBestSeller = product.isBestSeller;
-  if (product.offerExpiresAt) data.offerExpiresAt = product.offerExpiresAt;
+  if (product.offerExpiresAt && product.offerExpiresAt.trim()) {
+    data.offerExpiresAt = product.offerExpiresAt.trim().slice(0, 64);
+  }
 
   if (Array.isArray(product.colors)) {
     data.colors = sanitizeProductColorsForFirestore(product.colors).colors;
@@ -221,14 +274,14 @@ function cleanProductForFirestore(product: Product): Record<string, unknown> {
     data.colorImages = cleanColorImages;
   }
   if (Array.isArray(product.specifications)) {
-    data.specifications = product.specifications.map((s) => ({
+    data.specifications = product.specifications.slice(0, 60).map((s) => ({
       label: s.label || '',
       value: s.value || '',
       ...(s.group ? { group: s.group } : {}),
     }));
   }
   if (Array.isArray(product.variants)) {
-    data.variants = product.variants.map((v) => ({
+    data.variants = product.variants.slice(0, 50).map((v) => ({
       id: v.id,
       name: v.name,
       price: Number(v.price) || 0,
@@ -417,13 +470,101 @@ export async function fetchProductByIdCachedOrCloud(
 }
 
 /**
+ * Mirrors warehouse stock level changes to `/inventory/{productId}` for strict
+ * Firestore Security Rules enforcement (`super_admin` + `full_stock`).
+ */
+export async function persistInventoryRecordToCloud(product: Product): Promise<void> {
+  if (!auth.currentUser || isFirestoreInQuotaCooldown()) {
+    return;
+  }
+
+  const recordId = (product.id || '').trim().slice(0, 128);
+  if (!/^[a-zA-Z0-9_\-]+$/.test(recordId)) {
+    console.warn(`Skipped inventory cloud sync for non-conforming ID "${product.id}".`);
+    return;
+  }
+
+  const payload: FirestoreInventoryRecord = {
+    id: recordId,
+    productId: recordId,
+    sku: (product.sku || recordId).trim().slice(0, 64) || recordId.slice(0, 64),
+    productName:
+      (product.name || product.sku || recordId).trim().slice(0, 255) || recordId.slice(0, 255),
+    brand: (product.brand || '').trim().slice(0, 64),
+    category: (product.category || '').trim().slice(0, 64),
+    stock: Math.round(clampNumber(product.stock, 0, 1_000_000, 0)),
+    lowStockThreshold: Math.round(clampNumber(product.lowStockThreshold, 0, 100_000, 3)),
+    warehouse: 'Chouf Hub',
+    updatedByUid: auth.currentUser.uid.slice(0, 128),
+    updatedAt: new Date().toISOString(),
+  };
+
+  try {
+    await setDoc(doc(db, INVENTORY_COLLECTION, recordId), payload, { merge: true });
+  } catch (error) {
+    if (isFirestoreQuotaExceededError(error)) {
+      markFirestoreQuotaExceeded();
+      updateSyncMeta({ fromCache: true, isQuotaLimited: true, hasServerError: false });
+      return;
+    }
+    handleFirestoreError(error, OperationType.WRITE, `${INVENTORY_COLLECTION}/${recordId}`);
+  }
+}
+
+export async function removeInventoryRecordFromCloud(productId: string): Promise<void> {
+  if (!auth.currentUser || isFirestoreInQuotaCooldown()) {
+    return;
+  }
+
+  try {
+    await deleteDoc(doc(db, INVENTORY_COLLECTION, productId));
+  } catch (error) {
+    if (isFirestoreQuotaExceededError(error)) {
+      markFirestoreQuotaExceeded();
+      updateSyncMeta({ fromCache: true, isQuotaLimited: true, hasServerError: false });
+      return;
+    }
+    handleFirestoreError(error, OperationType.DELETE, `${INVENTORY_COLLECTION}/${productId}`);
+  }
+}
+
+/**
+ * Updates only public review aggregate fields on `/products/{productId}` so
+ * storefront customers can submit reviews without violating admin-only stock rules.
+ */
+export async function persistProductReviewToCloud(product: Product): Promise<void> {
+  storefrontCache.upsertProduct(product, 'mutation');
+
+  if (isFirestoreInQuotaCooldown()) {
+    return;
+  }
+
+  try {
+    await updateDoc(doc(db, PRODUCTS_COLLECTION, product.id), {
+      reviews: sanitizeProductReviewsForStorage(product.reviews || [], 50),
+      rating: Number(product.rating) || 5.0,
+      reviewCount:
+        Number(product.reviewCount) || (Array.isArray(product.reviews) ? product.reviews.length : 0),
+    });
+  } catch (error) {
+    if (isFirestoreQuotaExceededError(error)) {
+      markFirestoreQuotaExceeded();
+      updateSyncMeta({ fromCache: true, isQuotaLimited: true, hasServerError: false });
+      return;
+    }
+    console.warn('Firestore product review sync notice:', error);
+  }
+}
+
+/**
  * Saves or updates a product in the cloud Firestore database and immediately
- * patches the shared storefront cache.
+ * patches the shared storefront cache. Cloud write requires an authenticated
+ * Firebase session (`users/{uid}` with `role == 'super_admin'` and `'full_stock'`).
  */
 export async function persistProductToCloud(product: Product): Promise<void> {
   storefrontCache.upsertProduct(product, 'mutation');
 
-  if (isFirestoreInQuotaCooldown()) {
+  if (!auth.currentUser || isFirestoreInQuotaCooldown()) {
     return;
   }
   const docRef = doc(db, PRODUCTS_COLLECTION, product.id);
@@ -438,6 +579,7 @@ export async function persistProductToCloud(product: Product): Promise<void> {
 
   try {
     await setDoc(docRef, payload, { merge: true });
+    await persistInventoryRecordToCloud(product);
   } catch (error) {
     if (isFirestoreQuotaExceededError(error)) {
       markFirestoreQuotaExceeded();
@@ -470,6 +612,7 @@ export async function persistProductToCloud(product: Product): Promise<void> {
 
       try {
         await setDoc(docRef, emergencyPayload, { merge: true });
+        await persistInventoryRecordToCloud(product);
         console.warn(
           `Retried products/${product.id} write with stripped inline blobs after Firestore 1 MiB size error.`
         );
@@ -493,12 +636,13 @@ export async function persistProductToCloud(product: Product): Promise<void> {
 export async function removeProductFromCloud(productId: string): Promise<void> {
   storefrontCache.removeProduct(productId, 'mutation');
 
-  if (isFirestoreInQuotaCooldown()) {
+  if (!auth.currentUser || isFirestoreInQuotaCooldown()) {
     return;
   }
   const docRef = doc(db, PRODUCTS_COLLECTION, productId);
   try {
     await deleteDoc(docRef);
+    await removeInventoryRecordFromCloud(productId);
   } catch (error) {
     if (isFirestoreQuotaExceededError(error)) {
       markFirestoreQuotaExceeded();
@@ -618,7 +762,29 @@ export function subscribeToLiveProducts(
           isConnecting: false,
           hasServerError: true,
         });
-        handleFirestoreError(error, OperationType.LIST, PRODUCTS_COLLECTION);
+        emitPermissionDenied(
+          inferPermissionDeniedFromFirestoreError(
+            error,
+            OperationType.LIST,
+            PRODUCTS_COLLECTION,
+            auth.currentUser
+              ? {
+                  email: auth.currentUser.email || undefined,
+                  name: auth.currentUser.displayName || undefined,
+                }
+              : null
+          )
+        );
+        console.warn('Products live listener permission notice:', error);
+        if (unsubscribeFn) {
+          try {
+            unsubscribeFn();
+          } catch {
+            // ignore teardown error
+          }
+          unsubscribeFn = null;
+        }
+        isDisposed = true;
         return;
       }
 

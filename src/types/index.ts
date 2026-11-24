@@ -2,12 +2,68 @@ export type Language = 'en' | 'ar';
 
 export type AdminRole = 'super_admin' | 'product_manager' | 'order_manager' | 'inventory_manager';
 
+export type AdminPermission =
+  | 'full_stock'
+  | 'full_admin'
+  | 'manage_products'
+  | 'manage_orders'
+  | 'manage_inventory'
+  | 'manage_categories'
+  | 'manage_content'
+  | 'manage_customers'
+  | 'manage_settings'
+  | 'view_analytics'
+  | 'view_audit_logs';
+
 export interface AdminUser {
   id: string;
   username: string;
   name: string;
   role: AdminRole;
   email: string;
+  permissions?: AdminPermission[];
+}
+
+export interface FirestoreAdminProfile {
+  id?: string;
+  uid?: string;
+  username: string;
+  name: string;
+  email: string;
+  role: AdminRole;
+  permissions: AdminPermission[];
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type FirestoreUserRole = AdminRole | 'customer';
+
+export interface FirestoreUserProfile {
+  id?: string;
+  uid: string;
+  username: string;
+  name?: string;
+  email: string;
+  role: FirestoreUserRole;
+  permissions: AdminPermission[];
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface FirestoreInventoryRecord {
+  id: string;
+  productId: string;
+  sku: string;
+  productName: string;
+  brand?: string;
+  category?: string;
+  stock: number;
+  lowStockThreshold?: number;
+  warehouse?: string;
+  updatedByUid?: string;
+  updatedAt?: string;
 }
 
 export interface ProductVariant {

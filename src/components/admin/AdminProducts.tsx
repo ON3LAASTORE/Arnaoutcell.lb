@@ -36,13 +36,13 @@ interface AdminProductsProps {
 
 export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) => {
   const { lang, products, categories, brands, refreshData } = useShop();
-  const { selectableBrands } = useAdmin();
+  const { selectableBrands, requirePermission } = useAdmin();
 
   // Unified list of selectable brand names guaranteeing all required brands are present
   const allSelectableBrandNames = Array.from(
     new Set([
       ...selectableBrands,
-      ...brands.map((b) => b.name),
+      ...(brands || []).map((b) => b?.name).filter((n): n is string => Boolean(n)),
     ])
   );
 
@@ -86,6 +86,14 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
   const [formIsPublished, setFormIsPublished] = useState(true);
 
   const openAddModal = () => {
+    if (
+      !requirePermission(['full_stock', 'manage_products'], {
+        actionEn: 'Add new catalog product',
+        actionAr: 'إضافة منتج جديد للكتالوج',
+      })
+    ) {
+      return;
+    }
     setEditingProduct(null);
     setFormName('');
     setFormNameAr('');
@@ -125,34 +133,46 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
   };
 
   const openEditModal = (p: Product) => {
+    if (
+      !requirePermission(['full_stock', 'manage_products'], {
+        actionEn: `Edit product "${p.name}"`,
+        actionAr: `تعديل المنتج "${p.nameAr || p.name}"`,
+      })
+    ) {
+      return;
+    }
     setEditingProduct(p);
-    setFormName(p.name);
+    setFormName(p.name || '');
     setFormNameAr(p.nameAr || '');
-    setFormBrand(p.brand);
-    setFormCategory(p.category);
+    setFormBrand(p.brand || 'Apple');
+    setFormCategory(p.category || 'Phones');
     setFormSubcategory(p.subcategory || '');
-    setFormSku(p.sku);
+    setFormSku(p.sku || p.id);
     setFormBarcode(p.barcode || '');
-    setFormOriginalPrice(p.originalPrice);
-    setFormPrice(p.price);
-    setFormStock(p.stock);
-    setFormLowStockThreshold(p.lowStockThreshold || 3);
-    setFormImages(p.images || []);
+    const safePrice = Number.isFinite(Number(p.price)) ? Number(p.price) : 0;
+    const safeOrig = Number.isFinite(Number(p.originalPrice)) ? Number(p.originalPrice) : safePrice;
+    const safeStock = Number.isFinite(Number(p.stock)) ? Number(p.stock) : 0;
+    const safeWarranty = Number.isFinite(Number(p.warrantyMonths)) ? Number(p.warrantyMonths) : 12;
+    setFormOriginalPrice(safeOrig);
+    setFormPrice(safePrice);
+    setFormStock(safeStock);
+    setFormLowStockThreshold(Number.isFinite(Number(p.lowStockThreshold)) ? Number(p.lowStockThreshold) : 3);
+    setFormImages(Array.isArray(p.images) ? p.images : []);
     setFormVideoUrl(p.videoUrl || '');
-    setFormDesc(p.description);
+    setFormDesc(p.description || '');
     setFormDescAr(p.descriptionAr || '');
-    setFormWarrantyMonths(p.warrantyMonths);
+    setFormWarrantyMonths(safeWarranty);
     setFormColorVariants(buildColorVariantConfigs(p));
     setFormCapacityVariants(buildCapacityVariantConfigs(p));
     setNewColorInput('');
     setNewCapacityInput('');
     setColorUploadError(null);
-    setFormSpecs(p.specifications || []);
+    setFormSpecs(Array.isArray(p.specifications) ? p.specifications : []);
     setFormIsOffer(Boolean(p.isSpecialOffer));
     setFormIsFeatured(Boolean(p.isFeatured));
     setFormIsNewArrival(Boolean(p.isNewArrival));
     setFormIsBestSeller(Boolean(p.isBestSeller));
-    setFormIsPublished(p.isPublished);
+    setFormIsPublished(p.isPublished !== false);
     setIsModalOpen(true);
   };
 
@@ -316,6 +336,18 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
 
   const handleSaveProduct = (e: React.FormEvent) => {
     e.preventDefault();
+    if (
+      !requirePermission(['full_stock', 'manage_products'], {
+        actionEn: editingProduct
+          ? `Save changes to "${editingProduct.name}"`
+          : 'Create new product',
+        actionAr: editingProduct
+          ? `حفظ تعديلات "${editingProduct.nameAr || editingProduct.name}"`
+          : 'إنشاء منتج جديد',
+      })
+    ) {
+      return;
+    }
     if (!formName.trim() || !formSku.trim()) {
       setFeedback({ type: 'error', msg: 'Product Name and SKU are required.' });
       return;
@@ -403,11 +435,30 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
   const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
 
   const handleDelete = (id: string, name: string) => {
+    if (
+      !requirePermission('full_stock', {
+        actionEn: `Delete product "${name}" from catalog & inventory`,
+        actionAr: `حذف المنتج "${name}" من الكتالوج والمخزون`,
+        requiredRoles: ['super_admin'],
+      })
+    ) {
+      return;
+    }
     setPendingDelete({ id, name });
   };
 
   const confirmDeleteProduct = () => {
     if (!pendingDelete) return;
+    if (
+      !requirePermission('full_stock', {
+        actionEn: `Delete product "${pendingDelete.name}" from catalog & inventory`,
+        actionAr: `حذف المنتج "${pendingDelete.name}" من الكتالوج والمخزون`,
+        requiredRoles: ['super_admin'],
+      })
+    ) {
+      setPendingDelete(null);
+      return;
+    }
     deleteProduct(pendingDelete.id);
     refreshData();
     setFeedback({ type: 'success', msg: `Product "${pendingDelete.name}" deleted and removed from live database.` });
@@ -415,13 +466,15 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setTimeout(() => setFeedback(null), 3500);
   };
 
-  const filteredProducts = products.filter((p) => {
+  const q = search.toLowerCase();
+  const filteredProducts = (products || []).filter((p) => {
     const matchCategory = selectedCategory === 'all' || p.category === selectedCategory;
-    const matchBrand = selectedBrand === 'all' || p.brand.toLowerCase() === selectedBrand.toLowerCase();
+    const pBrand = (p.brand || '').toLowerCase();
+    const matchBrand = selectedBrand === 'all' || pBrand === selectedBrand.toLowerCase();
     const matchSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku.toLowerCase().includes(search.toLowerCase()) ||
-      p.brand.toLowerCase().includes(search.toLowerCase());
+      (p.name || '').toLowerCase().includes(q) ||
+      (p.sku || '').toLowerCase().includes(q) ||
+      pBrand.includes(q);
     return matchCategory && matchBrand && matchSearch;
   });
 
@@ -533,8 +586,8 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
                       <LazyImage
-                        src={p.images[0]}
-                        alt={p.name}
+                        src={p.images?.[0] || DEFAULT_FULL_RES_FALLBACK_IMAGE}
+                        alt={p.name || 'Product'}
                         width={40}
                         height={40}
                         priority={false}
@@ -720,9 +773,12 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                   <label className="text-xs text-[#172033] font-semibold block mb-1">Original Price ($)</label>
                   <input
                     type="number"
-                    min="1"
+                    min="0"
                     value={formOriginalPrice}
-                    onChange={(e) => setFormOriginalPrice(Number(e.target.value))}
+                    onChange={(e) => {
+                      const n = e.target.value === '' ? 0 : Number(e.target.value);
+                      setFormOriginalPrice(Number.isFinite(n) ? n : 0);
+                    }}
                     className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono"
                   />
                 </div>
@@ -731,10 +787,13 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                   <label className="text-xs text-[#172033] font-semibold block mb-1">Selling Price ($) *</label>
                   <input
                     type="number"
-                    min="1"
+                    min="0"
                     required
                     value={formPrice}
-                    onChange={(e) => setFormPrice(Number(e.target.value))}
+                    onChange={(e) => {
+                      const n = e.target.value === '' ? 0 : Number(e.target.value);
+                      setFormPrice(Number.isFinite(n) ? n : 0);
+                    }}
                     className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#007AFF] font-bold focus:outline-none focus:border-[#007AFF] font-mono"
                   />
                 </div>
@@ -746,7 +805,10 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                     min="0"
                     required
                     value={formStock}
-                    onChange={(e) => setFormStock(Number(e.target.value))}
+                    onChange={(e) => {
+                      const n = e.target.value === '' ? 0 : Number(e.target.value);
+                      setFormStock(Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0);
+                    }}
                     className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono"
                   />
                 </div>
@@ -757,7 +819,10 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                     type="number"
                     min="1"
                     value={formLowStockThreshold}
-                    onChange={(e) => setFormLowStockThreshold(Number(e.target.value))}
+                    onChange={(e) => {
+                      const n = e.target.value === '' ? 1 : Number(e.target.value);
+                      setFormLowStockThreshold(Number.isFinite(n) ? Math.max(1, Math.round(n)) : 1);
+                    }}
                     className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono"
                   />
                 </div>
@@ -925,11 +990,12 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                             step="any"
                             data-testid={`admin-capacity-price-${idx}`}
                             value={cap.price}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              const n = e.target.value === '' ? 0 : Number(e.target.value);
                               handleUpdateCapacity(idx, {
-                                price: e.target.value === '' ? 0 : Number(e.target.value),
-                              })
-                            }
+                                price: Number.isFinite(n) ? Math.max(0, n) : 0,
+                              });
+                            }}
                             className="w-full bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2 py-1.5 text-xs font-mono font-bold text-[#007AFF] focus:outline-none focus:border-[#007AFF]"
                           />
                         </div>
@@ -943,11 +1009,12 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                             min="0"
                             data-testid={`admin-capacity-stock-${idx}`}
                             value={cap.stock}
-                            onChange={(e) =>
+                            onChange={(e) => {
+                              const n = e.target.value === '' ? 0 : Number(e.target.value);
                               handleUpdateCapacity(idx, {
-                                stock: e.target.value === '' ? 0 : Number(e.target.value),
-                              })
-                            }
+                                stock: Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0,
+                              });
+                            }}
                             className="w-full bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2 py-1.5 text-xs font-mono text-[#172033] focus:outline-none focus:border-[#007AFF]"
                           />
                         </div>
@@ -1216,11 +1283,12 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                                 step="any"
                                 data-testid={`admin-color-price-adj-${idx}`}
                                 value={priceAdjValue}
-                                onChange={(e) =>
+                                onChange={(e) => {
+                                  const n = e.target.value === '' ? 0 : Number(e.target.value);
                                   handleUpdateColorVariant(idx, {
-                                    priceAdjustment: e.target.value === '' ? 0 : Number(e.target.value),
-                                  })
-                                }
+                                    priceAdjustment: Number.isFinite(n) ? n : 0,
+                                  });
+                                }}
                                 placeholder="0"
                                 className="w-24 bg-[#F8FAFC] border border-[#DCE5F0] rounded-lg px-2 py-1 text-xs font-mono font-bold text-[#172033] focus:outline-none focus:border-[#007AFF]"
                               />

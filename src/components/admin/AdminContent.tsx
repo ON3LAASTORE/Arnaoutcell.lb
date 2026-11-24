@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useShop } from '../../context/ShopContext';
+import { useAdmin } from '../../context/AdminContext';
 import { saveAnnouncementBar, saveMarketingVideos } from '../../services/storageService';
 import { MarketingVideo } from '../../types';
 import { Bell, Plus, Trash2 } from 'lucide-react';
@@ -8,6 +9,7 @@ import { ConfirmDialog } from '../ConfirmDialog';
 
 export const AdminContent: React.FC = () => {
   const { lang, storeSettings, marketingVideos, products, refreshData } = useShop();
+  const { requirePermission } = useAdmin();
 
   const [activeSection, setActiveSection] = useState<'announcement' | 'videos'>('announcement');
   const [feedback, setFeedback] = useState('');
@@ -38,6 +40,15 @@ export const AdminContent: React.FC = () => {
 
   const handleSaveAnnouncement = (e: React.FormEvent) => {
     e.preventDefault();
+    if (
+      !requirePermission('manage_content', {
+        actionEn: 'Update storefront announcement bar',
+        actionAr: 'تحديث شريط الإعلانات العلوي',
+        requiredRoles: ['super_admin', 'product_manager'],
+      })
+    ) {
+      return;
+    }
     const updated = {
       ...currentBar,
       enabled: barEnabled,
@@ -54,6 +65,15 @@ export const AdminContent: React.FC = () => {
 
   const handleAddVideo = (e: React.FormEvent) => {
     e.preventDefault();
+    if (
+      !requirePermission('manage_content', {
+        actionEn: 'Publish marketing video',
+        actionAr: 'نشر فيديو تسويقي جديد',
+        requiredRoles: ['super_admin', 'product_manager'],
+      })
+    ) {
+      return;
+    }
     if (!videoTitle.trim() || !videoUrl.trim()) return;
 
     const newVideo: MarketingVideo = {
@@ -71,7 +91,7 @@ export const AdminContent: React.FC = () => {
       views: 120,
     };
 
-    const updated = [newVideo, ...marketingVideos];
+    const updated = [newVideo, ...(marketingVideos || [])];
     saveMarketingVideos(updated);
     refreshData();
     setVideoTitle('');
@@ -85,12 +105,31 @@ export const AdminContent: React.FC = () => {
   };
 
   const handleDeleteVideo = (id: string) => {
+    if (
+      !requirePermission('manage_content', {
+        actionEn: 'Delete marketing video',
+        actionAr: 'حذف فيديو تسويقي',
+        requiredRoles: ['super_admin', 'product_manager'],
+      })
+    ) {
+      return;
+    }
     setPendingDeleteVideoId(id);
   };
 
   const confirmDeleteVideo = () => {
     if (!pendingDeleteVideoId) return;
-    const updated = marketingVideos.filter((v) => v.id !== pendingDeleteVideoId);
+    if (
+      !requirePermission('manage_content', {
+        actionEn: 'Delete marketing video',
+        actionAr: 'حذف فيديو تسويقي',
+        requiredRoles: ['super_admin', 'product_manager'],
+      })
+    ) {
+      setPendingDeleteVideoId(null);
+      return;
+    }
+    const updated = (marketingVideos || []).filter((v) => v.id !== pendingDeleteVideoId);
     saveMarketingVideos(updated);
     refreshData();
     setPendingDeleteVideoId(null);

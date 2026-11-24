@@ -6,7 +6,7 @@ import {
   getDocs,
   onSnapshot,
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from '../firebase';
+import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { Category } from '../types';
 import { INITIAL_CATEGORIES } from '../data/initialData';
 import {
@@ -18,6 +18,10 @@ import {
 } from '../utils/firestoreQuotaHelpers';
 import { mergeDynamicCategories, sortDynamicCategories } from '../utils/categoryBannerHelpers';
 import { storefrontCache } from '../utils/storefrontCacheHelpers';
+import {
+  emitPermissionDenied,
+  inferPermissionDeniedFromFirestoreError,
+} from '../utils/permissionDeniedHelpers';
 
 const CATEGORIES_COLLECTION = 'categories';
 const LOCAL_CATEGORIES_KEY = 'arnaout_cell_categories_v2';
@@ -53,10 +57,14 @@ export function cleanCategoryForFirestore(category: Category): Record<string, un
   const safeId = (category.id || '').trim().slice(0, 128);
   const safeName = (category.name || 'Category').trim().slice(0, 128) || 'Category';
   const safeNameAr = (category.nameAr || safeName).trim().slice(0, 128) || safeName;
-  const safeSlug =
-    (category.slug || safeName.toLowerCase().replace(/[^a-z0-9]+/g, '-'))
-      .trim()
-      .slice(0, 128) || 'category';
+  const rawSlug =
+    typeof category.slug === 'string' && category.slug.trim()
+      ? category.slug.trim()
+      : safeName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, '-')
+          .replace(/^-|-$/g, '');
+  const safeSlug = rawSlug.slice(0, 128) || safeId || 'category';
   const safeIconName = (category.iconName || 'Box').trim().slice(0, 64) || 'Box';
   const numericOrder = Number(category.displayOrder);
   const safeDisplayOrder =
@@ -255,7 +263,29 @@ export function subscribeToLiveCategories(
         return;
       }
       if (category === 'permission') {
-        handleFirestoreError(error, OperationType.LIST, CATEGORIES_COLLECTION);
+        emitPermissionDenied(
+          inferPermissionDeniedFromFirestoreError(
+            error,
+            OperationType.LIST,
+            CATEGORIES_COLLECTION,
+            auth.currentUser
+              ? {
+                  email: auth.currentUser.email || undefined,
+                  name: auth.currentUser.displayName || undefined,
+                }
+              : null
+          )
+        );
+        console.warn('Categories live listener permission notice:', error);
+        if (unsubscribeFn) {
+          try {
+            unsubscribeFn();
+          } catch {
+            // ignore teardown error
+          }
+          unsubscribeFn = null;
+        }
+        isDisposed = true;
       }
     }
   );
@@ -272,9 +302,13 @@ export function subscribeToLiveCategories(
 export async function persistCategoryToCloud(category: Category): Promise<void> {
   storefrontCache.upsertCategory(category, 'mutation');
 
-  if (isFirestoreInQuotaCooldown()) return;
+  if (!auth.currentUser || isFirestoreInQuotaCooldown()) return;
   const payload = cleanCategoryForFirestore(category);
-  const docId = String(payload.id || category.id);
+  const docId = String(payload.id || category.id).trim();
+  if (!/^[a-zA-Z0-9_\-]+$/.test(docId)) {
+    console.warn(`Skipped category cloud save for non-conforming ID "${docId}".`);
+    return;
+  }
   const docRef = doc(db, CATEGORIES_COLLECTION, docId);
 
   try {
@@ -294,8 +328,10 @@ export async function persistCategoryToCloud(category: Category): Promise<void> 
 export async function removeCategoryFromCloud(categoryId: string): Promise<void> {
   storefrontCache.removeCategory(categoryId, 'mutation');
 
-  if (isFirestoreInQuotaCooldown()) return;
-  const docRef = doc(db, CATEGORIES_COLLECTION, categoryId);
+  if (!auth.currentUser || isFirestoreInQuotaCooldown()) return;
+  const docId = (categoryId || '').trim();
+  if (!/^[a-zA-Z0-9_\-]+$/.test(docId)) return;
+  const docRef = doc(db, CATEGORIES_COLLECTION, docId);
   try {
     await deleteDoc(docRef);
   } catch (error) {
@@ -306,7 +342,7 @@ export async function removeCategoryFromCloud(categoryId: string): Promise<void>
       }
       return;
     }
-    handleFirestoreError(error, OperationType.DELETE, `${CATEGORIES_COLLECTION}/${categoryId}`);
+    handleFirestoreError(error, OperationType.DELETE, `${CATEGORIES_COLLECTION}/${docId}`);
   }
 }
 

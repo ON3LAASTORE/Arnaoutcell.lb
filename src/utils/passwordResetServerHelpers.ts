@@ -7,6 +7,7 @@ export const RESET_TOKEN_TTL_MINUTES = 15;
 export const DEFAULT_ADMIN_RECOVERY_EMAILS = [
   'optimatech.lb@gmail.com',
   'admin@arnaoutcell.com',
+  'alaa@onalaastore.com',
 ];
 
 export interface AdminResetTokenRecord {

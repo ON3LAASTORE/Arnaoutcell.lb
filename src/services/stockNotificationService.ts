@@ -250,11 +250,7 @@ export async function fetchStockNotificationsOverview(): Promise<{
       if (isFirestoreQuotaExceededError(error)) {
         markFirestoreQuotaExceeded();
       } else if (isFirestorePermissionError(error)) {
-        try {
-          handleFirestoreError(error, OperationType.LIST, COLLECTION_NAME);
-        } catch {
-          // Non-Firebase-auth admin portal continues cleanly with server & local records
-        }
+        console.warn('Stock notifications Firestore list skipped for current session (using server/local cache).');
       }
     }
   }
@@ -295,11 +291,7 @@ export async function dispatchAutomatedRestockUpdates(
       if (isFirestoreQuotaExceededError(error)) {
         markFirestoreQuotaExceeded();
       } else if (isFirestorePermissionError(error)) {
-        try {
-          handleFirestoreError(error, OperationType.LIST, COLLECTION_NAME);
-        } catch {
-          // Graceful fallback to server/local subscriber store
-        }
+        console.warn('Stock notifications Firestore query skipped for current session.');
       }
     }
   }
@@ -364,11 +356,7 @@ export async function dispatchAutomatedRestockUpdates(
           break;
         }
         if (isFirestorePermissionError(error)) {
-          try {
-            handleFirestoreError(error, OperationType.UPDATE, `${COLLECTION_NAME}/${record.id}`);
-          } catch {
-            // Ignore when non-Firebase-auth admin session
-          }
+          console.warn(`Skipped Firestore status update on ${COLLECTION_NAME}/${record.id} due to permissions.`);
         }
       }
     }

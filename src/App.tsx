@@ -10,6 +10,7 @@ import { ChunkErrorBoundary } from './components/ChunkErrorBoundary';
 import { safeLazy } from './utils/lazyImportHelpers';
 import { getDirectionTransitionClass } from './utils/languageToggleHelpers';
 import { recordStorefrontTrafficEvent } from './services/trafficAnalyticsService';
+import { PermissionDeniedModal } from './components/PermissionDeniedModal';
 
 const EmptyOverlayFallback: React.FC = () => null;
 const EmptyScrollLinesFallback: React.FC<{
@@ -241,6 +242,7 @@ export default function App() {
     <ShopProvider>
       <AdminProvider>
         <AppContent />
+        <PermissionDeniedModal />
       </AdminProvider>
     </ShopProvider>
   );

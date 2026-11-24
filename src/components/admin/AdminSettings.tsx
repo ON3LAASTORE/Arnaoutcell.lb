@@ -3,6 +3,9 @@ import { useShop } from '../../context/ShopContext';
 import { useAdmin } from '../../context/AdminContext';
 import { saveStoreSettings } from '../../services/storageService';
 import { evaluatePasswordStrength } from '../../services/authService';
+import { syncProvisionedAlaaAdminProfile } from '../../services/adminProfileService';
+import { formatAdminPermissionLabel } from '../../utils/adminPermissionHelpers';
+import { auth } from '../../firebase';
 import { StoreOpeningSchedule, StoreSettings } from '../../types';
 import { calculateScheduleDuration, checkStoreOpenStatus } from '../../utils/storeSchedule';
 import { DEFAULT_STORE_PROFILE_PICTURE, resolveStoreLogoUrl } from '../../utils/storeSettingsHelpers';
@@ -69,7 +72,7 @@ interface AdminSettingsProps {
 
 export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) => {
   const { lang, storeSettings, refreshData } = useShop();
-  const { changePassword, hasRole } = useAdmin();
+  const { user, permissions, changePassword, hasRole, hasPermission, requirePermission } = useAdmin();
 
   // Sub-tabs: 'branding' (Store Information & Branding), 'security' (Security -> Change Password), 'delivery' (Delivery Zones)
   const [activeSubTab, setActiveSubTab] = useState<'branding' | 'security' | 'delivery'>('branding');
@@ -126,6 +129,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
   const [securityLoading, setSecurityLoading] = useState(false);
   const [securitySuccess, setSecuritySuccess] = useState('');
   const [securityError, setSecurityError] = useState('');
+  const [rbacSyncBusy, setRbacSyncBusy] = useState(false);
 
   const strength = evaluatePasswordStrength(newPassword);
 
@@ -226,14 +230,24 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
   };
 
   const handleUpdateZoneFee = (zoneId: string, newFee: number) => {
+    const safeFee = Number.isFinite(Number(newFee)) ? Math.max(0, Number(newFee)) : 0;
     setZones((prev) =>
-      prev.map((z) => (z.id === zoneId ? { ...z, fee: Number(newFee) } : z))
+      prev.map((z) => (z.id === zoneId ? { ...z, fee: safeFee } : z))
     );
   };
 
   // Save Store Settings (Branding, Logo, Schedule & Info)
   const handleSaveStoreSettings = (e: React.FormEvent) => {
     e.preventDefault();
+    if (
+      !requirePermission('manage_settings', {
+        actionEn: 'Save store branding & configuration settings',
+        actionAr: 'حفظ إعدادات المتجر والهوية البصرية',
+        requiredRoles: ['super_admin'],
+      })
+    ) {
+      return;
+    }
 
     const formattedEn = `${daysOpenEn.trim()}: ${liveStatus.formattedHoursEn.split(': ').slice(1).join(': ')}`;
     const formattedAr = `${daysOpenAr.trim()}: ${liveStatus.formattedHoursAr.split(': ').slice(1).join(': ')}`;
@@ -318,6 +332,15 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
     e.preventDefault();
     setSecurityError('');
     setSecuritySuccess('');
+    if (
+      !requirePermission('manage_settings', {
+        actionEn: 'Change administrator password',
+        actionAr: 'تغيير كلمة مرور المدير',
+        requiredRoles: ['super_admin'],
+      })
+    ) {
+      return;
+    }
 
     if (!currentPassword) {
       setSecurityError(
@@ -375,7 +398,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
     }
   };
 
-  const canManageSecurity = hasRole(['super_admin']);
+  const canManageSecurity = hasPermission('manage_settings') || hasRole(['super_admin']);
 
   return (
     <div className="space-y-6">
@@ -406,41 +429,41 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
         </div>
 
         {/* Tab switcher */}
-        <div className="flex items-center gap-1.5 p-1 bg-[#F5F8FC] border border-[#DCE5F0] rounded-xl self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-1.5 p-1 bg-[#F5F8FC] border border-[#DCE5F0] rounded-xl self-start sm:self-auto shrink-0">
           <button
             type="button"
             onClick={() => setActiveSubTab('branding')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-colors duration-100 cursor-pointer ${
               activeSubTab === 'branding'
                 ? 'bg-[#007AFF] text-white shadow-sm'
                 : 'text-[#64748B] hover:text-[#172033]'
             }`}
           >
-            <Building2 className="w-3.5 h-3.5" />
+            <Building2 className="w-3.5 h-3.5 shrink-0" />
             <span>{lang === 'ar' ? 'معلومات المتجر والهوية' : 'Store & Branding'}</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveSubTab('security')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-colors duration-100 cursor-pointer ${
               activeSubTab === 'security'
                 ? 'bg-[#007AFF] text-white shadow-sm'
                 : 'text-[#64748B] hover:text-[#172033]'
             }`}
           >
-            <Shield className="w-3.5 h-3.5" />
+            <Shield className="w-3.5 h-3.5 shrink-0" />
             <span>{lang === 'ar' ? 'الأمان وكلمة المرور' : 'Security & Password'}</span>
           </button>
           <button
             type="button"
             onClick={() => setActiveSubTab('delivery')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-bold whitespace-nowrap transition-colors duration-100 cursor-pointer ${
               activeSubTab === 'delivery'
                 ? 'bg-[#007AFF] text-white shadow-sm'
                 : 'text-[#64748B] hover:text-[#172033]'
             }`}
           >
-            <Truck className="w-3.5 h-3.5" />
+            <Truck className="w-3.5 h-3.5 shrink-0" />
             <span>{lang === 'ar' ? 'رسوم التوصيل' : 'Delivery Zones'}</span>
           </button>
         </div>
@@ -975,7 +998,7 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
               <span>Settings → Security → Change Password</span>
             </div>
             <span className="px-2.5 py-1 rounded-full bg-white text-[11px] font-semibold text-[#007AFF] border border-[#BAE6FD]">
-              SHA-256 Web Crypto
+              Salted Bcrypt + RBAC
             </span>
           </div>
 
@@ -1016,6 +1039,90 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
                   </button>
                 )}
               </div>
+
+              {user && (
+                <div
+                  data-testid="settings-rbac-profile-card"
+                  className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] space-y-3"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <div className="text-xs font-black text-[#172033]">
+                        {user.name}{' '}
+                        <span className="font-mono text-[#64748B] font-semibold">
+                          (@{user.username})
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-[#64748B] mt-0.5">{user.email}</div>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="px-2.5 py-0.5 rounded-md bg-[#EAF3FF] border border-[#BAE6FD] text-[#007AFF] text-[10px] font-bold uppercase">
+                        {user.role.replace('_', ' ')}
+                      </span>
+                      {hasPermission('full_stock') && (
+                        <span className="px-2.5 py-0.5 rounded-md bg-emerald-50 border border-emerald-200 text-[#16A34A] text-[10px] font-bold uppercase">
+                          {lang === 'ar' ? 'صلاحية المخزون الكاملة' : 'Full Stock'}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-1.5">
+                    {permissions.map((perm) => (
+                      <span
+                        key={perm}
+                        className="px-2 py-0.5 rounded-md bg-white border border-[#DCE5F0] text-[10px] font-semibold text-[#475569]"
+                      >
+                        {formatAdminPermissionLabel(perm, lang === 'ar' ? 'ar' : 'en')}
+                      </span>
+                    ))}
+                  </div>
+
+                  {auth.currentUser && (
+                    <div className="pt-1 flex items-center justify-between gap-2">
+                      <span className="text-[11px] text-[#64748B]">
+                        {lang === 'ar'
+                          ? 'مزامنة سجل صلاحيات Alaa في Firestore (/users و /admins)'
+                          : 'Firebase session active — synchronize Alaa RBAC record to Firestore (/users & /admins)'}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={rbacSyncBusy}
+                        onClick={async () => {
+                          setRbacSyncBusy(true);
+                          setSecurityError('');
+                          const synced = await syncProvisionedAlaaAdminProfile(
+                            auth.currentUser?.uid
+                          );
+                          setRbacSyncBusy(false);
+                          if (synced) {
+                            setSecuritySuccess(
+                              lang === 'ar'
+                                ? 'تمت مزامنة ملف Alaa بصلاحية Super Admin و Full Stock في Firestore (/users و /admins) بنجاح.'
+                                : 'Alaa Super Admin & Full Stock profile synchronized to Firestore (/users & /admins) successfully.'
+                            );
+                          } else {
+                            setSecurityError(
+                              lang === 'ar'
+                                ? 'تعذر مزامنة السجل في Firestore حالياً.'
+                                : 'Unable to sync RBAC record to Firestore right now.'
+                            );
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-lg bg-white hover:bg-[#EAF3FF] border border-[#BAE6FD] text-[#007AFF] text-[11px] font-bold cursor-pointer disabled:opacity-50"
+                      >
+                        {rbacSyncBusy
+                          ? lang === 'ar'
+                            ? 'جاري المزامنة...'
+                            : 'Syncing...'
+                          : lang === 'ar'
+                          ? 'مزامنة سجل Firestore'
+                          : 'Sync to Firestore'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {securitySuccess && (
                 <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-[#16A34A] text-xs font-semibold flex items-center gap-2.5">

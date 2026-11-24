@@ -28,18 +28,109 @@ export function extractErrorMessage(err: unknown): string {
   }
 }
 
+function extractErrorStack(err: unknown): string {
+  if (err instanceof Error && typeof err.stack === 'string') {
+    return err.stack;
+  }
+  if (typeof err === 'object' && err !== null) {
+    const record = err as Record<string, unknown>;
+    if (typeof record.stack === 'string') return record.stack;
+    if (record.reason !== undefined) return extractErrorStack(record.reason);
+    if (record.error !== undefined) return extractErrorStack(record.error);
+  }
+  return '';
+}
+
+function isProtectedApplicationError(lowerCombined: string): boolean {
+  const protectedMarkers = [
+    'firebaseerror',
+    'auth/',
+    'firestore',
+    'permission-denied',
+    'missing or insufficient permissions',
+    'rendered more hooks',
+    'minified react error',
+    'cannot read properties of',
+    'is not a function',
+  ];
+  return protectedMarkers.some((marker) => lowerCombined.includes(marker));
+}
+
 /**
- * Returns true when an error or rejection is a known transient browser/dev-proxy
- * WebSocket or message-channel issue that should fail softly without crashing the app.
+ * Specifically identifies transient Vite HMR / @vite/client WebSocket connection
+ * rejections or events so they never pollute the console as Unhandled Rejection.
  */
-export function isTransientNetworkOrSocketError(err: unknown): boolean {
+export function isViteHmrWebSocketError(err: unknown, sourceFilename?: string): boolean {
   const msg = extractErrorMessage(err).toLowerCase();
-  if (!msg) return false;
+  const stack = extractErrorStack(err).toLowerCase();
+  const source = (sourceFilename || '').toLowerCase();
+  const combined = `${msg}\n${stack}\n${source}`;
+
+  // Never swallow genuine Firebase, Firestore, Auth, or React runtime errors
+  if (isProtectedApplicationError(msg) && !combined.includes('@vite/client')) {
+    return false;
+  }
+
+  if (
+    msg.includes('websocket closed without opened') ||
+    msg.includes('[vite] failed to connect to websocket') ||
+    msg.includes('failed to connect to websocket')
+  ) {
+    return true;
+  }
+
+  const fromViteClient =
+    combined.includes('@vite/client') ||
+    combined.includes('vite/dist/client') ||
+    combined.includes('vite-hmr') ||
+    combined.includes('vite-ping');
+
+  if (
+    fromViteClient &&
+    (msg.includes('websocket') ||
+      msg.includes('sendbeforeconnecterror') ||
+      msg.includes('connection'))
+  ) {
+    return true;
+  }
+
+  // Handle DOM Event / CloseEvent emitted directly by a Vite HMR WebSocket
+  if (typeof err === 'object' && err !== null && 'target' in err) {
+    const target = (err as { target?: unknown }).target as
+      | { url?: unknown; protocol?: unknown }
+      | undefined;
+    const targetUrl = typeof target?.url === 'string' ? target.url.toLowerCase() : '';
+    const targetProtocol =
+      typeof target?.protocol === 'string' ? target.protocol.toLowerCase() : '';
+    if (
+      targetProtocol === 'vite-hmr' ||
+      targetProtocol === 'vite-ping' ||
+      targetUrl.includes('token=')
+    ) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * Returns true when an error or rejection is a known transient Vite HMR WebSocket
+ * or browser-extension channel issue that should fail softly without crashing the app,
+ * while never swallowing real React, Firebase Auth, Firestore, or application errors.
+ */
+export function isTransientNetworkOrSocketError(
+  err: unknown,
+  sourceFilename?: string
+): boolean {
+  if (isViteHmrWebSocketError(err, sourceFilename)) {
+    return true;
+  }
+
+  const msg = extractErrorMessage(err).toLowerCase();
+  if (!msg || isProtectedApplicationError(msg)) return false;
 
   const patterns = [
-    'websocket closed without opened',
-    'failed to connect to websocket',
-    '@vite/client',
     'a listener indicated an asynchronous response by returning true, but the message channel closed',
     'the message port closed before a response was received',
     'resizeobserver loop limit exceeded',

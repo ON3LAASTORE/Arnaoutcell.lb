@@ -9,6 +9,7 @@ import {
   requestAdminPasswordReset,
   verifyAdminResetToken,
 } from '../../services/authService';
+import { resolvePortalDirectoryUser } from '../../utils/adminPermissionHelpers';
 import {
   ArrowLeft,
   Check,
@@ -336,9 +337,16 @@ export const AdminLogin: React.FC = () => {
                     type="text"
                     required
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => {
+                      const nextVal = e.target.value;
+                      setUsername(nextVal);
+                      const matched = resolvePortalDirectoryUser(nextVal);
+                      if (matched) {
+                        setRole(matched.role);
+                      }
+                    }}
                     className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl pl-10 pr-3 rtl:pl-3 rtl:pr-10 py-2.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/15 font-mono transition-all"
-                    placeholder="admin"
+                    placeholder="admin or Alaa"
                   />
                 </div>
               </div>
@@ -395,11 +403,24 @@ export const AdminLogin: React.FC = () => {
                   onChange={(e) => setRole(e.target.value as AdminRole)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/15 cursor-pointer"
                 >
-                  <option value="super_admin">Super Admin (Full Access)</option>
-                  <option value="product_manager">Product Manager (Products & Offers)</option>
-                  <option value="order_manager">Order Manager (Orders & Fulfillment)</option>
-                  <option value="inventory_manager">Inventory Manager (Stock & Restock)</option>
+                  <option value="super_admin">Super Admin (Full Access &amp; Full Stock)</option>
+                  <option value="product_manager">Product Manager (Products &amp; Offers)</option>
+                  <option value="order_manager">Order Manager (Orders &amp; Fulfillment)</option>
+                  <option value="inventory_manager">Inventory Manager (Stock &amp; Restock)</option>
                 </select>
+                {username.trim().toLowerCase() === 'alaa' && (
+                  <p
+                    data-testid="login-alaa-role-hint"
+                    className="mt-1.5 text-[11px] font-semibold text-[#007AFF] flex items-center gap-1.5"
+                  >
+                    <Shield className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      {isAr
+                        ? 'حساب Alaa: صلاحية المدير العام (Super Admin) + إدارة المخزون الكاملة (Full Stock)'
+                        : 'Alaa Profile: Super Admin • Full Stock & Complete Portal Permissions'}
+                    </span>
+                  </p>
+                )}
               </div>
 
               <button

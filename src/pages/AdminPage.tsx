@@ -6,6 +6,7 @@ import { AdminLayout } from '../components/admin/AdminLayout';
 import { AdminOverview } from '../components/admin/AdminOverview';
 import { ChunkErrorBoundary } from '../components/ChunkErrorBoundary';
 import { safeLazy } from '../utils/lazyImportHelpers';
+import { auth } from '../firebase';
 import { saveCategories, saveProducts } from '../services/storageService';
 import {
   seedInitialProductsToCloud,
@@ -42,10 +43,21 @@ const AdminTabSpinner: React.FC = () => (
 );
 
 export const AdminPage: React.FC = () => {
-  const { isAuthenticated } = useAdmin();
+  const { isAuthenticated, loading, hasRole, hasPermission, reportPermissionDenied } = useAdmin();
   const { refreshData } = useShop();
   const [activeTab, setActiveTab] = useState('overview');
   const [targetProductId, setTargetProductId] = useState<string | undefined>(undefined);
+
+  const canSeedProducts =
+    isAuthenticated &&
+    Boolean(auth.currentUser) &&
+    hasRole(['super_admin']) &&
+    hasPermission('full_stock');
+  const canSeedCategories =
+    isAuthenticated &&
+    Boolean(auth.currentUser) &&
+    (hasRole(['super_admin', 'product_manager']) ||
+      hasPermission(['full_stock', 'manage_categories']));
 
   // Isolated Admin real-time sync: only runs while Admin Dashboard is mounted & authenticated,
   // preserving storefront read quota and cleanly unsubscribing on unmount.
@@ -60,7 +72,9 @@ export const AdminPage: React.FC = () => {
         }
       },
       () => {
-        seedInitialProductsToCloud().catch(console.error);
+        if (canSeedProducts) {
+          seedInitialProductsToCloud().catch(console.error);
+        }
       }
     );
 
@@ -72,7 +86,9 @@ export const AdminPage: React.FC = () => {
         }
       },
       () => {
-        seedInitialCategoriesToCloud().catch(console.error);
+        if (canSeedCategories) {
+          seedInitialCategoriesToCloud().catch(console.error);
+        }
       }
     );
 
@@ -80,35 +96,89 @@ export const AdminPage: React.FC = () => {
       unsubscribeProducts();
       unsubscribeCategories();
     };
-  }, [isAuthenticated, refreshData]);
+  }, [isAuthenticated, canSeedProducts, canSeedCategories, refreshData]);
 
   const handleShareProduct = (productId: string) => {
     setTargetProductId(productId);
     setActiveTab('social_marketing');
   };
 
+  const canAccessTab = (tab: string): boolean => {
+    switch (tab) {
+      case 'overview':
+        return true;
+      case 'statistics':
+        return hasRole(['super_admin', 'product_manager', 'order_manager']) || hasPermission('view_analytics');
+      case 'products':
+      case 'offers':
+        return hasRole(['super_admin', 'product_manager']) || hasPermission(['full_stock', 'manage_products']);
+      case 'categories':
+        return hasRole(['super_admin', 'product_manager']) || hasPermission(['full_stock', 'manage_categories']);
+      case 'social_marketing':
+      case 'content':
+        return hasRole(['super_admin', 'product_manager']) || hasPermission('manage_content');
+      case 'orders':
+        return hasRole(['super_admin', 'order_manager']) || hasPermission('manage_orders');
+      case 'customers':
+        return hasRole(['super_admin', 'order_manager']) || hasPermission('manage_customers');
+      case 'inventory':
+        return hasRole(['super_admin', 'inventory_manager']) || hasPermission(['full_stock', 'manage_inventory']);
+      case 'activity_log':
+        return hasRole(['super_admin']) || hasPermission('view_audit_logs');
+      case 'settings':
+        return hasRole(['super_admin']) || hasPermission('manage_settings');
+      default:
+        return false;
+    }
+  };
+
+  const handleSelectTab = (tab: string) => {
+    if (!canAccessTab(tab)) {
+      reportPermissionDenied({
+        requiredPermissions:
+          tab === 'inventory'
+            ? ['full_stock', 'manage_inventory']
+            : tab === 'settings'
+            ? ['manage_settings']
+            : tab === 'activity_log'
+            ? ['view_audit_logs']
+            : ['full_admin'],
+        actionEn: `Open restricted section (${tab})`,
+        actionAr: `فتح قسم مقيد (${tab})`,
+      });
+      return;
+    }
+    setActiveTab(tab);
+  };
+
+  if (!isAuthenticated && loading) {
+    return <AdminTabSpinner />;
+  }
+
   if (!isAuthenticated) {
     return <AdminLogin />;
   }
 
+  const resolvedTab = canAccessTab(activeTab) ? activeTab : 'overview';
+
   return (
-    <AdminLayout activeTab={activeTab} setActiveTab={setActiveTab}>
-      <ChunkErrorBoundary resetKey={activeTab} label={`admin-${activeTab}`}>
+    <AdminLayout activeTab={resolvedTab} setActiveTab={handleSelectTab}>
+      <ChunkErrorBoundary resetKey={resolvedTab} label={`admin-${resolvedTab}`}>
         <React.Suspense fallback={<AdminTabSpinner />}>
-          {activeTab === 'overview' && <AdminOverview />}
-          {activeTab === 'statistics' && <AdminStatistics />}
-          {activeTab === 'products' && <AdminProducts onShareProduct={handleShareProduct} />}
-          {activeTab === 'social_marketing' && (
+          {resolvedTab === 'overview' && <AdminOverview />}
+          {resolvedTab === 'statistics' && <AdminStatistics />}
+          {resolvedTab === 'products' && <AdminProducts onShareProduct={handleShareProduct} />}
+          {resolvedTab === 'social_marketing' && (
             <AdminSocialMarketing initialProductId={targetProductId} />
           )}
-          {activeTab === 'offers' && <AdminOffers onShareProduct={handleShareProduct} />}
-          {activeTab === 'orders' && <AdminOrders />}
-          {activeTab === 'inventory' && <AdminInventory />}
-          {activeTab === 'categories' && <AdminCategoriesBrands />}
-          {activeTab === 'content' && <AdminContent />}
-          {activeTab === 'customers' && <AdminCustomers />}
-          {activeTab === 'activity_log' && <AdminActivityLog />}
-          {activeTab === 'settings' && <AdminSettings onNavigateTab={setActiveTab} />}
+          {resolvedTab === 'offers' && <AdminOffers onShareProduct={handleShareProduct} />}
+          {resolvedTab === 'orders' && <AdminOrders />}
+          {resolvedTab === 'inventory' && <AdminInventory />}
+          {resolvedTab === 'categories' && <AdminCategoriesBrands />}
+          {resolvedTab === 'content' && <AdminContent />}
+          {resolvedTab === 'customers' && <AdminCustomers />}
+          {resolvedTab === 'activity_log' && <AdminActivityLog />}
+          {resolvedTab === 'settings' && <AdminSettings onNavigateTab={handleSelectTab} />}
         </React.Suspense>
       </ChunkErrorBoundary>
     </AdminLayout>

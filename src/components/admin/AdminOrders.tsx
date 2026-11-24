@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useShop } from '../../context/ShopContext';
+import { useAdmin } from '../../context/AdminContext';
 import { getOrders, updateOrderStatus } from '../../services/storageService';
 import { Order, OrderStatus } from '../../types';
 import { downloadSalesOrdersCsvReport } from '../../services/csvReportService';
@@ -18,6 +19,7 @@ const ALL_STATUSES: OrderStatus[] = [
 
 export const AdminOrders: React.FC = () => {
   const { lang, refreshData, storeSettings } = useShop();
+  const { requirePermission } = useAdmin();
   const [orders, setOrders] = useState<Order[]>(() => getOrders());
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
@@ -40,6 +42,15 @@ export const AdminOrders: React.FC = () => {
   };
 
   const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
+    if (
+      !requirePermission('manage_orders', {
+        actionEn: `Update order ${orderId} status to ${newStatus}`,
+        actionAr: `تحديث حالة الطلب ${orderId}`,
+        requiredRoles: ['super_admin', 'order_manager'],
+      })
+    ) {
+      return;
+    }
     setOrderUpdateError('');
     const updated = updateOrderStatus(orderId, newStatus);
     if (updated) {
@@ -55,12 +66,13 @@ export const AdminOrders: React.FC = () => {
     }
   };
 
-  const filteredOrders = orders.filter((o) => {
+  const q = search.toLowerCase();
+  const filteredOrders = (orders || []).filter((o) => {
     const matchStatus = statusFilter === 'all' || o.status === statusFilter;
     const matchSearch =
-      o.id.toLowerCase().includes(search.toLowerCase()) ||
-      o.customer.fullName.toLowerCase().includes(search.toLowerCase()) ||
-      o.customer.phone.includes(search);
+      (o.id || '').toLowerCase().includes(q) ||
+      (o.customer?.fullName || '').toLowerCase().includes(q) ||
+      (o.customer?.phone || '').includes(search);
     return matchStatus && matchSearch;
   });
 
@@ -195,29 +207,31 @@ export const AdminOrders: React.FC = () => {
                   <td className="py-3 px-4">
                     <span className="font-mono font-bold text-[#007AFF] block">{ord.id}</span>
                     <span className="text-[10px] text-[#64748B]">
-                      {new Date(ord.orderDate).toLocaleDateString()}
+                      {ord.orderDate && !Number.isNaN(Date.parse(ord.orderDate))
+                        ? new Date(ord.orderDate).toLocaleDateString()
+                        : '—'}
                     </span>
                   </td>
 
                   <td className="py-3 px-4">
-                    <div className="font-bold text-[#172033]">{ord.customer.fullName}</div>
-                    <div className="text-[10px] text-[#64748B] font-mono">{ord.customer.phone}</div>
-                    <div className="text-[10px] text-[#64748B] truncate max-w-[150px]">{ord.customer.cityArea}</div>
+                    <div className="font-bold text-[#172033]">{ord.customer?.fullName || 'Customer'}</div>
+                    <div className="text-[10px] text-[#64748B] font-mono">{ord.customer?.phone || '—'}</div>
+                    <div className="text-[10px] text-[#64748B] truncate max-w-[150px]">{ord.customer?.cityArea || '—'}</div>
                   </td>
 
                   <td className="py-3 px-4">
                     <div className="max-w-[200px]">
-                      {ord.items.map((it, idx) => (
+                      {(ord.items || []).map((it, idx) => (
                         <div key={idx} className="truncate text-[11px] text-[#64748B]">
-                          {it.quantity}x {it.productName}
+                          {Number(it.quantity) || 0}x {it.productName || 'Item'}
                         </div>
                       ))}
                     </div>
                   </td>
 
                   <td className="py-3 px-4 font-mono">
-                    <span className="font-black text-[#172033]">${ord.total}</span>
-                    <span className="text-[10px] text-[#64748B] block uppercase">{ord.paymentMethod}</span>
+                    <span className="font-black text-[#172033]">${Number(ord.total) || 0}</span>
+                    <span className="text-[10px] text-[#64748B] block uppercase">{ord.paymentMethod || 'COD'}</span>
                   </td>
 
                   <td className="py-3 px-4">
@@ -291,14 +305,21 @@ export const AdminOrders: React.FC = () => {
                 </div>
                 <div className="text-right rtl:text-left font-mono">
                   <p className="font-bold text-[#007AFF]">{selectedOrderForInvoice.id}</p>
-                  <p className="text-[#64748B]">{new Date(selectedOrderForInvoice.orderDate).toLocaleDateString()}</p>
+                  <p className="text-[#64748B]">
+                    {selectedOrderForInvoice.orderDate &&
+                    !Number.isNaN(Date.parse(selectedOrderForInvoice.orderDate))
+                      ? new Date(selectedOrderForInvoice.orderDate).toLocaleDateString()
+                      : '—'}
+                  </p>
                 </div>
               </div>
 
               <div>
-                <p className="font-bold text-[#172033]">{selectedOrderForInvoice.customer.fullName}</p>
-                <p className="text-[#64748B]">{selectedOrderForInvoice.customer.phone}</p>
-                <p className="text-[#64748B]">{selectedOrderForInvoice.customer.cityArea} — {selectedOrderForInvoice.customer.addressLine}</p>
+                <p className="font-bold text-[#172033]">{selectedOrderForInvoice.customer?.fullName || 'Customer'}</p>
+                <p className="text-[#64748B]">{selectedOrderForInvoice.customer?.phone || '—'}</p>
+                <p className="text-[#64748B]">
+                  {selectedOrderForInvoice.customer?.cityArea || '—'} — {selectedOrderForInvoice.customer?.addressLine || ''}
+                </p>
               </div>
 
               <div className="border border-[#DCE5F0] rounded-xl overflow-hidden bg-white">
@@ -311,11 +332,13 @@ export const AdminOrders: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-[#DCE5F0] text-[#172033]">
-                    {selectedOrderForInvoice.items.map((it, idx) => (
+                    {(selectedOrderForInvoice.items || []).map((it, idx) => (
                       <tr key={idx}>
-                        <td className="p-2">{it.productName}</td>
-                        <td className="p-2 text-center">{it.quantity}</td>
-                        <td className="p-2 text-right rtl:text-left font-bold text-[#007AFF]">${it.price * it.quantity}</td>
+                        <td className="p-2">{it.productName || 'Item'}</td>
+                        <td className="p-2 text-center">{Number(it.quantity) || 0}</td>
+                        <td className="p-2 text-right rtl:text-left font-bold text-[#007AFF]">
+                          ${(Number(it.price) || 0) * (Number(it.quantity) || 0)}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -324,7 +347,7 @@ export const AdminOrders: React.FC = () => {
 
               <div className="flex justify-between pt-2 border-t border-[#DCE5F0] font-bold text-sm text-[#172033]">
                 <span>Grand Total:</span>
-                <span className="text-[#007AFF] font-mono">${selectedOrderForInvoice.total} USD</span>
+                <span className="text-[#007AFF] font-mono">${Number(selectedOrderForInvoice.total) || 0} USD</span>
               </div>
             </div>
 

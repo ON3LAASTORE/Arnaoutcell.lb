@@ -121,9 +121,29 @@
     },
     "AdminProfile": {
       "title": "AdminProfile",
-      "description": "Authorized administrator or staff role record",
+      "description": "Authorized administrator or staff role and permission profile record",
       "type": "object",
       "properties": {
+        "id": {
+          "type": "string",
+          "description": "Profile document identifier",
+          "maxLength": 128
+        },
+        "uid": {
+          "type": "string",
+          "description": "Linked Firebase Authentication UID",
+          "maxLength": 128
+        },
+        "username": {
+          "type": "string",
+          "description": "Portal login username (e.g. Alaa, admin)",
+          "maxLength": 64
+        },
+        "name": {
+          "type": "string",
+          "description": "Administrator display name",
+          "maxLength": 128
+        },
         "email": {
           "type": "string",
           "description": "Admin email address",
@@ -133,11 +153,126 @@
           "type": "string",
           "enum": ["super_admin", "product_manager", "order_manager", "inventory_manager"]
         },
+        "permissions": {
+          "type": "array",
+          "description": "Granular RBAC permissions granted to the account (e.g. full_stock)"
+        },
+        "isActive": {
+          "type": "boolean",
+          "description": "Whether the administrator account is enabled"
+        },
         "createdAt": {
+          "type": "string"
+        },
+        "updatedAt": {
           "type": "string"
         }
       },
-      "required": ["email", "role"]
+      "required": ["username", "email", "role", "permissions"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Authenticated user RBAC profile stored at users/{uid} controlling portal and inventory access",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "User profile document ID",
+          "maxLength": 128
+        },
+        "uid": {
+          "type": "string",
+          "description": "Firebase Authentication UID",
+          "maxLength": 128
+        },
+        "username": {
+          "type": "string",
+          "description": "Portal login username (e.g. Alaa)",
+          "maxLength": 64
+        },
+        "name": {
+          "type": "string",
+          "description": "Display name",
+          "maxLength": 128
+        },
+        "email": {
+          "type": "string",
+          "description": "Account email address",
+          "maxLength": 128
+        },
+        "role": {
+          "type": "string",
+          "enum": ["super_admin", "product_manager", "order_manager", "inventory_manager", "customer"]
+        },
+        "permissions": {
+          "type": "array",
+          "description": "Granted permissions (e.g. ['full_stock'])"
+        },
+        "isActive": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "updatedAt": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "required": ["uid", "username", "email", "role", "permissions"]
+    },
+    "InventoryItem": {
+      "title": "InventoryItem",
+      "description": "Warehouse inventory stock tracking record protected for Super Admin with Full Stock permission",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "productId": {
+          "type": "string",
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "sku": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "productName": {
+          "type": "string",
+          "maxLength": 255
+        },
+        "brand": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "stock": {
+          "type": "number"
+        },
+        "lowStockThreshold": {
+          "type": "number"
+        },
+        "warehouse": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "updatedByUid": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "updatedAt": {
+          "type": "string",
+          "maxLength": 64
+        }
+      },
+      "required": ["id", "productId", "sku", "productName", "stock"]
     },
     "Product": {
       "title": "Product",
@@ -662,6 +797,18 @@
         "$ref": "AdminProfile"
       },
       "description": "RBAC admin access control mapping"
+    },
+    "/users/{userId}": {
+      "schema": {
+        "$ref": "UserProfile"
+      },
+      "description": "User RBAC profile documents storing username, role, and permissions for portal and inventory enforcement"
+    },
+    "/inventory/{inventoryId}": {
+      "schema": {
+        "$ref": "InventoryItem"
+      },
+      "description": "Warehouse stock and inventory tracking records writable only by Super Admin users with Full Stock permission"
     },
     "/products/{productId}": {
       "schema": {

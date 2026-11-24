@@ -5,12 +5,40 @@ import {
   CHUNK_RELOAD_COOLDOWN_MS,
   extractErrorMessage,
   isTransientNetworkOrSocketError,
+  isViteHmrWebSocketError,
   isChunkLoadError,
   shouldTriggerChunkRecoveryReload,
   __resetChunkReloadGuardForTests,
 } from './errorHandlingHelpers';
 
-test('isTransientNetworkOrSocketError detects Vite websocket and extension channel errors', () => {
+test('isViteHmrWebSocketError detects @vite/client WS failures without swallowing React, Auth, or Firestore errors', () => {
+  assert.equal(
+    isViteHmrWebSocketError(new Error('WebSocket closed without opened.')),
+    true
+  );
+  assert.equal(
+    isViteHmrWebSocketError('[vite] failed to connect to websocket (Error: WebSocket closed without opened.).'),
+    true
+  );
+
+  const viteStackErr = new Error('Connection failed');
+  viteStackErr.stack = 'Error: Connection failed\n    at https://ais-dev.run.app/@vite/client:976:11';
+  assert.equal(isViteHmrWebSocketError(new Error('WebSocket handshake failed'), 'https://ais-dev.run.app/@vite/client'), true);
+
+  assert.equal(
+    isViteHmrWebSocketError({
+      target: { protocol: 'vite-hmr', url: 'wss://ais-dev.run.app/?token=abc' },
+    }),
+    true
+  );
+
+  // Genuine React, Auth, Firestore, and application errors MUST NOT be swallowed
+  assert.equal(isViteHmrWebSocketError(new Error('FirebaseError: Missing or insufficient permissions (firestore)')), false);
+  assert.equal(isViteHmrWebSocketError(new Error('Firebase: Error (auth/wrong-password).')), false);
+  assert.equal(isViteHmrWebSocketError(new Error('Rendered more hooks than during the previous render.')), false);
+});
+
+test('isTransientNetworkOrSocketError detects Vite websocket and extension channel errors without hiding app errors', () => {
   assert.equal(
     isTransientNetworkOrSocketError(new Error('WebSocket closed without opened.')),
     true
@@ -27,6 +55,14 @@ test('isTransientNetworkOrSocketError detects Vite websocket and extension chann
   );
   assert.equal(
     isTransientNetworkOrSocketError(new Error('TypeError: Cannot read properties of undefined')),
+    false
+  );
+  assert.equal(
+    isTransientNetworkOrSocketError(new Error('FirebaseError: permission-denied on firestore/inventory')),
+    false
+  );
+  assert.equal(
+    isTransientNetworkOrSocketError(new Error('Firebase: Error (auth/invalid-credential).')),
     false
   );
 });

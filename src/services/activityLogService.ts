@@ -7,7 +7,7 @@ import {
   query,
   setDoc,
 } from 'firebase/firestore';
-import { auth, db, handleFirestoreError, OperationType } from '../firebase';
+import { auth, db } from '../firebase';
 import {
   ActivityLogActor,
   ActivityLogEntry,
@@ -109,10 +109,11 @@ function canSyncToAdminFirestore(): boolean {
   if (typeof window === 'undefined') return false;
   if (isFirestoreInQuotaCooldown()) return false;
   const currentUser = auth.currentUser;
-  return Boolean(
-    currentUser &&
-      currentUser.email === 'optimatech.lb@gmail.com' &&
-      currentUser.emailVerified
+  if (!currentUser) return false;
+  const emailLower = (currentUser.email || '').toLowerCase();
+  return (
+    emailLower === 'alaa@onalaastore.com' ||
+    (emailLower === 'optimatech.lb@gmail.com' && currentUser.emailVerified)
   );
 }
 
@@ -192,11 +193,7 @@ export async function recordAdminActivity(
       if (isFirestoreQuotaExceededError(err)) {
         markFirestoreQuotaExceeded();
       } else {
-        try {
-          handleFirestoreError(err, OperationType.CREATE, `${ADMIN_ACTIVITY_COLLECTION}/${entry.id}`);
-        } catch {
-          // Structured error logged via handleFirestoreError
-        }
+        console.warn('Background activity log Firestore sync notice:', err);
       }
     }
   }
@@ -251,11 +248,7 @@ export async function fetchAdminActivityLogs(): Promise<ActivityLogEntry[]> {
       if (isFirestoreQuotaExceededError(err)) {
         markFirestoreQuotaExceeded();
       } else {
-        try {
-          handleFirestoreError(err, OperationType.LIST, ADMIN_ACTIVITY_COLLECTION);
-        } catch {
-          // Structured error logged via handleFirestoreError
-        }
+        console.warn('Background activity log Firestore fetch notice:', err);
       }
     }
   }

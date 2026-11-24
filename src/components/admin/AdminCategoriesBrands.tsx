@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useShop } from '../../context/ShopContext';
+import { useAdmin } from '../../context/AdminContext';
 import { upsertCategory, deleteCategory, saveBrands, readFileAsDataUrl } from '../../services/storageService';
 import { Category, Brand } from '../../types';
 import { Plus, Trash2, Upload } from 'lucide-react';
@@ -8,9 +9,11 @@ import { ConfirmDialog } from '../ConfirmDialog';
 
 export const AdminCategoriesBrands: React.FC = () => {
   const { lang, categories, brands, refreshData } = useShop();
+  const { requirePermission } = useAdmin();
 
   const [activeTab, setActiveTab] = useState<'categories' | 'brands'>('categories');
   const [feedback, setFeedback] = useState('');
+  const [uploadError, setUploadError] = useState('');
   const [pendingDelete, setPendingDelete] = useState<{
     kind: 'category' | 'brand';
     id: string;
@@ -29,9 +32,22 @@ export const AdminCategoriesBrands: React.FC = () => {
 
   const handleAddCategory = (e: React.FormEvent) => {
     e.preventDefault();
+    if (
+      !requirePermission(['full_stock', 'manage_categories'], {
+        actionEn: 'Create new category',
+        actionAr: 'إنشاء قسم جديد',
+      })
+    ) {
+      return;
+    }
     if (!newCatName.trim()) return;
 
-    const slug = newCatName.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    const rawSlug = newCatName
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '');
+    const slug = rawSlug || `cat-${Date.now()}`;
     const subcats = newCatSub
       .split(',')
       .map((s) => s.trim())
@@ -43,7 +59,7 @@ export const AdminCategoriesBrands: React.FC = () => {
       nameAr: newCatNameAr.trim() || newCatName.trim(),
       slug,
       iconName: 'Box',
-      displayOrder: categories.length + 1,
+      displayOrder: (categories || []).length + 1,
       subcategories: subcats,
     };
 
@@ -57,11 +73,28 @@ export const AdminCategoriesBrands: React.FC = () => {
   };
 
   const handleDeleteCategory = (catId: string, name: string) => {
+    if (
+      !requirePermission('full_stock', {
+        actionEn: `Delete category "${name}"`,
+        actionAr: `حذف القسم "${name}"`,
+        requiredRoles: ['super_admin'],
+      })
+    ) {
+      return;
+    }
     setPendingDelete({ kind: 'category', id: catId, name });
   };
 
   const handleAddBrand = (e: React.FormEvent) => {
     e.preventDefault();
+    if (
+      !requirePermission(['full_stock', 'manage_categories'], {
+        actionEn: 'Add new brand',
+        actionAr: 'إضافة ماركة جديدة',
+      })
+    ) {
+      return;
+    }
     if (!newBrandName.trim()) return;
 
     const newBrand: Brand = {
@@ -75,7 +108,7 @@ export const AdminCategoriesBrands: React.FC = () => {
       productCount: 0,
     };
 
-    const updated = [...brands, newBrand];
+    const updated = [...(brands || []), newBrand];
     saveBrands(updated, true);
     refreshData();
     setNewBrandName('');
@@ -86,23 +119,51 @@ export const AdminCategoriesBrands: React.FC = () => {
   };
 
   const handleBrandLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      const url = await readFileAsDataUrl(files[0]);
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setUploadError('');
+    try {
+      const url = await readFileAsDataUrl(file);
       setNewBrandLogo(url);
+    } catch (err) {
+      setUploadError(
+        err instanceof Error
+          ? err.message
+          : 'Unable to read logo image. Please choose a valid image under 10MB.'
+      );
     }
   };
 
   const handleDeleteBrand = (brandId: string, name: string) => {
+    if (
+      !requirePermission('full_stock', {
+        actionEn: `Delete brand "${name}"`,
+        actionAr: `حذف الماركة "${name}"`,
+        requiredRoles: ['super_admin'],
+      })
+    ) {
+      return;
+    }
     setPendingDelete({ kind: 'brand', id: brandId, name });
   };
 
   const confirmPendingDelete = () => {
     if (!pendingDelete) return;
+    if (
+      !requirePermission('full_stock', {
+        actionEn: `Delete ${pendingDelete.kind} "${pendingDelete.name}"`,
+        actionAr: `حذف "${pendingDelete.name}"`,
+        requiredRoles: ['super_admin'],
+      })
+    ) {
+      setPendingDelete(null);
+      return;
+    }
     if (pendingDelete.kind === 'category') {
       deleteCategory(pendingDelete.id);
     } else {
-      const updated = brands.filter((b) => b.id !== pendingDelete.id);
+      const updated = (brands || []).filter((b) => b.id !== pendingDelete.id);
       saveBrands(updated, true);
     }
     refreshData();
@@ -148,6 +209,12 @@ export const AdminCategoriesBrands: React.FC = () => {
       {feedback && (
         <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-[#16A34A] text-xs font-semibold">
           {feedback}
+        </div>
+      )}
+
+      {uploadError && (
+        <div role="alert" className="p-3 rounded-xl bg-red-50 border border-red-200 text-[#DC2626] text-xs font-semibold">
+          {uploadError}
         </div>
       )}
 

@@ -7,5 +7,6 @@ coverage/
 .env*
 !.env.example
 .admin_credentials.json
+.admin_users.json
 .social_credentials.json
 .restock_notifications.json

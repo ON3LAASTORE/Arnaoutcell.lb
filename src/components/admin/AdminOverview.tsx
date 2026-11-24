@@ -26,28 +26,36 @@ export const AdminOverview: React.FC = () => {
   const { lang, products, storeSettings } = useShop();
   const orders = getOrders();
 
+  const safeOrders = orders || [];
+  const safeProducts = products || [];
+
   // Metrics calculation
-  const totalRevenue = orders.reduce((sum, o) => {
+  const totalRevenue = safeOrders.reduce((sum, o) => {
     if (o.status !== 'cancelled' && o.status !== 'returned') {
-      return sum + o.total;
+      return sum + (Number(o.total) || 0);
     }
     return sum;
   }, 0);
 
-  const pendingOrders = orders.filter(
+  const pendingOrders = safeOrders.filter(
     (o) => o.status === 'new' || o.status === 'confirmed' || o.status === 'preparing'
   );
-  const lowStockProducts = products.filter(
-    (p) => p.stock > 0 && p.stock <= (p.lowStockThreshold || 3)
-  );
-  const outOfStockProducts = products.filter((p) => p.stock <= 0);
-  const offerProducts = products.filter((p) => p.isSpecialOffer);
+  const lowStockProducts = safeProducts.filter((p) => {
+    const stock = Number(p.stock);
+    return Number.isFinite(stock) && stock > 0 && stock <= (p.lowStockThreshold || 3);
+  });
+  const outOfStockProducts = safeProducts.filter((p) => {
+    const stock = Number(p.stock);
+    return !Number.isFinite(stock) || stock <= 0;
+  });
+  const offerProducts = safeProducts.filter((p) => p.isSpecialOffer);
 
   // Best selling products based on actual orders
   const salesMap: Record<string, { product: OrderItem; count: number; totalRev: number }> = {};
-  orders.forEach((ord) => {
+  safeOrders.forEach((ord) => {
     if (ord.status !== 'cancelled' && ord.status !== 'returned') {
-      ord.items.forEach((item) => {
+      (ord.items || []).forEach((item) => {
+        if (!item || !item.productId) return;
         if (!salesMap[item.productId]) {
           salesMap[item.productId] = {
             product: item,
@@ -55,8 +63,10 @@ export const AdminOverview: React.FC = () => {
             totalRev: 0,
           };
         }
-        salesMap[item.productId].count += item.quantity;
-        salesMap[item.productId].totalRev += item.price * item.quantity;
+        const qty = Number(item.quantity) || 0;
+        const unitPrice = Number(item.price) || 0;
+        salesMap[item.productId].count += qty;
+        salesMap[item.productId].totalRev += unitPrice * qty;
       });
     }
   });

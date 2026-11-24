@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { useAdmin } from '../../context/AdminContext';
-import { saveProduct, getOrders } from '../../services/storageService';
+import { saveProduct, deleteProduct, getOrders } from '../../services/storageService';
 import {
   fetchStockNotificationsOverview,
   maybeTriggerRestockNotifications,
@@ -10,13 +10,22 @@ import {
 } from '../../services/stockNotificationService';
 import { downloadInventoryCsvReport } from '../../services/csvReportService';
 import { Product } from '../../types';
-import { Warehouse, AlertTriangle, AlertCircle, Search, BellRing, MailCheck, Download, Send, RefreshCw, X } from 'lucide-react';
+import { Warehouse, AlertTriangle, AlertCircle, Search, BellRing, MailCheck, Download, Send, RefreshCw, X, Trash2 } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
+import { ConfirmDialog } from '../ConfirmDialog';
+import { DEFAULT_FULL_RES_FALLBACK_IMAGE } from '../../utils/imageResolutionHelpers';
 
 export const AdminInventory: React.FC = () => {
   const { lang, products, brands, refreshData } = useShop();
-  const { selectableBrands } = useAdmin();
-  const allBrandNames = Array.from(new Set([...selectableBrands, ...brands.map((b) => b.name)]));
+  const { selectableBrands, hasPermission, requirePermission } = useAdmin();
+  const hasFullStock = hasPermission('full_stock');
+  const allBrandNames = Array.from(
+    new Set([
+      ...selectableBrands,
+      ...(brands || []).map((b) => b?.name).filter((n): n is string => Boolean(n)),
+    ])
+  );
+  const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string; nameAr?: string } | null>(null);
 
   const [search, setSearch] = useState('');
   const [selectedBrand, setSelectedBrand] = useState('all');
@@ -45,9 +54,17 @@ export const AdminInventory: React.FC = () => {
   }, [loadNotificationsOverview]);
 
   const handleAdjustStock = async (product: Product, delta: number) => {
+    if (
+      !requirePermission(['full_stock', 'manage_inventory'], {
+        actionEn: `Adjust stock for "${product.name}"`,
+        actionAr: `تعديل مخزون "${product.nameAr || product.name}"`,
+      })
+    ) {
+      return;
+    }
     try {
       setInventoryError('');
-      const previousStock = product.stock;
+      const previousStock = Number.isFinite(Number(product.stock)) ? Number(product.stock) : 0;
       const newStock = Math.max(0, previousStock + delta);
       const updated: Product = {
         ...product,
@@ -78,16 +95,57 @@ export const AdminInventory: React.FC = () => {
     }
   };
 
-  const filtered = products.filter((p) => {
-    const matchBrand = selectedBrand === 'all' || p.brand.toLowerCase() === selectedBrand.toLowerCase();
-    const matchSearch =
-      p.name.toLowerCase().includes(search.toLowerCase()) ||
-      p.sku.toLowerCase().includes(search.toLowerCase()) ||
-      p.brand.toLowerCase().includes(search.toLowerCase());
+  const handleRequestDeleteInventory = (product: Product) => {
+    if (
+      !requirePermission('full_stock', {
+        actionEn: `Delete inventory item "${product.name}"`,
+        actionAr: `حذف صنف المخزون "${product.nameAr || product.name}"`,
+        requiredRoles: ['super_admin'],
+      })
+    ) {
+      return;
+    }
+    setPendingDelete({ id: product.id, name: product.name, nameAr: product.nameAr });
+  };
+
+  const confirmDeleteInventoryItem = () => {
+    if (!pendingDelete) return;
+    if (
+      !requirePermission('full_stock', {
+        actionEn: `Delete inventory item "${pendingDelete.name}"`,
+        actionAr: `حذف صنف المخزون "${pendingDelete.nameAr || pendingDelete.name}"`,
+        requiredRoles: ['super_admin'],
+      })
+    ) {
+      setPendingDelete(null);
+      return;
+    }
+    deleteProduct(pendingDelete.id);
+    refreshData();
+    setFeedback(
+      lang === 'ar'
+        ? `تم حذف الصنف "${pendingDelete.nameAr || pendingDelete.name}" من المخزون وقاعدة البيانات.`
+        : `Deleted inventory item "${pendingDelete.name}" from stock & catalog.`
+    );
+    setPendingDelete(null);
+    setTimeout(() => setFeedback(''), 5000);
+  };
+
+  const safeProducts = products || [];
+  const filtered = safeProducts.filter((p) => {
+    const pBrand = (p.brand || '').toLowerCase();
+    const pName = (p.name || '').toLowerCase();
+    const pSku = (p.sku || '').toLowerCase();
+    const q = search.toLowerCase();
+    const matchBrand = selectedBrand === 'all' || pBrand === selectedBrand.toLowerCase();
+    const matchSearch = pName.includes(q) || pSku.includes(q) || pBrand.includes(q);
     return matchBrand && matchSearch;
   });
 
-  const lowStockCount = products.filter((p) => p.stock <= (p.lowStockThreshold || 3)).length;
+  const lowStockCount = safeProducts.filter((p) => {
+    const stockVal = Number.isFinite(Number(p.stock)) ? Number(p.stock) : 0;
+    return stockVal <= (p.lowStockThreshold || 3);
+  }).length;
   const pendingCountByProduct = subscriptions.reduce<Record<string, number>>((acc, item) => {
     if (item.status === 'pending') {
       acc[item.productId] = (acc[item.productId] || 0) + 1;
@@ -125,6 +183,15 @@ export const AdminInventory: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {hasFullStock && (
+            <div
+              data-testid="inventory-full-stock-badge"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-[#16A34A] text-xs font-bold"
+            >
+              <span>{lang === 'ar' ? 'صلاحية المخزون الكاملة' : 'Full Stock Access'}</span>
+            </div>
+          )}
+
           {totalPendingAlerts > 0 && (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-[#007AFF] text-xs font-bold">
               <BellRing className="w-4 h-4" />
@@ -245,8 +312,9 @@ export const AdminInventory: React.FC = () => {
                   </td>
                 </tr>
               ) : filtered.map((p) => {
-                const isLow = p.stock <= (p.lowStockThreshold || 3);
-                const isOut = p.stock <= 0;
+                const stockVal = Number.isFinite(Number(p.stock)) ? Number(p.stock) : 0;
+                const isLow = stockVal <= (p.lowStockThreshold || 3);
+                const isOut = stockVal <= 0;
                 const waitingCount = pendingCountByProduct[p.id] || 0;
 
                 return (
@@ -254,8 +322,8 @@ export const AdminInventory: React.FC = () => {
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
                         <LazyImage
-                          src={p.images[0]}
-                          alt={p.name}
+                          src={p.images?.[0] || DEFAULT_FULL_RES_FALLBACK_IMAGE}
+                          alt={p.name || 'Product'}
                           width={40}
                           height={40}
                           priority={false}
@@ -263,21 +331,21 @@ export const AdminInventory: React.FC = () => {
                           className="w-full h-full object-cover"
                         />
                         <div>
-                          <div className="font-bold text-[#172033] line-clamp-1">{p.name}</div>
-                          <div className="text-[10px] text-[#007AFF] font-medium">{p.brand} • {p.category}</div>
+                          <div className="font-bold text-[#172033] line-clamp-1">{p.name || 'Unnamed Product'}</div>
+                          <div className="text-[10px] text-[#007AFF] font-medium">{p.brand || '—'} • {p.category || '—'}</div>
                         </div>
                       </div>
                     </td>
 
-                    <td className="py-3 px-4 font-mono text-[#64748B]">{p.sku}</td>
+                    <td className="py-3 px-4 font-mono text-[#64748B]">{p.sku || p.id}</td>
 
                     <td className="py-3 px-4 font-mono font-bold">
                       {isOut ? (
                         <span className="text-[#DC2626]">0 (Out of Stock)</span>
                       ) : isLow ? (
-                        <span className="text-amber-600 font-black">{p.stock} (Low Stock)</span>
+                        <span className="text-amber-600 font-black">{stockVal} (Low Stock)</span>
                       ) : (
-                        <span className="text-[#16A34A]">{p.stock} units</span>
+                        <span className="text-[#16A34A]">{stockVal} units</span>
                       )}
                     </td>
 
@@ -324,6 +392,24 @@ export const AdminInventory: React.FC = () => {
                           title="Restock 10"
                         >
                           +10
+                        </button>
+                        <button
+                          type="button"
+                          data-testid={`inventory-delete-${p.id}`}
+                          onClick={() => handleRequestDeleteInventory(p)}
+                          aria-label={`Delete inventory item ${p.name}`}
+                          className="p-1.5 rounded-lg bg-red-50/80 hover:bg-[#DC2626] hover:text-white border border-red-200 text-[#DC2626] transition-colors cursor-pointer"
+                          title={
+                            hasFullStock
+                              ? lang === 'ar'
+                                ? 'حذف من المخزون'
+                                : 'Delete Inventory Item'
+                              : lang === 'ar'
+                              ? 'يتطلب صلاحية Full Stock'
+                              : 'Requires Full Stock permission'
+                          }
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </td>
@@ -394,7 +480,7 @@ export const AdminInventory: React.FC = () => {
                       </span>
                     </div>
                     <div className="text-[11px] text-[#64748B] truncate">
-                      {log.emails.join(', ')}
+                      {(log.emails || []).join(', ')}
                     </div>
                   </div>
                 ))}
@@ -403,6 +489,21 @@ export const AdminInventory: React.FC = () => {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        isOpen={Boolean(pendingDelete)}
+        lang={lang}
+        title={lang === 'ar' ? 'حذف صنف من المخزون' : 'Delete Inventory Item'}
+        message={
+          pendingDelete
+            ? lang === 'ar'
+              ? `هل أنت متأكد من حذف "${pendingDelete.nameAr || pendingDelete.name}" نهائياً من المخزون والكتالوج؟`
+              : `Permanently delete "${pendingDelete.name}" from inventory and live catalog?`
+            : ''
+        }
+        confirmLabel={lang === 'ar' ? 'حذف نهائي' : 'Delete Item'}
+        onConfirm={confirmDeleteInventoryItem}
+        onCancel={() => setPendingDelete(null)}
+      />
     </div>
   );
 };

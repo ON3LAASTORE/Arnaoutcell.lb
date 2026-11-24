@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useAdmin } from '../../context/AdminContext';
 import { useShop } from '../../context/ShopContext';
-import { AdminRole } from '../../types';
+import { AdminPermission, AdminRole } from '../../types';
 import { formatCountdownMmSs } from '../../utils/adminSessionTimerHelpers';
 import {
   LayoutDashboard,
@@ -36,8 +36,15 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
   setActiveTab,
   children,
 }) => {
-  const { user, logout, hasRole, sessionRemainingMs, showTimeoutWarning, extendSession } =
-    useAdmin();
+  const {
+    user,
+    logout,
+    hasRole,
+    hasPermission,
+    sessionRemainingMs,
+    showTimeoutWarning,
+    extendSession,
+  } = useAdmin();
   const { lang, setCurrentView } = useShop();
   const [mobileOpen, setMobileOpen] = useState(false);
   const isAr = lang === 'ar';
@@ -50,19 +57,20 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
     labelAr: string;
     icon: React.ComponentType<{ className?: string }>;
     roles: AdminRole[];
+    permissions?: AdminPermission[];
   }> = [
     { id: 'overview', labelEn: 'Overview', labelAr: 'نظرة عامة', icon: LayoutDashboard, roles: ['super_admin', 'product_manager', 'order_manager', 'inventory_manager'] },
-    { id: 'statistics', labelEn: 'Statistics', labelAr: 'الإحصائيات', icon: BarChart3, roles: ['super_admin', 'product_manager', 'order_manager'] },
-    { id: 'products', labelEn: 'Products', labelAr: 'إدارة المنتجات', icon: Package, roles: ['super_admin', 'product_manager'] },
-    { id: 'social_marketing', labelEn: 'Social Media Manager', labelAr: 'مدير وسائل التواصل', icon: Share2, roles: ['super_admin', 'product_manager'] },
-    { id: 'offers', labelEn: 'Offers & Deals', labelAr: 'العروض والخصومات', icon: Flame, roles: ['super_admin', 'product_manager'] },
-    { id: 'orders', labelEn: 'Orders & Sales', labelAr: 'الطلبات والمبيعات', icon: ShoppingBag, roles: ['super_admin', 'order_manager'] },
-    { id: 'inventory', labelEn: 'Inventory', labelAr: 'المستودع والمخزون', icon: Warehouse, roles: ['super_admin', 'inventory_manager'] },
-    { id: 'categories', labelEn: 'Categories & Brands', labelAr: 'الأقسام والماركات', icon: Layers, roles: ['super_admin', 'product_manager'] },
-    { id: 'content', labelEn: 'Banners & Videos', labelAr: 'البانرات والفيديوهات', icon: Video, roles: ['super_admin', 'product_manager'] },
-    { id: 'customers', labelEn: 'Customers', labelAr: 'قاعدة العملاء', icon: Users, roles: ['super_admin', 'order_manager'] },
-    { id: 'activity_log', labelEn: 'Activity Log', labelAr: 'سجل النشاط الأمني', icon: History, roles: ['super_admin'] },
-    { id: 'settings', labelEn: 'Settings & Security', labelAr: 'الإعدادات والأمان', icon: Settings, roles: ['super_admin'] },
+    { id: 'statistics', labelEn: 'Statistics', labelAr: 'الإحصائيات', icon: BarChart3, roles: ['super_admin', 'product_manager', 'order_manager'], permissions: ['view_analytics'] },
+    { id: 'products', labelEn: 'Products', labelAr: 'إدارة المنتجات', icon: Package, roles: ['super_admin', 'product_manager'], permissions: ['full_stock', 'manage_products'] },
+    { id: 'social_marketing', labelEn: 'Social Media Manager', labelAr: 'مدير وسائل التواصل', icon: Share2, roles: ['super_admin', 'product_manager'], permissions: ['manage_content'] },
+    { id: 'offers', labelEn: 'Offers & Deals', labelAr: 'العروض والخصومات', icon: Flame, roles: ['super_admin', 'product_manager'], permissions: ['full_stock', 'manage_products'] },
+    { id: 'orders', labelEn: 'Orders & Sales', labelAr: 'الطلبات والمبيعات', icon: ShoppingBag, roles: ['super_admin', 'order_manager'], permissions: ['manage_orders'] },
+    { id: 'inventory', labelEn: 'Inventory', labelAr: 'المستودع والمخزون', icon: Warehouse, roles: ['super_admin', 'inventory_manager'], permissions: ['full_stock', 'manage_inventory'] },
+    { id: 'categories', labelEn: 'Categories & Brands', labelAr: 'الأقسام والماركات', icon: Layers, roles: ['super_admin', 'product_manager'], permissions: ['full_stock', 'manage_categories'] },
+    { id: 'content', labelEn: 'Banners & Videos', labelAr: 'البانرات والفيديوهات', icon: Video, roles: ['super_admin', 'product_manager'], permissions: ['manage_content'] },
+    { id: 'customers', labelEn: 'Customers', labelAr: 'قاعدة العملاء', icon: Users, roles: ['super_admin', 'order_manager'], permissions: ['manage_customers'] },
+    { id: 'activity_log', labelEn: 'Activity Log', labelAr: 'سجل النشاط الأمني', icon: History, roles: ['super_admin'], permissions: ['view_audit_logs'] },
+    { id: 'settings', labelEn: 'Settings & Security', labelAr: 'الإعدادات والأمان', icon: Settings, roles: ['super_admin'], permissions: ['manage_settings'] },
   ];
 
   return (
@@ -109,10 +117,25 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
             {/* Current user, role & inactivity countdown */}
             {user && (
               <div className="mt-4 p-2.5 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0] text-xs">
-                <p className="font-bold text-[#172033] truncate">{user.name}</p>
-                <span className="inline-block mt-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#EAF3FF] text-[#007AFF] border border-[#BAE6FD] uppercase">
-                  {user.role.replace('_', ' ')}
-                </span>
+                <p data-testid="sidebar-admin-name" className="font-bold text-[#172033] truncate">
+                  {user.name}
+                </p>
+                <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                  <span
+                    data-testid="sidebar-admin-role"
+                    className="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#EAF3FF] text-[#007AFF] border border-[#BAE6FD] uppercase"
+                  >
+                    {user.role.replace('_', ' ')}
+                  </span>
+                  {hasPermission('full_stock') && (
+                    <span
+                      data-testid="sidebar-full-stock-badge"
+                      className="inline-block px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-50 text-[#16A34A] border border-emerald-200 uppercase"
+                    >
+                      {isAr ? 'مخزون كامل' : 'FULL STOCK'}
+                    </span>
+                  )}
+                </div>
                 <div className="mt-2.5 pt-2 border-t border-[#DCE5F0] flex items-center justify-between text-[11px]">
                   <span className="inline-flex items-center gap-1.5 text-[#64748B] font-medium">
                     <Clock className="w-3 h-3" />
@@ -134,7 +157,9 @@ export const AdminLayout: React.FC<AdminLayoutProps> = ({
           {/* Nav Items */}
           <nav className="space-y-1">
             {navItems.map((item) => {
-              const allowed = hasRole(item.roles);
+              const allowed =
+                hasRole(item.roles) ||
+                (item.permissions ? hasPermission(item.permissions) : false);
               if (!allowed) return null;
 
               const isActive = activeTab === item.id;

@@ -7,9 +7,9 @@ import React, {
   useCallback,
   ReactNode,
 } from 'react';
-import { AdminRole, AdminUser } from '../types';
+import { AdminPermission, AdminRole, AdminUser } from '../types';
 import {
-  verifyAdminPassword,
+  verifyAdminCredentials,
   changeAdminPassword,
   initializeAdminAuth,
   clearAdminApiToken,
@@ -28,6 +28,28 @@ import {
   shouldPausePassiveActivityReset,
   shouldRecordActivityUpdate,
 } from '../utils/adminSessionTimerHelpers';
+import {
+  getEffectivePermissions,
+  hasAdminPermission,
+  hasAdminRole,
+  normalizeAdminUserProfile,
+  normalizePortalUsername,
+  resolvePortalDirectoryUser,
+  SUPER_ADMIN_PERMISSIONS,
+} from '../utils/adminPermissionHelpers';
+import {
+  BuildPermissionDeniedInput,
+  emitPermissionDenied,
+  guardActionWithPermission,
+  PermissionDeniedDetail,
+} from '../utils/permissionDeniedHelpers';
+import {
+  buildAdminUserFromFirebaseUser,
+  fetchFirestoreAdminProfile,
+  signInWithResolvedPortalFirebaseAccount,
+  syncProvisionedAlaaAdminProfile,
+  syncSignedInSuperAdminProfile,
+} from '../services/adminProfileService';
 import { auth } from '../firebase';
 import {
   GoogleAuthProvider,
@@ -71,10 +93,26 @@ export const SELECTABLE_ADMIN_BRANDS: string[] = [
 interface AdminContextType {
   user: AdminUser | null;
   isAuthenticated: boolean;
+  loading: boolean;
+  permissions: AdminPermission[];
   login: (username: string, password?: string, role?: AdminRole) => Promise<boolean>;
   loginWithGoogle: () => Promise<boolean>;
   logout: (reason?: AdminLogoutReason) => void;
   hasRole: (roles: AdminRole[]) => boolean;
+  hasPermission: (required: AdminPermission | AdminPermission[]) => boolean;
+  requirePermission: (
+    required: AdminPermission | AdminPermission[],
+    actionContext: {
+      actionEn: string;
+      actionAr?: string;
+      requiredRoles?: AdminRole[];
+      reasonEn?: string;
+      reasonAr?: string;
+    }
+  ) => boolean;
+  reportPermissionDenied: (
+    input: Omit<BuildPermissionDeniedInput, 'currentUser'>
+  ) => PermissionDeniedDetail;
   changePassword: (
     currentPass: string,
     newPass: string,
@@ -89,12 +127,21 @@ interface AdminContextType {
 }
 
 const DEMO_USERS: Record<string, AdminUser> = {
+  alaa: {
+    id: 'admin-alaa',
+    username: 'Alaa',
+    name: 'Alaa',
+    role: 'super_admin',
+    email: 'alaa@onalaastore.com',
+    permissions: [...SUPER_ADMIN_PERMISSIONS],
+  },
   admin: {
     id: 'u-1',
     username: 'admin',
     name: '3Laa Hassan',
     role: 'super_admin',
     email: 'admin@arnaoutcell.com',
+    permissions: [...SUPER_ADMIN_PERMISSIONS],
   },
   products: {
     id: 'u-2',
@@ -102,6 +149,7 @@ const DEMO_USERS: Record<string, AdminUser> = {
     name: 'Karim Product Specialist',
     role: 'product_manager',
     email: 'products@arnaoutcell.com',
+    permissions: ['manage_products', 'manage_categories', 'manage_content', 'view_analytics'],
   },
   orders: {
     id: 'u-3',
@@ -109,6 +157,7 @@ const DEMO_USERS: Record<string, AdminUser> = {
     name: 'Lina Order Operations',
     role: 'order_manager',
     email: 'orders@arnaoutcell.com',
+    permissions: ['manage_orders', 'manage_customers', 'view_analytics'],
   },
   inventory: {
     id: 'u-4',
@@ -116,6 +165,7 @@ const DEMO_USERS: Record<string, AdminUser> = {
     name: 'Tarek Chouf Fulfillment Hub',
     role: 'inventory_manager',
     email: 'inventory@arnaoutcell.com',
+    permissions: ['manage_inventory'],
   },
 };
 
@@ -153,10 +203,7 @@ function readInitialAdminSnapshot(): InitialAuthSnapshot {
       };
     }
 
-    const parsedUser = JSON.parse(rawUser) as AdminUser;
-    if (parsedUser.role === 'super_admin' || parsedUser.username === 'admin') {
-      parsedUser.name = '3Laa Hassan';
-    }
+    const parsedUser = normalizeAdminUserProfile(JSON.parse(rawUser) as AdminUser);
 
     const storedLastActivity = parseStoredActivityTimestamp(
       localStorage.getItem(ADMIN_LAST_ACTIVITY_STORAGE_KEY)
@@ -206,6 +253,7 @@ function readInitialAdminSnapshot(): InitialAuthSnapshot {
 export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [initialSnapshot] = useState<InitialAuthSnapshot>(() => readInitialAdminSnapshot());
   const [user, setUser] = useState<AdminUser | null>(initialSnapshot.user);
+  const [loading, setLoading] = useState<boolean>(() => !initialSnapshot.user);
   const [sessionRemainingMs, setSessionRemainingMs] = useState<number>(
     initialSnapshot.remainingMs
   );
@@ -218,6 +266,8 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const lastActivityRef = useRef<number>(initialSnapshot.lastActivityAt);
   const lastThrottleWriteRef = useRef<number>(0);
   const logoutGuardRef = useRef<boolean>(Boolean(initialSnapshot.expiredUser));
+  const firebaseBackedRef = useRef<boolean>(false);
+  const authEpochRef = useRef<number>(0);
 
   useEffect(() => {
     userRef.current = user;
@@ -276,6 +326,8 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   const logout = useCallback((reason: AdminLogoutReason = 'manual') => {
     if (logoutGuardRef.current) return;
     logoutGuardRef.current = true;
+    authEpochRef.current += 1;
+    firebaseBackedRef.current = false;
 
     const signingOutUser = userRef.current;
     if (signingOutUser) {
@@ -317,6 +369,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
 
     setUser(null);
+    setLoading(false);
     setShowTimeoutWarning(false);
     setSessionRemainingMs(0);
     setLogoutReason(reason === 'inactivity' ? 'inactivity' : null);
@@ -450,107 +503,275 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     password?: string,
     role?: AdminRole
   ): Promise<boolean> => {
-    const trimmedUser = username.toLowerCase().trim();
+    const trimmedUser = normalizePortalUsername(username);
     if (!trimmedUser) return false;
 
     // Always require and verify administrator password securely via backend bcrypt endpoint
     if (!password) {
       return false;
     }
-    const isValid = await verifyAdminPassword(password, {
+
+    const directoryEntry = resolvePortalDirectoryUser(trimmedUser);
+    const credCheck = await verifyAdminCredentials(password, {
       username: trimmedUser,
-      role: role || DEMO_USERS[trimmedUser]?.role || 'super_admin',
+      role: directoryEntry?.role || role || DEMO_USERS[trimmedUser]?.role || 'super_admin',
     });
-    if (!isValid) {
+
+    if (!credCheck.valid) {
       clearAdminApiToken();
-      fetchAdminActivityLogs().catch(() => {});
       return false;
     }
 
     logoutGuardRef.current = false;
+    const attemptEpoch = ++authEpochRef.current;
+    firebaseBackedRef.current = false;
     setLogoutReason(null);
     stampActivity(Date.now());
 
+    if (credCheck.user) {
+      const resolvedUser = normalizeAdminUserProfile({
+        id: credCheck.user.id,
+        username: credCheck.user.username,
+        name: credCheck.user.name,
+        email: credCheck.user.email,
+        role: (credCheck.user.role as AdminRole) || 'super_admin',
+        permissions: credCheck.user.permissions as AdminPermission[] | undefined,
+      });
+      setUser(resolvedUser);
+      setLoading(false);
+      fetchAdminActivityLogs().catch(() => {});
+
+      // Attempt username-to-Firebase Email/Password sign-in seamlessly so Firestore
+      // inventory rules see a live `request.auth.uid` backed by `users/{uid}` when enabled.
+      signInWithResolvedPortalFirebaseAccount(username, password)
+        .then(async (fbUser) => {
+          if (logoutGuardRef.current || authEpochRef.current !== attemptEpoch) {
+            return;
+          }
+          if (!fbUser) {
+            if (auth.currentUser) {
+              await syncProvisionedAlaaAdminProfile(auth.currentUser.uid);
+            }
+            return;
+          }
+          firebaseBackedRef.current = true;
+          await syncSignedInSuperAdminProfile(fbUser);
+          if (logoutGuardRef.current || authEpochRef.current !== attemptEpoch) {
+            return;
+          }
+          const firestoreProfile = await fetchFirestoreAdminProfile(fbUser.uid).catch(() => null);
+          if (logoutGuardRef.current || authEpochRef.current !== attemptEpoch) {
+            return;
+          }
+          if (firestoreProfile?.isActive === false) {
+            firebaseBackedRef.current = false;
+            setUser(null);
+            clearAdminApiToken();
+            logoutAdminSession().catch(() => {});
+            fbSignOut(auth).catch(() => {});
+            emitPermissionDenied({
+              source: 'ui_guard',
+              requiredPermissions: ['full_admin'],
+              actionEn: 'Access Central Management & Secure Control Portal',
+              actionAr: 'الدخول إلى بوابة الإدارة المركزية',
+              reasonEn: 'This administrator account is currently deactivated (isActive: false).',
+              reasonAr: 'تم تعطيل حساب المدير هذا في قاعدة البيانات.',
+              currentUser: {
+                username: firestoreProfile.username,
+                name: firestoreProfile.name,
+                email: firestoreProfile.email,
+                role: firestoreProfile.role,
+                permissions: firestoreProfile.permissions,
+              },
+            });
+            return;
+          }
+          const nextAdminUser = buildAdminUserFromFirebaseUser(fbUser, firestoreProfile);
+          if (nextAdminUser && firestoreProfile) {
+            setUser(nextAdminUser);
+          }
+        })
+        .catch(() => {});
+      return true;
+    }
+
     if (DEMO_USERS[trimmedUser]) {
-      setUser(DEMO_USERS[trimmedUser]);
+      setUser(normalizeAdminUserProfile(DEMO_USERS[trimmedUser]));
+      setLoading(false);
       fetchAdminActivityLogs().catch(() => {});
       return true;
     }
 
     // Custom role login
-    if (role && trimmedUser.length >= 3) {
-      const isSuper = role === 'super_admin' || trimmedUser === 'admin';
-      const newUser: AdminUser = {
-        id: `u-${Date.now()}`,
-        username: trimmedUser,
-        name: isSuper ? '3Laa Hassan' : trimmedUser.charAt(0).toUpperCase() + trimmedUser.slice(1),
-        role,
-        email: `${trimmedUser}@arnaoutcell.com`,
-      };
-      setUser(newUser);
-      fetchAdminActivityLogs().catch(() => {});
-      return true;
-    }
-
-    // Default to super_admin if authorized
-    const isSuper = (role || 'super_admin') === 'super_admin' || trimmedUser === 'admin';
-    setUser({
+    const targetRole = role || 'super_admin';
+    const customUser = normalizeAdminUserProfile({
       id: `u-${Date.now()}`,
-      username: trimmedUser,
-      name: isSuper ? '3Laa Hassan' : trimmedUser.charAt(0).toUpperCase() + trimmedUser.slice(1),
-      role: role || 'super_admin',
-      email: `${trimmedUser}@arnaoutcell.com`,
+      username: username.trim(),
+      name:
+        trimmedUser === 'admin'
+          ? '3Laa Hassan'
+          : trimmedUser === 'alaa'
+          ? 'Alaa'
+          : username.trim().charAt(0).toUpperCase() + username.trim().slice(1),
+      role: targetRole,
+      email: `${trimmedUser}@onalaastore.com`,
+      permissions: getEffectivePermissions({ role: targetRole }),
     });
+    setUser(customUser);
+    setLoading(false);
     fetchAdminActivityLogs().catch(() => {});
     return true;
   };
 
   // Listen to Firebase auth state changes
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (fbUser) => {
-      if (fbUser && !logoutGuardRef.current) {
-        const isAdminEmail = fbUser.email === 'optimatech.lb@gmail.com';
-        const adminProfile: AdminUser = {
-          id: fbUser.uid,
-          username: fbUser.email?.split('@')[0] || 'admin',
-          name: fbUser.displayName || (isAdminEmail ? '3Laa Hassan' : 'Authorized Admin'),
-          role: isAdminEmail ? 'super_admin' : 'product_manager',
-          email: fbUser.email || 'optimatech.lb@gmail.com',
-        };
+    let isEffectCancelled = false;
+
+    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+      const eventEpoch = authEpochRef.current;
+
+      if (!fbUser) {
+        if (!isEffectCancelled && firebaseBackedRef.current) {
+          firebaseBackedRef.current = false;
+          setUser(null);
+          clearAdminApiToken();
+        }
+        if (!isEffectCancelled) {
+          setLoading(false);
+        }
+        return;
+      }
+
+      if (logoutGuardRef.current) {
+        if (!isEffectCancelled) {
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const firestoreProfile = await fetchFirestoreAdminProfile(fbUser.uid).catch(() => null);
+        if (isEffectCancelled || logoutGuardRef.current || authEpochRef.current !== eventEpoch) {
+          return;
+        }
+
+        if (firestoreProfile?.isActive === false) {
+          firebaseBackedRef.current = false;
+          setUser(null);
+          clearAdminApiToken();
+          logoutAdminSession().catch(() => {});
+          fbSignOut(auth).catch(() => {});
+          emitPermissionDenied({
+            source: 'ui_guard',
+            requiredPermissions: ['full_admin'],
+            actionEn: 'Access Central Management & Secure Control Portal',
+            actionAr: 'الدخول إلى بوابة الإدارة المركزية',
+            reasonEn: 'This administrator account is currently deactivated (isActive: false).',
+            reasonAr: 'تم تعطيل حساب المدير هذا في قاعدة البيانات.',
+            currentUser: {
+              username: firestoreProfile.username,
+              name: firestoreProfile.name,
+              email: firestoreProfile.email,
+              role: firestoreProfile.role,
+              permissions: firestoreProfile.permissions,
+            },
+          });
+          return;
+        }
+
+        const adminProfile = buildAdminUserFromFirebaseUser(fbUser, firestoreProfile);
+        if (!adminProfile) {
+          return;
+        }
+
+        const isSuperFirebaseEmail =
+          fbUser.email?.toLowerCase() === 'optimatech.lb@gmail.com' ||
+          fbUser.email?.toLowerCase() === 'alaa@onalaastore.com';
+
+        firebaseBackedRef.current = true;
         logoutGuardRef.current = false;
         setLogoutReason(null);
         if (!parseStoredActivityTimestamp(localStorage.getItem(ADMIN_LAST_ACTIVITY_STORAGE_KEY))) {
           stampActivity(Date.now());
         }
         setUser(adminProfile);
-        if (isAdminEmail) {
+        if (isSuperFirebaseEmail || adminProfile.role === 'super_admin') {
           exchangeFirebaseIdTokenForAdminSession(() => fbUser.getIdToken()).catch(() => {});
+          syncSignedInSuperAdminProfile(fbUser).catch(() => {});
+        }
+      } finally {
+        if (!isEffectCancelled) {
+          setLoading(false);
         }
       }
     });
-    return () => unsubscribe();
+
+    return () => {
+      isEffectCancelled = true;
+      unsubscribe();
+    };
   }, [stampActivity]);
 
   const loginWithGoogle = async (): Promise<boolean> => {
     try {
       logoutGuardRef.current = false;
+      const attemptEpoch = ++authEpochRef.current;
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       if (result.user) {
-        const isAdminEmail = result.user.email === 'optimatech.lb@gmail.com';
-        const adminProfile: AdminUser = {
-          id: result.user.uid,
-          username: result.user.email?.split('@')[0] || 'admin',
-          name: result.user.displayName || (isAdminEmail ? '3Laa Hassan' : 'Authorized Admin'),
-          role: isAdminEmail ? 'super_admin' : 'product_manager',
-          email: result.user.email || 'optimatech.lb@gmail.com',
-        };
+        if (logoutGuardRef.current || authEpochRef.current !== attemptEpoch) {
+          return false;
+        }
+        const firestoreProfile = await fetchFirestoreAdminProfile(result.user.uid).catch(
+          () => null
+        );
+        if (logoutGuardRef.current || authEpochRef.current !== attemptEpoch) {
+          return false;
+        }
+
+        if (firestoreProfile?.isActive === false) {
+          firebaseBackedRef.current = false;
+          setUser(null);
+          clearAdminApiToken();
+          await fbSignOut(auth).catch(() => {});
+          emitPermissionDenied({
+            source: 'ui_guard',
+            requiredPermissions: ['full_admin'],
+            actionEn: 'Sign in with Google SSO',
+            actionAr: 'تسجيل الدخول عبر Google SSO',
+            reasonEn: 'This administrator account is currently deactivated (isActive: false).',
+            reasonAr: 'تم تعطيل حساب المدير هذا في قاعدة البيانات.',
+            currentUser: {
+              username: firestoreProfile.username,
+              name: firestoreProfile.name,
+              email: firestoreProfile.email,
+              role: firestoreProfile.role,
+              permissions: firestoreProfile.permissions,
+            },
+          });
+          return false;
+        }
+
+        const adminProfile = buildAdminUserFromFirebaseUser(result.user, firestoreProfile);
+        if (!adminProfile) {
+          return false;
+        }
+
+        const isSuperFirebaseEmail =
+          result.user.email?.toLowerCase() === 'optimatech.lb@gmail.com' ||
+          result.user.email?.toLowerCase() === 'alaa@onalaastore.com';
+
+        firebaseBackedRef.current = true;
         logoutGuardRef.current = false;
         setLogoutReason(null);
         stampActivity(Date.now());
         setUser(adminProfile);
-        if (isAdminEmail) {
-          await exchangeFirebaseIdTokenForAdminSession(() => result.user.getIdToken());
+        setLoading(false);
+        if (isSuperFirebaseEmail || adminProfile.role === 'super_admin') {
+          await Promise.all([
+            exchangeFirebaseIdTokenForAdminSession(() => result.user.getIdToken()).catch(() => false),
+            syncSignedInSuperAdminProfile(result.user).catch(() => false),
+          ]);
         }
         recordAdminActivity({
           action: 'auth_login_success',
@@ -577,10 +798,47 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     }
   };
 
+  const permissions = getEffectivePermissions(user);
+
   const hasRole = (allowedRoles: AdminRole[]): boolean => {
-    if (!user) return false;
-    if (user.role === 'super_admin') return true;
-    return allowedRoles.includes(user.role);
+    return hasAdminRole(user, allowedRoles);
+  };
+
+  const hasPermission = (required: AdminPermission | AdminPermission[]): boolean => {
+    return hasAdminPermission(user, required);
+  };
+
+  const requirePermission = (
+    required: AdminPermission | AdminPermission[],
+    actionContext: {
+      actionEn: string;
+      actionAr?: string;
+      requiredRoles?: AdminRole[];
+      reasonEn?: string;
+      reasonAr?: string;
+    }
+  ): boolean => {
+    return guardActionWithPermission({
+      user,
+      required,
+      ...actionContext,
+    });
+  };
+
+  const reportPermissionDenied = (
+    input: Omit<BuildPermissionDeniedInput, 'currentUser'>
+  ): PermissionDeniedDetail => {
+    return emitPermissionDenied({
+      ...input,
+      currentUser: user
+        ? {
+            username: user.username,
+            name: user.name,
+            role: user.role,
+            permissions: user.permissions,
+          }
+        : null,
+    });
   };
 
   const handleChangePassword = async (
@@ -606,10 +864,15 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       value={{
         user,
         isAuthenticated: !!user,
+        loading,
+        permissions,
         login,
         loginWithGoogle,
         logout,
         hasRole,
+        hasPermission,
+        requirePermission,
+        reportPermissionDenied,
         changePassword: handleChangePassword,
         selectableBrands: SELECTABLE_ADMIN_BRANDS,
         sessionRemainingMs,

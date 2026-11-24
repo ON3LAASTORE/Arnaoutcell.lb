@@ -1,5 +1,522 @@
 [
   {
+    "id": "audit-1795530759745-t3uc14",
+    "action": "product_updated",
+    "titleEn": "Updated product: HOCO X102 TC-IPHONE",
+    "titleAr": "تم تحديث المنتج: HOCO X102 TC-IPHONE",
+    "category": "catalog",
+    "severity": "info",
+    "target": "HOCO X102 TC-IPHONE (prod-1793519795397)",
+    "details": "Stock 35 -> 34",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T14:32:39.745Z"
+  },
+  {
+    "id": "audit-1795530757451-j5bdox",
+    "action": "product_updated",
+    "titleEn": "Updated product: HOCO X102 TC-IPHONE",
+    "titleAr": "تم تحديث المنتج: HOCO X102 TC-IPHONE",
+    "category": "catalog",
+    "severity": "info",
+    "target": "HOCO X102 TC-IPHONE (prod-1793519795397)",
+    "details": "Stock 30 -> 35",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T14:32:37.451Z"
+  },
+  {
+    "id": "audit-1795530754644-b8dk5p",
+    "action": "product_deleted",
+    "titleEn": "Deleted product: QA Verification Phone X1",
+    "titleAr": "تم حذف المنتج: QA Verification Phone X1",
+    "category": "catalog",
+    "severity": "warning",
+    "target": "QA Verification Phone X1 (prod-1795530749507)",
+    "details": "Removed Apple item ($89) from storefront catalog.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T14:32:34.644Z"
+  },
+  {
+    "id": "audit-1795530751486-tnirf1",
+    "action": "product_created",
+    "titleEn": "Added new product: QA Verification Phone X1",
+    "titleAr": "تمت إضافة منتج جديد: QA Verification Phone X1",
+    "category": "catalog",
+    "severity": "info",
+    "target": "QA Verification Phone X1 (prod-1795530749507)",
+    "details": "Brand: Apple • Category: Phones • Price: $89 • Stock: 15",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T14:32:31.486Z"
+  },
+  {
+    "id": "audit-1795530727140-96ff72",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-24T14:32:07.140Z"
+  },
+  {
+    "id": "audit-1795529290798-o9py4o",
+    "action": "auth_logout",
+    "titleEn": "Administrator signed out",
+    "titleAr": "تم تسجيل خروج المدير",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Admin portal session terminated by user.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T14:08:10.798Z"
+  },
+  {
+    "id": "audit-1795529285781-kyffwl",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-24T14:08:05.781Z"
+  },
+  {
+    "id": "audit-1795528737199-uoorjn",
+    "action": "auth_logout",
+    "titleEn": "Administrator signed out",
+    "titleAr": "تم تسجيل خروج المدير",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Admin portal session terminated by user.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T13:58:57.199Z"
+  },
+  {
+    "id": "audit-1795528730702-0wkeev",
+    "action": "product_updated",
+    "titleEn": "Updated product: HOCO X102 TC-IPHONE",
+    "titleAr": "تم تحديث المنتج: HOCO X102 TC-IPHONE",
+    "category": "catalog",
+    "severity": "info",
+    "target": "HOCO X102 TC-IPHONE (prod-1793519795397)",
+    "details": "Stock 26 -> 25",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T13:58:50.702Z"
+  },
+  {
+    "id": "audit-1795528728538-o8mwx5",
+    "action": "product_updated",
+    "titleEn": "Updated product: HOCO X102 TC-IPHONE",
+    "titleAr": "تم تحديث المنتج: HOCO X102 TC-IPHONE",
+    "category": "catalog",
+    "severity": "info",
+    "target": "HOCO X102 TC-IPHONE (prod-1793519795397)",
+    "details": "Stock 27 -> 26",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T13:58:48.538Z"
+  },
+  {
+    "id": "audit-1795528726117-bshx8e",
+    "action": "product_updated",
+    "titleEn": "Updated product: HOCO X102 TC-IPHONE",
+    "titleAr": "تم تحديث المنتج: HOCO X102 TC-IPHONE",
+    "category": "catalog",
+    "severity": "info",
+    "target": "HOCO X102 TC-IPHONE (prod-1793519795397)",
+    "details": "Stock 28 -> 27",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T13:58:46.116Z"
+  },
+  {
+    "id": "audit-1795528724006-kc3u4d",
+    "action": "product_updated",
+    "titleEn": "Updated product: HOCO X102 TC-IPHONE",
+    "titleAr": "تم تحديث المنتج: HOCO X102 TC-IPHONE",
+    "category": "catalog",
+    "severity": "info",
+    "target": "HOCO X102 TC-IPHONE (prod-1793519795397)",
+    "details": "Stock 29 -> 28",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T13:58:44.006Z"
+  },
+  {
+    "id": "audit-1795528721269-o9g5fk",
+    "action": "product_updated",
+    "titleEn": "Updated product: HOCO X102 TC-IPHONE",
+    "titleAr": "تم تحديث المنتج: HOCO X102 TC-IPHONE",
+    "category": "catalog",
+    "severity": "info",
+    "target": "HOCO X102 TC-IPHONE (prod-1793519795397)",
+    "details": "Stock 30 -> 29",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T13:58:41.269Z"
+  },
+  {
+    "id": "audit-1795528718290-nmno6t",
+    "action": "product_updated",
+    "titleEn": "Updated product: Apple iPhone 16 Pro Max 256GB Desert Titanium",
+    "titleAr": "تم تحديث المنتج: أبل آيفون 16 برو ماكس 256 جيجابايت - تيتانيوم صحراوي",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Apple iPhone 16 Pro Max 256GB Desert Titanium (prod-iphone16promax)",
+    "details": "Price $1690 -> $1249 • Stock 10 -> 19",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T13:58:38.290Z"
+  },
+  {
+    "id": "audit-1795528712811-tx5d1t",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-24T13:58:32.811Z"
+  },
+  {
+    "id": "audit-1795528711970-1cgyvo",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (alaa)",
+    "details": "Invalid administrator password submitted for provisioned user account.",
+    "actor": {
+      "name": "Alaa",
+      "username": "alaa",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-24T13:58:31.970Z"
+  },
+  {
+    "id": "audit-1795528289120-un93nm",
+    "action": "auth_logout",
+    "titleEn": "Administrator signed out",
+    "titleAr": "تم تسجيل خروج المدير",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Admin portal session terminated by user.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T13:51:29.120Z"
+  },
+  {
+    "id": "audit-1795528277104-qhikke",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-24T13:51:17.104Z"
+  },
+  {
+    "id": "audit-1795528208663-ui94ut",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (admin)",
+    "details": "Invalid administrator password submitted during authentication check.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-24T13:50:08.662Z"
+  },
+  {
+    "id": "audit-1795528207692-1nayvc",
+    "action": "auth_logout",
+    "titleEn": "Administrator signed out",
+    "titleAr": "تم تسجيل خروج المدير",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Admin portal session terminated by user.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T13:50:07.692Z"
+  },
+  {
+    "id": "audit-1795528196266-tnnkuu",
+    "action": "product_updated",
+    "titleEn": "Updated product: HOCO X102 TC-IPHONE",
+    "titleAr": "تم تحديث المنتج: HOCO X102 TC-IPHONE",
+    "category": "catalog",
+    "severity": "info",
+    "target": "HOCO X102 TC-IPHONE (prod-1793519795397)",
+    "details": "Stock 25 -> 30",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T13:49:56.266Z"
+  },
+  {
+    "id": "audit-1795528188983-afdxe2",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-24T13:49:48.983Z"
+  },
+  {
+    "id": "audit-1795528188169-3xlkx7",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (alaa)",
+    "details": "Invalid administrator password submitted for provisioned user account.",
+    "actor": {
+      "name": "Alaa",
+      "username": "alaa",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-24T13:49:48.169Z"
+  },
+  {
+    "id": "audit-1795528146448-iqhoka",
+    "action": "product_updated",
+    "titleEn": "Updated product: HOCO X102 TC-IPHONE",
+    "titleAr": "تم تحديث المنتج: HOCO X102 TC-IPHONE",
+    "category": "catalog",
+    "severity": "info",
+    "target": "HOCO X102 TC-IPHONE (prod-1793519795397)",
+    "details": "Stock 20 -> 25",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T13:49:06.448Z"
+  },
+  {
+    "id": "audit-1795528138497-77foi7",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-24T13:48:58.496Z"
+  },
+  {
+    "id": "audit-1795528137691-mbv9ex",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (alaa)",
+    "details": "Invalid administrator password submitted for provisioned user account.",
+    "actor": {
+      "name": "Alaa",
+      "username": "alaa",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-24T13:48:57.691Z"
+  },
+  {
+    "id": "audit-1795528036400-cuz8uz",
+    "action": "product_updated",
+    "titleEn": "Updated product: HOCO X102 TC-IPHONE",
+    "titleAr": "تم تحديث المنتج: HOCO X102 TC-IPHONE",
+    "category": "catalog",
+    "severity": "info",
+    "target": "HOCO X102 TC-IPHONE (prod-1793519795397)",
+    "details": "Stock 15 -> 20",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-24T13:47:16.400Z"
+  },
+  {
+    "id": "audit-1795528024499-rry5k1",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-24T13:47:04.499Z"
+  },
+  {
+    "id": "audit-1795528020993-q38rll",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (alaa)",
+    "details": "Invalid administrator password submitted for provisioned user account.",
+    "actor": {
+      "name": "Alaa",
+      "username": "alaa",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-24T13:47:00.993Z"
+  },
+  {
     "id": "audit-1795439139195-3orq67",
     "action": "auth_login_failed",
     "titleEn": "Failed administrator login attempt",

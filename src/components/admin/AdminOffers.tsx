@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useShop } from '../../context/ShopContext';
+import { useAdmin } from '../../context/AdminContext';
 import { saveProduct } from '../../services/storageService';
 import { Product } from '../../types';
 import { Flame, Search, Share2 } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
+import { DEFAULT_FULL_RES_FALLBACK_IMAGE } from '../../utils/imageResolutionHelpers';
 
 interface AdminOffersProps {
   onShareProduct?: (productId: string) => void;
@@ -11,12 +13,22 @@ interface AdminOffersProps {
 
 export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
   const { lang, products, refreshData } = useShop();
+  const { requirePermission } = useAdmin();
   const [search, setSearch] = useState('');
   const [feedback, setFeedback] = useState('');
 
-  const offerProducts = products.filter((p) => p.isSpecialOffer);
+  const safeProducts = products || [];
+  const offerProducts = safeProducts.filter((p) => p.isSpecialOffer);
 
   const handleToggleOffer = (product: Product) => {
+    if (
+      !requirePermission(['full_stock', 'manage_products'], {
+        actionEn: `Update promotional offer status for "${product.name}"`,
+        actionAr: `تعديل حالة العرض للمنتج "${product.nameAr || product.name}"`,
+      })
+    ) {
+      return;
+    }
     const updated: Product = {
       ...product,
       isSpecialOffer: !product.isSpecialOffer,
@@ -28,10 +40,20 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
   };
 
   const handleUpdateDiscount = (product: Product, newDiscountPercent: number) => {
+    if (
+      !requirePermission(['full_stock', 'manage_products'], {
+        actionEn: `Update discount percentage for "${product.name}"`,
+        actionAr: `تعديل نسبة الخصم للمنتج "${product.nameAr || product.name}"`,
+      })
+    ) {
+      return;
+    }
     const clampedPercent = Number.isFinite(newDiscountPercent)
       ? Math.min(90, Math.max(0, Math.round(newDiscountPercent)))
       : 0;
-    const basePrice = product.originalPrice > 0 ? product.originalPrice : product.price;
+    const orig = Number(product.originalPrice);
+    const curr = Number(product.price);
+    const basePrice = Number.isFinite(orig) && orig > 0 ? orig : (Number.isFinite(curr) ? curr : 0);
     const discountedPrice = Math.max(0, Math.round(basePrice * (1 - clampedPercent / 100)));
     const updated: Product = {
       ...product,
@@ -43,9 +65,10 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
     refreshData();
   };
 
-  const filtered = products.filter((p) =>
-    p.name.toLowerCase().includes(search.toLowerCase()) ||
-    p.brand.toLowerCase().includes(search.toLowerCase())
+  const q = search.toLowerCase();
+  const filtered = safeProducts.filter((p) =>
+    (p.name || '').toLowerCase().includes(q) ||
+    (p.brand || '').toLowerCase().includes(q)
   );
 
   return (
@@ -115,8 +138,8 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
                       <LazyImage
-                        src={p.images[0]}
-                        alt={p.name}
+                        src={p.images?.[0] || DEFAULT_FULL_RES_FALLBACK_IMAGE}
+                        alt={p.name || 'Product'}
                         width={40}
                         height={40}
                         priority={false}

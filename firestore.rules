@@ -24,11 +24,48 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Bootstrapped Admin check with runtime email optimatech.lb@gmail.com
+    function isBootstrapOwnerEmail() {
+      return isSignedIn() && (
+        (request.auth.token.email == 'optimatech.lb@gmail.com' && request.auth.token.email_verified == true) ||
+        (request.auth.token.email == 'alaa@onalaastore.com' && request.auth.token.email_verified == true)
+      );
+    }
+
+    // Strict Super Admin + Full Stock check against users/{uid} (and admins/{uid} compatibility record)
+    function hasUserSuperAdminFullStock(uid) {
+      return exists(/databases/$(database)/documents/users/$(uid))
+        && get(/databases/$(database)/documents/users/$(uid)).data.role == 'super_admin'
+        && get(/databases/$(database)/documents/users/$(uid)).data.isActive != false
+        && get(/databases/$(database)/documents/users/$(uid)).data.permissions is list
+        && 'full_stock' in get(/databases/$(database)/documents/users/$(uid)).data.permissions;
+    }
+
+    function hasAdminSuperAdminFullStock(uid) {
+      return exists(/databases/$(database)/documents/admins/$(uid))
+        && get(/databases/$(database)/documents/admins/$(uid)).data.role == 'super_admin'
+        && get(/databases/$(database)/documents/admins/$(uid)).data.isActive != false
+        && get(/databases/$(database)/documents/admins/$(uid)).data.permissions is list
+        && 'full_stock' in get(/databases/$(database)/documents/admins/$(uid)).data.permissions;
+    }
+
+    function isSuperAdminWithFullStock() {
+      return isSignedIn() && (
+        hasUserSuperAdminFullStock(request.auth.uid) ||
+        hasAdminSuperAdminFullStock(request.auth.uid)
+      );
+    }
+
+    // Bootstrapped Admin & Staff RBAC checks
     function isAdmin() {
       return isSignedIn() && (
+        isSuperAdminWithFullStock() ||
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        (request.auth.token.email == 'optimatech.lb@gmail.com' && request.auth.token.email_verified == true)
+        (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['super_admin', 'product_manager', 'order_manager', 'inventory_manager'] &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActive != false
+        ) ||
+        isBootstrapOwnerEmail()
       );
     }
 
@@ -69,9 +106,86 @@ service cloud.firestore {
     }
 
     function isValidAdminProfile(data) {
-      return data.keys().hasAll(['email', 'role'])
-        && data.email is string && data.email.size() <= 128
-        && data.role in ['super_admin', 'product_manager', 'order_manager', 'inventory_manager'];
+      return data.keys().hasAll(['username', 'email', 'role', 'permissions'])
+        && data.keys().hasOnly([
+          'id', 'uid', 'username', 'name', 'email', 'role', 'permissions', 'isActive', 'createdAt', 'updatedAt'
+        ])
+        && (!('id' in data) || isValidId(data.id))
+        && (!('uid' in data) || (data.uid is string && data.uid.size() > 0 && data.uid.size() <= 128))
+        && data.username is string && data.username.size() > 0 && data.username.size() <= 64
+        && (!('name' in data) || (data.name is string && data.name.size() > 0 && data.name.size() <= 128))
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 128
+        && data.email.matches('^[a-zA-Z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)+$')
+        && data.role in ['super_admin', 'product_manager', 'order_manager', 'inventory_manager']
+        && data.permissions is list
+        && data.permissions.size() > 0 && data.permissions.size() <= 20
+        && data.permissions.hasOnly([
+          'full_stock',
+          'full_admin',
+          'manage_products',
+          'manage_orders',
+          'manage_inventory',
+          'manage_categories',
+          'manage_content',
+          'manage_customers',
+          'manage_settings',
+          'view_analytics',
+          'view_audit_logs'
+        ])
+        && (!('isActive' in data) || data.isActive is bool)
+        && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64))
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidUserProfile(data) {
+      return data.keys().hasAll(['uid', 'username', 'email', 'role', 'permissions'])
+        && data.keys().hasOnly([
+          'id', 'uid', 'username', 'name', 'email', 'role', 'permissions', 'isActive', 'createdAt', 'updatedAt'
+        ])
+        && (!('id' in data) || isValidId(data.id))
+        && data.uid is string && data.uid.size() > 0 && data.uid.size() <= 128
+        && data.username is string && data.username.size() > 0 && data.username.size() <= 64
+        && (!('name' in data) || (data.name is string && data.name.size() > 0 && data.name.size() <= 128))
+        && data.email is string && data.email.size() >= 3 && data.email.size() <= 128
+        && data.email.matches('^[a-zA-Z0-9.!#$%&\'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\\.[a-zA-Z0-9-]+)+$')
+        && data.role in ['super_admin', 'product_manager', 'order_manager', 'inventory_manager', 'customer']
+        && data.permissions is list
+        && data.permissions.size() <= 20
+        && data.permissions.hasOnly([
+          'full_stock',
+          'full_admin',
+          'manage_products',
+          'manage_orders',
+          'manage_inventory',
+          'manage_categories',
+          'manage_content',
+          'manage_customers',
+          'manage_settings',
+          'view_analytics',
+          'view_audit_logs'
+        ])
+        && (!('isActive' in data) || data.isActive is bool)
+        && (!('createdAt' in data) || (data.createdAt is string && data.createdAt.size() <= 64))
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
+    }
+
+    function isValidInventoryItem(data) {
+      return data.keys().hasAll(['id', 'productId', 'sku', 'productName', 'stock'])
+        && data.keys().hasOnly([
+          'id', 'productId', 'sku', 'productName', 'brand', 'category',
+          'stock', 'lowStockThreshold', 'warehouse', 'updatedByUid', 'updatedAt'
+        ])
+        && isValidId(data.id)
+        && isValidId(data.productId)
+        && data.sku is string && data.sku.size() > 0 && data.sku.size() <= 64
+        && data.productName is string && data.productName.size() > 0 && data.productName.size() <= 255
+        && (!('brand' in data) || (data.brand is string && data.brand.size() <= 64))
+        && (!('category' in data) || (data.category is string && data.category.size() <= 64))
+        && data.stock is number && data.stock >= 0 && data.stock <= 1000000
+        && (!('lowStockThreshold' in data) || (data.lowStockThreshold is number && data.lowStockThreshold >= 0 && data.lowStockThreshold <= 100000))
+        && (!('warehouse' in data) || (data.warehouse is string && data.warehouse.size() <= 128))
+        && (!('updatedByUid' in data) || (data.updatedByUid is string && data.updatedByUid.size() <= 128))
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 64));
     }
 
     function isValidNewsletterSubscriber(data) {
@@ -220,6 +334,7 @@ service cloud.firestore {
         && data.actor.username is string && data.actor.username.size() > 0 && data.actor.username.size() <= 64
         && data.actor.role in ['super_admin', 'product_manager', 'order_manager', 'inventory_manager', 'system']
         && (!('email' in data.actor) || (data.actor.email is string && data.actor.email.size() <= 128))
+        && (!('source' in data.actor) || data.actor.source in ['server', 'client', 'firestore'])
         && (!('source' in data) || data.source in ['server', 'client', 'firestore'])
         && data.timestamp is string && data.timestamp.size() > 0 && data.timestamp.size() <= 64;
     }
@@ -234,7 +349,6 @@ service cloud.firestore {
       allow get: if isValidId(orderId) && (
         isAdmin() ||
         (isSignedIn() && resource.data.userId == request.auth.uid) ||
-        // Allow customer tracking verification by order ID
         resource.data.id == orderId
       );
 
@@ -249,9 +363,7 @@ service cloud.firestore {
         && isValidOrder(incoming())
         && incoming().id == existing().id
         && (
-          // Admin override
           isAdmin() ||
-          // Customer can only cancel their own pending new order
           (
             isSignedIn()
             && existing().userId == request.auth.uid
@@ -275,45 +387,113 @@ service cloud.firestore {
       allow update, delete: if isAdmin();
     }
 
-    // 7. Admin RBAC Collection
-    match /admins/{adminUid} {
-      allow get: if isSignedIn() && (request.auth.uid == adminUid || isAdmin());
+    // 7a. User Profiles Collection (users/{uid}): Strict self-service PII isolation + anti-privilege-escalation
+    match /users/{userId} {
+      allow get: if isValidId(userId) && isSignedIn() && (request.auth.uid == userId || isAdmin());
       allow list: if isAdmin();
-      allow write: if isAdmin();
+
+      allow create: if isSignedIn()
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && (
+          isAdmin() ||
+          (
+            request.auth.uid == userId
+            && incoming().uid == request.auth.uid
+            && incoming().role == 'customer'
+            && incoming().permissions.size() == 0
+          )
+        );
+
+      allow update: if isSignedIn()
+        && isValidId(userId)
+        && isValidUserProfile(incoming())
+        && (!('createdAt' in existing()) || !('createdAt' in incoming()) || incoming().createdAt == existing().createdAt)
+        && (
+          isAdmin() ||
+          (
+            request.auth.uid == userId
+            && incoming().uid == existing().uid
+            && incoming().role == existing().role
+            && incoming().permissions == existing().permissions
+            && incoming().diff(existing()).affectedKeys().hasOnly(['name', 'updatedAt'])
+          )
+        );
+
+      allow delete: if isAdmin() && isValidId(userId);
     }
 
-    // 8. Products Collection: Public live catalog, validated management
+    // 7b. Admin RBAC Collection
+    match /admins/{adminUid} {
+      allow get: if isValidId(adminUid) && isSignedIn() && (request.auth.uid == adminUid || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isAdmin() && isValidId(adminUid) && isValidAdminProfile(incoming());
+      allow update: if isAdmin() && isValidId(adminUid) && isValidAdminProfile(incoming())
+        && (!('createdAt' in existing()) || !('createdAt' in incoming()) || incoming().createdAt == existing().createdAt);
+      allow delete: if isAdmin() && isValidId(adminUid);
+    }
+
+    // 8a. Inventory Collection: Authenticated read; write/delete strictly restricted to Super Admin with Full Stock permission
+    match /inventory/{inventoryId} {
+      allow get: if isValidId(inventoryId) && isSignedIn();
+      allow list: if isSignedIn() && resource.data.stock >= 0;
+
+      allow create: if isSignedIn()
+        && isValidId(inventoryId)
+        && isValidInventoryItem(incoming())
+        && incoming().id == inventoryId
+        && isSuperAdminWithFullStock();
+
+      allow update: if isSignedIn()
+        && isValidId(inventoryId)
+        && isValidInventoryItem(incoming())
+        && incoming().id == existing().id
+        && incoming().productId == existing().productId
+        && isSuperAdminWithFullStock();
+
+      allow delete: if isSignedIn()
+        && isValidId(inventoryId)
+        && isSuperAdminWithFullStock();
+    }
+
+    // 8b. Products Collection: Public catalog read; stock/catalog writes/deletes strictly restricted to Super Admin with Full Stock
     match /products/{productId} {
       allow get, list: if true;
 
-      allow create: if isValidId(productId)
+      allow create: if isSignedIn()
+        && isValidId(productId)
         && isValidProduct(incoming())
-        && incoming().id == productId;
+        && incoming().id == productId
+        && isSuperAdminWithFullStock();
 
       allow update: if isValidId(productId)
         && isValidProduct(incoming())
-        && incoming().id == existing().id;
+        && incoming().id == existing().id
+        && (
+          isSuperAdminWithFullStock() ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['reviews', 'rating', 'reviewCount'])
+        );
 
-      allow delete: if isValidId(productId);
+      allow delete: if isSignedIn()
+        && isValidId(productId)
+        && isSuperAdminWithFullStock();
     }
 
-    // 8b. Categories Collection: Public dynamic storefront categories, schema-validated management
+    // 8c. Categories Collection: Public storefront categories, admin-only management
     match /categories/{categoryId} {
       allow get, list: if true;
 
-      allow create: if isValidId(categoryId)
+      allow create: if isAdmin()
+        && isValidId(categoryId)
         && isValidCategory(incoming())
         && incoming().id == categoryId;
 
-      allow update: if isValidId(categoryId)
+      allow update: if isAdmin()
+        && isValidId(categoryId)
         && isValidCategory(incoming())
-        && incoming().id == existing().id
-        && (
-          isAdmin() ||
-          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'nameAr', 'slug', 'iconName', 'image', 'description', 'featured', 'displayOrder', 'subcategories'])
-        );
+        && incoming().id == existing().id;
 
-      allow delete: if isValidId(categoryId);
+      allow delete: if isAdmin() && isValidId(categoryId);
     }
 
     // 9. Newsletter Subscribers Collection: PII-isolated signup with strict field validation

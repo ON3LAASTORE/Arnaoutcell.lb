@@ -8,6 +8,7 @@ import {
   INITIAL_STORE_SETTINGS,
 } from '../data/initialData';
 import {
+  persistProductReviewToCloud,
   persistProductToCloud,
   removeProductFromCloud,
 } from './productFirestoreService';
@@ -803,8 +804,8 @@ export function addProductReview(
   }
   saveProducts(nextProducts);
 
-  // Sync updated reviews, rating, and reviewCount to Firestore
-  persistProductToCloud(updatedProduct).catch((err) =>
+  // Sync updated reviews, rating, and reviewCount to Firestore without touching stock/admin fields
+  persistProductReviewToCloud(updatedProduct).catch((err) =>
     console.warn('Firestore product review sync notice:', err)
   );
 

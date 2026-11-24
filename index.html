@@ -220,34 +220,54 @@
         } catch (e) {}
       })();
 
-      // Gracefully silence transient WebSocket, @vite/client, and WebChannel proxy disconnects in embedded iframes
+      // Gracefully silence transient Vite HMR WebSocket rejections from @vite/client before app bootstrap
+      // without swallowing real React, Firebase Auth, Firestore, or application errors.
       (function() {
-        function isTransientSocketMessage(msg) {
-          if (!msg) return false;
-          var lower = String(msg).toLowerCase();
+        function isViteHmrSocketNoise(msg, stack, filename) {
+          var combined = (String(msg || '') + '\n' + String(stack || '') + '\n' + String(filename || '')).toLowerCase();
+          if (!combined.trim()) return false;
+          if (
+            (combined.indexOf('firestore') !== -1 ||
+              combined.indexOf('auth/') !== -1 ||
+              combined.indexOf('permission-denied') !== -1) &&
+            combined.indexOf('@vite/client') === -1
+          ) {
+            return false;
+          }
           return (
-            lower.indexOf('websocket') !== -1 ||
-            lower.indexOf('@vite/client') !== -1 ||
-            lower.indexOf('webchannelconnection') !== -1 ||
-            lower.indexOf('listen stream transport errored') !== -1 ||
-            lower.indexOf('failed to connect to websocket') !== -1
+            combined.indexOf('websocket closed without opened') !== -1 ||
+            combined.indexOf('[vite] failed to connect to websocket') !== -1 ||
+            (combined.indexOf('failed to connect to websocket') !== -1 && combined.indexOf('vite') !== -1) ||
+            (combined.indexOf('@vite/client') !== -1 && combined.indexOf('websocket') !== -1)
           );
         }
 
-        window.addEventListener('unhandledrejection', function(event) {
-          var reason = event.reason;
-          var msg = reason ? (reason.message || String(reason)) : '';
-          if (isTransientSocketMessage(msg)) {
-            event.preventDefault();
-          }
-        });
+        window.addEventListener(
+          'unhandledrejection',
+          function(event) {
+            var reason = event && event.reason;
+            var msg = reason ? (reason.message || String(reason)) : '';
+            var stack = reason && reason.stack ? reason.stack : '';
+            if (isViteHmrSocketNoise(msg, stack, '')) {
+              event.preventDefault();
+            }
+          },
+          true
+        );
 
-        window.addEventListener('error', function(event) {
-          var msg = (event && (event.message || (event.error && event.error.message))) || '';
-          if (isTransientSocketMessage(msg)) {
-            event.preventDefault();
-          }
-        });
+        window.addEventListener(
+          'error',
+          function(event) {
+            var err = event && event.error;
+            var msg = (event && (event.message || (err && err.message))) || '';
+            var stack = err && err.stack ? err.stack : '';
+            var filename = (event && event.filename) || '';
+            if (isViteHmrSocketNoise(msg, stack, filename)) {
+              event.preventDefault();
+            }
+          },
+          true
+        );
       })();
     </script>
   </head>

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Download,
   History,
@@ -49,29 +49,44 @@ export const AdminActivityLog: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<'all' | ActivityLogCategory>('all');
   const [selectedSeverity, setSelectedSeverity] = useState<'all' | ActivityLogSeverity>('all');
 
+  const mountedRef = useRef(true);
+
   const handleRefresh = async () => {
+    if (!mountedRef.current) return;
     setIsLoading(true);
     setLoadError('');
     try {
       const updated = await fetchAdminActivityLogs();
-      setLogs(updated);
+      if (mountedRef.current) {
+        setLogs(updated);
+      }
     } catch {
-      setLoadError(
-        isAr
-          ? 'تعذر تحميل سجل النشاط الأمني من الخادم.'
-          : 'Unable to load activity log records from server.'
-      );
+      if (mountedRef.current) {
+        setLoadError(
+          isAr
+            ? 'تعذر تحميل سجل النشاط الأمني من الخادم.'
+            : 'Unable to load activity log records from server.'
+        );
+      }
     } finally {
-      setIsLoading(false);
+      if (mountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
   useEffect(() => {
+    mountedRef.current = true;
     const unsubscribe = subscribeActivityLogs((nextLogs) => {
-      setLogs(nextLogs);
+      if (mountedRef.current) {
+        setLogs(nextLogs);
+      }
     });
     handleRefresh();
-    return () => unsubscribe();
+    return () => {
+      mountedRef.current = false;
+      unsubscribe();
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

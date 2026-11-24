@@ -124,14 +124,29 @@ export interface AuthActorMeta {
   email?: string;
 }
 
+export interface VerifiedAdminCredentialsResult {
+  valid: boolean;
+  user?: {
+    id: string;
+    username: string;
+    name: string;
+    email: string;
+    role: string;
+    permissions?: string[];
+  };
+}
+
 /**
- * Verifies administrator candidate password against the backend bcrypt hash.
+ * Verifies administrator candidate password against the backend bcrypt hash and
+ * returns any per-user RBAC metadata (such as username, role, and permissions).
  */
-export async function verifyAdminPassword(
+export async function verifyAdminCredentials(
   candidate: string,
   actorMeta?: AuthActorMeta
-): Promise<boolean> {
-  if (!candidate || typeof candidate !== 'string') return false;
+): Promise<VerifiedAdminCredentialsResult> {
+  if (!candidate || typeof candidate !== 'string') {
+    return { valid: false };
+  }
 
   try {
     const response = await fetch('/api/admin/auth/verify', {
@@ -150,20 +165,35 @@ export async function verifyAdminPassword(
 
     if (!response.ok) {
       clearAdminApiToken();
-      return false;
+      return { valid: false };
     }
-    const data = (await response.json()) as { valid?: boolean; token?: string };
+    const data = (await response.json()) as {
+      valid?: boolean;
+      token?: string;
+      user?: VerifiedAdminCredentialsResult['user'];
+    };
     if (data.valid === true) {
       if (data.token) {
         setAdminApiToken(data.token);
       }
-      return true;
+      return { valid: true, user: data.user };
     }
     clearAdminApiToken();
-    return false;
+    return { valid: false };
   } catch {
-    return false;
+    return { valid: false };
   }
+}
+
+/**
+ * Verifies administrator candidate password against the backend bcrypt hash.
+ */
+export async function verifyAdminPassword(
+  candidate: string,
+  actorMeta?: AuthActorMeta
+): Promise<boolean> {
+  const res = await verifyAdminCredentials(candidate, actorMeta);
+  return res.valid;
 }
 
 export async function exchangeFirebaseIdTokenForAdminSession(

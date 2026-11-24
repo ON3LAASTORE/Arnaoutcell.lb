@@ -8,37 +8,53 @@ import {
   shouldTriggerChunkRecoveryReload,
 } from './utils/errorHandlingHelpers';
 
-if (typeof window !== 'undefined') {
-  window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
-    if (isTransientNetworkOrSocketError(event.reason)) {
-      event.preventDefault();
-      return;
-    }
+declare global {
+  interface Window {
+    __oaaGlobalErrorHandlersRegistered?: boolean;
+  }
+}
 
-    if (
-      isChunkLoadError(event.reason) &&
-      shouldTriggerChunkRecoveryReload(Date.now(), window.sessionStorage)
-    ) {
-      event.preventDefault();
-      window.location.reload();
-    }
-  });
+if (typeof window !== 'undefined' && !window.__oaaGlobalErrorHandlersRegistered) {
+  window.__oaaGlobalErrorHandlersRegistered = true;
 
-  window.addEventListener('error', (event: ErrorEvent) => {
-    const errPayload = event.error ?? event.message;
-    if (isTransientNetworkOrSocketError(errPayload)) {
-      event.preventDefault();
-      return;
-    }
+  window.addEventListener(
+    'unhandledrejection',
+    (event: PromiseRejectionEvent) => {
+      if (isTransientNetworkOrSocketError(event.reason)) {
+        event.preventDefault();
+        return;
+      }
 
-    if (
-      isChunkLoadError(errPayload) &&
-      shouldTriggerChunkRecoveryReload(Date.now(), window.sessionStorage)
-    ) {
-      event.preventDefault();
-      window.location.reload();
-    }
-  });
+      if (
+        isChunkLoadError(event.reason) &&
+        shouldTriggerChunkRecoveryReload(Date.now(), window.sessionStorage)
+      ) {
+        event.preventDefault();
+        window.location.reload();
+      }
+    },
+    { capture: true }
+  );
+
+  window.addEventListener(
+    'error',
+    (event: ErrorEvent) => {
+      const errPayload = event.error ?? event.message;
+      if (isTransientNetworkOrSocketError(errPayload, event.filename)) {
+        event.preventDefault();
+        return;
+      }
+
+      if (
+        isChunkLoadError(errPayload) &&
+        shouldTriggerChunkRecoveryReload(Date.now(), window.sessionStorage)
+      ) {
+        event.preventDefault();
+        window.location.reload();
+      }
+    },
+    { capture: true }
+  );
 }
 
 createRoot(document.getElementById('root')!).render(
