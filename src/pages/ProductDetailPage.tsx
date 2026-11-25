@@ -118,7 +118,7 @@ export const ProductDetailPage: React.FC = () => {
     const cleanPhone =
       (storeSettings.whatsapp || '96170773067').replace(/[^\d]/g, '') || '96170773067';
     const msg =
-      `Hello ON AlAA STORE (${storeSettings.whatsapp || '70 773 067'})! I'm inquiring about: ` +
+      `Hello ON ALAA STORE (${storeSettings.whatsapp || '70 773 067'})! I'm inquiring about: ` +
       `${ctx.fullTitle} (SKU: ${ctx.activeSku}, Price: $${ctx.activePrice.toFixed(2)}` +
       (ctx.selectedCapacity ? `, Capacity: ${ctx.selectedCapacity}` : '') +
       `). Is it available for delivery in Lebanon?`;

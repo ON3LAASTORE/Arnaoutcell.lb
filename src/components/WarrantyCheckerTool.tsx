@@ -563,10 +563,10 @@ export const WarrantyCheckerTool: React.FC = () => {
                       lang === 'ar' && item.productNameAr ? item.productNameAr : item.productName;
                     const whatsappMessage = encodeURIComponent(
                       item.calculation.status === 'expired'
-                        ? `Hello ON AlAA STORE, I checked warranty for ${result.query} (${item.productName}) which is expired, and would like to inquire about paid repair options.`
+                        ? `Hello ON ALAA STORE, I checked warranty for ${result.query} (${item.productName}) which is expired, and would like to inquire about paid repair options.`
                         : isClaimed && item.calculation.claimInfo?.claimReference
-                        ? `Hello ON AlAA STORE, I am following up on warranty claim ${item.calculation.claimInfo.claimReference} for ${result.query} (${item.productName}).`
-                        : `Hello ON AlAA STORE, I checked warranty for ${result.query} (${item.productName}) and would like support regarding my warranty coverage.`
+                        ? `Hello ON ALAA STORE, I am following up on warranty claim ${item.calculation.claimInfo.claimReference} for ${result.query} (${item.productName}).`
+                        : `Hello ON ALAA STORE, I checked warranty for ${result.query} (${item.productName}) and would like support regarding my warranty coverage.`
                     );
 
                     return (
@@ -821,9 +821,9 @@ export const WarrantyCheckerTool: React.FC = () => {
                               lang === 'ar'
                                 ? hasArabicTerms
                                   ? item.warrantyTerms
-                                  : `كفالة رسمية لمدة ${item.calculation.warrantyMonths} شهراً من متجر \u2066ON AlAA STORE\u2069 ضد عيوب التصنيع والأعطال المصنعية.`
+                                  : `كفالة رسمية لمدة ${item.calculation.warrantyMonths} شهراً من متجر \u2066ON ALAA STORE\u2069 ضد عيوب التصنيع والأعطال المصنعية.`
                                 : item.warrantyTerms ||
-                                  'Official ON AlAA STORE warranty covering verified manufacturing defects.';
+                                  'Official ON ALAA STORE warranty covering verified manufacturing defects.';
 
                             return (
                               <p
@@ -881,12 +881,12 @@ export const WarrantyCheckerTool: React.FC = () => {
                 </h3>
                 <p className="text-xs text-[#64748B] dark:text-slate-400 max-w-md mx-auto leading-relaxed">
                   {lang === 'ar'
-                    ? 'يرجى التأكد من إدخال رقم الطلب (مثل OAA-2027-1001) أو الباركود / SKU الصحيح، أو التواصل مباشرة مع فريق ON AlAA STORE في الشوف عبر واتساب \u206670 773 067\u2069.'
+                    ? 'يرجى التأكد من إدخال رقم الطلب (مثل OAA-2027-1001) أو الباركود / SKU الصحيح، أو التواصل مباشرة مع فريق ON ALAA STORE في الشوف عبر واتساب \u206670 773 067\u2069.'
                     : 'Please verify your Order ID (e.g. OAA-2027-1001) or product Barcode / SKU, or contact our Chouf support team on WhatsApp at 70 773 067 with your invoice.'}
                 </p>
                 <div className="pt-1 flex justify-center">
                   <a
-                    href="https://wa.me/96170773067?text=Hello%20ON%20AlAA%20STORE%2C%20I%20would%20like%20help%20checking%20my%20device%20warranty."
+                    href="https://wa.me/96170773067?text=Hello%20ON%20ALAA%20STORE%2C%20I%20would%20like%20help%20checking%20my%20device%20warranty."
                     target="_blank"
                     rel="noopener noreferrer"
                     className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold inline-flex items-center gap-2 transition-colors"

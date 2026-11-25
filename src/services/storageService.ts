@@ -617,12 +617,27 @@ export function getStoreSettings(): StoreSettings {
       ...INITIAL_STORE_SETTINGS,
       ...parsed,
     };
-    // Centralized automatic migration if old branding, phones, or Saida location was retained
-    if (!merged.storeName || merged.storeName.includes('ARNAOUT') || merged.storeName.includes('ON 3LAA') || merged.storeName.includes('SQUARE')) {
-      merged.storeName = 'ON AlAA STORE';
+    // Centralized automatic migration if old branding, typo casing, phones, or Saida location was retained
+    if (
+      !merged.storeName ||
+      merged.storeName === 'ON AlAA STORE' ||
+      merged.storeName === 'ON AIAA STORE' ||
+      merged.storeName.includes('ARNAOUT') ||
+      merged.storeName.includes('ON 3LAA') ||
+      merged.storeName.includes('SQUARE')
+    ) {
+      merged.storeName = 'ON ALAA STORE';
     }
-    if (!merged.storeNameAr || merged.storeNameAr.includes('أرناؤوط') || merged.storeNameAr.includes('ON 3LAA') || merged.storeNameAr === 'متجر ON AlAA') {
-      merged.storeNameAr = 'متجر ON AlAA STORE';
+    if (
+      !merged.storeNameAr ||
+      merged.storeNameAr === 'متجر ON AlAA STORE' ||
+      merged.storeNameAr === 'متجر ON AIAA STORE' ||
+      merged.storeNameAr.includes('أرناؤوط') ||
+      merged.storeNameAr.includes('ON 3LAA') ||
+      merged.storeNameAr === 'متجر ON AlAA' ||
+      merged.storeNameAr === 'متجر ON AIAA'
+    ) {
+      merged.storeNameAr = 'متجر ON ALAA STORE';
     }
     merged.logoUrl = resolveStoreLogoUrl(merged.logoUrl);
     if (!merged.locationEn || merged.locationEn.includes('Saida') || merged.locationEn.includes('H97G+W2P')) {
@@ -651,12 +666,29 @@ export function getStoreSettings(): StoreSettings {
     ) {
       merged.deliveryZones = INITIAL_STORE_SETTINGS.deliveryZones;
     }
-    // Ensure announcement bar reflects ON AlAA STORE and all-Lebanon delivery
-    if (merged.announcementBar && (!merged.announcementBar.textEn || merged.announcementBar.textEn.includes('SAIDA') || merged.announcementBar.textEn.includes('ON 3LAA'))) {
+    // Ensure announcement bar reflects ON ALAA STORE and all-Lebanon delivery
+    if (
+      merged.announcementBar &&
+      (!merged.announcementBar.textEn ||
+        merged.announcementBar.textEn.includes('SAIDA') ||
+        merged.announcementBar.textEn.includes('ON 3LAA') ||
+        merged.announcementBar.textEn.includes('ON AlAA') ||
+        merged.announcementBar.textEn.includes('ON AIAA'))
+    ) {
       merged.announcementBar = INITIAL_STORE_SETTINGS.announcementBar;
     }
-    // Ensure hero slides reflect ON AlAA STORE and all-Lebanon delivery
-    if (merged.heroSlides && merged.heroSlides.some((s) => s.titleEn && (s.titleEn.includes('SAIDA') || s.titleEn.includes('ON 3LAA')))) {
+    // Ensure hero slides reflect ON ALAA STORE and all-Lebanon delivery
+    if (
+      merged.heroSlides &&
+      merged.heroSlides.some(
+        (s) =>
+          s.titleEn &&
+          (s.titleEn.includes('SAIDA') ||
+            s.titleEn.includes('ON 3LAA') ||
+            s.titleEn.includes('ON AlAA') ||
+            s.titleEn.includes('ON AIAA'))
+      )
+    ) {
       merged.heroSlides = INITIAL_STORE_SETTINGS.heroSlides;
     }
     if (Array.isArray(merged.heroSlides)) {
@@ -702,7 +734,7 @@ export function saveStoreSettings(
       titleAr: 'تم تحديث إعدادات المتجر والهوية والتوصيل',
       category: 'settings',
       severity: 'info',
-      target: settings.storeName || 'ON AlAA STORE',
+      target: settings.storeName || 'ON ALAA STORE',
       details: `Phone: ${settings.phone || '—'} • Hours: ${settings.openingSchedule?.openTime || '10:00'}–${settings.openingSchedule?.closeTime || '01:00'} • Zones: ${settings.deliveryZones?.length || 0}`,
     }).catch(() => {});
   }

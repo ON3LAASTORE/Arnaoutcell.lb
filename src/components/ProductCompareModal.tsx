@@ -184,8 +184,8 @@ export const ProductCompareModal: React.FC = () => {
     const phone = storeSettings.whatsapp || '96170773067';
     const text = encodeURIComponent(
       isArabic
-        ? `مرحباً متجر ON AlAA! أقارن بين جهازين:\n1) ${slotA.nameAr || slotA.name} ($${slotA.price})\n2) ${slotB.nameAr || slotB.name} ($${slotB.price})\nأيهما تنصحونني به؟`
-        : `Hello ON AlAA STORE! I am comparing:\n1) ${slotA.name} ($${slotA.price} USD)\n2) ${slotB.name} ($${slotB.price} USD)\nWhich one would you recommend?`
+        ? `مرحباً متجر ON ALAA! أقارن بين جهازين:\n1) ${slotA.nameAr || slotA.name} ($${slotA.price})\n2) ${slotB.nameAr || slotB.name} ($${slotB.price})\nأيهما تنصحونني به؟`
+        : `Hello ON ALAA STORE! I am comparing:\n1) ${slotA.name} ($${slotA.price} USD)\n2) ${slotB.name} ($${slotB.price} USD)\nWhich one would you recommend?`
     );
     openExternalUrl(`https://wa.me/${phone}?text=${text}`);
   };

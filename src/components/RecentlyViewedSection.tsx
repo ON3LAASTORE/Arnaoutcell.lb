@@ -54,8 +54,8 @@ export const RecentlyViewedSection: React.FC = () => {
 
             <p className="text-sm text-[#64748B] dark:text-slate-300 max-w-2xl">
               {lang === 'ar'
-                ? 'ارجع بسرعة إلى آخر 5 منتجات قمت بمعاينتها في ON AlAA STORE.'
-                : 'Quickly revisit the last 5 products you clicked on across ON AlAA STORE.'}
+                ? 'ارجع بسرعة إلى آخر 5 منتجات قمت بمعاينتها في ON ALAA STORE.'
+                : 'Quickly revisit the last 5 products you clicked on across ON ALAA STORE.'}
             </p>
           </div>
 

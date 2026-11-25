@@ -788,7 +788,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }
   ): string => {
     const phone = storeSettings.whatsapp || '96170773067';
-    let text = `*New Order Inquiry - ${storeSettings.storeName || 'ON AlAA STORE'} (${storeSettings.phone || '70 773 067'})* 🏠\n\n`;
+    let text = `*New Order Inquiry - ${storeSettings.storeName || 'ON ALAA STORE'} (${storeSettings.phone || '70 773 067'})* 🏠\n\n`;
 
     if ('id' in order && order.id) {
       text += `*Order Reference:* ${order.id}\n`;
@@ -828,7 +828,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if ('paymentMethod' in order && order.paymentMethod) {
       text += `\n*Payment Method:* ${order.paymentMethod.toUpperCase()}`;
     }
-    text += `\n\n_Thank you for contacting ${storeSettings.storeName || 'ON AlAA STORE'} (Chouf • All Lebanon Delivery)!_`;
+    text += `\n\n_Thank you for contacting ${storeSettings.storeName || 'ON ALAA STORE'} (Chouf • All Lebanon Delivery)!_`;
 
     return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
   };

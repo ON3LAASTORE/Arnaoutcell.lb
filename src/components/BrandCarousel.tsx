@@ -31,7 +31,7 @@ export const BrandCarousel: React.FC = () => {
               <span>{lang === 'ar' ? 'شركاء النجاح المعتمدون' : 'OFFICIAL BRANDS & PARTNERS'}</span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-black text-[#172033] dark:text-[#F8FAFC] tracking-tight">
-              {lang === 'ar' ? 'أشهر الماركات العالمية في متجر ON AlAA' : 'Shop by Leading Tech Brands'}
+              {lang === 'ar' ? 'أشهر الماركات العالمية في متجر ON ALAA' : 'Shop by Leading Tech Brands'}
             </h2>
             <p className="text-[#64748B] dark:text-slate-300 text-xs sm:text-sm mt-1">
               {lang === 'ar'

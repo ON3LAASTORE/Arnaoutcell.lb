@@ -39,7 +39,7 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
 }) => {
   const { storeSettings } = useShop();
   const effectiveSettings = settings || storeSettings;
-  const storeName = effectiveSettings.storeName || 'ON AlAA STORE';
+  const storeName = effectiveSettings.storeName || 'ON ALAA STORE';
   const storeLogoUrl = resolveStoreLogoUrl(effectiveSettings.logoUrl);
   const caption = customCaption || (activeLang === 'ar' ? post.captionAr : post.captionEn) || '';
   const image = resolveFullResolutionImageUrl(
@@ -153,7 +153,7 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
                 <span>onalaastore.lb</span>
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#007AFF] fill-[#007AFF]" />
               </a>
-              <div className="text-[10px] text-[#64748B]">ON AlAA STORE • Chouf • All Lebanon</div>
+              <div className="text-[10px] text-[#64748B]">ON ALAA STORE • Chouf • All Lebanon</div>
             </div>
           </div>
           <a
@@ -195,7 +195,7 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
             >
               onalaastore.lb
             </a>
-            <span className="whitespace-pre-wrap">{caption || 'New arrival showcase at ON AlAA STORE!'}</span>
+            <span className="whitespace-pre-wrap">{caption || 'New arrival showcase at ON ALAA STORE!'}</span>
           </div>
 
           <div className="text-[10px] text-[#64748B] uppercase">View all comments • Just now</div>
@@ -285,7 +285,7 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
           />
           <div>
             <div className="font-bold flex items-center gap-1">
-              <span>ON AlAA STORE 🇱🇧</span>
+              <span>ON ALAA STORE 🇱🇧</span>
               <span className="text-[10px] px-1.5 py-0.2 rounded-md bg-[#2AABEE]/20 text-[#2AABEE]">Channel</span>
             </div>
             <div className="text-[10px] text-slate-400">14,200 subscribers</div>
@@ -301,7 +301,7 @@ export const SocialPreviewCard: React.FC<SocialPreviewCardProps> = ({
           )}
 
           <div className="text-slate-100 whitespace-pre-wrap text-[11px] leading-relaxed">
-            {caption || '💎 ON AlAA STORE Tech Drop...'}
+            {caption || '💎 ON ALAA STORE Tech Drop...'}
           </div>
 
           <div className="flex items-center justify-between pt-1 text-[10px] text-slate-400">

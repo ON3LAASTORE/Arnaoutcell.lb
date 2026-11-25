@@ -141,7 +141,7 @@ export function buildAdminPasswordResetEmail(options: {
   storeName?: string;
 }): { subject: string; html: string; text: string } {
   const expiresMinutes = options.expiresMinutes ?? RESET_TOKEN_TTL_MINUTES;
-  const storeName = options.storeName || 'ON AlAA STORE';
+  const storeName = options.storeName || 'ON ALAA STORE';
   const isAr = options.lang === 'ar';
 
   if (isAr) {

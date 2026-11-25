@@ -11,8 +11,8 @@ import {
 } from './storeLocatorHelpers.ts';
 
 test('CHOUF_STORE_DATA contains valid Chouf online store info, all-Lebanon coverage, and phone 70773067', () => {
-  assert.equal(CHOUF_STORE_DATA.name, 'ON AlAA STORE — Online Store based in Chouf, Lebanon');
-  assert.equal(CHOUF_STORE_DATA.shortName, 'ON AlAA STORE');
+  assert.equal(CHOUF_STORE_DATA.name, 'ON ALAA STORE — Online Store based in Chouf, Lebanon');
+  assert.equal(CHOUF_STORE_DATA.shortName, 'ON ALAA STORE');
   assert.equal(CHOUF_STORE_DATA.cityEn, 'Chouf, Mount Lebanon');
   assert.equal(CHOUF_STORE_DATA.phone, '70773067');
   assert.equal(CHOUF_STORE_DATA.phoneFormatted, '70 773 067');
@@ -34,11 +34,11 @@ test('buildLiveRouteUrl returns official WhatsApp direct link for delivery coord
 test('buildWhatsAppLocationUrl generates WhatsApp link with valid phone 96170773067 and delivery inquiry message', () => {
   const urlEn = buildWhatsAppLocationUrl('96170773067', false);
   assert.ok(urlEn.includes('https://wa.me/96170773067'));
-  assert.ok(urlEn.includes('ON%20AlAA%20STORE'));
+  assert.ok(urlEn.includes('ON%20ALAA%20STORE'));
 
   const urlAr = buildWhatsAppLocationUrl('96170773067', true);
   assert.ok(urlAr.includes('https://wa.me/96170773067'));
-  assert.ok(urlAr.includes('ON%20AlAA'));
+  assert.ok(urlAr.includes('ON%20ALAA'));
 });
 
 test('buildSendToPhoneUrl supports WhatsApp and SMS modes with phone 70773067', () => {
@@ -55,7 +55,7 @@ test('buildSendToPhoneUrl supports WhatsApp and SMS modes with phone 70773067', 
 
 test('buildLocationShareData returns complete share title, text, and full message', () => {
   const shareEn = buildLocationShareData(false);
-  assert.equal(shareEn.title, 'ON AlAA STORE — Online Store based in Chouf, Lebanon');
+  assert.equal(shareEn.title, 'ON ALAA STORE — Online Store based in Chouf, Lebanon');
   assert.equal(shareEn.url, 'https://wa.me/96170773067');
   assert.ok(shareEn.text.includes('Chouf'));
   assert.ok(shareEn.text.includes('All Lebanon'));

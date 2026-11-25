@@ -73,11 +73,11 @@ export const StoreLocatorSection: React.FC = () => {
           <h2 className="text-2xl sm:text-4xl lg:text-5xl font-black text-[#172033] dark:text-white tracking-tight">
             {isArabic ? (
               <>
-                <span className="text-[#007AFF]">{storeSettings.storeNameAr || 'متجر ON AlAA'}</span> — التوصيل متاح لجميع مناطق لبنان
+                <span className="text-[#007AFF]">{storeSettings.storeNameAr || 'متجر ON ALAA'}</span> — التوصيل متاح لجميع مناطق لبنان
               </>
             ) : (
               <>
-                <span className="text-[#007AFF]">{storeSettings.storeName || 'ON AlAA STORE'}</span> — Delivery Available to All Lebanon
+                <span className="text-[#007AFF]">{storeSettings.storeName || 'ON ALAA STORE'}</span> — Delivery Available to All Lebanon
               </>
             )}
           </h2>
@@ -113,7 +113,7 @@ export const StoreLocatorSection: React.FC = () => {
                   <div className="w-13 h-13 rounded-full overflow-hidden bg-[#000000] p-[2px] border border-[#1E3A5F]/85 ring-1 ring-[#007AFF]/35 shadow-[0_0_14px_rgba(0,122,255,0.28)] shrink-0 flex items-center justify-center">
                     <LazyImage
                       src={resolveStoreLogoUrl(storeSettings.logoUrl)}
-                      alt={storeSettings.storeName || 'ON AlAA STORE'}
+                      alt={storeSettings.storeName || 'ON ALAA STORE'}
                       width={52}
                       height={52}
                       wrapperClassName="w-full h-full rounded-full overflow-hidden"
@@ -122,7 +122,7 @@ export const StoreLocatorSection: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-black text-base text-[#172033] dark:text-white leading-tight">
-                      {isArabic ? (storeSettings.storeNameAr || 'متجر ON AlAA') : (storeSettings.storeName || 'ON AlAA STORE')}
+                      {isArabic ? (storeSettings.storeNameAr || 'متجر ON ALAA') : (storeSettings.storeName || 'ON ALAA STORE')}
                     </h3>
                     <span className="text-[11px] text-[#007AFF] dark:text-[#38BDF8] font-bold">
                       {isArabic ? 'متجر إلكتروني — مقره الشوف' : 'Online Store — Based in Chouf'}

@@ -87,7 +87,7 @@ export const CustomerTrust: React.FC = () => {
             <div className="w-14 h-14 rounded-full overflow-hidden bg-[#000000] p-[2px] border border-[#1E3A5F]/85 ring-1 ring-[#007AFF]/35 shadow-[0_0_14px_rgba(0,122,255,0.25)] flex items-center justify-center flex-shrink-0">
               <LazyImage
                 src={resolveStoreLogoUrl(storeSettings.logoUrl)}
-                alt={storeSettings.storeName || 'ON AlAA STORE'}
+                alt={storeSettings.storeName || 'ON ALAA STORE'}
                 width={56}
                 height={56}
                 wrapperClassName="w-full h-full rounded-full overflow-hidden"

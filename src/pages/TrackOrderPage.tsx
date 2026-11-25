@@ -290,8 +290,8 @@ export const TrackOrderPage: React.FC = () => {
                 </h3>
                 <p className="text-xs text-[#64748B] dark:text-slate-400 max-w-sm mx-auto">
                   {lang === 'ar'
-                    ? `يرجى التحقق من رقم الطلب (مثال: OAA-2027-1001) أو التواصل مع خدمة عملاء ${storeSettings.storeNameAr || 'ON AlAA STORE'}.`
-                    : `Please verify your Order ID or contact ${storeSettings.storeName || 'ON AlAA STORE'} support on ${storeSettings.phone || '70 773 067'}.`}
+                    ? `يرجى التحقق من رقم الطلب (مثال: OAA-2027-1001) أو التواصل مع خدمة عملاء ${storeSettings.storeNameAr || 'ON ALAA STORE'}.`
+                    : `Please verify your Order ID or contact ${storeSettings.storeName || 'ON ALAA STORE'} support on ${storeSettings.phone || '70 773 067'}.`}
                 </p>
               </div>
             )}

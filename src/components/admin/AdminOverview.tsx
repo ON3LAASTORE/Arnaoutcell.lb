@@ -113,8 +113,8 @@ export const AdminOverview: React.FC = () => {
           </h1>
           <p className="text-xs text-[#64748B] mt-1">
             {lang === 'ar'
-              ? `مؤشرات أداء المتجر والمبيعات المسجلة لـ ${storeSettings.storeNameAr || 'ON AlAA STORE'} — متجر إلكتروني بالشوف والتوصيل لجميع لبنان.`
-              : `Live business KPIs and actual order statistics for ${storeSettings.storeName || 'ON AlAA STORE'} (Chouf Online Store • All Lebanon).`}
+              ? `مؤشرات أداء المتجر والمبيعات المسجلة لـ ${storeSettings.storeNameAr || 'ON ALAA STORE'} — متجر إلكتروني بالشوف والتوصيل لجميع لبنان.`
+              : `Live business KPIs and actual order statistics for ${storeSettings.storeName || 'ON ALAA STORE'} (Chouf Online Store • All Lebanon).`}
           </p>
         </div>
 

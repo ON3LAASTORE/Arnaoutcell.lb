@@ -24,7 +24,7 @@ export const PoliciesPage: React.FC<PoliciesPageProps> = ({ initialTab = 'delive
             <span>{lang === 'ar' ? 'السياسات والشروط المعتمدة' : 'OFFICIAL STORE POLICIES'}</span>
           </div>
           <h1 className="text-2xl sm:text-4xl font-black text-[#172033] dark:text-[#F8FAFC]">
-            {lang === 'ar' ? `سياسات وشروط ${storeSettings.storeNameAr || 'ON AlAA STORE'}` : `${storeSettings.storeName || 'ON AlAA STORE'} Terms & Policies`}
+            {lang === 'ar' ? `سياسات وشروط ${storeSettings.storeNameAr || 'ON ALAA STORE'}` : `${storeSettings.storeName || 'ON ALAA STORE'} Terms & Policies`}
           </h1>
           <p className="text-xs sm:text-sm text-[#64748B] dark:text-slate-400">
             {lang === 'ar'
@@ -106,8 +106,8 @@ export const PoliciesPage: React.FC<PoliciesPageProps> = ({ initialTab = 'delive
               </h2>
               <p>
                 {lang === 'ar'
-                  ? `يعمل متجر ${storeSettings.storeNameAr || 'ON AlAA STORE'} كمتجر إلكتروني رائد انطلاقاً من الشوف، مع خدمة توصيل سريعة وموثوقة متاحة لجميع المناطق اللبنانية.`
-                  : `${storeSettings.storeName || 'ON AlAA STORE'} operates as an online store based in Chouf, with fast and reliable Cash on Delivery available across all regions of Lebanon.`}
+                  ? `يعمل متجر ${storeSettings.storeNameAr || 'ON ALAA STORE'} كمتجر إلكتروني رائد انطلاقاً من الشوف، مع خدمة توصيل سريعة وموثوقة متاحة لجميع المناطق اللبنانية.`
+                  : `${storeSettings.storeName || 'ON ALAA STORE'} operates as an online store based in Chouf, with fast and reliable Cash on Delivery available across all regions of Lebanon.`}
               </p>
 
               <h3 className="font-bold text-[#172033] dark:text-[#F8FAFC] text-xs uppercase tracking-wider pt-2">
@@ -141,8 +141,8 @@ export const PoliciesPage: React.FC<PoliciesPageProps> = ({ initialTab = 'delive
               </h2>
               <p>
                 {lang === 'ar'
-                  ? `كافة الهواتف الذكية والأجهزة اللوحية واللابتوبات والإلكترونيات المباعة عبر ${storeSettings.storeNameAr || 'ON AlAA STORE'} مكفولة لمدة 12 أو 24 شهراً وفقاً للعلامة التجارية وشروط الوكيل المعتمد في لبنان.`
-                  : `All smartphones, laptops, audio gear, and gadgets sold through ${storeSettings.storeName || 'ON AlAA STORE'} are covered by a 12 to 24 months official warranty depending on the manufacturer and regional distributor.`}
+                  ? `كافة الهواتف الذكية والأجهزة اللوحية واللابتوبات والإلكترونيات المباعة عبر ${storeSettings.storeNameAr || 'ON ALAA STORE'} مكفولة لمدة 12 أو 24 شهراً وفقاً للعلامة التجارية وشروط الوكيل المعتمد في لبنان.`
+                  : `All smartphones, laptops, audio gear, and gadgets sold through ${storeSettings.storeName || 'ON ALAA STORE'} are covered by a 12 to 24 months official warranty depending on the manufacturer and regional distributor.`}
               </p>
 
               <h3 className="font-bold text-[#172033] dark:text-[#F8FAFC] text-xs uppercase tracking-wider pt-2">
@@ -178,8 +178,8 @@ export const PoliciesPage: React.FC<PoliciesPageProps> = ({ initialTab = 'delive
               </p>
               <p>
                 {lang === 'ar'
-                  ? `في حال وجود عيب مصنعي، يتكفل متجر ${storeSettings.storeNameAr || 'ON AlAA STORE'} بفحص الجهاز أو استبداله فوراً دون أي تكاليف شحن إضافية.`
-                  : `In case of a verified factory defect upon delivery, ${storeSettings.storeName || 'ON AlAA STORE'} covers complete return dispatch and replacement.`}
+                  ? `في حال وجود عيب مصنعي، يتكفل متجر ${storeSettings.storeNameAr || 'ON ALAA STORE'} بفحص الجهاز أو استبداله فوراً دون أي تكاليف شحن إضافية.`
+                  : `In case of a verified factory defect upon delivery, ${storeSettings.storeName || 'ON ALAA STORE'} covers complete return dispatch and replacement.`}
               </p>
             </div>
           )}
@@ -211,8 +211,8 @@ export const PoliciesPage: React.FC<PoliciesPageProps> = ({ initialTab = 'delive
               </h2>
               <p>
                 {lang === 'ar'
-                  ? `يحترم متجر ${storeSettings.storeNameAr || 'ON AlAA STORE'} خصوصية عملائه في الشوف وكافة المناطق اللبنانية. تُستخدم معلومات التواصل والعنوان حصرياً لتأكيد الطلبات، التوصيل، وتفعيل الضمان الرسمي.`
-                  : `${storeSettings.storeName || 'ON AlAA STORE'} respects customer privacy across Chouf and all Lebanon. Contact details and delivery addresses are collected solely to confirm orders, coordinate courier delivery, and register product warranty coverage.`}
+                  ? `يحترم متجر ${storeSettings.storeNameAr || 'ON ALAA STORE'} خصوصية عملائه في الشوف وكافة المناطق اللبنانية. تُستخدم معلومات التواصل والعنوان حصرياً لتأكيد الطلبات، التوصيل، وتفعيل الضمان الرسمي.`
+                  : `${storeSettings.storeName || 'ON ALAA STORE'} respects customer privacy across Chouf and all Lebanon. Contact details and delivery addresses are collected solely to confirm orders, coordinate courier delivery, and register product warranty coverage.`}
               </p>
               <p>
                 {lang === 'ar'

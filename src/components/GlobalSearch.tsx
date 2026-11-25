@@ -31,10 +31,15 @@ import {
   findProductSkuMatch,
   findExactSkuProductMatch,
   getSampleProductSkus,
+  resolveProductThumbnailUrl,
+  resolveCategoryThumbnailImage,
   SearchFilterMode,
   MatchedCategoryInfo,
 } from '../utils/globalSearchHelpers';
-import { addSearchHistoryTerm } from '../utils/quickSearchOverlayHelpers';
+import {
+  addSearchHistoryTerm,
+  splitHighlightedTextSegments,
+} from '../utils/quickSearchOverlayHelpers';
 import {
   getRecentSkuSearches,
   recordRecentSkuSearch,
@@ -113,20 +118,22 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
     return categories.filter((c) => c.slug === selectedCategorySlug);
   }, [categories, selectedCategorySlug]);
 
-  // Compute matching categories, brands, and products
-  const matchingCategories = useMemo(() => {
-    if (filterMode === 'name' || filterMode === 'brand' || filterMode === 'sku') return [];
-    return getUniqueMatchingCategories(scopedProducts, scopedCategories, query).slice(0, 4);
-  }, [scopedProducts, scopedCategories, query, filterMode]);
-
-  const matchingBrands = useMemo(() => {
-    if (filterMode === 'name' || filterMode === 'category' || filterMode === 'sku') return [];
-    return getUniqueMatchingBrands(scopedProducts, scopedBrands, query).slice(0, 4);
-  }, [scopedProducts, scopedBrands, query, filterMode]);
-
   const matchingProducts = useMemo(() => {
     return filterProductsGlobally(scopedProducts, query, filterMode, categories).slice(0, 6);
   }, [scopedProducts, categories, query, filterMode]);
+
+  // Compute matching categories and brands (keep compact when matching products exist so both sections appear immediately above the fold)
+  const matchingCategories = useMemo(() => {
+    if (filterMode === 'name' || filterMode === 'brand' || filterMode === 'sku') return [];
+    const maxCats = matchingProducts.length > 0 ? 3 : 4;
+    return getUniqueMatchingCategories(scopedProducts, scopedCategories, query).slice(0, maxCats);
+  }, [scopedProducts, scopedCategories, query, filterMode, matchingProducts.length]);
+
+  const matchingBrands = useMemo(() => {
+    if (filterMode === 'name' || filterMode === 'category' || filterMode === 'sku') return [];
+    const maxBrands = matchingProducts.length > 0 ? 2 : 4;
+    return getUniqueMatchingBrands(scopedProducts, scopedBrands, query).slice(0, maxBrands);
+  }, [scopedProducts, scopedBrands, query, filterMode, matchingProducts.length]);
 
   const resolvedRecentSkus = useMemo(() => {
     return recentSkuEntries.map((entry) => resolveRecentSkuLookup(entry, products));
@@ -515,12 +522,46 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
   const hasResults =
     matchingCategories.length > 0 || matchingBrands.length > 0 || matchingProducts.length > 0;
 
+  const featuredCategoriesWithThumbnails = useMemo(
+    () =>
+      featuredCategories.map((cat) => ({
+        cat,
+        ...resolveCategoryThumbnailImage(cat, scopedProducts),
+      })),
+    [featuredCategories, scopedProducts]
+  );
+
+  const renderHighlightedText = (text: string) => {
+    const segments = splitHighlightedTextSegments(text, query);
+    return segments.map((seg, idx) =>
+      seg.isMatch ? (
+        <mark
+          key={idx}
+          className="bg-[#007AFF]/12 dark:bg-[#38BDF8]/20 text-[#007AFF] dark:text-[#38BDF8] rounded-[2px] font-extrabold"
+        >
+          {seg.text}
+        </mark>
+      ) : (
+        <React.Fragment key={idx}>{seg.text}</React.Fragment>
+      )
+    );
+  };
+
   return (
     <div
       ref={containerRef}
-      className={`relative ${className}`}
+      className={`relative ${isOpen ? 'z-50' : ''} ${className}`}
       data-testid={isMobile ? 'mobile-global-search-container' : 'global-search-container'}
     >
+      {isOpen && variant === 'navbar' && (
+        <div
+          aria-hidden="true"
+          data-testid={isMobile ? 'mobile-navbar-search-backdrop' : 'navbar-search-backdrop'}
+          onClick={() => setIsOpen(false)}
+          className="fixed inset-0 bg-[#0A0F1D]/45 backdrop-blur-[2px] z-40 transition-opacity"
+        />
+      )}
+
       {variant === 'navbar' ? (
         isMobile ? (
           /* Mobile 96TECH-inspired Search Form */
@@ -528,7 +569,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
             onSubmit={handleSubmitSearch}
             role="search"
             aria-label={isArabic ? 'البحث في المتجر' : 'Mobile product search'}
-            className="flex items-stretch w-full h-10 rounded-[10px] overflow-hidden bg-white shadow-sm focus-within:ring-2 focus-within:ring-[#00BAF2] transition-shadow"
+            className="relative z-50 flex items-stretch w-full h-10 rounded-[10px] overflow-hidden bg-white shadow-sm focus-within:ring-2 focus-within:ring-[#00BAF2] transition-shadow"
           >
             <input
               ref={inputRef}
@@ -601,7 +642,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
             onSubmit={handleSubmitSearch}
             role="search"
             aria-label={isArabic ? 'البحث في المتجر' : 'Store product search'}
-            className="flex items-stretch w-full h-11 rounded-[10px] overflow-hidden bg-white shadow-sm ring-1 ring-white/10 focus-within:ring-2 focus-within:ring-[#00BAF2] transition-shadow"
+            className="relative z-50 flex items-stretch w-full h-11 rounded-[10px] overflow-hidden bg-white shadow-sm ring-1 ring-white/10 focus-within:ring-2 focus-within:ring-[#00BAF2] transition-shadow"
           >
             {/* Left Category Dropdown Selector */}
             <div className="relative flex items-center bg-[#F1F5F9] border-r rtl:border-r-0 rtl:border-l border-slate-200 shrink-0">
@@ -933,24 +974,41 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                 </div>
               )}
 
-              {/* Quick Category Shortcuts */}
-              {featuredCategories.length > 0 && filterMode !== 'sku' && (
+              {/* Quick Category Shortcuts with Thumbnails */}
+              {featuredCategoriesWithThumbnails.length > 0 && filterMode !== 'sku' && (
                 <div>
                   <div className="text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <Folder className="w-3 h-3 text-[#007AFF]" />
                     <span>{isArabic ? 'تصفية سريعة بالقسم' : 'Quick Filter by Category'}</span>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                    {featuredCategories.map((cat) => (
+                    {featuredCategoriesWithThumbnails.map(({ cat, image }) => (
                       <button
                         key={cat.id}
                         type="button"
                         onClick={() => handleSelectCategory(cat)}
-                        className="p-2 rounded-xl bg-[#F5F8FC] dark:bg-[#162038] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-left rtl:text-right transition-all cursor-pointer group flex items-center justify-between gap-1.5"
+                        className="p-2 rounded-xl bg-[#F5F8FC] dark:bg-[#162038] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-left rtl:text-right transition-all cursor-pointer group flex items-center justify-between gap-2"
                       >
-                        <span className="text-xs font-semibold text-[#172033] dark:text-[#F8FAFC] group-hover:text-[#007AFF] dark:group-hover:text-[#38BDF8] truncate">
-                          {isArabic ? cat.nameAr : cat.name}
-                        </span>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-7 h-7 rounded-lg bg-white dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] overflow-hidden flex-shrink-0 flex items-center justify-center">
+                            {image ? (
+                              <LazyImage
+                                src={image}
+                                alt={isArabic ? cat.nameAr : cat.name}
+                                priority={true}
+                                width={28}
+                                height={28}
+                                wrapperClassName="w-full h-full flex items-center justify-center"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                              />
+                            ) : (
+                              <Folder className="w-3.5 h-3.5 text-[#007AFF]" />
+                            )}
+                          </div>
+                          <span className="text-xs font-semibold text-[#172033] dark:text-[#F8FAFC] group-hover:text-[#007AFF] dark:group-hover:text-[#38BDF8] truncate">
+                            {isArabic ? cat.nameAr : cat.name}
+                          </span>
+                        </div>
                         <ChevronIcon className="w-3 h-3 text-[#64748B] dark:text-slate-400 group-hover:text-[#007AFF] shrink-0" />
                       </button>
                     ))}
@@ -989,13 +1047,49 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                     ? 'اكتب اسم المنتج، الماركة، القسم، أو رمز SKU الفريد للانتقال الفوري'
                     : 'Enter a unique SKU code (press Enter to jump directly), product name, brand, or category'}
                 </span>
-                <span className="font-semibold text-[#007AFF] whitespace-nowrap">ON AlAA STORE</span>
+                <span className="font-semibold text-[#007AFF] whitespace-nowrap">ON ALAA STORE</span>
               </div>
             </div>
           ) : hasResults ? (
-            /* Case 2: Matching Results Found */
-            <div className="max-h-[440px] overflow-y-auto divide-y divide-[#DCE5F0]/60 dark:divide-[#1E293B]/60">
-              {/* SECTION 1: MATCHING CATEGORIES */}
+            /* Case 2: Real-Time Predictive Results Overlay */
+            <div
+              role="listbox"
+              aria-label={isArabic ? 'نتائج البحث الفوري' : 'Predictive search results'}
+              className="max-h-[520px] overflow-y-auto divide-y divide-[#DCE5F0]/60 dark:divide-[#1E293B]/60"
+            >
+              {/* Live Predictive Result Summary Bar */}
+              <div className="px-3 py-1.5 bg-[#F8FAFC] dark:bg-[#111A2E] flex items-center justify-between gap-2 text-[11px] text-[#64748B] dark:text-slate-400">
+                <span>
+                  {isArabic
+                    ? `نتائج فورية لـ "${query.trim()}"`
+                    : `Live matches for "${query.trim()}"`}
+                </span>
+                <span className="font-semibold tabular-nums text-[#007AFF] dark:text-[#38BDF8]">
+                  {isArabic
+                    ? [
+                        matchingCategories.length > 0 ? `${matchingCategories.length} أقسام` : null,
+                        matchingBrands.length > 0 ? `${matchingBrands.length} ماركات` : null,
+                        matchingProducts.length > 0 ? `${matchingProducts.length} منتجات` : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')
+                    : [
+                        matchingCategories.length > 0
+                          ? `${matchingCategories.length} ${matchingCategories.length === 1 ? 'category' : 'categories'}`
+                          : null,
+                        matchingBrands.length > 0
+                          ? `${matchingBrands.length} ${matchingBrands.length === 1 ? 'brand' : 'brands'}`
+                          : null,
+                        matchingProducts.length > 0
+                          ? `${matchingProducts.length} ${matchingProducts.length === 1 ? 'product' : 'products'}`
+                          : null,
+                      ]
+                        .filter(Boolean)
+                        .join(' · ')}
+                </span>
+              </div>
+
+              {/* SECTION 1: MATCHING CATEGORIES WITH THUMBNAILS */}
               {matchingCategories.length > 0 && (
                 <div className="p-2 bg-[#F8FAFC]/60 dark:bg-[#111A2E]/60">
                   <div className="px-2 py-1 text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
@@ -1005,10 +1099,14 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                   <div className="space-y-1">
                     {matchingCategories.map((cat, catIdx) => {
                       const isHighlighted = selectedIndex === catIdx;
+                      const catTitle = isArabic ? cat.nameAr : cat.name;
                       return (
                         <button
                           key={cat.id}
                           type="button"
+                          role="option"
+                          aria-selected={isHighlighted}
+                          data-testid={`global-search-category-${cat.slug}`}
                           onClick={() => handleSelectCategory(cat)}
                           className={`w-full text-left rtl:text-right px-3 py-2 rounded-xl transition-all flex items-center justify-between cursor-pointer group ${
                             isHighlighted
@@ -1016,13 +1114,25 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                               : 'hover:bg-white dark:hover:bg-[#162038] text-[#172033] dark:text-[#F8FAFC]'
                           }`}
                         >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-8 h-8 rounded-lg bg-[#EAF3FF] dark:bg-[#1E293B] text-[#007AFF] dark:text-[#38BDF8] flex-shrink-0 flex items-center justify-center">
-                              <Folder className="w-4 h-4" />
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-lg bg-white dark:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] text-[#007AFF] dark:text-[#38BDF8] overflow-hidden flex-shrink-0 flex items-center justify-center">
+                              {cat.image ? (
+                                <LazyImage
+                                  src={cat.image}
+                                  alt={catTitle}
+                                  priority={true}
+                                  width={40}
+                                  height={40}
+                                  wrapperClassName="w-full h-full flex items-center justify-center"
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                />
+                              ) : (
+                                <Folder className="w-4 h-4" />
+                              )}
                             </div>
-                            <div className="truncate">
+                            <div className="min-w-0 truncate">
                               <p className="text-xs font-bold leading-tight truncate">
-                                {isArabic ? cat.nameAr : cat.name}
+                                {renderHighlightedText(catTitle)}
                               </p>
                               <p className="text-[10px] text-[#64748B] dark:text-slate-400 truncate mt-0.5">
                                 {isArabic ? cat.name : cat.nameAr}
@@ -1065,6 +1175,8 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                         <button
                           key={b.name}
                           type="button"
+                          role="option"
+                          aria-selected={isHighlighted}
                           onClick={() => handleSelectBrand(b.name)}
                           className={`w-full text-left rtl:text-right px-3 py-2 rounded-xl transition-all flex items-center justify-between cursor-pointer group ${
                             isHighlighted
@@ -1073,14 +1185,14 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                           }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-8 h-8 rounded-lg bg-white dark:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] overflow-hidden flex-shrink-0 flex items-center justify-center p-1">
+                            <div className="w-9 h-9 rounded-lg bg-white dark:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] overflow-hidden flex-shrink-0 flex items-center justify-center p-1">
                               {b.logo ? (
                                 <LazyImage
                                   src={b.logo}
                                   alt={b.name}
                                   priority={true}
-                                  width={28}
-                                  height={28}
+                                  width={32}
+                                  height={32}
                                   wrapperClassName="w-full h-full flex items-center justify-center"
                                   className="w-full h-full object-contain"
                                 />
@@ -1090,7 +1202,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                             </div>
                             <div className="truncate">
                               <p className="text-xs font-bold leading-tight truncate">
-                                {b.name}
+                                {renderHighlightedText(b.name)}
                               </p>
                               <p className="text-[10px] text-[#64748B] dark:text-slate-400 truncate mt-0.5">
                                 {isArabic
@@ -1160,11 +1272,16 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                       const hasDiscount = !skuMatch?.matchedVariant && p.originalPrice > p.price;
                       const isLowStock = displayStock > 0 && displayStock <= (p.lowStockThreshold || 3);
                       const isOutOfStock = displayStock === 0;
+                      const productThumb =
+                        skuMatch?.matchedVariant?.image?.trim() || resolveProductThumbnailUrl(p);
+                      const productTitle = isArabic ? p.nameAr || p.name : p.name;
 
                       return (
                         <button
                           key={p.id}
                           type="button"
+                          role="option"
+                          aria-selected={isHighlighted}
                           data-testid={`global-search-product-${p.id}`}
                           onClick={() => handleSelectProduct(p, skuMatch?.matchedVariant?.id)}
                           className={`w-full text-left rtl:text-right p-2.5 rounded-xl transition-all flex items-center gap-3 cursor-pointer group ${
@@ -1177,10 +1294,10 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                         >
                           {/* Thumbnail */}
                           <div className="w-12 h-12 rounded-lg bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] overflow-hidden flex-shrink-0 flex items-center justify-center relative">
-                            {p.images && p.images[0] ? (
+                            {productThumb ? (
                               <LazyImage
-                                src={p.images[0]}
-                                alt={p.name}
+                                src={productThumb}
+                                alt={productTitle}
                                 priority={true}
                                 width={48}
                                 height={48}
@@ -1226,7 +1343,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                             </div>
 
                             <p className="text-xs font-semibold text-[#172033] dark:text-[#F8FAFC] group-hover:text-[#007AFF] dark:group-hover:text-[#38BDF8] truncate leading-tight">
-                              {isArabic ? p.nameAr || p.name : p.name}
+                              {renderHighlightedText(productTitle)}
                               {skuMatch?.matchedVariant ? ` · ${skuMatch.matchedVariant.name}` : ''}
                             </p>
 
@@ -1250,7 +1367,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                                       : 'bg-[#F5F8FC] dark:bg-[#111A2E] text-[#64748B] dark:text-slate-400'
                                   }`}
                                 >
-                                  <span>SKU: {displaySku}</span>
+                                  <span>SKU: {renderHighlightedText(displaySku)}</span>
                                   {isExactSku && (
                                     <span className="text-[9px] uppercase tracking-wider opacity-95">
                                       · {isArabic ? 'مطابق' : 'Exact'}

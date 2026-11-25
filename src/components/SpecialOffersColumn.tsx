@@ -53,18 +53,18 @@ export const SpecialOffersColumn: React.FC = () => {
             <h2 className="text-2xl sm:text-4xl font-black text-[#172033] dark:text-[#F8FAFC] tracking-tight">
               {lang === 'ar' ? (
                 <>
-                  أقوى العروض المخفضة — <span className="text-[#007AFF]">{storeSettings.storeNameAr || 'ON AlAA STORE'}</span>
+                  أقوى العروض المخفضة — <span className="text-[#007AFF]">{storeSettings.storeNameAr || 'ON ALAA STORE'}</span>
                 </>
               ) : (
                 <>
-                  Official Special Offers — <span className="text-[#007AFF]">{storeSettings.storeName || 'ON AlAA STORE'}</span>
+                  Official Special Offers — <span className="text-[#007AFF]">{storeSettings.storeName || 'ON ALAA STORE'}</span>
                 </>
               )}
             </h2>
             <p className="text-[#64748B] dark:text-slate-300 text-sm sm:text-base mt-1.5 max-w-2xl">
               {lang === 'ar'
-                ? 'تخفيضات أسبوعية حقيقية بكفالة معتمدة من ON AlAA STORE في الشوف، مع توصيل متاح لجميع مناطق لبنان أو الطلب عبر واتساب 70773067.'
-                : 'Genuine, direct discounts on top smartphones, audio gear, and fast chargers with official ON AlAA STORE warranty and delivery available to all Lebanon.'}
+                ? 'تخفيضات أسبوعية حقيقية بكفالة معتمدة من ON ALAA STORE في الشوف، مع توصيل متاح لجميع مناطق لبنان أو الطلب عبر واتساب 70773067.'
+                : 'Genuine, direct discounts on top smartphones, audio gear, and fast chargers with official ON ALAA STORE warranty and delivery available to all Lebanon.'}
             </p>
           </div>
 
@@ -173,14 +173,14 @@ export const SpecialOffersColumn: React.FC = () => {
             </h4>
             <p className="text-xs sm:text-sm text-emerald-100 max-w-xl">
               {lang === 'ar'
-                ? 'فريق ON AlAA STORE جاهز للرد على استفساراتكم وتأكيد الطلب مع توصيل متاح لجميع المناطق اللبنانية.'
+                ? 'فريق ON ALAA STORE جاهز للرد على استفساراتكم وتأكيد الطلب مع توصيل متاح لجميع المناطق اللبنانية.'
                 : 'Our team is active on WhatsApp to process instant orders with fast delivery available across all Lebanon.'}
             </p>
           </div>
 
           <a
             href={`https://wa.me/96170773067?text=${encodeURIComponent(
-              'Hello ON AlAA STORE! I am inquiring about current special offers and flash discounts.'
+              'Hello ON ALAA STORE! I am inquiring about current special offers and flash discounts.'
             )}`}
             target="_blank"
             rel="noopener noreferrer"

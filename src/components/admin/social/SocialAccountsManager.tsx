@@ -366,7 +366,7 @@ export const SocialAccountsManager: React.FC<SocialAccountsManagerProps> = ({ la
                 </label>
                 <input
                   type="text"
-                  placeholder="@onalaastore.lb or ON AlAA STORE"
+                  placeholder="@onalaastore.lb or ON ALAA STORE"
                   value={formHandle}
                   onChange={(e) => setFormHandle(e.target.value)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3.5 py-2.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"

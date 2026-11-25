@@ -190,7 +190,7 @@ export const TestimonialsSlider: React.FC = () => {
             <h2 className="text-2xl sm:text-4xl font-black text-[#172033] dark:text-white tracking-tight">
               {isArabic ? (
                 <>
-                  شاركنا <span className="text-[#007AFF]">رأيك وتجربتك</span> مع ON AlAA STORE
+                  شاركنا <span className="text-[#007AFF]">رأيك وتجربتك</span> مع ON ALAA STORE
                 </>
               ) : (
                 <>
@@ -306,8 +306,8 @@ export const TestimonialsSlider: React.FC = () => {
               <a
                 href={`https://wa.me/96170773067?text=${encodeURIComponent(
                   isArabic
-                    ? 'مرحباً ON AlAA STORE! أود مشاركة تقييمي وتجربتي مع الشراء والأجهزة.'
-                    : 'Hello ON AlAA STORE! I want to share my customer review and feedback.'
+                    ? 'مرحباً ON ALAA STORE! أود مشاركة تقييمي وتجربتي مع الشراء والأجهزة.'
+                    : 'Hello ON ALAA STORE! I want to share my customer review and feedback.'
                 )}`}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -420,8 +420,8 @@ export const TestimonialsSlider: React.FC = () => {
           <a
             href={`https://wa.me/96170773067?text=${encodeURIComponent(
               isArabic
-                ? 'مرحباً ON AlAA STORE! أود مشاركة تقييمي وتجربتي مع الشراء والأجهزة.'
-                : 'Hello ON AlAA STORE! I want to share my customer review and feedback.'
+                ? 'مرحباً ON ALAA STORE! أود مشاركة تقييمي وتجربتي مع الشراء والأجهزة.'
+                : 'Hello ON ALAA STORE! I want to share my customer review and feedback.'
             )}`}
             target="_blank"
             rel="noopener noreferrer"
@@ -502,7 +502,7 @@ export const TestimonialsSlider: React.FC = () => {
                       {isArabic ? 'كتابة تقييم ومشاركة رأيك' : 'Submit Customer Review & Feedback'}
                     </h3>
                     <p className="text-[11px] text-[#64748B] dark:text-slate-400">
-                      {isArabic ? 'ON AlAA STORE — متجر إلكتروني في الشوف • توصيل لكل لبنان' : 'ON AlAA STORE — Online Store in Chouf • All Lebanon Delivery'}
+                      {isArabic ? 'ON ALAA STORE — متجر إلكتروني في الشوف • توصيل لكل لبنان' : 'ON ALAA STORE — Online Store in Chouf • All Lebanon Delivery'}
                     </p>
                   </div>
                 </div>

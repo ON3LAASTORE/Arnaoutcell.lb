@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { useShop } from '../context/ShopContext';
-import { LazyImage } from './LazyImage';
 import { DEFAULT_STORE_PROFILE_PICTURE, resolveStoreLogoUrl } from '../utils/storeSettingsHelpers';
 
 interface StoreLogoProps {
@@ -23,7 +22,7 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
   const { storeSettings, lang } = useShop();
 
   const logoUrl = resolveStoreLogoUrl(storeSettings.logoUrl);
-  const storeName = storeSettings.storeName || 'ON AlAA STORE';
+  const storeName = storeSettings.storeName || 'ON ALAA STORE';
   const tagline = lang === 'ar' ? storeSettings.taglineAr : storeSettings.tagline;
 
   // Dynamically synchronize favicon & mobile home-screen icon with active store logo
@@ -68,7 +67,7 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
 
   const parts = storeName.split(' ');
   const firstWord = parts[0] || 'ON';
-  const restWords = parts.slice(1).join(' ') || 'AlAA STORE';
+  const restWords = parts.slice(1).join(' ') || 'ALAA STORE';
 
   return (
     <div
@@ -80,15 +79,24 @@ export const StoreLogo: React.FC<StoreLogoProps> = ({
       <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
         {/* Official Circular Profile Emblem on deep dark backing so neon glow and metallic outer ring never clip */}
         <div className="shrink-0 overflow-hidden rounded-full bg-[#000000] p-[1.5px] border border-[#1E3A5F]/85 dark:border-[#38BDF8]/45 ring-1 ring-[#007AFF]/30 shadow-[0_0_12px_rgba(0,122,255,0.24)] flex items-center justify-center transition-transform group-hover:scale-105">
-          <LazyImage
-            src={logoUrl}
-            alt={storeName}
-            width={size === 'sm' ? 36 : size === 'lg' ? 64 : 44}
-            height={size === 'sm' ? 36 : size === 'lg' ? 64 : 44}
-            priority={true}
-            wrapperClassName={`${sizeClasses.image} rounded-full overflow-hidden bg-[#000000]`}
-            className="w-full h-full rounded-full object-contain object-center"
-          />
+          <div className={`${sizeClasses.image} rounded-full overflow-hidden bg-[#000000] flex items-center justify-center`}>
+            <img
+              src={logoUrl}
+              alt={storeName}
+              width={size === 'sm' ? 36 : size === 'lg' ? 64 : 44}
+              height={size === 'sm' ? 36 : size === 'lg' ? 64 : 44}
+              loading="eager"
+              decoding="sync"
+              fetchPriority="high"
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                if (!e.currentTarget.src.endsWith(DEFAULT_STORE_PROFILE_PICTURE)) {
+                  e.currentTarget.src = DEFAULT_STORE_PROFILE_PICTURE;
+                }
+              }}
+              className="w-full h-full rounded-full object-contain object-center"
+            />
+          </div>
         </div>
 
         <div className="leading-tight min-w-0">

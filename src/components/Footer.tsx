@@ -148,8 +148,8 @@ export const Footer: React.FC = () => {
         <div className="mt-10 pt-6 border-t border-white/[0.08] flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-[#9CA3AF]">
           <p className="text-center sm:text-left rtl:sm:text-right">
             {isArabic
-              ? `© 2027 ${storeSettings.storeNameAr || 'أون علاء ستور'} (${storeSettings.storeName || 'ON AlAA STORE'}). جميع الحقوق محفوظة.`
-              : `© 2027 ${storeSettings.storeName || 'ON AlAA STORE'}. Chouf, Lebanon. All rights reserved.`}
+              ? `© 2027 ${storeSettings.storeNameAr || 'أون علاء ستور'} (${storeSettings.storeName || 'ON ALAA STORE'}). جميع الحقوق محفوظة.`
+              : `© 2027 ${storeSettings.storeName || 'ON ALAA STORE'}. Chouf, Lebanon. All rights reserved.`}
           </p>
 
           <div className="flex items-center gap-4">

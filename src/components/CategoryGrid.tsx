@@ -89,7 +89,7 @@ export const CategoryGrid: React.FC<CategoryGridProps> = ({
             </h2>
             <p className="text-[#64748B] dark:text-slate-300 text-sm sm:text-base mt-1.5 max-w-2xl">
               {lang === 'ar'
-                ? 'استكشف كافة فئات الإلكترونيات، الهواتف الذكية والملحقات التقنية من ON AlAA STORE.'
+                ? 'استكشف كافة فئات الإلكترونيات، الهواتف الذكية والملحقات التقنية من ON ALAA STORE.'
                 : 'Explore genuine smartphones, laptops, audio gear, and smart tech essentials.'}
             </p>
           </div>

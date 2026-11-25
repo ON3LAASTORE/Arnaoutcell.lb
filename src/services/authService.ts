@@ -1,5 +1,5 @@
 /**
- * ON AlAA STORE Security & Authentication Service
+ * ON ALAA STORE Security & Authentication Service
  *
  * Delegates administrator credential verification and rotation to the server-side
  * bcrypt authentication controller (`/api/admin/auth/*`), which hashes the `.env`

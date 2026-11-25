@@ -287,7 +287,7 @@ export function buildStructuredDataGraph(
   params: StructuredDataGraphParams
 ): Record<string, unknown> {
   const cleanOrigin = params.origin.replace(/\/+$/, '');
-  const storeName = params.storeSettings.storeName || 'ON AlAA STORE';
+  const storeName = params.storeSettings.storeName || 'ON ALAA STORE';
   const resolvedLogo = resolveSchemaUrl(params.logoUrl, cleanOrigin) || `${cleanOrigin}/on-alaa-store-profile.png`;
 
   const organizationNode: Record<string, unknown> = {
@@ -295,7 +295,7 @@ export function buildStructuredDataGraph(
     '@id': `${cleanOrigin}/#organization`,
     inLanguage: params.lang,
     name: storeName,
-    alternateName: params.storeSettings.storeNameAr || 'متجر ON AlAA STORE',
+    alternateName: params.storeSettings.storeNameAr || 'متجر ON ALAA STORE',
     description: params.metaDescription,
     url: cleanOrigin,
     telephone: '+96170773067',

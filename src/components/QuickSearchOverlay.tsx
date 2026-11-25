@@ -1357,8 +1357,20 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                         }`}
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          <div className="w-9 h-9 rounded-lg bg-[#EFF6FF] dark:bg-[#132238] text-[#0070F3] dark:text-[#38BDF8] flex items-center justify-center shrink-0">
-                            <Folder className="w-4 h-4" />
+                          <div className="w-10 h-10 rounded-lg bg-[#EFF6FF] dark:bg-[#132238] border border-[#E2E8F0] dark:border-[#1E293B] text-[#0070F3] dark:text-[#38BDF8] flex items-center justify-center shrink-0 overflow-hidden">
+                            {cat.image ? (
+                              <LazyImage
+                                src={cat.image}
+                                alt={isArabic ? cat.nameAr : cat.name}
+                                priority={true}
+                                width={40}
+                                height={40}
+                                wrapperClassName="w-full h-full flex items-center justify-center"
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                              />
+                            ) : (
+                              <Folder className="w-4 h-4" />
+                            )}
                           </div>
                           <div className="min-w-0">
                             <p className="text-xs sm:text-sm font-bold text-[#0A0F2C] dark:text-white truncate">

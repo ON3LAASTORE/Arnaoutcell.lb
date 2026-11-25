@@ -180,7 +180,7 @@ function clampNumber(value: unknown, min: number, max: number, fallback: number)
 export function cleanProductForFirestore(product: Product): Record<string, unknown> {
   const safeId = (product.id || '').trim().slice(0, 128) || `prod-${Date.now()}`;
   const safeName = (product.name || '').trim().slice(0, 255) || 'Unnamed Product';
-  const safeBrand = (product.brand || '').trim().slice(0, 64) || 'ON AlAA STORE';
+  const safeBrand = (product.brand || '').trim().slice(0, 64) || 'ON ALAA STORE';
   const safeCategory = (product.category || '').trim().slice(0, 64) || 'Electronics';
   const safeSku = (product.sku || safeId).trim().slice(0, 64) || safeId.slice(0, 64);
   const safePrice = clampNumber(product.price, 0, 1_000_000, 0);

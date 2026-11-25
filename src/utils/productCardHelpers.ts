@@ -131,8 +131,8 @@ export function buildProductWhatsAppUrl(
 
   const text =
     lang === 'ar'
-      ? `مرحباً متجر ON AlAA! أود طلب المنتج:\n- ${title}\n- السعر: $${formattedPrice} USD\n- الكود: ${product.id}\nالرجاء تأكيد التوفر والتوصيل في لبنان.`
-      : `Hello ON AlAA STORE! I would like to inquire / order this product:\n- ${title}\n- Price: $${formattedPrice} USD\n- SKU: ${product.id}\nPlease confirm availability and delivery in Lebanon.`;
+      ? `مرحباً متجر ON ALAA! أود طلب المنتج:\n- ${title}\n- السعر: $${formattedPrice} USD\n- الكود: ${product.id}\nالرجاء تأكيد التوفر والتوصيل في لبنان.`
+      : `Hello ON ALAA STORE! I would like to inquire / order this product:\n- ${title}\n- Price: $${formattedPrice} USD\n- SKU: ${product.id}\nPlease confirm availability and delivery in Lebanon.`;
 
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(text)}`;
 }
@@ -154,7 +154,7 @@ export function buildProductCardViewModel(
     typeof product.rating === 'number' && Number.isFinite(product.rating) ? product.rating : 5;
 
   return {
-    brandLabel: (product.brand || product.category || 'ON AlAA STORE').toUpperCase(),
+    brandLabel: (product.brand || product.category || 'ON ALAA STORE').toUpperCase(),
     displayTitle: lang === 'ar' ? product.nameAr || product.name : product.name,
     inStock: !isOutOfStock,
     isOutOfStock,

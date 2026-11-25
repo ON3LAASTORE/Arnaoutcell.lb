@@ -31,6 +31,8 @@ export interface MatchedCategoryInfo {
   nameAr: string;
   slug: string;
   iconName: string;
+  image?: string;
+  topProductName?: string;
   count: number;
   isExact: boolean;
   subcategories?: string[];
@@ -481,6 +483,117 @@ export function getUniqueMatchingBrands(
 }
 
 /**
+ * Resolves the primary thumbnail URL for a product, checking main images, color entries, and variants.
+ */
+export function resolveProductThumbnailUrl(product: Product): string | undefined {
+  if (Array.isArray(product.images)) {
+    for (const img of product.images) {
+      if (typeof img === 'string' && img.trim()) return img.trim();
+    }
+  }
+  if (Array.isArray(product.colors)) {
+    for (const entry of product.colors) {
+      if (entry && typeof entry === 'object' && typeof entry.imageUrl === 'string' && entry.imageUrl.trim()) {
+        return entry.imageUrl.trim();
+      }
+    }
+  }
+  if (product.colorImages && typeof product.colorImages === 'object') {
+    for (const img of Object.values(product.colorImages)) {
+      if (typeof img === 'string' && img.trim()) return img.trim();
+    }
+  }
+  if (Array.isArray(product.variants)) {
+    for (const v of product.variants) {
+      if (typeof v?.image === 'string' && v.image.trim()) return v.image.trim();
+    }
+  }
+  return undefined;
+}
+
+/**
+ * Resolves a representative thumbnail image for a category: explicit category.image first,
+ * falling back to the top-ranked published product image inside that category.
+ */
+export function resolveCategoryThumbnailImage(
+  category: Category,
+  products: Product[]
+): { image?: string; topProductName?: string } {
+  const catNameNorm = normalizeSearchTerm(category.name);
+  const catSlugNorm = normalizeSearchTerm(category.slug);
+
+  const catSubcats = (category.subcategories || []).map((s) => normalizeSearchTerm(s));
+
+  const matchesCategoryLoose = (p: Product): boolean => {
+    const pCat = normalizeSearchTerm(p.category || '');
+    const pSub = normalizeSearchTerm(p.subcategory || '');
+    if (
+      pCat === catNameNorm ||
+      pCat === catSlugNorm ||
+      pCat.replace(/[^a-z0-9]+/g, '-') === catSlugNorm
+    ) {
+      return true;
+    }
+    if (pCat && (catNameNorm.includes(pCat) || pCat.includes(catNameNorm))) {
+      return true;
+    }
+    if (pSub && catSubcats.some((s) => s === pSub || s.includes(pSub) || pSub.includes(s))) {
+      return true;
+    }
+    return false;
+  };
+
+  const matchingPublished = products
+    .filter((p) => {
+      if (p.isPublished === false) return false;
+      const pCat = normalizeSearchTerm(p.category || '');
+      return (
+        pCat === catNameNorm ||
+        pCat === catSlugNorm ||
+        pCat.replace(/[^a-z0-9]+/g, '-') === catSlugNorm
+      );
+    })
+    .sort((a, b) => {
+      const rank = (p: Product) =>
+        (p.stock > 0 ? 8 : 0) + (p.isFeatured ? 4 : 0) + (p.isBestSeller ? 2 : 0) + (Number(p.rating) || 0) * 0.2;
+      return rank(b) - rank(a);
+    });
+
+  const fallbackLooseMatches =
+    matchingPublished.length > 0
+      ? matchingPublished
+      : products
+          .filter((p) => p.isPublished !== false && matchesCategoryLoose(p))
+          .sort((a, b) => {
+            const rank = (p: Product) =>
+              (p.stock > 0 ? 8 : 0) + (p.isFeatured ? 4 : 0) + (p.isBestSeller ? 2 : 0) + (Number(p.rating) || 0) * 0.2;
+            return rank(b) - rank(a);
+          });
+
+  const explicitImg = typeof category.image === 'string' ? category.image.trim() : '';
+  if (explicitImg) {
+    return {
+      image: explicitImg,
+      topProductName: fallbackLooseMatches[0]?.name,
+    };
+  }
+
+  for (const prod of fallbackLooseMatches) {
+    const thumb = resolveProductThumbnailUrl(prod);
+    if (thumb) {
+      return {
+        image: thumb,
+        topProductName: prod.name,
+      };
+    }
+  }
+
+  return {
+    topProductName: fallbackLooseMatches[0]?.name,
+  };
+}
+
+/**
  * Extracts and ranks matching categories from the store taxonomy + published products.
  */
 export function getUniqueMatchingCategories(
@@ -548,12 +661,16 @@ export function getUniqueMatchingCategories(
       score += 20;
     }
 
+    const resolvedThumb = resolveCategoryThumbnailImage(cat, products);
+
     scored.push({
       id: cat.id,
       name: cat.name,
       nameAr: cat.nameAr,
       slug: cat.slug,
       iconName: cat.iconName,
+      image: resolvedThumb.image,
+      topProductName: resolvedThumb.topProductName,
       subcategories: cat.subcategories,
       count,
       isExact,

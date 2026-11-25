@@ -33,8 +33,8 @@ export const VideoShowcase: React.FC = () => {
             </h2>
             <p className="text-[#64748B] text-sm sm:text-base mt-1">
               {lang === 'ar'
-                ? 'شاهد اختبارات الأداء المباشرة والمواصفات الواقعية للأجهزة المتوفرة لدينا في ON AlAA STORE.'
-                : 'Experience hands-on demos, real testing, and live unboxings from ON AlAA STORE.'}
+                ? 'شاهد اختبارات الأداء المباشرة والمواصفات الواقعية للأجهزة المتوفرة لدينا في ON ALAA STORE.'
+                : 'Experience hands-on demos, real testing, and live unboxings from ON ALAA STORE.'}
             </p>
           </div>
         </div>

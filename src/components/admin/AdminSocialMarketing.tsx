@@ -83,7 +83,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
   const [isPublishing, setIsPublishing] = useState(false);
   const [isPublishingInstagram, setIsPublishingInstagram] = useState(false);
 
-  // Dedicated Instagram Publishing Modal for ON AlAA STORE
+  // Dedicated Instagram Publishing Modal for ON ALAA STORE
   const [instagramModal, setInstagramModal] = useState<{
     isOpen: boolean;
     stage: 'idle' | 'uploading' | 'container' | 'publishing' | 'done' | 'error';
@@ -857,7 +857,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <span className="font-black text-xs text-[#172033]">ON AlAA STORE</span>
+                    <span className="font-black text-xs text-[#172033]">ON ALAA STORE</span>
                     <span className="text-[10px] font-bold text-purple-700 bg-purple-100 px-1.5 py-0.5 rounded">Instagram Business</span>
                   </div>
                   <a
@@ -1004,7 +1004,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
       )}
 
       {/* =========================================================================
-          INSTAGRAM DIRECT PUBLISHING MODAL FOR ON AlAA STORE
+          INSTAGRAM DIRECT PUBLISHING MODAL FOR ON ALAA STORE
       ========================================================================== */}
       {instagramModal?.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-200">
@@ -1026,7 +1026,7 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
                     rel="noopener noreferrer"
                     className="text-xs font-bold text-purple-600 hover:underline flex items-center gap-1"
                   >
-                    <span>ON AlAA STORE (@onalaastore.lb)</span>
+                    <span>ON ALAA STORE (@onalaastore.lb)</span>
                     <ExternalLink className="w-3 h-3" />
                   </a>
                 </div>
@@ -1087,8 +1087,8 @@ export const AdminSocialMarketing: React.FC<AdminSocialMarketingProps> = ({
                 </div>
                 <p className="text-xs text-emerald-800 leading-relaxed">
                   {isArabic
-                    ? 'تم نشر تصميم المنتج والنص التسويقي والكفالة مباشرة في حساب إنستغرام الرسمي لـ ON AlAA STORE.'
-                    : 'Your product graphic, pricing, warranty, and hashtags have been published directly to ON AlAA STORE on Instagram.'}
+                    ? 'تم نشر تصميم المنتج والنص التسويقي والكفالة مباشرة في حساب إنستغرام الرسمي لـ ON ALAA STORE.'
+                    : 'Your product graphic, pricing, warranty, and hashtags have been published directly to ON ALAA STORE on Instagram.'}
                 </p>
                 {instagramModal.postId && (
                   <div className="text-[11px] font-mono text-emerald-800 bg-emerald-100/60 p-2 rounded-xl">

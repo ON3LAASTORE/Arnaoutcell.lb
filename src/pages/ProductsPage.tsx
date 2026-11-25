@@ -533,7 +533,7 @@ export const ProductsPage: React.FC = () => {
                 <p className="text-xs text-[#64748B] dark:text-slate-400 max-w-sm mx-auto mb-6">
                   {lang === 'ar'
                     ? 'جرب تقليل شروط التصفية أو البحث عن مسمى آخر أو تواصل معنا عبر واتساب على الرقم 70 773 067 للمساعدة.'
-                    : 'Try broadening your filters or contact ON AlAA STORE directly at 70 773 067.'}
+                    : 'Try broadening your filters or contact ON ALAA STORE directly at 70 773 067.'}
                 </p>
                 <button
                   onClick={clearAllFilters}

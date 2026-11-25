@@ -29,7 +29,7 @@ test('parseProductQrPayload extracts Product IDs, SKUs, barcodes, JSON payloads,
   assert.equal(hashUrl?.lookupValue, 'prod-anker737');
   assert.equal(hashUrl?.detectedField, 'product_id');
 
-  const jsonPayload = parseProductQrPayload('{"sku":"APL-IP16PM-256","store":"ON AlAA STORE"}');
+  const jsonPayload = parseProductQrPayload('{"sku":"APL-IP16PM-256","store":"ON ALAA STORE"}');
   assert.equal(jsonPayload?.lookupValue, 'APL-IP16PM-256');
   assert.equal(jsonPayload?.detectedField, 'sku');
 
@@ -37,7 +37,7 @@ test('parseProductQrPayload extracts Product IDs, SKUs, barcodes, JSON payloads,
   assert.equal(barcode?.lookupValue, '195949038221');
   assert.equal(barcode?.detectedField, 'barcode');
 
-  const labeled = parseProductQrPayload('ON AlAA STORE\nSKU: GL-ULT2-49\nWarranty: 12M');
+  const labeled = parseProductQrPayload('ON ALAA STORE\nSKU: GL-ULT2-49\nWarranty: 12M');
   assert.equal(labeled?.lookupValue, 'GL-ULT2-49');
   assert.equal(labeled?.detectedField, 'sku');
 

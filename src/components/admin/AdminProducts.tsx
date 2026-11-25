@@ -387,9 +387,9 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
           ? formImages.map((img) => resolveFullResolutionImageUrl(img))
           : [DEFAULT_FULL_RES_FALLBACK_IMAGE],
       videoUrl: formVideoUrl.trim() || undefined,
-      description: formDesc.trim() || 'Genuine device with full Lebanese store warranty from ON AlAA STORE (Chouf) and express delivery to all Lebanon.',
+      description: formDesc.trim() || 'Genuine device with full Lebanese store warranty from ON ALAA STORE (Chouf) and express delivery to all Lebanon.',
       descriptionAr:
-        formDescAr.trim() || 'جهاز أصلي مع كفالة متجر ON AlAA STORE الرسمية (الشوف) وتوصيل سريع متاح لجميع مناطق لبنان.',
+        formDescAr.trim() || 'جهاز أصلي مع كفالة متجر ON ALAA STORE الرسمية (الشوف) وتوصيل سريع متاح لجميع مناطق لبنان.',
       specifications: formSpecs,
       colors: extractedStructuredData.colors,
       colorImages: extractedStructuredData.colorImages,

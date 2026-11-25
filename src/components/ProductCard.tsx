@@ -258,12 +258,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   navigator
                     .share({
                       title: vm.displayTitle,
-                      text: `${vm.displayTitle} at ON AlAA STORE - ${vm.pricing.formattedSalePrice} USD`,
+                      text: `${vm.displayTitle} at ON ALAA STORE - ${vm.pricing.formattedSalePrice} USD`,
                       url: `${window.location.origin}?product=${product.id}`,
                     })
                     .catch(() => {});
                 } else {
-                  const shareText = `Check out ${vm.displayTitle} (${vm.pricing.formattedSalePrice} USD) at ON AlAA STORE (Chouf • All Lebanon Delivery): ${window.location.origin}?product=${product.id}`;
+                  const shareText = `Check out ${vm.displayTitle} (${vm.pricing.formattedSalePrice} USD) at ON ALAA STORE (Chouf • All Lebanon Delivery): ${window.location.origin}?product=${product.id}`;
                   openExternalUrl(`https://wa.me/?text=${encodeURIComponent(shareText)}`);
                 }
               }}

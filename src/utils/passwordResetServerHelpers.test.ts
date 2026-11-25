@@ -105,7 +105,7 @@ test('sendResendPasswordResetEmail posts authorized Bearer payload to Resend API
 
   const okRes = await sendResendPasswordResetEmail({
     apiKey: 're_test_12345',
-    from: 'ON AlAA STORE <alerts@onalaastore.com>',
+    from: 'ON ALAA STORE <alerts@onalaastore.com>',
     to: 'optimatech.lb@gmail.com',
     subject: 'Reset Password',
     html: '<p>Reset</p>',
@@ -129,7 +129,7 @@ test('sendResendPasswordResetEmail posts authorized Bearer payload to Resend API
 
   const failRes = await sendResendPasswordResetEmail({
     apiKey: 're_bad',
-    from: 'ON AlAA STORE <alerts@onalaastore.com>',
+    from: 'ON ALAA STORE <alerts@onalaastore.com>',
     to: 'optimatech.lb@gmail.com',
     subject: 'Reset Password',
     html: '<p>Reset</p>',

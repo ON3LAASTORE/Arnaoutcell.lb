@@ -103,8 +103,8 @@ export const HeroSection: React.FC = () => {
     const phone = '96170773067';
     const text = encodeURIComponent(
       lang === 'ar'
-        ? `مرحباً ON AlAA STORE! أود طلب وشراء هاتف OPPO Reno 16 Series 5G الجديد (إصدار 3D Pop Planet):\n- السعر: $${renoProduct?.price || 629} USD\n- الكفالة: كفالة رسمية معتمدة 12 شهراً\nالرجاء تأكيد التوفر والتوصيل داخل لبنان (المقر الرئيسي: الشوف).`
-        : `Hello ON AlAA STORE! I want to buy the all-new OPPO Reno 16 Series 5G (3D Pop Planet Edition):\n- Price: $${renoProduct?.price || 629} USD\n- Warranty: 1-Year Official Lebanon Warranty\nPlease confirm availability and delivery to my area in Lebanon.`
+        ? `مرحباً ON ALAA STORE! أود طلب وشراء هاتف OPPO Reno 16 Series 5G الجديد (إصدار 3D Pop Planet):\n- السعر: $${renoProduct?.price || 629} USD\n- الكفالة: كفالة رسمية معتمدة 12 شهراً\nالرجاء تأكيد التوفر والتوصيل داخل لبنان (المقر الرئيسي: الشوف).`
+        : `Hello ON ALAA STORE! I want to buy the all-new OPPO Reno 16 Series 5G (3D Pop Planet Edition):\n- Price: $${renoProduct?.price || 629} USD\n- Warranty: 1-Year Official Lebanon Warranty\nPlease confirm availability and delivery to my area in Lebanon.`
     );
     openExternalUrl(`https://wa.me/${phone}?text=${text}`);
   };

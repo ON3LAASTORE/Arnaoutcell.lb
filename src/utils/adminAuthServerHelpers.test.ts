@@ -213,3 +213,62 @@ test('rotateServerAdminUserPassword updates only the targeted user bcrypt hash',
   assert.equal(rawFile.includes(nextPass), false);
 });
 
+test('verifyServerAdminUserLogin authenticates Alaa with default seeded password and upgrades stale seeded hashes', async () => {
+  const usersPath = makeTempCredsPath('.admin_users.json');
+
+  // Simulate legacy .admin_users.json containing an outdated seeded_hash
+  const staleHash = await hashAdminPasswordBcrypt('LegacyOldPass!123', 8);
+  fs.writeFileSync(
+    usersPath,
+    JSON.stringify(
+      {
+        users: {
+          alaa: {
+            id: 'admin-alaa',
+            username: 'Alaa',
+            name: 'Alaa',
+            email: 'alaa@onalaastore.com',
+            role: 'super_admin',
+            permissions: ['full_stock'],
+            algorithm: 'bcrypt',
+            rounds: 8,
+            passwordHash: staleHash,
+            source: 'seeded_hash',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+        },
+      },
+      null,
+      2
+    ),
+    'utf-8'
+  );
+
+  const ok = await verifyServerAdminUserLogin({
+    username: 'Alaa',
+    candidate: 'Alaa123321a',
+    usersFilePath: usersPath,
+  });
+  assert.equal(ok.accountFound, true);
+  assert.equal(ok.valid, true);
+  assert.equal(ok.user?.username, 'Alaa');
+  assert.equal(ok.user?.role, 'super_admin');
+  assert.equal(ok.user?.permissions.includes('full_stock'), true);
+
+  const okLower = await verifyServerAdminUserLogin({
+    username: 'alaa',
+    candidate: 'Alaa123321a',
+    usersFilePath: usersPath,
+  });
+  assert.equal(okLower.valid, true);
+
+  const wrong = await verifyServerAdminUserLogin({
+    username: 'Alaa',
+    candidate: 'A1234554321a',
+    usersFilePath: usersPath,
+  });
+  assert.equal(wrong.accountFound, true);
+  assert.equal(wrong.valid, false);
+});
+
+

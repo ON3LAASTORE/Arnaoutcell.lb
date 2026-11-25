@@ -1,6 +1,14 @@
 {
   "name": "ON AlAA STORE | Online Tech Store Lebanon",
-  "description": "ON AlAA STORE — Online Tech Store based in Chouf with fast delivery available to all Lebanon. Authentic smartphones, laptops, gaming gear, and tech accessories.",
+  "description": "Shop authentic smartphones, laptops, GaN fast chargers, audio gear, and smart electronics with official warranty and Lebanon-wide delivery.",
   "requestFramePermissions": ["camera", "microphone"],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"],
+  "seo": {
+    "defaultOgImage": "/on-alaa-store-profile.png",
+    "dynamicOgImages": true,
+    "inventoryIndexing": true,
+    "twitterCard": "summary_large_image",
+    "locale": "en_US",
+    "alternateLocale": "ar_LB"
+  }
 }

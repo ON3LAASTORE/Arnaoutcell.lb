@@ -11,6 +11,8 @@ import {
   findProductSkuMatch,
   findExactSkuProductMatch,
   getSampleProductSkus,
+  resolveProductThumbnailUrl,
+  resolveCategoryThumbnailImage,
 } from './globalSearchHelpers';
 import type { Product, Brand, Category } from '../types';
 
@@ -455,6 +457,39 @@ test('filterProductsGlobally matches keywords in specifications, descriptions, a
   const colorHits = filterProductsGlobally(mockProducts, 'Desert Titanium', 'all', mockCategories);
   assert.equal(colorHits.length, 1);
   assert.equal(colorHits[0].id, 'p1');
+});
+
+test('resolveProductThumbnailUrl and resolveCategoryThumbnailImage resolve product, color, variant, and category thumbnails cleanly', () => {
+  const variantOnlyProduct: Product = {
+    ...mockProducts[0],
+    id: 'p-variant-thumb',
+    images: [],
+    variants: [{ id: 'v1', name: '256GB', price: 999, stock: 3, sku: 'VAR-IMG', image: 'https://example.com/variant.jpg' }],
+  };
+  assert.equal(resolveProductThumbnailUrl(variantOnlyProduct), 'https://example.com/variant.jpg');
+
+  const colorObjProduct: Product = {
+    ...mockProducts[0],
+    id: 'p-color-thumb',
+    images: [],
+    colors: [{ id: 'c1', name: 'Blue', hex: '#0000FF', imageUrl: 'https://example.com/blue.jpg' }],
+  };
+  assert.equal(resolveProductThumbnailUrl(colorObjProduct), 'https://example.com/blue.jpg');
+
+  const phoneThumb = resolveCategoryThumbnailImage(mockCategories[0], mockProducts);
+  assert.equal(phoneThumb.image, 'https://example.com/iphone.jpg');
+  assert.equal(phoneThumb.topProductName, 'Apple iPhone 16 Pro Max 256GB');
+
+  const explicitCategory: Category = {
+    ...mockCategories[0],
+    image: 'https://example.com/cat-phones-banner.jpg',
+  };
+  const explicitThumb = resolveCategoryThumbnailImage(explicitCategory, mockProducts);
+  assert.equal(explicitThumb.image, 'https://example.com/cat-phones-banner.jpg');
+
+  const matches = getUniqueMatchingCategories(mockProducts, mockCategories, 'Smartphones');
+  assert.equal(matches.length, 1);
+  assert.ok(matches[0].image && matches[0].image.startsWith('https://'));
 });
 
 

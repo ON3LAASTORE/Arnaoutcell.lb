@@ -1,7 +1,7 @@
 {
-  "name": "ON AlAA STORE",
-  "short_name": "ON AlAA",
-  "description": "ON AlAA STORE — Online Tech Store based in Chouf with fast delivery available to all Lebanon.",
+  "name": "ON ALAA STORE",
+  "short_name": "ON ALAA",
+  "description": "ON ALAA STORE — Online Tech Store based in Chouf with fast delivery available to all Lebanon.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#050811",

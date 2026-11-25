@@ -27,9 +27,9 @@ export const SERVICES_FAQS: ServicesFaqItem[] = [
     questionEn: 'Where do you deliver and how long does shipping take?',
     questionAr: 'ما هي مناطق التوصيل في لبنان وكم يستغرق وصول الطلب؟',
     answerEn:
-      'ON AlAA STORE is an online store based in Chouf with fast door-to-door delivery available to all Lebanon. Chouf & Mount Lebanon orders arrive the same day or within 24 hours; Greater Beirut takes 1–2 business days; and North, South, and Bekaa regions arrive within 1–3 business days.',
+      'ON ALAA STORE is an online store based in Chouf with fast door-to-door delivery available to all Lebanon. Chouf & Mount Lebanon orders arrive the same day or within 24 hours; Greater Beirut takes 1–2 business days; and North, South, and Bekaa regions arrive within 1–3 business days.',
     answerAr:
-      'متجر ON AlAA STORE هو متجر إلكتروني مقره الشوف ويوفر التوصيل المتاح لجميع مناطق لبنان. تصل طلبات الشوف وجبل لبنان في نفس اليوم أو خلال 24 ساعة، بيروت الكبرى خلال 1–2 يوم عمل، والشمال والجنوب والبقاع خلال 1–3 أيام عمل.',
+      'متجر ON ALAA STORE هو متجر إلكتروني مقره الشوف ويوفر التوصيل المتاح لجميع مناطق لبنان. تصل طلبات الشوف وجبل لبنان في نفس اليوم أو خلال 24 ساعة، بيروت الكبرى خلال 1–2 يوم عمل، والشمال والجنوب والبقاع خلال 1–3 أيام عمل.',
   },
   {
     id: 'faq-delivery-inspection',
@@ -44,8 +44,8 @@ export const SERVICES_FAQS: ServicesFaqItem[] = [
   {
     id: 'faq-payment-methods',
     category: 'payment',
-    questionEn: 'What payment methods are accepted at ON AlAA STORE?',
-    questionAr: 'ما هي طرق الدفع المتوفرة في متجر ON AlAA STORE؟',
+    questionEn: 'What payment methods are accepted at ON ALAA STORE?',
+    questionAr: 'ما هي طرق الدفع المتوفرة في متجر ON ALAA STORE؟',
     answerEn:
       'We accept Cash on Delivery (COD) across all Lebanon in Fresh USD or Lebanese Pounds (LBP) calculated at the daily market exchange rate, as well as direct digital wallet transfers via Whish Money prior to dispatch.',
     answerAr:

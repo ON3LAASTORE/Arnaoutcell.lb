@@ -76,10 +76,10 @@ test('buildSubscriberPayload constructs blueprint-compliant subscriber objects',
 
 test('formatNewsletterWelcome provides localized welcome messages', () => {
   const en = formatNewsletterWelcome('vip@lebanon.com', 'en');
-  assert.equal(en.title.includes('ON AlAA STORE'), true);
+  assert.equal(en.title.includes('ON ALAA STORE'), true);
   assert.equal(en.subtitle.includes('vip@lebanon.com'), true);
 
   const ar = formatNewsletterWelcome('vip@lebanon.com', 'ar');
-  assert.equal(ar.title.includes('ON AlAA STORE'), true);
+  assert.equal(ar.title.includes('ON ALAA STORE'), true);
   assert.equal(ar.subtitle.includes('vip@lebanon.com'), true);
 });

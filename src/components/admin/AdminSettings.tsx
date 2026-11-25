@@ -78,8 +78,8 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
   const [activeSubTab, setActiveSubTab] = useState<'branding' | 'security' | 'delivery'>('branding');
 
   // ==================== STORE INFORMATION & BRANDING STATE ====================
-  const [storeName, setStoreName] = useState(storeSettings.storeName || 'ON AlAA STORE');
-  const [storeNameAr, setStoreNameAr] = useState(storeSettings.storeNameAr || 'ON AlAA STORE');
+  const [storeName, setStoreName] = useState(storeSettings.storeName || 'ON ALAA STORE');
+  const [storeNameAr, setStoreNameAr] = useState(storeSettings.storeNameAr || 'ON ALAA STORE');
   const [tagline, setTagline] = useState(storeSettings.tagline || 'Your Home in Electronics 🏠');
   const [taglineAr, setTaglineAr] = useState(storeSettings.taglineAr || 'بيتك في عالم الإلكترونيات 🏠');
 
@@ -265,8 +265,8 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
 
     const updated: StoreSettings = {
       ...storeSettings,
-      storeName: storeName.trim() || 'ON AlAA STORE',
-      storeNameAr: storeNameAr.trim() || 'ON AlAA STORE',
+      storeName: storeName.trim() || 'ON ALAA STORE',
+      storeNameAr: storeNameAr.trim() || 'ON ALAA STORE',
       tagline: tagline.trim() || 'Your Home in Electronics 🏠',
       taglineAr: taglineAr.trim() || 'بيتك في عالم الإلكترونيات 🏠',
       logoUrl: resolveStoreLogoUrl(logoUrl),
@@ -670,8 +670,8 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
               </h3>
               <p className="text-xs text-[#64748B] mt-0.5">
                 {lang === 'ar'
-                  ? 'الاسم الرسمي المعتمد: ON AlAA STORE | متجر إلكتروني - الشوف، التوصيل لجميع لبنان'
-                  : 'Official Display Name: ON AlAA STORE | Online Store — Chouf, Delivery to All Lebanon'}
+                  ? 'الاسم الرسمي المعتمد: ON ALAA STORE | متجر إلكتروني - الشوف، التوصيل لجميع لبنان'
+                  : 'Official Display Name: ON ALAA STORE | Online Store — Chouf, Delivery to All Lebanon'}
               </p>
             </div>
 
@@ -687,10 +687,10 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
                   value={storeName}
                   onChange={(e) => setStoreName(e.target.value)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2.5 text-xs text-[#172033] font-bold focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/15 transition-all"
-                  placeholder="ON AlAA STORE"
+                  placeholder="ON ALAA STORE"
                 />
                 <span className="text-[10px] text-[#64748B] mt-1 block">
-                  Default: ON AlAA STORE
+                  Default: ON ALAA STORE
                 </span>
               </div>
 
@@ -705,10 +705,10 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
                   value={storeNameAr}
                   onChange={(e) => setStoreNameAr(e.target.value)}
                   className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2.5 text-xs text-[#172033] font-bold focus:outline-none focus:border-[#007AFF] focus:ring-2 focus:ring-[#007AFF]/15 transition-all"
-                  placeholder="ON AlAA STORE"
+                  placeholder="ON ALAA STORE"
                 />
                 <span className="text-[10px] text-[#64748B] mt-1 block">
-                  الافتراضي: ON AlAA STORE
+                  الافتراضي: ON ALAA STORE
                 </span>
               </div>
 

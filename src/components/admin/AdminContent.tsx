@@ -17,8 +17,8 @@ export const AdminContent: React.FC = () => {
 
   const currentBar = storeSettings?.announcementBar || {
     enabled: true,
-    textEn: '✨ ON AlAA STORE — Online Store in Chouf • Delivery Available to All Lebanon',
-    textAr: '✨ متجر ON AlAA STORE الإلكتروني بالشوف — توصيل متاح لجميع مناطق لبنان',
+    textEn: '✨ ON ALAA STORE — Online Store in Chouf • Delivery Available to All Lebanon',
+    textAr: '✨ متجر ON ALAA STORE الإلكتروني بالشوف — توصيل متاح لجميع مناطق لبنان',
     bgColor: '#007AFF',
     textColor: '#FFFFFF',
   };

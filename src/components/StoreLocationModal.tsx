@@ -104,7 +104,7 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({ isOpen, 
             <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full overflow-hidden bg-[#000000] p-[2px] border border-blue-400/55 ring-1 ring-white/25 shadow-[0_0_18px_rgba(0,122,255,0.45)] shrink-0 flex items-center justify-center">
               <LazyImage
                 src={resolveStoreLogoUrl(storeSettings.logoUrl)}
-                alt={storeSettings.storeName || 'ON AlAA STORE'}
+                alt={storeSettings.storeName || 'ON ALAA STORE'}
                 width={64}
                 height={64}
                 priority={true}
@@ -119,7 +119,7 @@ export const StoreLocationModal: React.FC<StoreLocationModalProps> = ({ isOpen, 
               </div>
 
               <h3 id="store-location-title" className="text-xl sm:text-2xl font-black leading-tight">
-                {isArabic ? (storeSettings.storeNameAr || 'متجر ON AlAA') : (storeSettings.storeName || 'ON AlAA STORE')}
+                {isArabic ? (storeSettings.storeNameAr || 'متجر ON ALAA') : (storeSettings.storeName || 'ON ALAA STORE')}
               </h3>
 
               <p className="text-xs sm:text-sm text-blue-100 font-medium flex items-center gap-2">

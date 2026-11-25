@@ -49,15 +49,15 @@ export const ServicesPage: React.FC = () => {
         <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EAF3FF] dark:bg-[#111A2E] border border-[#BAE6FD] dark:border-[#1E293B] text-[#007AFF] dark:text-[#38BDF8] text-xs font-bold tracking-wider">
             <CreditCard className="w-4 h-4" />
-            <span>{lang === 'ar' ? 'خدمات ويش موني والاتصالات — ON AlAA STORE' : 'WHISH WALLET & TELECOM SERVICES'}</span>
+            <span>{lang === 'ar' ? 'خدمات ويش موني والاتصالات — ON ALAA STORE' : 'WHISH WALLET & TELECOM SERVICES'}</span>
           </div>
           <h1 className="text-3xl sm:text-5xl font-black text-[#172033] dark:text-[#F8FAFC]">
             {lang === 'ar' ? 'خدمات ويش موني وتوتش للاتصالات' : 'Whish Money & Touch Services'}
           </h1>
           <p className="text-[#64748B] dark:text-slate-400 text-sm sm:text-base leading-relaxed">
             {lang === 'ar'
-              ? 'من متجر ON AlAA STORE الإلكتروني في الشوف مع خدمة تغطي كافة مناطق لبنان، نوفر دعم خدمات ويش موني والاتصالات بأعلى معايير السرعة والأمان.'
-              : 'Through ON AlAA STORE online hub based in Chouf serving customers across all Lebanon, we assist with Whish Money digital wallet and Touch/Alfa telecom services.'}
+              ? 'من متجر ON ALAA STORE الإلكتروني في الشوف مع خدمة تغطي كافة مناطق لبنان، نوفر دعم خدمات ويش موني والاتصالات بأعلى معايير السرعة والأمان.'
+              : 'Through ON ALAA STORE online hub based in Chouf serving customers across all Lebanon, we assist with Whish Money digital wallet and Touch/Alfa telecom services.'}
           </p>
         </div>
 
@@ -86,7 +86,7 @@ export const ServicesPage: React.FC = () => {
               <span>70 773 067</span>
             </a>
             <a
-              href="https://wa.me/96170773067?text=Hello%20ON%20AlAA%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20Whish%20%26%20Touch%20services"
+              href="https://wa.me/96170773067?text=Hello%20ON%20ALAA%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20Whish%20%26%20Touch%20services"
               target="_blank"
               rel="noopener noreferrer"
               className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white font-black text-xs flex items-center gap-2 transition-all shadow-md shadow-emerald-700/30 active:scale-95 group"
@@ -175,7 +175,7 @@ export const ServicesPage: React.FC = () => {
                   <span>70 773 067</span>
                 </a>
                 <a
-                  href="https://wa.me/96170773067?text=Hello%20ON%20AlAA%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20Touch%20telecom%20services"
+                  href="https://wa.me/96170773067?text=Hello%20ON%20ALAA%20STORE%2C%20I%20have%20an%20inquiry%20regarding%20Touch%20telecom%20services"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-800/50 text-emerald-800 dark:text-emerald-300 font-bold flex items-center gap-1 transition-all"
@@ -314,7 +314,7 @@ export const ServicesPage: React.FC = () => {
               </p>
               <p className="text-xs text-[#64748B] dark:text-slate-400">
                 {lang === 'ar'
-                  ? 'فريق ON AlAA STORE في الشوف متاح يومياً 10:00 ص – 1:00 ص لخدمة جميع مناطق لبنان.'
+                  ? 'فريق ON ALAA STORE في الشوف متاح يومياً 10:00 ص – 1:00 ص لخدمة جميع مناطق لبنان.'
                   : 'Our Chouf-based support team is available daily 10:00 AM – 1:00 AM for all Lebanon.'}
               </p>
             </div>
@@ -327,7 +327,7 @@ export const ServicesPage: React.FC = () => {
                 <span dir="ltr">70 773 067</span>
               </a>
               <a
-                href="https://wa.me/96170773067?text=Hello%20ON%20AlAA%20STORE%2C%20I%20have%20a%20question%20regarding%20delivery%2C%20payment%2C%20or%20warranty."
+                href="https://wa.me/96170773067?text=Hello%20ON%20ALAA%20STORE%2C%20I%20have%20a%20question%20regarding%20delivery%2C%20payment%2C%20or%20warranty."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black flex items-center gap-2 shadow-sm transition-colors"

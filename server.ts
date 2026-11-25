@@ -124,7 +124,7 @@ function loadSecureAccounts(): Map<string, SecureSocialAccount> {
     map.set('facebook', {
       platform: 'facebook',
       displayName: 'Facebook Page & Marketplace',
-      accountHandle: process.env.FACEBOOK_PAGE_NAME || 'ON AlAA STORE Lebanon',
+      accountHandle: process.env.FACEBOOK_PAGE_NAME || 'ON ALAA STORE Lebanon',
       pageId: process.env.FACEBOOK_PAGE_ID || '',
       pageAccessToken: process.env.FACEBOOK_PAGE_ACCESS_TOKEN || '',
       isConnected: Boolean(process.env.FACEBOOK_PAGE_ACCESS_TOKEN),
@@ -137,14 +137,14 @@ function loadSecureAccounts(): Map<string, SecureSocialAccount> {
   if (!existingIg || !existingIg.accountHandle || existingIg.accountHandle === '@arnaoutstore' || existingIg.accountHandle === '@m.arnaoutcell') {
     map.set('instagram', {
       platform: 'instagram',
-      displayName: 'Instagram Business – ON AlAA STORE',
+      displayName: 'Instagram Business – ON ALAA STORE',
       accountHandle: '@onalaastore.lb',
       instagramAccountId: existingIg?.instagramAccountId || process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID || '',
       pageAccessToken: existingIg?.pageAccessToken || process.env.INSTAGRAM_ACCESS_TOKEN || process.env.FACEBOOK_PAGE_ACCESS_TOKEN || '',
       isConnected: Boolean((existingIg?.instagramAccountId || process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID) && (existingIg?.pageAccessToken || process.env.INSTAGRAM_ACCESS_TOKEN || process.env.FACEBOOK_PAGE_ACCESS_TOKEN)),
       directPublishSupported: true,
       directPublishEnabled: true,
-      pageName: 'ON AlAA STORE',
+      pageName: 'ON ALAA STORE',
     });
   }
 
@@ -849,12 +849,12 @@ async function startServer() {
         rawToken,
         expiresMinutes: RESET_TOKEN_TTL_MINUTES,
         lang,
-        storeName: 'ON AlAA STORE',
+        storeName: 'ON ALAA STORE',
       });
 
       const resendKey = process.env.RESEND_API_KEY?.trim();
       const fromEmail =
-        process.env.RESEND_FROM_EMAIL?.trim() || 'ON AlAA STORE <alerts@onalaastore.com>';
+        process.env.RESEND_FROM_EMAIL?.trim() || 'ON ALAA STORE <alerts@onalaastore.com>';
 
       if (resendKey) {
         const sendResult = await sendResendPasswordResetEmail({
@@ -1205,7 +1205,7 @@ async function startServer() {
       const notifiedAt = new Date().toISOString();
       const resendKey = process.env.RESEND_API_KEY?.trim();
       const webhookUrl = process.env.RESTOCK_WEBHOOK_URL?.trim();
-      const fromEmail = process.env.RESEND_FROM_EMAIL?.trim() || 'ON AlAA STORE <alerts@onalaastore.com>';
+      const fromEmail = process.env.RESEND_FROM_EMAIL?.trim() || 'ON ALAA STORE <alerts@onalaastore.com>';
 
       let channel: ServerRestockDispatchLog['channel'] = 'automated_queue';
       let subjectSample = '';
@@ -1568,7 +1568,7 @@ async function startServer() {
     res.json({ success: true, message: `Disconnected ${platform}.` });
   });
 
-  // Dedicated Instagram Status Endpoint for ON AlAA STORE
+  // Dedicated Instagram Status Endpoint for ON ALAA STORE
   app.get('/api/social/instagram-status', requireAdminAuth, (_req: Request, res: Response) => {
     const igAcc = secureAccounts.get('instagram');
     const fbAcc = secureAccounts.get('facebook');
@@ -1579,7 +1579,7 @@ async function startServer() {
       success: true,
       account: igAcc?.accountHandle || '@onalaastore.lb',
       targetUrl: 'https://www.instagram.com/onalaastore.lb/',
-      displayName: igAcc?.displayName || 'Instagram Business – ON AlAA STORE',
+      displayName: igAcc?.displayName || 'Instagram Business – ON ALAA STORE',
       isConnected: Boolean(igAcc?.isConnected && token && igUserId),
       hasToken: Boolean(token),
       hasAccountId: Boolean(igUserId),
@@ -1589,7 +1589,7 @@ async function startServer() {
     });
   });
 
-  // Dedicated Instagram Direct Publishing for ON AlAA STORE
+  // Dedicated Instagram Direct Publishing for ON ALAA STORE
   app.post('/api/social/publish-instagram', requireAdminAuth, async (req: Request, res: Response) => {
     const {
       productId,
@@ -2210,8 +2210,8 @@ async function startServer() {
             config: {
               systemInstruction:
                 lang === 'ar'
-                  ? 'أنت مساعد ON AlAA Sidekick المختص بالمنتجات التقنية في لبنان. أجب باختصار ودقة عالية (2-4 جمل أو نقاط موجزة) اعتماداً على مواصفات المنتج المقدمة فقط، وباللغة العربية الواضحة.'
-                  : 'You are ON AlAA Sidekick, a concise luxury tech shopping advisor in Lebanon (based in Chouf, all-Lebanon delivery, WhatsApp 70773067). Answer in 2-4 crisp, helpful sentences based strictly on the provided product facts.',
+                  ? 'أنت مساعد ON ALAA Sidekick المختص بالمنتجات التقنية في لبنان. أجب باختصار ودقة عالية (2-4 جمل أو نقاط موجزة) اعتماداً على مواصفات المنتج المقدمة فقط، وباللغة العربية الواضحة.'
+                  : 'You are ON ALAA Sidekick, a concise luxury tech shopping advisor in Lebanon (based in Chouf, all-Lebanon delivery, WhatsApp 70773067). Answer in 2-4 crisp, helpful sentences based strictly on the provided product facts.',
             },
           }),
       });
@@ -2248,7 +2248,7 @@ async function startServer() {
     }
     res.json({
       status: 'healthy',
-      store: 'ON AlAA STORE',
+      store: 'ON ALAA STORE',
       version: '2027.1.0',
       uptime: process.uptime(),
       timestamp: new Date().toISOString(),
@@ -2355,7 +2355,7 @@ async function startServer() {
   });
 
   httpServer.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 ON AlAA STORE Server running on http://0.0.0.0:${PORT}`);
+    console.log(`🚀 ON ALAA STORE Server running on http://0.0.0.0:${PORT}`);
   });
 }
 

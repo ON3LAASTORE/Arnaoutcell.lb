@@ -34,7 +34,7 @@ test('cleanProductForFirestore preserves warrantyMonths: 0 and enforces firestor
   const cleaned = cleanProductForFirestore(dirtyProduct);
   assert.equal(cleaned.warrantyMonths, 0);
   assert.equal(String(cleaned.name).length, 255);
-  assert.equal(cleaned.brand, 'ON AlAA STORE');
+  assert.equal(cleaned.brand, 'ON ALAA STORE');
   assert.equal(String(cleaned.category).length, 64);
   assert.equal(cleaned.sku, 'prod-test-1');
   assert.equal(cleaned.price, 0);

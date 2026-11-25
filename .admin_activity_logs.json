@@ -1,5 +1,58 @@
 [
   {
+    "id": "audit-1795613407846-gp8ml8",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-25T13:30:07.846Z"
+  },
+  {
+    "id": "audit-1795613241289-4173im",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-25T13:27:21.288Z"
+  },
+  {
+    "id": "audit-1795611253673-ufput6",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-25T12:54:13.673Z"
+  },
+  {
     "id": "audit-1795530759745-t3uc14",
     "action": "product_updated",
     "titleEn": "Updated product: HOCO X102 TC-IPHONE",

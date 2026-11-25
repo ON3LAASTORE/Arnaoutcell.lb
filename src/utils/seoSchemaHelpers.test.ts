@@ -13,7 +13,7 @@ test('buildProductSchema produces valid Schema.org Product with Offer, shipping,
   const sample = INITIAL_PRODUCTS[0];
   const schema = buildProductSchema(sample, {
     origin: 'https://onalaastore.example.com',
-    storeName: 'ON AlAA STORE',
+    storeName: 'ON ALAA STORE',
     lang: 'en',
     fallbackImage: 'https://onalaastore.example.com/on-alaa-store-profile.png',
   });
@@ -65,7 +65,7 @@ test('buildProductSchema includes aggregateRating and reviews when reviews exist
 
   const schema = buildProductSchema(productWithReviews, {
     origin: 'https://onalaastore.example.com',
-    storeName: 'ON AlAA STORE',
+    storeName: 'ON ALAA STORE',
     lang: 'en',
   });
 
@@ -117,7 +117,7 @@ test('buildStructuredDataGraph outputs Product and BreadcrumbList on product-det
 
   const listSchema = buildInventoryItemListSchema(visibleOnly, {
     origin: 'https://onalaastore.example.com',
-    storeName: 'ON AlAA STORE',
+    storeName: 'ON ALAA STORE',
     lang: 'en',
     listName: 'Store Inventory',
     listUrl: 'https://onalaastore.example.com/#/products',

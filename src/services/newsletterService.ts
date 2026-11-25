@@ -63,8 +63,8 @@ export async function subscribeToNewsletter(
       success: true,
       alreadySubscribed: true,
       email: cleanEmail,
-      messageEn: `You are already subscribed with ${cleanEmail} for ON AlAA STORE marketing updates and special tech deals.`,
-      messageAr: `البريد الإلكتروني ${cleanEmail} مشترك بالفعل في نشرة ON AlAA STORE للعروض والتحديثات الحصرية.`,
+      messageEn: `You are already subscribed with ${cleanEmail} for ON ALAA STORE marketing updates and special tech deals.`,
+      messageAr: `البريد الإلكتروني ${cleanEmail} مشترك بالفعل في نشرة ON ALAA STORE للعروض والتحديثات الحصرية.`,
     };
   }
 

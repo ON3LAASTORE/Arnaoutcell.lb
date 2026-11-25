@@ -45,8 +45,8 @@ export const FloatingWhatsAppButton: React.FC = () => {
     const phone = storeSettings.whatsapp || '96170773067';
     const text = encodeURIComponent(
       lang === 'ar'
-        ? `مرحباً متجر ON AlAA! أنا أتواصل معكم من المتجر الإلكتروني بخصوص استفسار / طلب أجهزة وعروض.`
-        : `Hello ON AlAA STORE! I am reaching out from your website regarding products and special offers.`
+        ? `مرحباً متجر ON ALAA! أنا أتواصل معكم من المتجر الإلكتروني بخصوص استفسار / طلب أجهزة وعروض.`
+        : `Hello ON ALAA STORE! I am reaching out from your website regarding products and special offers.`
     );
     openExternalUrl(`https://wa.me/${phone}?text=${text}`);
   };
@@ -57,7 +57,7 @@ export const FloatingWhatsAppButton: React.FC = () => {
         right: lang === 'ar' ? 'auto' : 'max(1rem, calc(env(safe-area-inset-right, 0px) + 0.75rem))',
         left: lang === 'ar' ? 'max(1rem, calc(env(safe-area-inset-left, 0px) + 0.75rem))' : 'auto',
       }}
-      className={`fixed z-50 flex items-end gap-3 select-none pointer-events-auto transition-transform bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))] md:bottom-[max(1.5rem,calc(env(safe-area-inset-bottom,0px)+1rem))] ${
+      className={`fixed z-30 flex items-end gap-3 select-none pointer-events-auto transition-transform bottom-[calc(5.25rem+env(safe-area-inset-bottom,0px))] md:bottom-[max(1.5rem,calc(env(safe-area-inset-bottom,0px)+1rem))] ${
         lang === 'ar' ? 'flex-row-reverse' : 'flex-row'
       }`}
     >
@@ -79,7 +79,7 @@ export const FloatingWhatsAppButton: React.FC = () => {
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500" />
                 </span>
                 <span className="text-[11px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
-                  {lang === 'ar' ? 'تواصل مباشر — متجر ON AlAA' : 'ON AlAA STORE Direct Chat'}
+                  {lang === 'ar' ? 'تواصل مباشر — متجر ON ALAA' : 'ON ALAA STORE Direct Chat'}
                 </span>
               </div>
 

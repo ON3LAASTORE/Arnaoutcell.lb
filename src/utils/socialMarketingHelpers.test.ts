@@ -39,7 +39,7 @@ const mockProduct: Product = {
 };
 
 const mockSettings: StoreSettings = {
-  storeName: 'ON AlAA STORE',
+  storeName: 'ON ALAA STORE',
   tagline: 'Your Home in Electronics 🏠',
   taglineAr: 'بيتك في عالم الإلكترونيات 🏠',
   phone: '70 773 067',
@@ -84,7 +84,7 @@ test('generateSocialCaptions creates complete English and Arabic copy with real 
 
   // Bilingual checks
   assert.ok(bilingual.includes('Cash Price'));
-  assert.ok(bilingual.includes('ON AlAA STORE'));
+  assert.ok(bilingual.includes('ON ALAA STORE'));
 });
 
 test('generatePlatformSpecificText applies platform-specific rules', () => {
@@ -99,7 +99,7 @@ test('generatePlatformSpecificText applies platform-specific rules', () => {
 
   // WhatsApp formatting should include bold asterisks
   const waText = generatePlatformSpecificText('whatsapp', post, mockSettings);
-  assert.ok(waText.includes('*ON AlAA STORE'));
+  assert.ok(waText.includes('*ON ALAA STORE'));
   assert.ok(waText.includes('*$739 USD*') || waText.includes('$739 USD'));
 
   // WhatsApp status should be punchy
@@ -114,7 +114,7 @@ test('generatePlatformSpecificText applies platform-specific rules', () => {
 
   // Telegram formatting
   const tgText = generatePlatformSpecificText('telegram', post, mockSettings);
-  assert.ok(tgText.includes('**ON AlAA STORE'));
+  assert.ok(tgText.includes('**ON ALAA STORE'));
 });
 
 test('buildPlatformShareUrl constructs proper intent URLs for each network', () => {

@@ -78,7 +78,7 @@ export const ProductQuickViewModal: React.FC = () => {
     selectedCapacity?: string;
   }) => {
     const phone = (storeSettings.whatsapp || '96170773067').replace(/[^\d]/g, '') || '96170773067';
-    const storeName = storeSettings.storeName || 'ON AlAA STORE';
+    const storeName = storeSettings.storeName || 'ON ALAA STORE';
     const text =
       `*Inquiry: ${ctx.fullTitle}*\n` +
       `Price: $${ctx.activePrice.toFixed(2)} USD\n` +

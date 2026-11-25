@@ -73,7 +73,7 @@ export const ContactPage: React.FC = () => {
             <div className="w-20 h-20 rounded-full overflow-hidden bg-[#000000] p-[2px] border border-[#1E3A5F] ring-2 ring-[#007AFF]/35 shadow-[0_0_22px_rgba(0,122,255,0.28)] flex items-center justify-center">
               <LazyImage
                 src={resolveStoreLogoUrl(storeSettings.logoUrl)}
-                alt={storeSettings.storeName || 'ON AlAA STORE'}
+                alt={storeSettings.storeName || 'ON ALAA STORE'}
                 width={80}
                 height={80}
                 priority={true}
@@ -89,7 +89,7 @@ export const ContactPage: React.FC = () => {
           </div>
 
           <h1 className="text-3xl sm:text-5xl font-black text-[#172033] dark:text-white">
-            {isArabic ? (storeSettings.storeNameAr || 'متجر ON AlAA') : (storeSettings.storeName || 'ON AlAA STORE')}
+            {isArabic ? (storeSettings.storeNameAr || 'متجر ON ALAA') : (storeSettings.storeName || 'ON ALAA STORE')}
           </h1>
 
           <p className="text-[#64748B] dark:text-slate-400 text-xs sm:text-sm">
@@ -323,8 +323,8 @@ export const ContactPage: React.FC = () => {
                   </h4>
                   <p className="text-xs text-[#64748B] dark:text-slate-400">
                     {isArabic
-                      ? 'شكراً لتواصلكم مع متجر ON AlAA. سنتصل بكم على الرقم المسجل في أقرب وقت مع خدمة التوصيل لكافة مناطق لبنان.'
-                      : 'Thank you for contacting ON AlAA STORE. We will get back to you shortly with delivery to all Lebanon.'}
+                      ? 'شكراً لتواصلكم مع متجر ON ALAA. سنتصل بكم على الرقم المسجل في أقرب وقت مع خدمة التوصيل لكافة مناطق لبنان.'
+                      : 'Thank you for contacting ON ALAA STORE. We will get back to you shortly with delivery to all Lebanon.'}
                   </p>
                   <button
                     onClick={() => setSubmitted(false)}

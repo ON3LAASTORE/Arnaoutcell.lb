@@ -61,7 +61,7 @@ export const INITIAL_SOCIAL_ACCOUNTS: SocialAccountConfig[] = [
   {
     id: 'acc-instagram',
     platform: 'instagram',
-    displayName: 'Instagram Business – ON AlAA STORE',
+    displayName: 'Instagram Business – ON ALAA STORE',
     accountHandle: '@onalaastore.lb',
     isConnected: true,
     directPublishSupported: true, // Official Meta Instagram Graph API
@@ -76,7 +76,7 @@ export const INITIAL_SOCIAL_ACCOUNTS: SocialAccountConfig[] = [
     id: 'acc-facebook',
     platform: 'facebook',
     displayName: 'Facebook Page & Marketplace',
-    accountHandle: 'ON AlAA STORE Lebanon',
+    accountHandle: 'ON ALAA STORE Lebanon',
     isConnected: true,
     directPublishSupported: true,
     directPublishEnabled: true,
@@ -129,8 +129,8 @@ export const INITIAL_MARKETING_POSTS: MarketingPost[] = [
     productImage: 'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd',
     aspectRatio: '1:1',
     templateStyle: 'coloros_purple',
-    captionEn: '🔥 MEET THE ALL-NEW OPPO RENO 16 SERIES 5G at ON AlAA STORE!\n\nExperience 3D Pop Planet Design, HoloVerse 3D Tech, and 50MP Ultra-Wide Selfie Camera.\n\n💰 Cash USD: $739 (Was $790 - Save 6% OFF)\n🛡️ 12 Months Official Warranty\n🚚 Online Store in Chouf • Delivery Available to All Lebanon\n\n📲 Order via WhatsApp: https://wa.me/96170773067 (70 773 067)\n#ONAlAASTORE #OPPOLebanon #Reno16Series #Chouf #LebanonTech',
-    captionAr: '🔥 أحدث هواتف أوبو: OPPO Reno 16 Series 5G متوفر الآن لدى ON AlAA STORE!\n\nتصميم ثوري مع تقنية HoloVerse 3D وكاميرا سيلفي 50 ميجابكسل فائقة الدقة.\n\n💰 السعر كاش: $739 دولار (خصم خاص 6%)\n🛡️ كفالة رسمية 12 شهراً\n🚚 متجر أونلاين في الشوف • توصيل متاح لجميع مناطق لبنان\n\n📲 للطلب الفوري عبر واتساب: https://wa.me/96170773067 (70 773 067)\n#ONAlAASTORE #الشوف #أوبو #هواتف_لبنان',
+    captionEn: '🔥 MEET THE ALL-NEW OPPO RENO 16 SERIES 5G at ON ALAA STORE!\n\nExperience 3D Pop Planet Design, HoloVerse 3D Tech, and 50MP Ultra-Wide Selfie Camera.\n\n💰 Cash USD: $739 (Was $790 - Save 6% OFF)\n🛡️ 12 Months Official Warranty\n🚚 Online Store in Chouf • Delivery Available to All Lebanon\n\n📲 Order via WhatsApp: https://wa.me/96170773067 (70 773 067)\n#ONAlAASTORE #OPPOLebanon #Reno16Series #Chouf #LebanonTech',
+    captionAr: '🔥 أحدث هواتف أوبو: OPPO Reno 16 Series 5G متوفر الآن لدى ON ALAA STORE!\n\nتصميم ثوري مع تقنية HoloVerse 3D وكاميرا سيلفي 50 ميجابكسل فائقة الدقة.\n\n💰 السعر كاش: $739 دولار (خصم خاص 6%)\n🛡️ كفالة رسمية 12 شهراً\n🚚 متجر أونلاين في الشوف • توصيل متاح لجميع مناطق لبنان\n\n📲 للطلب الفوري عبر واتساب: https://wa.me/96170773067 (70 773 067)\n#ONAlAASTORE #الشوف #أوبو #هواتف_لبنان',
     hashtags: ['#ONAlAASTORE', '#OPPO', '#Reno16Series', '#Chouf', '#LebanonTech', '#CashUSD'],
     selectedPlatforms: ['whatsapp', 'whatsapp_status', 'instagram', 'facebook', 'telegram'],
     status: 'published',
@@ -154,8 +154,8 @@ export const INITIAL_MARKETING_POSTS: MarketingPost[] = [
     productImage: 'https://images.unsplash.com/photo-1592750475338-74b7b21085ab',
     aspectRatio: '9:16',
     templateStyle: 'modern_dark',
-    captionEn: '✨ Apple iPhone 16 Pro Max in Desert Titanium!\n\nPowered by A18 Pro chip with Apple Intelligence. Available online today at ON AlAA STORE (Chouf).\n\n💰 Best Cash USD Price: $1,249\n🛡️ 12 Months Official Warranty\n🚚 Delivery Available to All Lebanon\n\nWhatsApp: https://wa.me/96170773067 (70 773 067)\n#ONAlAASTORE #iPhone16ProMax #AppleLebanon #Chouf',
-    captionAr: '✨ آيفون 16 برو ماكس باللون التيتانيوم الصحراوي الفاخر!\n\nمعالج A18 Pro الأقوى وكاميرا احترافية 48 ميجابكسل. متوفر الآن لدى ON AlAA STORE في الشوف.\n\n💰 السعر: $1,249 دولار كاش\n🛡️ كفالة رسمية\n🚚 توصيل متاح لجميع مناطق لبنان\n\nواتساب: https://wa.me/96170773067 (70 773 067)\n#ONAlAASTORE #الشوف #آيفون #توصيل_لكل_لبنان',
+    captionEn: '✨ Apple iPhone 16 Pro Max in Desert Titanium!\n\nPowered by A18 Pro chip with Apple Intelligence. Available online today at ON ALAA STORE (Chouf).\n\n💰 Best Cash USD Price: $1,249\n🛡️ 12 Months Official Warranty\n🚚 Delivery Available to All Lebanon\n\nWhatsApp: https://wa.me/96170773067 (70 773 067)\n#ONAlAASTORE #iPhone16ProMax #AppleLebanon #Chouf',
+    captionAr: '✨ آيفون 16 برو ماكس باللون التيتانيوم الصحراوي الفاخر!\n\nمعالج A18 Pro الأقوى وكاميرا احترافية 48 ميجابكسل. متوفر الآن لدى ON ALAA STORE في الشوف.\n\n💰 السعر: $1,249 دولار كاش\n🛡️ كفالة رسمية\n🚚 توصيل متاح لجميع مناطق لبنان\n\nواتساب: https://wa.me/96170773067 (70 773 067)\n#ONAlAASTORE #الشوف #آيفون #توصيل_لكل_لبنان',
     hashtags: ['#ONAlAASTORE', '#Apple', '#iPhone16ProMax', '#Chouf', '#Lebanon'],
     selectedPlatforms: ['whatsapp_status', 'instagram', 'x', 'tiktok'],
     status: 'draft',
@@ -576,7 +576,7 @@ export async function fetchBackendPublishLogs(): Promise<Record<string, unknown>
 }
 
 /**
- * Fetches status specifically for ON AlAA STORE (@onalaastore.lb) Instagram integration.
+ * Fetches status specifically for ON ALAA STORE (@onalaastore.lb) Instagram integration.
  */
 export async function fetchInstagramStatus(): Promise<{
   success: boolean;
@@ -604,7 +604,7 @@ export async function fetchInstagramStatus(): Promise<{
     success: false,
     account: '@onalaastore.lb',
     targetUrl: 'https://www.instagram.com/onalaastore.lb/',
-    displayName: 'Instagram Business – ON AlAA STORE',
+    displayName: 'Instagram Business – ON ALAA STORE',
     isConnected: false,
     hasToken: false,
     hasAccountId: false,

@@ -237,7 +237,7 @@ export interface StoredAdminAccountRecord {
 
 // Precomputed salted cost-12 bcrypt hash for provisioned Super Admin 'Alaa' (no plaintext stored)
 export const ALAA_DEFAULT_BCRYPT_HASH =
-  '$2b$12$rmLkXXsae6yr0pGPH5/vGe6TFPlBF6Rda1N5MTn0k7uBP4o5S5slG';
+  '$2b$12$IbCM9phCaoKjLNSeozHWhuD0POXeuaRVgRCDdSfTDJu4UDO4p5JfS';
 
 const ALAA_FULL_PERMISSIONS: string[] = [
   'full_stock',
@@ -365,6 +365,15 @@ export async function ensureAdminUsersRegistry(options: {
         existingAlaa.updatedAt = new Date().toISOString();
         dirty = true;
       }
+    } else if (
+      !trimmedEnvPassword &&
+      existingAlaa.source === 'seeded_hash' &&
+      existingAlaa.passwordHash !== defaultAlaaHash
+    ) {
+      existingAlaa.passwordHash = defaultAlaaHash;
+      existingAlaa.rounds = rounds;
+      existingAlaa.updatedAt = new Date().toISOString();
+      dirty = true;
     }
   }
 

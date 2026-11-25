@@ -99,12 +99,12 @@ export function formatNewsletterWelcome(
   const cleanEmail = normalizeEmail(email);
   if (lang === 'ar') {
     return {
-      title: 'تم تأكيد اشتراكك في نشرة ON AlAA STORE',
+      title: 'تم تأكيد اشتراكك في نشرة ON ALAA STORE',
       subtitle: `تم تسجيل بريدك الإلكتروني (${cleanEmail}) بنجاح. ستصلك عروض التقنية والتخفيضات الحصرية فور توفرها.`,
     };
   }
   return {
-    title: 'Welcome to ON AlAA STORE Updates',
+    title: 'Welcome to ON ALAA STORE Updates',
     subtitle: `Your email (${cleanEmail}) is registered for marketing updates, flash discounts, and 2027 tech drops.`,
   };
 }

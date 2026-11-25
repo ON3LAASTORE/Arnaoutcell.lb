@@ -383,8 +383,8 @@ export const CheckoutPage: React.FC = () => {
                       <span className="text-xs font-bold block">{t.storePickup}</span>
                       <span className="text-[11px] text-[#64748B] dark:text-slate-400 block mt-0.5">
                         {lang === 'ar'
-                          ? `تنسيق توصيل مباشر وسريع داخل منطقة الشوف أو لأقرب نقطة استلام عبر ${storeSettings.storeNameAr || 'ON AlAA STORE'}.`
-                          : `Direct fast dispatch across Chouf or arranged courier handoff via ${storeSettings.storeName || 'ON AlAA STORE'}.`}
+                          ? `تنسيق توصيل مباشر وسريع داخل منطقة الشوف أو لأقرب نقطة استلام عبر ${storeSettings.storeNameAr || 'ON ALAA STORE'}.`
+                          : `Direct fast dispatch across Chouf or arranged courier handoff via ${storeSettings.storeName || 'ON ALAA STORE'}.`}
                       </span>
                     </div>
                   </label>
@@ -409,7 +409,7 @@ export const CheckoutPage: React.FC = () => {
                       <span className="text-xs font-bold block">{t.whishTransfer}</span>
                       <span className="text-[11px] text-[#64748B] dark:text-slate-400 block mt-0.5">
                         {lang === 'ar'
-                          ? `تحويل عبر تطبيق ويش موني إلى حساب ${storeSettings.storeNameAr || 'ON AlAA STORE'} وتأكيد الإشعار.`
+                          ? `تحويل عبر تطبيق ويش موني إلى حساب ${storeSettings.storeNameAr || 'ON ALAA STORE'} وتأكيد الإشعار.`
                           : 'Transfer via Whish Money app to our verified store account before dispatch.'}
                       </span>
                     </div>

@@ -428,7 +428,7 @@ export const ProductDetailTabs: React.FC<ProductDetailTabsProps> = ({
         ) : (
           <p className="text-xs text-[#64748B] dark:text-slate-400 m-0">
             {lang === 'ar'
-              ? `لا توجد تقييمات سابقة لهذا المنتج على ${storeNameAr || 'ON AlAA STORE'} بعد.`
+              ? `لا توجد تقييمات سابقة لهذا المنتج على ${storeNameAr || 'ON ALAA STORE'} بعد.`
               : 'No customer reviews yet. Be the first to share your experience with this device.'}
           </p>
         )}
