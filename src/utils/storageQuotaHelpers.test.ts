@@ -6,6 +6,7 @@ import {
   purgeStaleFirestoreWebStorageKeys,
   compactStoreSettingsPayload,
   compactProductsForStorage,
+  compactProductsProgressively,
   StorageLike,
 } from './storageQuotaHelpers';
 import { INITIAL_STORE_SETTINGS, INITIAL_PRODUCTS } from '../data/initialData';
@@ -163,4 +164,29 @@ test('safeStorageSetItem recovers quota by purging bloated firestore_mutations k
   assert.equal(result.ok, true);
   assert.equal(result.recovered, true);
   assert.equal(mock.getItem('firestore_mutations_firestore/[DEFAULT]/db/_78'), null);
+});
+
+test('compactProductsProgressively falls back through smaller thresholds so tight localStorage persists the product record', () => {
+  const baseProduct = INITIAL_PRODUCTS[0];
+  const mediumInlineImage = `data:image/jpeg;base64,${'D'.repeat(50_000)}`;
+  const targetList = [{ ...baseProduct, id: 'prod-tight-quota', name: 'Tight Quota Item', images: [mediumInlineImage] }];
+  const tiers = compactProductsProgressively(targetList);
+  assert.equal(tiers.length, 3);
+
+  // Storage cap allows stripped tier (tiers[2]) while rejecting full & 120KB tier
+  const mock = createQuotaMockStorage({
+    maxBytes: tiers[2].length + 100,
+  });
+
+  const result = safeStorageSetItem(mock, 'arnaout_cell_products_v2', JSON.stringify(targetList), {
+    onQuotaRecovery: () => compactProductsProgressively(targetList),
+  });
+
+  assert.equal(result.ok, true);
+  assert.equal(result.recovered, true);
+  const storedRaw = mock.getItem('arnaout_cell_products_v2');
+  assert.ok(storedRaw);
+  const parsed = JSON.parse(storedRaw);
+  assert.equal(parsed[0].id, 'prod-tight-quota');
+  assert.equal(parsed[0].name, 'Tight Quota Item');
 });

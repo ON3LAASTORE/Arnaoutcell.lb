@@ -445,7 +445,9 @@ export const CheckoutPage: React.FC = () => {
                             alt={item.product.name}
                             width={40}
                             height={40}
+                            responsiveSizes="40px"
                             priority={idx < 3}
+                            loading="lazy"
                             wrapperClassName="w-10 h-10 rounded-lg overflow-hidden bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] flex-shrink-0"
                             className="w-full h-full object-cover"
                           />

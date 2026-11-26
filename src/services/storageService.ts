@@ -8,10 +8,16 @@ import {
   INITIAL_STORE_SETTINGS,
 } from '../data/initialData';
 import {
+  getCachedServerCatalogOverlay,
   persistProductReviewToCloud,
   persistProductToCloud,
+  removeLocalServerOverlayRecord,
   removeProductFromCloud,
+  upsertLocalServerOverlayRecord,
 } from './productFirestoreService';
+import { invalidateProductAutocompleteCache } from './productAutocompleteService';
+import { getAdminApiHeaders, restoreAdminApiSession } from './authService';
+import { sanitizeProductId } from '../utils/adminProductFormHelpers';
 import {
   persistCategoryToCloud,
   removeCategoryFromCloud,
@@ -23,7 +29,8 @@ import { hasLegacyScheduleText, migrateOpeningSchedule } from '../utils/storeSch
 import {
   safeStorageSetItem,
   compactStoreSettingsPayload,
-  compactProductsForStorage,
+  compactProductsProgressively,
+  LEGACY_EVICTABLE_KEYS,
   SafeStorageSetResult,
 } from '../utils/storageQuotaHelpers';
 import { optimizeUploadedImage } from '../utils/imageCompression';
@@ -78,6 +85,7 @@ function setStorageItem(
 
 const KEYS = {
   PRODUCTS: 'arnaout_cell_products_v2',
+  DELETED_PRODUCT_IDS: 'arnaout_cell_deleted_product_ids_v1',
   CATEGORIES: 'arnaout_cell_categories_v2',
   BRANDS: 'arnaout_cell_brands_v2',
   VIDEOS: 'arnaout_cell_videos_v2',
@@ -88,6 +96,42 @@ const KEYS = {
   TESTIMONIALS: 'arnaout_cell_testimonials_v2',
   REAL_LEDGER_RESET: 'arnaout_cell_real_ledger_reset_v1',
 };
+
+export const CATALOG_UPDATED_EVENT = 'onalaa:catalog-updated';
+
+export function emitCatalogUpdatedEvent(detail?: { productId?: string; action?: 'save' | 'delete' }): void {
+  if (typeof window !== 'undefined' && typeof CustomEvent !== 'undefined') {
+    window.dispatchEvent(new CustomEvent(CATALOG_UPDATED_EVENT, { detail }));
+  }
+}
+
+export function getLocalDeletedProductIds(): string[] {
+  try {
+    const raw = getStorageItem(KEYS.DELETED_PRODUCT_IDS);
+    const localIds: string[] = raw ? JSON.parse(raw) : [];
+    const serverDeleted = getCachedServerCatalogOverlay().deletedIds || [];
+    return Array.from(
+      new Set(
+        [...(Array.isArray(localIds) ? localIds : []), ...serverDeleted]
+          .filter((id): id is string => typeof id === 'string')
+          .map((id) => id.trim())
+          .filter(Boolean)
+      )
+    );
+  } catch {
+    return getCachedServerCatalogOverlay().deletedIds || [];
+  }
+}
+
+function addLocalDeletedProductId(productId: string): void {
+  const next = Array.from(new Set([productId, ...getLocalDeletedProductIds()])).slice(0, 500);
+  setStorageItem(KEYS.DELETED_PRODUCT_IDS, JSON.stringify(next));
+}
+
+function removeLocalDeletedProductId(productId: string): void {
+  const next = getLocalDeletedProductIds().filter((id) => id !== productId);
+  setStorageItem(KEYS.DELETED_PRODUCT_IDS, JSON.stringify(next));
+}
 
 const SEEDED_SAMPLE_ORDER_IDS = new Set([
   'OAA-2027-1001',
@@ -195,17 +239,22 @@ export function getProducts(): Product[] {
       }
       return nextProd;
     });
+    const deletedSet = new Set(getLocalDeletedProductIds());
+    const filteredMerged = merged.filter((p) => p?.id && !deletedSet.has(p.id));
+    if (filteredMerged.length !== merged.length) {
+      changed = true;
+    }
     for (const initProd of INITIAL_PRODUCTS) {
-      if (!existingIds.has(initProd.id)) {
-        merged.push(initProd);
+      if (!existingIds.has(initProd.id) && !deletedSet.has(initProd.id)) {
+        filteredMerged.push(initProd);
         existingIds.add(initProd.id);
         changed = true;
       }
     }
     if (changed) {
-      saveProducts(merged);
+      saveProducts(filteredMerged);
     }
-    return merged;
+    return filteredMerged;
   } catch {
     return INITIAL_PRODUCTS;
   }
@@ -215,86 +264,358 @@ export function saveProducts(products: Product[]): void {
   setStorageItem(
     KEYS.PRODUCTS,
     JSON.stringify(products),
-    () => JSON.stringify(compactProductsForStorage(products))
+    () => compactProductsProgressively(products)
   );
+  // Also evict derived offers key before failing if primary products key is under pressure
+  if (quotaFallbackKeys.has(KEYS.PRODUCTS) && typeof window !== 'undefined') {
+    safeStorageSetItem(
+      window.localStorage,
+      KEYS.PRODUCTS,
+      JSON.stringify(products),
+      {
+        evictableKeys: [...LEGACY_EVICTABLE_KEYS, 'arnaout_storefront_cache_v1_offers'],
+        onQuotaRecovery: () => compactProductsProgressively(products),
+      }
+    );
+  }
   storefrontCache.setProducts(products, 'mutation');
 }
 
-export function saveProduct(product: Product): Product {
+export interface SaveProductResult {
+  ok: boolean;
+  product: Product;
+  persistedToServer: boolean;
+  persistedToFirestore: boolean;
+  errorMessage?: string;
+}
+
+export interface DeleteProductResult {
+  ok: boolean;
+  deletedId: string;
+  persistedToServer: boolean;
+  persistedToFirestore: boolean;
+  errorMessage?: string;
+}
+
+async function persistProductToServer(
+  product: Product,
+  syncedToFirestore: boolean
+): Promise<{ ok: boolean; errorMessage?: string }> {
+  if (typeof fetch === 'undefined' || typeof window === 'undefined') {
+    return { ok: false, errorMessage: 'Browser environment unavailable.' };
+  }
+  const sendRequest = () =>
+    fetch(`/api/catalog/products/${encodeURIComponent(product.id)}`, {
+      method: 'PUT',
+      headers: getAdminApiHeaders({ 'Content-Type': 'application/json' }),
+      credentials: 'same-origin',
+      body: JSON.stringify({ product, syncedToFirestore }),
+    });
+
+  try {
+    let response = await sendRequest();
+    if (response.status === 401) {
+      const restored = await restoreAdminApiSession();
+      if (restored.authenticated) {
+        response = await sendRequest();
+      }
+    }
+    const payload = (await response.json().catch(() => ({}))) as {
+      success?: boolean;
+      error?: string;
+    };
+    if (!response.ok || payload.success !== true) {
+      return {
+        ok: false,
+        errorMessage: payload.error || `Server returned status ${response.status}`,
+      };
+    }
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      errorMessage: err instanceof Error ? err.message : 'Network error saving catalog product.',
+    };
+  }
+}
+
+async function deleteProductFromServer(
+  productId: string
+): Promise<{ ok: boolean; errorMessage?: string }> {
+  if (typeof fetch === 'undefined' || typeof window === 'undefined') {
+    return { ok: false, errorMessage: 'Browser environment unavailable.' };
+  }
+  const sendRequest = () =>
+    fetch(`/api/catalog/products/${encodeURIComponent(productId)}`, {
+      method: 'DELETE',
+      headers: getAdminApiHeaders(),
+      credentials: 'same-origin',
+    });
+
+  try {
+    let response = await sendRequest();
+    if (response.status === 401) {
+      const restored = await restoreAdminApiSession();
+      if (restored.authenticated) {
+        response = await sendRequest();
+      }
+    }
+    const payload = (await response.json().catch(() => ({}))) as {
+      success?: boolean;
+      error?: string;
+    };
+    if (!response.ok || payload.success !== true) {
+      return {
+        ok: false,
+        errorMessage: payload.error || `Server returned status ${response.status}`,
+      };
+    }
+    return { ok: true };
+  } catch (err) {
+    return {
+      ok: false,
+      errorMessage: err instanceof Error ? err.message : 'Network error deleting catalog product.',
+    };
+  }
+}
+
+function applyLocalProductSave(product: Product): { normalized: Product; existing?: Product } {
+  const safeId = sanitizeProductId(product.id);
+  const normalized: Product = { ...product, id: safeId };
   const products = getProducts();
-  const index = products.findIndex((p) => p.id === product.id);
+  const index = products.findIndex((p) => p.id === safeId);
   const existing = index >= 0 ? products[index] : undefined;
   if (index >= 0) {
-    products[index] = product;
+    products[index] = normalized;
   } else {
-    products.unshift(product);
+    products.unshift(normalized);
   }
+  removeLocalDeletedProductId(safeId);
   saveProducts(products);
-  storefrontCache.upsertProduct(product, 'mutation');
+  storefrontCache.upsertProduct(normalized, 'mutation');
+  upsertLocalServerOverlayRecord(normalized, false);
+  invalidateProductAutocompleteCache();
+  emitCatalogUpdatedEvent({ productId: safeId, action: 'save' });
+  return { normalized, existing };
+}
 
-  // Automatically persist to Firebase Firestore live cloud database
-  persistProductToCloud(product).catch((err) => {
-    console.warn('Live product sync notice:', err);
-  });
-
+function logProductSaveActivity(normalized: Product, existing?: Product): void {
   if (existing) {
     const changes: string[] = [];
-    if (existing.price !== product.price) {
-      changes.push(`Price $${existing.price} -> $${product.price}`);
+    if (existing.price !== normalized.price) {
+      changes.push(`Price $${existing.price} -> $${normalized.price}`);
     }
-    if (existing.stock !== product.stock) {
-      changes.push(`Stock ${existing.stock} -> ${product.stock}`);
+    if (existing.stock !== normalized.stock) {
+      changes.push(`Stock ${existing.stock} -> ${normalized.stock}`);
     }
-    if (existing.isPublished !== product.isPublished) {
-      changes.push(product.isPublished ? 'Published' : 'Unpublished');
+    if (existing.isPublished !== normalized.isPublished) {
+      changes.push(normalized.isPublished ? 'Published' : 'Unpublished');
     }
     recordAdminActivity({
       action: 'product_updated',
-      titleEn: `Updated product: ${product.name}`,
-      titleAr: `تم تحديث المنتج: ${product.nameAr || product.name}`,
+      titleEn: `Updated product: ${normalized.name}`,
+      titleAr: `تم تحديث المنتج: ${normalized.nameAr || normalized.name}`,
       category: 'catalog',
       severity: 'info',
-      target: `${product.name} (${product.id})`,
-      details: changes.length > 0 ? changes.join(' • ') : `Modified specifications/media for ${product.brand} item.`,
+      target: `${normalized.name} (${normalized.id})`,
+      details:
+        changes.length > 0
+          ? changes.join(' • ')
+          : `Modified specifications/media for ${normalized.brand} item.`,
     }).catch(() => {});
   } else {
     recordAdminActivity({
       action: 'product_created',
-      titleEn: `Added new product: ${product.name}`,
-      titleAr: `تمت إضافة منتج جديد: ${product.nameAr || product.name}`,
+      titleEn: `Added new product: ${normalized.name}`,
+      titleAr: `تمت إضافة منتج جديد: ${normalized.nameAr || normalized.name}`,
       category: 'catalog',
       severity: 'info',
-      target: `${product.name} (${product.id})`,
-      details: `Brand: ${product.brand} • Category: ${product.category} • Price: $${product.price} • Stock: ${product.stock}`,
+      target: `${normalized.name} (${normalized.id})`,
+      details: `Brand: ${normalized.brand} • Category: ${normalized.category} • Price: $${normalized.price} • Stock: ${normalized.stock}`,
     }).catch(() => {});
   }
-
-  return product;
 }
 
-export function deleteProduct(productId: string): void {
-  const currentProducts = getProducts();
-  const deleted = currentProducts.find((p) => p.id === productId);
-  const products = currentProducts.filter((p) => p.id !== productId);
-  saveProducts(products);
-  storefrontCache.removeProduct(productId, 'mutation');
+export async function saveProductAsync(product: Product): Promise<SaveProductResult> {
+  const safeId = sanitizeProductId(product.id);
+  const previousProducts = getProducts();
+  const wasDeletedPreviously = getLocalDeletedProductIds().includes(safeId);
+  const previousOverlayRecord = getCachedServerCatalogOverlay().records.find(
+    (r) => r.product.id === safeId
+  );
 
-  // Automatically remove from Firebase Firestore live cloud database
-  removeProductFromCloud(productId).catch((err) => {
-    console.warn('Live product deletion notice:', err);
+  const rollbackSave = () => {
+    if (wasDeletedPreviously) {
+      addLocalDeletedProductId(safeId);
+    }
+    if (previousOverlayRecord) {
+      upsertLocalServerOverlayRecord(
+        previousOverlayRecord.product,
+        Boolean(previousOverlayRecord.syncedToFirestore)
+      );
+    } else {
+      removeLocalServerOverlayRecord(safeId);
+    }
+    saveProducts(previousProducts);
+    invalidateProductAutocompleteCache();
+    emitCatalogUpdatedEvent({ productId: safeId, action: 'save' });
+  };
+
+  const { normalized, existing } = applyLocalProductSave(product);
+
+  const [cloudResult, serverResult] = await Promise.all([
+    persistProductToCloud(normalized),
+    persistProductToServer(normalized, false),
+  ]);
+
+  if (cloudResult.status === 'saved') {
+    upsertLocalServerOverlayRecord(normalized, true);
+    persistProductToServer(normalized, true).catch(() => {});
+  }
+
+  if (cloudResult.status === 'error') {
+    const errMsg = cloudResult.errorMessage || 'Firestore rejected product save.';
+    console.error(`Failed to save product "${normalized.name}" (${normalized.id}) to Firestore:`, errMsg);
+    if (serverResult.ok && !existing) {
+      deleteProductFromServer(safeId).catch(() => {});
+    } else if (serverResult.ok && existing) {
+      persistProductToServer(existing, Boolean(previousOverlayRecord?.syncedToFirestore)).catch(() => {});
+    }
+    rollbackSave();
+    return {
+      ok: false,
+      product: normalized,
+      persistedToServer: false,
+      persistedToFirestore: false,
+      errorMessage: errMsg,
+    };
+  }
+
+  if (!serverResult.ok && !cloudResult.persisted) {
+    const errMsg =
+      serverResult.errorMessage ||
+      cloudResult.errorMessage ||
+      'Unable to persist product to database. Please verify your admin session and retry.';
+    console.error(`Failed to persist product "${normalized.name}" (${normalized.id}):`, errMsg);
+    rollbackSave();
+    return {
+      ok: false,
+      product: normalized,
+      persistedToServer: false,
+      persistedToFirestore: false,
+      errorMessage: errMsg,
+    };
+  }
+
+  logProductSaveActivity(normalized, existing);
+  return {
+    ok: true,
+    product: normalized,
+    persistedToServer: serverResult.ok,
+    persistedToFirestore: cloudResult.persisted,
+  };
+}
+
+export function saveProduct(product: Product): Product {
+  const { normalized } = applyLocalProductSave(product);
+  void saveProductAsync(normalized).catch((err) => {
+    console.error('Background product persistence error:', err);
   });
+  return normalized;
+}
+
+export async function deleteProductAsync(productId: string): Promise<DeleteProductResult> {
+  const safeId = sanitizeProductId(productId);
+  const currentProducts = getProducts();
+  const previousOverlayRecord = getCachedServerCatalogOverlay().records.find(
+    (r) => r.product.id === safeId
+  );
+  const deleted = currentProducts.find((p) => p.id === safeId || p.id === productId);
+  const products = currentProducts.filter((p) => p.id !== safeId && p.id !== productId);
+
+  const rollbackDelete = () => {
+    removeLocalDeletedProductId(safeId);
+    if (previousOverlayRecord) {
+      upsertLocalServerOverlayRecord(
+        previousOverlayRecord.product,
+        Boolean(previousOverlayRecord.syncedToFirestore)
+      );
+    } else if (deleted) {
+      upsertLocalServerOverlayRecord(deleted, false);
+    }
+    saveProducts(currentProducts);
+    invalidateProductAutocompleteCache();
+    emitCatalogUpdatedEvent({ productId: safeId, action: 'delete' });
+  };
+
+  addLocalDeletedProductId(safeId);
+  removeLocalServerOverlayRecord(safeId);
+  saveProducts(products);
+  storefrontCache.removeProduct(safeId, 'mutation');
+  invalidateProductAutocompleteCache();
+  emitCatalogUpdatedEvent({ productId: safeId, action: 'delete' });
+
+  const [cloudResult, serverResult] = await Promise.all([
+    removeProductFromCloud(safeId),
+    deleteProductFromServer(safeId),
+  ]);
+
+  if (cloudResult.status === 'error') {
+    const errMsg = cloudResult.errorMessage || 'Firestore rejected product deletion.';
+    console.error(`Failed to delete product ${safeId} from Firestore:`, errMsg);
+    if (serverResult.ok && deleted) {
+      persistProductToServer(deleted, Boolean(previousOverlayRecord?.syncedToFirestore)).catch(() => {});
+    }
+    rollbackDelete();
+    return {
+      ok: false,
+      deletedId: safeId,
+      persistedToServer: false,
+      persistedToFirestore: false,
+      errorMessage: errMsg,
+    };
+  }
+
+  if (!serverResult.ok && !cloudResult.persisted) {
+    const errMsg =
+      serverResult.errorMessage ||
+      cloudResult.errorMessage ||
+      'Unable to persist product deletion. Please verify your admin permissions and retry.';
+    console.error(`Failed to delete product ${safeId}:`, errMsg);
+    rollbackDelete();
+    return {
+      ok: false,
+      deletedId: safeId,
+      persistedToServer: false,
+      persistedToFirestore: false,
+      errorMessage: errMsg,
+    };
+  }
 
   recordAdminActivity({
     action: 'product_deleted',
-    titleEn: `Deleted product: ${deleted?.name || productId}`,
-    titleAr: `تم حذف المنتج: ${deleted?.nameAr || deleted?.name || productId}`,
+    titleEn: `Deleted product: ${deleted?.name || safeId}`,
+    titleAr: `تم حذف المنتج: ${deleted?.nameAr || deleted?.name || safeId}`,
     category: 'catalog',
     severity: 'warning',
-    target: deleted ? `${deleted.name} (${productId})` : productId,
+    target: deleted ? `${deleted.name} (${safeId})` : safeId,
     details: deleted
       ? `Removed ${deleted.brand} item ($${deleted.price}) from storefront catalog.`
       : 'Product removed from storefront catalog.',
   }).catch(() => {});
+
+  return {
+    ok: true,
+    deletedId: safeId,
+    persistedToServer: serverResult.ok,
+    persistedToFirestore: cloudResult.persisted,
+  };
+}
+
+export function deleteProduct(productId: string): void {
+  void deleteProductAsync(productId).catch((err) => {
+    console.error('Background product deletion error:', err);
+  });
 }
 
 // Categories

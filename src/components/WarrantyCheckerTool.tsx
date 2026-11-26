@@ -583,6 +583,8 @@ export const WarrantyCheckerTool: React.FC = () => {
                                 alt={displayName}
                                 width={56}
                                 height={56}
+                                responsiveSizes="56px"
+                                loading="lazy"
                                 wrapperClassName="w-14 h-14 rounded-xl overflow-hidden border border-[#DCE5F0] dark:border-[#1E293B] bg-[#F8FAFC] shrink-0"
                                 className="w-full h-full object-cover"
                               />

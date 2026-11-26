@@ -4,6 +4,8 @@ import {
   RESPONSIVE_IMAGE_WIDTHS,
   DEFAULT_RESPONSIVE_SIZES,
   buildNextGenResponsiveSources,
+  buildImageSrcSetAttributes,
+  resolveImageLoadingConfig,
   resolveExplicitImageDimensions,
   shouldDeferMediaDownload,
 } from './webVitalsHelpers';
@@ -15,6 +17,7 @@ test('buildNextGenResponsiveSources generates AVIF, WebP, and 4K fallback srcset
 
   assert.equal(result.isResponsiveSupported, true);
   assert.equal(result.sizes, DEFAULT_RESPONSIVE_SIZES);
+  assert.ok(RESPONSIVE_IMAGE_WIDTHS.includes(320));
 
   for (const width of RESPONSIVE_IMAGE_WIDTHS) {
     assert.ok(result.avifSrcSet.includes(`fm=avif`), 'avifSrcSet includes fm=avif');
@@ -56,6 +59,58 @@ test('buildNextGenResponsiveSources skips local, data, and non-CDN URLs safely',
     assert.equal(res.webpSrcSet, '');
     assert.equal(res.fallbackSrcSet, '');
   }
+});
+
+test('buildImageSrcSetAttributes emits responsive srcSet for Unsplash, local, and external URLs while skipping data/blob URIs', () => {
+  const unsplash = buildImageSrcSetAttributes(
+    'https://images.unsplash.com/photo-1598327105666-5b89351aff97',
+    '(max-width: 640px) 50vw, 25vw',
+    800
+  );
+  assert.ok(unsplash.avifSrcSet?.includes('320w'));
+  assert.ok(unsplash.webpSrcSet?.includes('3840w'));
+  assert.ok(unsplash.srcSet?.includes('320w'));
+  assert.equal(unsplash.sizes, '(max-width: 640px) 50vw, 25vw');
+
+  const localProduct = buildImageSrcSetAttributes(
+    '/images/tecno_spark_black_1795262250150.jpg',
+    '(max-width: 640px) 50vw, 25vw',
+    800
+  );
+  assert.equal(localProduct.avifSrcSet, undefined);
+  assert.equal(localProduct.srcSet, '/images/tecno_spark_black_1795262250150.jpg 800w');
+  assert.equal(localProduct.sizes, '(max-width: 640px) 50vw, 25vw');
+
+  const externalBrand = buildImageSrcSetAttributes('https://cdn.example.com/brand logo.png', '140px', 240);
+  assert.equal(externalBrand.srcSet, 'https://cdn.example.com/brand%20logo.png 240w');
+  assert.equal(externalBrand.sizes, '140px');
+
+  assert.deepEqual(buildImageSrcSetAttributes('data:image/png;base64,abc,def', '64px', 64), {});
+  assert.deepEqual(buildImageSrcSetAttributes('blob:https://example.com/id', '64px', 64), {});
+  assert.deepEqual(buildImageSrcSetAttributes('', '64px', 64), {});
+});
+
+test('resolveImageLoadingConfig avoids contradictory lazy + high fetchPriority combinations', () => {
+  assert.deepEqual(resolveImageLoadingConfig(false), {
+    loading: 'lazy',
+    decoding: 'async',
+    fetchPriority: 'low',
+  });
+  assert.deepEqual(resolveImageLoadingConfig(true), {
+    loading: 'eager',
+    decoding: 'sync',
+    fetchPriority: 'high',
+  });
+  assert.deepEqual(resolveImageLoadingConfig(true, 'lazy'), {
+    loading: 'lazy',
+    decoding: 'async',
+    fetchPriority: 'low',
+  });
+  assert.deepEqual(resolveImageLoadingConfig(false, 'eager'), {
+    loading: 'eager',
+    decoding: 'async',
+    fetchPriority: 'low',
+  });
 });
 
 test('resolveExplicitImageDimensions provides non-zero HTML dimensions and aspectRatio for CLS prevention', () => {

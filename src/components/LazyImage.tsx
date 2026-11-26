@@ -10,8 +10,9 @@ import {
   observeElementInViewport,
 } from '../utils/lazyLoadingHelpers';
 import {
-  buildNextGenResponsiveSources,
+  buildImageSrcSetAttributes,
   resolveExplicitImageDimensions,
+  resolveImageLoadingConfig,
 } from '../utils/webVitalsHelpers';
 
 export interface LazyImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -70,6 +71,10 @@ export const LazyImage: React.FC<LazyImageProps> = ({
   onError,
   width,
   height,
+  loading: explicitLoading,
+  decoding: explicitDecoding,
+  fetchPriority: explicitFetchPriority,
+  referrerPolicy: explicitReferrerPolicy,
   ...rest
 }) => {
   const resolvedSrc = resolveFullResolutionImageUrl(src) || src;
@@ -89,9 +94,25 @@ export const LazyImage: React.FC<LazyImageProps> = ({
     [width, height, fallbackWidth, fallbackHeight]
   );
 
-  const nextGenSources = useMemo(
-    () => buildNextGenResponsiveSources(currentSrc || resolvedSrc, responsiveSizes || rest.sizes),
-    [currentSrc, resolvedSrc, responsiveSizes, rest.sizes]
+  const srcSetAttrs = useMemo(
+    () =>
+      buildImageSrcSetAttributes(
+        currentSrc || resolvedSrc,
+        responsiveSizes || rest.sizes,
+        explicitDimensions.width
+      ),
+    [currentSrc, resolvedSrc, responsiveSizes, rest.sizes, explicitDimensions.width]
+  );
+
+  const loadingConfig = useMemo(
+    () =>
+      resolveImageLoadingConfig(
+        priority,
+        explicitLoading,
+        explicitDecoding,
+        explicitFetchPriority
+      ),
+    [priority, explicitLoading, explicitDecoding, explicitFetchPriority]
   );
 
   // Synchronize src if it changes
@@ -205,32 +226,32 @@ export const LazyImage: React.FC<LazyImageProps> = ({
       {/* Next-gen AVIF / WebP <picture> element mounts only when viewport intersection is triggered */}
       {isInView && currentSrc ? (
         <picture className="w-full h-full flex items-center justify-center relative z-[1]">
-          {nextGenSources.isResponsiveSupported && nextGenSources.avifSrcSet && (
+          {srcSetAttrs.avifSrcSet && (
             <source
               type="image/avif"
-              srcSet={nextGenSources.avifSrcSet}
-              sizes={nextGenSources.sizes}
+              srcSet={srcSetAttrs.avifSrcSet}
+              sizes={srcSetAttrs.sizes}
             />
           )}
-          {nextGenSources.isResponsiveSupported && nextGenSources.webpSrcSet && (
+          {srcSetAttrs.webpSrcSet && (
             <source
               type="image/webp"
-              srcSet={nextGenSources.webpSrcSet}
-              sizes={nextGenSources.sizes}
+              srcSet={srcSetAttrs.webpSrcSet}
+              sizes={srcSetAttrs.sizes}
             />
           )}
           <img
             ref={imgRef}
             src={currentSrc}
-            srcSet={nextGenSources.isResponsiveSupported ? nextGenSources.fallbackSrcSet : undefined}
-            sizes={nextGenSources.isResponsiveSupported ? nextGenSources.sizes : undefined}
+            srcSet={srcSetAttrs.srcSet}
+            sizes={srcSetAttrs.sizes}
             width={explicitDimensions.width}
             height={explicitDimensions.height}
             alt={alt}
-            loading={cleanRestProps.loading || (priority ? 'eager' : 'lazy')}
-            decoding={priority ? 'sync' : 'async'}
-            referrerPolicy={cleanRestProps.referrerPolicy || 'no-referrer'}
-            {...(priority ? { fetchPriority: 'high' } : { fetchPriority: 'low' })}
+            loading={loadingConfig.loading}
+            decoding={loadingConfig.decoding}
+            referrerPolicy={explicitReferrerPolicy || 'no-referrer'}
+            fetchPriority={loadingConfig.fetchPriority}
             onLoad={handleImageLoad}
             onError={handleImageError}
             style={imgStyle}

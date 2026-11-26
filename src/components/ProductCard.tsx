@@ -134,6 +134,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 height={800}
                 responsiveSizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
                 priority={priority}
+                loading="lazy"
                 rootMargin="0px"
                 onLoaded={() => setIsImageLoaded(true)}
                 onError={() => {

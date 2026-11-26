@@ -320,7 +320,11 @@ export const ProductCompareModal: React.FC = () => {
                           <LazyImage
                             src={cand.images[0]}
                             alt={cand.name}
+                            width={36}
+                            height={36}
+                            responsiveSizes="36px"
                             priority={false}
+                            loading="lazy"
                             wrapperClassName="w-full h-full flex items-center justify-center"
                             className="w-full h-full object-contain"
                           />
@@ -404,7 +408,11 @@ export const ProductCompareModal: React.FC = () => {
                   <LazyImage
                     src={product.images[0]}
                     alt={isArabic ? product.nameAr || product.name : product.name}
+                    width={112}
+                    height={112}
+                    responsiveSizes="112px"
                     priority={true}
+                    loading="lazy"
                     wrapperClassName="w-full h-full flex items-center justify-center"
                     className="w-full h-full object-contain"
                   />

@@ -172,11 +172,13 @@ export function createStorefrontCacheManager(
       safeStorageSetItem(storage, storageKey, JSON.stringify(entry), {
         onQuotaRecovery: () => {
           if ((key === 'products' || key === 'offers') && Array.isArray(data)) {
-            const compacted = compactProductsForStorage(data as unknown as Product[]);
-            return JSON.stringify({
-              ...entry,
-              data: compacted,
-            });
+            const list = data as unknown as Product[];
+            return [120_000, 24_000, 0].map((maxChars) =>
+              JSON.stringify({
+                ...entry,
+                data: compactProductsForStorage(list, maxChars),
+              })
+            );
           }
           return null;
         },

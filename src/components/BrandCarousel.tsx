@@ -59,12 +59,12 @@ export const BrandCarousel: React.FC = () => {
 
         {/* 2-Column Spacious Horizontal Brand Showcase Grid */}
         <div className="oaa-brand-grid">
-          {showcaseItems.map((item, idx) => (
+          {showcaseItems.map((item) => (
             <BrandBannerCard
               key={item.brand.id}
               item={item}
               onSelect={selectBrand}
-              priority={idx < 4}
+              priority={false}
               lang={lang}
             />
           ))}

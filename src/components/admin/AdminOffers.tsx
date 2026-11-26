@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { useAdmin } from '../../context/AdminContext';
-import { saveProduct } from '../../services/storageService';
+import { saveProductAsync } from '../../services/storageService';
 import { Product } from '../../types';
 import { Flame, Search, Share2 } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
@@ -16,11 +16,12 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
   const { requirePermission } = useAdmin();
   const [search, setSearch] = useState('');
   const [feedback, setFeedback] = useState('');
+  const [offerError, setOfferError] = useState('');
 
   const safeProducts = products || [];
   const offerProducts = safeProducts.filter((p) => p.isSpecialOffer);
 
-  const handleToggleOffer = (product: Product) => {
+  const handleToggleOffer = async (product: Product) => {
     if (
       !requirePermission(['full_stock', 'manage_products'], {
         actionEn: `Update promotional offer status for "${product.name}"`,
@@ -29,17 +30,22 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
     ) {
       return;
     }
+    setOfferError('');
     const updated: Product = {
       ...product,
       isSpecialOffer: !product.isSpecialOffer,
     };
-    saveProduct(updated);
+    const result = await saveProductAsync(updated);
     refreshData();
+    if (!result.ok) {
+      setOfferError(result.errorMessage || `Failed to update offer status for ${product.name}.`);
+      return;
+    }
     setFeedback(`Updated offer status for ${product.name}`);
     setTimeout(() => setFeedback(''), 3000);
   };
 
-  const handleUpdateDiscount = (product: Product, newDiscountPercent: number) => {
+  const handleUpdateDiscount = async (product: Product, newDiscountPercent: number) => {
     if (
       !requirePermission(['full_stock', 'manage_products'], {
         actionEn: `Update discount percentage for "${product.name}"`,
@@ -48,6 +54,7 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
     ) {
       return;
     }
+    setOfferError('');
     const clampedPercent = Number.isFinite(newDiscountPercent)
       ? Math.min(90, Math.max(0, Math.round(newDiscountPercent)))
       : 0;
@@ -61,8 +68,11 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
       discountPercentage: clampedPercent,
       price: discountedPrice,
     };
-    saveProduct(updated);
+    const result = await saveProductAsync(updated);
     refreshData();
+    if (!result.ok) {
+      setOfferError(result.errorMessage || `Failed to update discount for ${product.name}.`);
+    }
   };
 
   const q = search.toLowerCase();
@@ -95,6 +105,12 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
       {feedback && (
         <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-[#16A34A] text-xs font-semibold">
           {feedback}
+        </div>
+      )}
+
+      {offerError && (
+        <div role="alert" className="p-3 rounded-xl bg-red-50 border border-red-200 text-[#DC2626] text-xs font-semibold">
+          {offerError}
         </div>
       )}
 
@@ -142,7 +158,9 @@ export const AdminOffers: React.FC<AdminOffersProps> = ({ onShareProduct }) => {
                         alt={p.name || 'Product'}
                         width={40}
                         height={40}
+                        responsiveSizes="40px"
                         priority={false}
+                        loading="lazy"
                         wrapperClassName="w-10 h-10 rounded-lg overflow-hidden bg-[#F5F8FC] border border-[#DCE5F0] flex-shrink-0"
                         className="w-full h-full object-cover"
                       />

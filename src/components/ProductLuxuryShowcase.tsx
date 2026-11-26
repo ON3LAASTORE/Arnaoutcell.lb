@@ -447,6 +447,8 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
               src={activeHeroImageUrl}
               alt={`${rawTitle}${selectedColor ? ` - ${selectedColor}` : ''}`}
               priority={true}
+              loading={mode === 'modal' ? 'lazy' : 'eager'}
+              responsiveSizes="(max-width: 1024px) 100vw, 50vw"
               data-testid={mode === 'modal' ? 'quickview-main-image' : 'pdp-hero-image'}
               wrapperClassName="w-full h-full flex items-center justify-center"
               className="max-h-full max-w-full w-auto h-auto object-contain select-none"
@@ -520,10 +522,15 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
                       }`}
                     >
                       {explicitThumb ? (
-                        <img
-                          src={resolveFullResolutionImageUrl(explicitThumb)}
+                        <LazyImage
+                          src={explicitThumb}
                           alt={`${rawTitle} - ${colorOpt.name}`}
-                          referrerPolicy="no-referrer"
+                          width={74}
+                          height={74}
+                          responsiveSizes="74px"
+                          priority={true}
+                          loading="lazy"
+                          wrapperClassName="w-full h-full flex items-center justify-center rounded-lg overflow-hidden"
                           className="w-full h-full object-contain rounded-lg"
                         />
                       ) : colorOpt.hex ? (
@@ -535,10 +542,15 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
                           <rect width="48" height="48" rx="8" fill={colorOpt.hex} />
                         </svg>
                       ) : (
-                        <img
-                          src={resolveFullResolutionImageUrl(fallbackThumb)}
+                        <LazyImage
+                          src={fallbackThumb}
                           alt={`${rawTitle} - ${colorOpt.name}`}
-                          referrerPolicy="no-referrer"
+                          width={74}
+                          height={74}
+                          responsiveSizes="74px"
+                          priority={true}
+                          loading="lazy"
+                          wrapperClassName="w-full h-full flex items-center justify-center rounded-lg overflow-hidden"
                           className="w-full h-full object-contain rounded-lg"
                         />
                       )}

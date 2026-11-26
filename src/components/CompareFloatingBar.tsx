@@ -56,7 +56,11 @@ export const CompareFloatingBar: React.FC = () => {
                 <LazyImage
                   src={product.images[0] || 'https://images.unsplash.com/photo-1598327105666-5b89351aff97'}
                   alt={product.name}
+                  width={40}
+                  height={40}
+                  responsiveSizes="40px"
                   priority={true}
+                  loading="lazy"
                   wrapperClassName="w-full h-full flex items-center justify-center"
                   className="w-full h-full object-contain"
                 />

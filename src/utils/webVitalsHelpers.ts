@@ -1,4 +1,4 @@
-export const RESPONSIVE_IMAGE_WIDTHS = [640, 1280, 1920, 3840] as const;
+export const RESPONSIVE_IMAGE_WIDTHS = [320, 640, 1280, 1920, 3840] as const;
 
 export const DEFAULT_RESPONSIVE_SIZES =
   '(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 100vw';
@@ -9,6 +9,19 @@ export interface NextGenResponsiveSources {
   webpSrcSet: string;
   fallbackSrcSet: string;
   sizes: string;
+}
+
+export interface ImageSrcSetAttributes {
+  avifSrcSet?: string;
+  webpSrcSet?: string;
+  srcSet?: string;
+  sizes?: string;
+}
+
+export interface ImageLoadingConfig {
+  loading: 'eager' | 'lazy';
+  decoding: 'sync' | 'async';
+  fetchPriority: 'high' | 'low' | 'auto';
 }
 
 export interface ExplicitImageDimensions {
@@ -91,6 +104,85 @@ export function buildNextGenResponsiveSources(
     fallbackSrcSet,
     sizes,
   };
+}
+
+function isSrcSetEligibleUrl(src: string): boolean {
+  if (!src) return false;
+  const lower = src.toLowerCase();
+  if (lower.startsWith('data:') || lower.startsWith('blob:')) {
+    return false;
+  }
+  return (
+    src.startsWith('/') ||
+    lower.startsWith('https://') ||
+    lower.startsWith('http://')
+  );
+}
+
+function sanitizeSrcSetCandidateUrl(src: string): string {
+  return src.replace(/,/g, '%2C').replace(/\s+/g, '%20');
+}
+
+/**
+ * Builds complete responsive srcSet & sizes attributes for any image source.
+ * Uses multi-width AVIF/WebP/fallback descriptors for supported CDNs and falls back
+ * to a valid width-descriptor srcSet + sizes for local/external product & brand assets
+ * (safely skipping inline data: and blob: URIs whose commas break srcset parsing).
+ */
+export function buildImageSrcSetAttributes(
+  resolvedSrc: string,
+  customSizes?: string,
+  intrinsicWidth = 800
+): ImageSrcSetAttributes {
+  const trimmed = typeof resolvedSrc === 'string' ? resolvedSrc.trim() : '';
+  if (!trimmed) {
+    return {};
+  }
+
+  const nextGen = buildNextGenResponsiveSources(trimmed, customSizes);
+  if (nextGen.isResponsiveSupported) {
+    return {
+      avifSrcSet: nextGen.avifSrcSet,
+      webpSrcSet: nextGen.webpSrcSet,
+      srcSet: nextGen.fallbackSrcSet,
+      sizes: nextGen.sizes,
+    };
+  }
+
+  if (!isSrcSetEligibleUrl(trimmed)) {
+    return {};
+  }
+
+  const safeWidth = Math.max(1, Math.round(intrinsicWidth || 800));
+  const safeUrl = sanitizeSrcSetCandidateUrl(trimmed);
+  return {
+    srcSet: `${safeUrl} ${safeWidth}w`,
+    sizes: nextGen.sizes,
+  };
+}
+
+/**
+ * Resolves coherent loading, decoding, and fetchPriority hints without
+ * emitting contradictory loading="lazy" + fetchPriority="high" attributes.
+ */
+export function resolveImageLoadingConfig(
+  priority: boolean,
+  explicitLoading?: 'eager' | 'lazy',
+  explicitDecoding?: 'sync' | 'async' | 'auto',
+  explicitFetchPriority?: 'high' | 'low' | 'auto'
+): ImageLoadingConfig {
+  const loading: 'eager' | 'lazy' = explicitLoading || (priority ? 'eager' : 'lazy');
+  const decoding: 'sync' | 'async' =
+    explicitDecoding === 'sync' || explicitDecoding === 'async'
+      ? explicitDecoding
+      : loading === 'eager' && priority
+      ? 'sync'
+      : 'async';
+  const fetchPriority: 'high' | 'low' | 'auto' =
+    explicitFetchPriority ||
+    (loading === 'lazy' ? 'low' : priority ? 'high' : 'low');
+
+  return { loading, decoding, fetchPriority };
 }
 
 function parsePositiveDimension(value: number | string | undefined): number | null {

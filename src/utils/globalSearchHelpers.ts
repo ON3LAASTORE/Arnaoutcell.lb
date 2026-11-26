@@ -298,6 +298,29 @@ export function filterProductsGlobally(
 
     const skuMatches = Boolean(skuMatch);
 
+    const linkedCats = resolveProductCategoryRecords(product, categories);
+    const crossFieldHit =
+      mode === 'all' &&
+      searchWords.length > 1 &&
+      searchWords.every((word) => {
+        const single = [word];
+        return (
+          matchesSearch(product.name, single) ||
+          (product.nameAr ? matchesSearch(product.nameAr, single) : false) ||
+          matchesSearch(product.brand, single) ||
+          matchesSearch(product.category || '', single) ||
+          (product.subcategory ? matchesSearch(product.subcategory, single) : false) ||
+          linkedCats.some(
+            (c) =>
+              matchesSearch(c.name, single) ||
+              (c.nameAr ? matchesSearch(c.nameAr, single) : false) ||
+              normalizeSearchTerm(c.slug).includes(word)
+          ) ||
+          Boolean(findProductSkuMatch(product, word)) ||
+          (keywordBlob ? matchesSearch(keywordBlob, single) : false)
+        );
+      });
+
     let matchType: ScoredProductMatch['matchedBy'] | null = null;
 
     if (mode === 'sku' && skuMatches) {
@@ -316,7 +339,7 @@ export function filterProductsGlobally(
         (skuMatches ? 1 : 0) +
         (keywordMatches ? 1 : 0);
 
-      if (hitCount > 1) matchType = 'multiple';
+      if (hitCount > 1 || crossFieldHit) matchType = 'multiple';
       else if (skuMatches) matchType = 'sku';
       else if (nameMatches) matchType = 'name';
       else if (brandMatches) matchType = 'brand';
@@ -350,6 +373,8 @@ export function filterProductsGlobally(
       score += 54;
     } else if (categoryMatches) {
       score += 48;
+    } else if (crossFieldHit) {
+      score += 68;
     } else if (keywordMatches) {
       score += 38;
     }
@@ -434,11 +459,22 @@ export function getUniqueMatchingBrands(
   const seenBrands = new Set<string>();
   const results: Array<MatchedBrandInfo & { nameMatches: boolean }> = [];
 
+  const matchBrandText = (brandName: string): boolean => {
+    const normBrandName = normalizeSearchTerm(brandName);
+    return (
+      normBrandName.includes(normalizedQuery) ||
+      matchesSearch(brandName, searchWords) ||
+      searchWords.every((w) => {
+        if (normBrandName.includes(w)) return true;
+        return matchesSearch(brandName, [w]);
+      })
+    );
+  };
+
   // 1. Check configured brands list
   for (const b of brands) {
     const normBrandName = normalizeSearchTerm(b.name);
-    const nameMatches =
-      normBrandName.includes(normalizedQuery) || matchesSearch(b.name, searchWords);
+    const nameMatches = matchBrandText(b.name);
     const descMatches = Boolean(b.description && matchesSearch(b.description, searchWords));
 
     if ((nameMatches || descMatches) && !seenBrands.has(normBrandName)) {
@@ -460,7 +496,7 @@ export function getUniqueMatchingBrands(
     const normBrand = normalizeSearchTerm(p.brand);
     if (seenBrands.has(normBrand)) continue;
 
-    if (normBrand.includes(normalizedQuery) || matchesSearch(p.brand, searchWords)) {
+    if (matchBrandText(p.brand)) {
       seenBrands.add(normBrand);
       const meta = brandMetaMap.get(p.brand.toLowerCase());
       results.push({

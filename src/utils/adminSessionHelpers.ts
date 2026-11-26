@@ -1,4 +1,6 @@
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 
 export const ADMIN_SESSION_COOKIE_NAME = 'onalaa_admin_session';
 export const DEFAULT_SESSION_TTL_MS = 12 * 60 * 60 * 1000;
@@ -41,6 +43,40 @@ export function resolveEphemeralOrEnvSecret(envSecret?: string): string {
     processEphemeralSecret = crypto.randomBytes(32).toString('hex');
   }
   return processEphemeralSecret;
+}
+
+/**
+ * Uses ADMIN_SESSION_SECRET when configured, or persists a cryptographically random
+ * signing secret to disk so HttpOnly admin session cookies survive server restarts.
+ */
+export function resolvePersistentOrEnvSecret(
+  envSecret: string | undefined,
+  secretFilePath: string
+): string {
+  const trimmed = typeof envSecret === 'string' ? envSecret.trim() : '';
+  if (trimmed.length > 0) {
+    return trimmed;
+  }
+
+  try {
+    if (fs.existsSync(secretFilePath)) {
+      const existing = fs.readFileSync(secretFilePath, 'utf8').trim();
+      if (/^[a-f0-9]{64,}$/i.test(existing)) {
+        return existing;
+      }
+    }
+  } catch {
+    // Ignore read error and generate below
+  }
+
+  const secret = resolveEphemeralOrEnvSecret(undefined);
+  try {
+    fs.mkdirSync(path.dirname(secretFilePath), { recursive: true });
+    fs.writeFileSync(secretFilePath, secret, { encoding: 'utf8', mode: 0o600 });
+  } catch {
+    // Read-only filesystem fallback uses processEphemeralSecret
+  }
+  return secret;
 }
 
 function encodeBase64Url(input: Buffer | string): string {

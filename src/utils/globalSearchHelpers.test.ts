@@ -492,5 +492,29 @@ test('resolveProductThumbnailUrl and resolveCategoryThumbnailImage resolve produ
   assert.ok(matches[0].image && matches[0].image.startsWith('https://'));
 });
 
+test('filterProductsGlobally supports cross-field multi-word queries across brand, name, and category', () => {
+  // Brand ("Apple") + Category ("Audio") matches AirPods Pro 2 (p5), even though "Audio" is not in product name
+  const appleAudio = filterProductsGlobally(mockProducts, 'Apple Audio', 'all', mockCategories);
+  assert.equal(appleAudio.length, 1);
+  assert.equal(appleAudio[0].id, 'p5');
 
+  // Brand ("Apple") + Category ("Smartphones") matches iPhone 16 Pro Max (p1), excluding draft p4 and AirPods p5
+  const applePhones = filterProductsGlobally(mockProducts, 'Apple Smartphones', 'all', mockCategories);
+  assert.equal(applePhones.length, 1);
+  assert.equal(applePhones[0].id, 'p1');
+
+  // Brand ("Samsung") + Arabic category ("الهواتف") matches Galaxy S25 Ultra (p2)
+  const samsungArabicCat = filterProductsGlobally(mockProducts, 'Samsung الهواتف', 'all', mockCategories);
+  assert.equal(samsungArabicCat.length, 1);
+  assert.equal(samsungArabicCat[0].id, 'p2');
+});
+
+test('getUniqueMatchingBrands and brand mode support Arabic brand synonyms', () => {
+  const arabicAppleBrand = getUniqueMatchingBrands(mockProducts, mockBrands, 'ابل');
+  assert.ok(arabicAppleBrand.some((b) => b.name === 'Apple'));
+
+  const brandModeArabic = filterProductsGlobally(mockProducts, 'انكر', 'brand', mockCategories);
+  assert.equal(brandModeArabic.length, 1);
+  assert.equal(brandModeArabic[0].id, 'p3');
+});
 

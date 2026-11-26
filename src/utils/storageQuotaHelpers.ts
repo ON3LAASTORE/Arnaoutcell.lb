@@ -101,7 +101,7 @@ export function safeStorageSetItem(
   value: string,
   options?: {
     evictableKeys?: string[];
-    onQuotaRecovery?: () => string | null;
+    onQuotaRecovery?: () => string | string[] | null;
   }
 ): SafeStorageSetResult {
   if (!storage) {
@@ -138,13 +138,23 @@ export function safeStorageSetItem(
       }
     }
 
-    // Step 2: Run optional payload compaction and retry
+    // Step 2: Run optional payload compaction (single string or progressive tiers) and retry
     if (options?.onQuotaRecovery) {
       try {
         const compacted = options.onQuotaRecovery();
-        if (typeof compacted === 'string') {
-          storage.setItem(key, compacted);
-          return { ok: true, recovered: true, persistedValue: compacted };
+        const candidates = Array.isArray(compacted)
+          ? compacted
+          : typeof compacted === 'string'
+          ? [compacted]
+          : [];
+        for (const candidate of candidates) {
+          if (typeof candidate !== 'string') continue;
+          try {
+            storage.setItem(key, candidate);
+            return { ok: true, recovered: true, persistedValue: candidate };
+          } catch {
+            // Try next more aggressive compaction tier
+          }
         }
       } catch {
         // still over quota
@@ -241,4 +251,10 @@ export function compactProductsForStorage(
       ...(cleanVariants ? { variants: cleanVariants } : {}),
     };
   });
+}
+
+export function compactProductsProgressively(products: Product[]): string[] {
+  return [120_000, 24_000, 0].map((maxChars) =>
+    JSON.stringify(compactProductsForStorage(products, maxChars))
+  );
 }

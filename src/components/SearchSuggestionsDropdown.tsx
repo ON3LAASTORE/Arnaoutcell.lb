@@ -352,8 +352,10 @@ export const SearchSuggestionsDropdown: React.FC<SearchSuggestionsDropdownProps>
                             <LazyImage
                               src={b.logo}
                               alt={b.name}
+                              loading="lazy"
                               width={28}
                               height={28}
+                              responsiveSizes="28px"
                               wrapperClassName="w-full h-full flex items-center justify-center"
                               className="w-full h-full object-contain"
                             />
@@ -481,8 +483,10 @@ export const SearchSuggestionsDropdown: React.FC<SearchSuggestionsDropdownProps>
                           <LazyImage
                             src={p.images[0]}
                             alt={p.name}
+                            loading="lazy"
                             width={48}
                             height={48}
+                            responsiveSizes="48px"
                             wrapperClassName="w-full h-full flex items-center justify-center"
                             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                           />

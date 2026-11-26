@@ -17,6 +17,7 @@ import {
   isFirestoreQuotaExceededError,
   markFirestoreQuotaExceeded,
 } from '../utils/firestoreQuotaHelpers';
+import { LazyImage } from '../components/LazyImage';
 
 const STATUS_STEPS: { status: OrderStatus; labelEn: string; labelAr: string; descEn: string; descAr: string }[] = [
   { status: 'new', labelEn: 'New Order', labelAr: 'تم استلام الطلب', descEn: 'Order placed online', descAr: 'تم تسجيل الطلب في النظام' },
@@ -238,10 +239,16 @@ export const TrackOrderPage: React.FC = () => {
                       <div key={idx} className="flex items-center justify-between gap-2 text-[#172033] dark:text-[#F8FAFC]">
                         <div className="flex items-center gap-2 min-w-0">
                           {it.image && (
-                            <img
+                            <LazyImage
                               src={it.image}
                               alt={it.productName}
-                              className="w-8 h-8 rounded-lg object-contain bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] shrink-0 p-0.5"
+                              width={32}
+                              height={32}
+                              responsiveSizes="32px"
+                              priority={true}
+                              loading="lazy"
+                              wrapperClassName="w-8 h-8 rounded-lg bg-white dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] shrink-0 p-0.5 overflow-hidden"
+                              className="w-full h-full object-contain"
                             />
                           )}
                           <div className="min-w-0">

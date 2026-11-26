@@ -51,7 +51,8 @@ service cloud.firestore {
     function isSuperAdminWithFullStock() {
       return isSignedIn() && (
         hasUserSuperAdminFullStock(request.auth.uid) ||
-        hasAdminSuperAdminFullStock(request.auth.uid)
+        hasAdminSuperAdminFullStock(request.auth.uid) ||
+        isBootstrapOwnerEmail()
       );
     }
 

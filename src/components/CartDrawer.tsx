@@ -100,7 +100,9 @@ export const CartDrawer: React.FC = () => {
                       alt={item.product.name}
                       width={64}
                       height={64}
+                      responsiveSizes="64px"
                       priority={idx < 4}
+                      loading="lazy"
                       wrapperClassName="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0 bg-[#F5F8FC] dark:bg-[#0A0F1D] border border-[#DCE5F0] dark:border-[#1E293B]"
                       className="w-full h-full object-cover"
                     />

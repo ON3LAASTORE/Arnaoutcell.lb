@@ -38,6 +38,10 @@ import {
   MatchedCategoryInfo,
 } from '../utils/globalSearchHelpers';
 import {
+  resolveAutocompleteBrands,
+  resolveAutocompleteCategories,
+} from '../utils/productAutocompleteHelpers';
+import {
   getSearchHistory,
   addSearchHistoryTerm,
   removeSearchHistoryTerm,
@@ -77,6 +81,7 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
     categories,
     selectBrand,
     selectCategory,
+    applyCatalogFilters,
     viewProductDetail,
     setQuickViewProduct,
     addToCart,
@@ -240,20 +245,6 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
   const hasFacetFilter = Boolean(selectedFacetBrand || selectedFacetCategorySlug);
   const isSearchActive = hasQuery || hasFacetFilter;
 
-  const matchingCategories = useMemo(() => {
-    if (!hasQuery || filterMode === 'name' || filterMode === 'brand' || filterMode === 'sku') {
-      return [];
-    }
-    return getUniqueMatchingCategories(products, categories, deferredQuery).slice(0, 4);
-  }, [hasQuery, products, categories, deferredQuery, filterMode]);
-
-  const matchingBrands = useMemo(() => {
-    if (!hasQuery || filterMode === 'name' || filterMode === 'category' || filterMode === 'sku') {
-      return [];
-    }
-    return getUniqueMatchingBrands(products, brands, deferredQuery).slice(0, 4);
-  }, [hasQuery, products, brands, deferredQuery, filterMode]);
-
   const baseMatchingProducts = useMemo(() => {
     if (!isSearchActive) return [];
     if (hasQuery) {
@@ -262,6 +253,34 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
     // Browsing directly by brand or category facet inside the overlay
     return products.filter((p) => p.isPublished !== false);
   }, [isSearchActive, hasQuery, products, deferredQuery, filterMode, categories]);
+
+  const matchingCategories = useMemo(() => {
+    if (!hasQuery || filterMode === 'name' || filterMode === 'brand' || filterMode === 'sku') {
+      return [];
+    }
+    return resolveAutocompleteCategories({
+      products,
+      rankedProducts: baseMatchingProducts,
+      categories,
+      query: deferredQuery,
+      filterMode,
+      maxResults: 4,
+    }).suggestions;
+  }, [hasQuery, products, baseMatchingProducts, categories, deferredQuery, filterMode]);
+
+  const matchingBrands = useMemo(() => {
+    if (!hasQuery || filterMode === 'name' || filterMode === 'category' || filterMode === 'sku') {
+      return [];
+    }
+    return resolveAutocompleteBrands({
+      products,
+      rankedProducts: baseMatchingProducts,
+      brands,
+      query: deferredQuery,
+      filterMode,
+      maxResults: 4,
+    }).suggestions;
+  }, [hasQuery, products, baseMatchingProducts, brands, deferredQuery, filterMode]);
 
   const availableFacets = useMemo(() => {
     if (!isSearchActive) return { brands: [], categories: [] };
@@ -487,13 +506,15 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
     (rawTerm: string, source: 'desktop_input_submit' | 'trending_term_click' = 'desktop_input_submit') => {
       const trimmed = rawTerm.trim();
       if (!trimmed) {
-        if (selectedFacetBrand) {
-          handleSelectBrand(selectedFacetBrand);
-          return;
-        }
-        if (selectedFacetCategorySlug) {
-          selectCategory(selectedFacetCategorySlug);
-          setCurrentView('products');
+        if (selectedFacetBrand || selectedFacetCategorySlug) {
+          applyCatalogFilters({
+            categorySlug: selectedFacetCategorySlug || null,
+            brandName: selectedFacetBrand || null,
+            searchQuery: '',
+            searchFilterMode: 'all',
+          });
+          setSelectedFacetBrand(null);
+          setSelectedFacetCategorySlug(null);
           onClose();
           return;
         }
@@ -561,9 +582,9 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
           c.slug.toLowerCase() === lower
       );
 
-      if (filterMode === 'brand' && (matchedBrand || brandHits.length > 0)) {
+      if (filterMode === 'brand' && (matchedBrand || brandHits.length === 1) && !selectedFacetCategorySlug) {
         selectBrand(matchedBrand ? matchedBrand.name : brandHits[0].name);
-      } else if (filterMode === 'category' && (matchedCategory || catHits.length === 1)) {
+      } else if (filterMode === 'category' && (matchedCategory || catHits.length === 1) && !selectedFacetBrand) {
         const target = matchedCategory || catHits[0];
         selectCategory(target.slug);
       } else if (filterMode === 'all' && matchedBrand && !selectedFacetCategorySlug) {
@@ -571,12 +592,12 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
       } else if (filterMode === 'all' && matchedCategory && !selectedFacetBrand) {
         selectCategory(matchedCategory.slug);
       } else {
-        selectCategory(selectedFacetCategorySlug || null);
-        if (selectedFacetBrand) {
-          selectBrand(selectedFacetBrand);
-        }
-        setSearchQuery(trimmed);
-        setCurrentView('products');
+        applyCatalogFilters({
+          categorySlug: selectedFacetCategorySlug || null,
+          brandName: selectedFacetBrand || null,
+          searchQuery: trimmed,
+          searchFilterMode: filterMode,
+        });
       }
 
       setQuery('');
@@ -586,10 +607,10 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
       window.scrollTo({ top: 0, behavior: 'smooth' });
     },
     [
+      applyCatalogFilters,
       brands,
       categories,
       filterMode,
-      handleSelectBrand,
       onClose,
       products,
       recordTermInHistory,
@@ -1363,8 +1384,10 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                                 src={cat.image}
                                 alt={isArabic ? cat.nameAr : cat.name}
                                 priority={true}
+                                loading="lazy"
                                 width={40}
                                 height={40}
+                                responsiveSizes="40px"
                                 wrapperClassName="w-full h-full flex items-center justify-center"
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                               />
@@ -1427,8 +1450,10 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                                 src={b.logo}
                                 alt={b.name}
                                 priority={true}
+                                loading="lazy"
                                 width={28}
                                 height={28}
+                                responsiveSizes="28px"
                                 wrapperClassName="w-full h-full flex items-center justify-center"
                                 className="w-full h-full object-contain"
                               />
@@ -1522,8 +1547,10 @@ export const QuickSearchOverlay: React.FC<QuickSearchOverlayProps> = ({
                                 src={p.images[0]}
                                 alt={productTitle}
                                 priority={true}
+                                loading="lazy"
                                 width={52}
                                 height={52}
+                                responsiveSizes="52px"
                                 wrapperClassName="w-full h-full flex items-center justify-center"
                                 className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-200"
                               />

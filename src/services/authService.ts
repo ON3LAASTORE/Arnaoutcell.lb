@@ -230,6 +230,31 @@ export async function exchangeFirebaseIdTokenForAdminSession(
   }
 }
 
+export async function restoreAdminApiSession(): Promise<{
+  authenticated: boolean;
+  token?: string;
+}> {
+  if (typeof fetch === 'undefined') return { authenticated: false };
+  try {
+    const response = await fetch('/api/admin/auth/session', {
+      method: 'GET',
+      cache: 'no-store',
+      credentials: 'same-origin',
+    });
+    if (!response.ok) {
+      return { authenticated: false };
+    }
+    const data = (await response.json()) as { authenticated?: boolean; token?: string };
+    if (data.authenticated && data.token) {
+      setAdminApiToken(data.token);
+      return { authenticated: true, token: data.token };
+    }
+    return { authenticated: false };
+  } catch {
+    return { authenticated: false };
+  }
+}
+
 export async function logoutAdminSession(): Promise<void> {
   clearAdminApiToken();
   if (typeof fetch === 'undefined') return;

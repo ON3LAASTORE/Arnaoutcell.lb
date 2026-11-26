@@ -1,9 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {
   ADMIN_SESSION_COOKIE_NAME,
   resolveEphemeralOrEnvSecret,
+  resolvePersistentOrEnvSecret,
   createAdminSessionToken,
   verifyAdminSessionToken,
   parseCookies,
@@ -172,4 +176,19 @@ test('verifyFirebaseAdminIdTokenWithCerts validates RS256 signature, claims, and
     verifyFirebaseAdminIdTokenWithCerts(wrongAudToken, { 'kid-1': publicPem }, projectId, nowSec),
     null
   );
+});
+
+test('resolvePersistentOrEnvSecret creates and reuses on-disk secret across restarts when env secret is unset', () => {
+  const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'onalaa-secret-test-'));
+  const secretPath = path.join(tempDir, '.admin_session_secret');
+  try {
+    const first = resolvePersistentOrEnvSecret(undefined, secretPath);
+    const second = resolvePersistentOrEnvSecret(undefined, secretPath);
+    assert.ok(first.length >= 64);
+    assert.equal(first, second);
+    assert.equal(fs.readFileSync(secretPath, 'utf8').trim(), first);
+    assert.equal(resolvePersistentOrEnvSecret('explicit-env-secret', secretPath), 'explicit-env-secret');
+  } finally {
+    fs.rmSync(tempDir, { recursive: true, force: true });
+  }
 });

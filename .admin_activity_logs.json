@@ -1,5 +1,812 @@
 [
   {
+    "id": "audit-1795683102098-73uutz",
+    "action": "product_deleted",
+    "titleEn": "Deleted product: Galaxy Fold Test Pro",
+    "titleAr": "تم حذف المنتج: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "warning",
+    "target": "Galaxy Fold Test Pro (prod-1795683076160)",
+    "details": "Removed Apple item ($1399) from storefront catalog.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:51:42.097Z"
+  },
+  {
+    "id": "audit-1795683076303-hzb88m",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795683076160)",
+    "details": "Brand: Apple • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:51:16.303Z"
+  },
+  {
+    "id": "audit-1795683073691-wink7d",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:51:13.691Z"
+  },
+  {
+    "id": "audit-1795683012036-j0c3pp",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795683011955)",
+    "details": "Brand: Apple • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:50:12.036Z"
+  },
+  {
+    "id": "audit-1795683009618-41yfjg",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:50:09.618Z"
+  },
+  {
+    "id": "audit-1795682901717-zgb5y8",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:48:21.717Z"
+  },
+  {
+    "id": "audit-1795682845885-oayo4r",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:47:25.885Z"
+  },
+  {
+    "id": "audit-1795682762026-q5k7m9",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:46:02.026Z"
+  },
+  {
+    "id": "audit-1795682726006-s6i01w",
+    "action": "product_deleted",
+    "titleEn": "Deleted product: Galaxy Fold Test Pro",
+    "titleAr": "تم حذف المنتج: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "warning",
+    "target": "Galaxy Fold Test Pro (prod-1795682677367)",
+    "details": "Removed Samsung item ($1299) from storefront catalog.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:45:26.006Z"
+  },
+  {
+    "id": "audit-1795682708312-go3z13",
+    "action": "product_updated",
+    "titleEn": "Updated product: Galaxy Fold Test Pro",
+    "titleAr": "تم تحديث المنتج: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795682677367)",
+    "details": "Price $1399 -> $1299",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:45:08.312Z"
+  },
+  {
+    "id": "audit-1795682677509-x129vu",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795682677367)",
+    "details": "Brand: Samsung • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:44:37.509Z"
+  },
+  {
+    "id": "audit-1795682674561-dd7bo2",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:44:34.561Z"
+  },
+  {
+    "id": "audit-1795682519551-lorudy",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:41:59.551Z"
+  },
+  {
+    "id": "audit-1795682465707-lmsthf",
+    "action": "product_updated",
+    "titleEn": "Updated product: Galaxy Fold Test Pro",
+    "titleAr": "تم تحديث المنتج: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795682438445)",
+    "details": "Price $1399 -> $1299",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:41:05.707Z"
+  },
+  {
+    "id": "audit-1795682438608-berja2",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795682438445)",
+    "details": "Brand: Samsung • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:40:38.608Z"
+  },
+  {
+    "id": "audit-1795682435069-223geh",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:40:35.069Z"
+  },
+  {
+    "id": "audit-1795682337467-6evpa1",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795682337366)",
+    "details": "Brand: Samsung • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:38:57.467Z"
+  },
+  {
+    "id": "audit-1795682334677-vi5cvf",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:38:54.677Z"
+  },
+  {
+    "id": "audit-1795682287707-8zoyf2",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795682287602)",
+    "details": "Brand: Samsung • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:38:07.707Z"
+  },
+  {
+    "id": "audit-1795682284290-j7oa9i",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:38:04.290Z"
+  },
+  {
+    "id": "audit-1795682165624-qp7ti9",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795682163590)",
+    "details": "Brand: Samsung • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:36:05.624Z"
+  },
+  {
+    "id": "audit-1795682157398-csyl8z",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:35:57.398Z"
+  },
+  {
+    "id": "audit-1795682060317-udu0d9",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795682058178)",
+    "details": "Brand: Samsung • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:34:20.317Z"
+  },
+  {
+    "id": "audit-1795682051641-adn0bv",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:34:11.641Z"
+  },
+  {
+    "id": "audit-1795681943041-4dgnwa",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795681940881)",
+    "details": "Brand: Samsung • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:32:23.040Z"
+  },
+  {
+    "id": "audit-1795681934246-j095ao",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:32:14.246Z"
+  },
+  {
+    "id": "audit-1795681889735-30j589",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795681886540)",
+    "details": "Brand: Samsung • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:31:29.735Z"
+  },
+  {
+    "id": "audit-1795681876299-kleg3n",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:31:16.299Z"
+  },
+  {
+    "id": "audit-1795681748922-ia79hr",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795681746637)",
+    "details": "Brand: Samsung • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:29:08.922Z"
+  },
+  {
+    "id": "audit-1795681739407-8ikpzo",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:28:59.407Z"
+  },
+  {
+    "id": "audit-1795681704037-zwdclo",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795681702075)",
+    "details": "Brand: Samsung • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:28:24.037Z"
+  },
+  {
+    "id": "audit-1795681695668-qco5sp",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:28:15.668Z"
+  },
+  {
+    "id": "audit-1795681610347-66i45t",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795681607983)",
+    "details": "Brand: Samsung • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:26:50.347Z"
+  },
+  {
+    "id": "audit-1795681600707-87weo0",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:26:40.707Z"
+  },
+  {
+    "id": "audit-1795681542834-dgdzn3",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795681540784)",
+    "details": "Brand: Samsung • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:25:42.834Z"
+  },
+  {
+    "id": "audit-1795681533737-8vbt23",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:25:33.737Z"
+  },
+  {
+    "id": "audit-1795681421461-zg1twx",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795681418504)",
+    "details": "Brand: Samsung • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:23:41.461Z"
+  },
+  {
+    "id": "audit-1795681406866-djxmh6",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:23:26.866Z"
+  },
+  {
+    "id": "audit-1795681349424-iclnfa",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795681346761)",
+    "details": "Brand: Samsung • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:22:29.424Z"
+  },
+  {
+    "id": "audit-1795681337658-rm6bd4",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:22:17.658Z"
+  },
+  {
+    "id": "audit-1795681277110-ovd7hw",
+    "action": "product_created",
+    "titleEn": "Added new product: Galaxy Fold Test Pro",
+    "titleAr": "تمت إضافة منتج جديد: Galaxy Fold Test Pro",
+    "category": "catalog",
+    "severity": "info",
+    "target": "Galaxy Fold Test Pro (prod-1795681274356)",
+    "details": "Brand: Samsung • Category: Phones • Price: $1399 • Stock: 14",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-26T08:21:17.110Z"
+  },
+  {
+    "id": "audit-1795681266227-ih02bh",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:21:06.227Z"
+  },
+  {
+    "id": "audit-1795680926352-4fey88",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-26T08:15:26.352Z"
+  },
+  {
+    "id": "audit-1795620528776-vlxidz",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-25T15:28:48.776Z"
+  },
+  {
+    "id": "audit-1795620063277-0opse5",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in",
+    "titleAr": "تم تسجيل دخول المدير بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt credential authentication succeeded.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-25T15:21:03.277Z"
+  },
+  {
     "id": "audit-1795613407846-gp8ml8",
     "action": "auth_login_success",
     "titleEn": "Administrator signed in (Alaa)",

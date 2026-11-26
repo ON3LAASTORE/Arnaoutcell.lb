@@ -34,10 +34,164 @@ import { storefrontCache } from '../utils/storefrontCacheHelpers';
 import {
   emitPermissionDenied,
   inferPermissionDeniedFromFirestoreError,
+  isFirestorePermissionDeniedError,
 } from '../utils/permissionDeniedHelpers';
+import {
+  CatalogOverlayRecord,
+  mergeCatalogProducts,
+} from '../utils/catalogMergeHelpers';
+import { sanitizeProductId } from '../utils/adminProductFormHelpers';
 
 const PRODUCTS_COLLECTION = 'products';
 const INVENTORY_COLLECTION = 'inventory';
+const LOCAL_PRODUCTS_STORAGE_KEY = 'arnaout_cell_products_v2';
+const LOCAL_DELETED_PRODUCTS_KEY = 'arnaout_cell_deleted_product_ids_v1';
+
+export interface PersistProductResult {
+  persisted: boolean;
+  status: 'saved' | 'skipped_unauthenticated' | 'skipped_quota' | 'error';
+  errorMessage?: string;
+}
+
+function readPersistedLocalDeletedIds(): string[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(LOCAL_DELETED_PRODUCTS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed
+          .filter((id): id is string => typeof id === 'string')
+          .map((id) => id.trim())
+          .filter(Boolean)
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function readPersistedLocalProducts(): Product[] {
+  const byId = new Map<string, Product>();
+  const cached = storefrontCache.readEntry<Product[]>('products')?.data;
+  if (Array.isArray(cached)) {
+    for (const item of cached) {
+      if (item?.id && !byId.has(item.id)) {
+        byId.set(item.id, item);
+      }
+    }
+  }
+  if (typeof window !== 'undefined') {
+    try {
+      const raw = window.localStorage.getItem(LOCAL_PRODUCTS_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) {
+          for (const item of parsed as Product[]) {
+            if (item?.id && !byId.has(item.id)) {
+              byId.set(item.id, item);
+            }
+          }
+        }
+      }
+    } catch {
+      // Ignore malformed local storage fallback
+    }
+  }
+  return Array.from(byId.values());
+}
+
+export interface ServerCatalogOverlayState {
+  records: CatalogOverlayRecord[];
+  deletedIds: string[];
+  loaded: boolean;
+}
+
+let serverOverlayState: ServerCatalogOverlayState = {
+  records: [],
+  deletedIds: [],
+  loaded: false,
+};
+let inFlightOverlayFetch: Promise<ServerCatalogOverlayState> | null = null;
+
+export function getCachedServerCatalogOverlay(): ServerCatalogOverlayState {
+  return serverOverlayState;
+}
+
+export function upsertLocalServerOverlayRecord(
+  product: Product,
+  syncedToFirestore: boolean = false
+): void {
+  const nextRecord: CatalogOverlayRecord = {
+    product,
+    updatedAtMs: Date.now(),
+    syncedToFirestore,
+  };
+  const nextRecords = [
+    nextRecord,
+    ...serverOverlayState.records.filter((r) => r.product.id !== product.id),
+  ];
+  serverOverlayState = {
+    records: nextRecords,
+    deletedIds: serverOverlayState.deletedIds.filter((id) => id !== product.id),
+    loaded: true,
+  };
+}
+
+export function removeLocalServerOverlayRecord(productId: string): void {
+  const cleanId = (productId || '').trim();
+  if (!cleanId) return;
+  serverOverlayState = {
+    records: serverOverlayState.records.filter((r) => r.product.id !== cleanId),
+    deletedIds: Array.from(new Set([cleanId, ...serverOverlayState.deletedIds])),
+    loaded: true,
+  };
+}
+
+export async function fetchServerCatalogOverlay(
+  force: boolean = false
+): Promise<ServerCatalogOverlayState> {
+  if (typeof fetch === 'undefined' || typeof window === 'undefined') {
+    return serverOverlayState;
+  }
+  if (!force && serverOverlayState.loaded && !inFlightOverlayFetch) {
+    return serverOverlayState;
+  }
+  if (inFlightOverlayFetch) {
+    return inFlightOverlayFetch;
+  }
+
+  inFlightOverlayFetch = (async (): Promise<ServerCatalogOverlayState> => {
+    try {
+      const response = await fetch('/api/catalog/products', {
+        method: 'GET',
+        cache: 'no-store',
+        credentials: 'same-origin',
+      });
+      if (!response.ok) {
+        return serverOverlayState;
+      }
+      const data = (await response.json()) as {
+        success?: boolean;
+        records?: CatalogOverlayRecord[];
+        deletedIds?: string[];
+      };
+      if (data?.success && Array.isArray(data.records)) {
+        serverOverlayState = {
+          records: data.records,
+          deletedIds: Array.isArray(data.deletedIds) ? data.deletedIds : [],
+          loaded: true,
+        };
+      }
+      return serverOverlayState;
+    } catch {
+      return serverOverlayState;
+    } finally {
+      inFlightOverlayFetch = null;
+    }
+  })();
+
+  return inFlightOverlayFetch;
+}
 
 export interface ProductSyncMetadata {
   fromCache: boolean;
@@ -157,15 +311,22 @@ export function mapFirestoreDocToProduct(
   };
 }
 
-function mergeCloudWithInitialProducts(cloudProducts: Product[]): Product[] {
-  const cloudMap = new Map(cloudProducts.map((p) => [p.id, p]));
-  const mergedList: Product[] = [...cloudProducts];
-  for (const initP of INITIAL_PRODUCTS) {
-    if (!cloudMap.has(initP.id)) {
-      mergedList.push(initP);
-    }
-  }
-  return mergedList;
+function mergeCloudWithInitialProducts(
+  cloudProducts: Product[],
+  overlay: ServerCatalogOverlayState = serverOverlayState,
+  baseSeed: Product[] = INITIAL_PRODUCTS,
+  localProducts: Product[] = readPersistedLocalProducts()
+): Product[] {
+  const mergedDeletedIds = Array.from(
+    new Set([...(overlay.deletedIds || []), ...readPersistedLocalDeletedIds()])
+  );
+  return mergeCatalogProducts({
+    cloudProducts,
+    serverRecords: overlay.records,
+    localProducts,
+    initialProducts: baseSeed,
+    deletedIds: mergedDeletedIds,
+  });
 }
 
 function clampNumber(value: unknown, min: number, max: number, fallback: number): number {
@@ -178,7 +339,7 @@ function clampNumber(value: unknown, min: number, max: number, fallback: number)
  * Strips undefined properties and enforces firestore.rules `isValidProduct` bounds.
  */
 export function cleanProductForFirestore(product: Product): Record<string, unknown> {
-  const safeId = (product.id || '').trim().slice(0, 128) || `prod-${Date.now()}`;
+  const safeId = sanitizeProductId(product.id);
   const safeName = (product.name || '').trim().slice(0, 255) || 'Unnamed Product';
   const safeBrand = (product.brand || '').trim().slice(0, 64) || 'ON ALAA STORE';
   const safeCategory = (product.category || '').trim().slice(0, 64) || 'Electronics';
@@ -295,6 +456,37 @@ export function cleanProductForFirestore(product: Product): Record<string, unkno
   return data;
 }
 
+export async function hydrateProductsWithServerOverlay(
+  baseProducts: Product[],
+  forceOverlayFetch: boolean = false
+): Promise<{ products: Product[]; changed: boolean }> {
+  const overlay = await fetchServerCatalogOverlay(forceOverlayFetch);
+  const localDeletedIds = readPersistedLocalDeletedIds();
+  const mergedDeletedIds = Array.from(
+    new Set([...(overlay.deletedIds || []), ...localDeletedIds])
+  );
+  if (overlay.records.length === 0 && mergedDeletedIds.length === 0) {
+    return { products: baseProducts, changed: false };
+  }
+  const merged = mergeCatalogProducts({
+    cloudProducts: baseProducts,
+    serverRecords: overlay.records,
+    localProducts: baseProducts,
+    initialProducts: baseProducts,
+    deletedIds: mergedDeletedIds,
+  });
+  const changed =
+    merged.length !== baseProducts.length ||
+    merged.some((p, i) => {
+      const prev = baseProducts[i];
+      return !prev || p.id !== prev.id || p.price !== prev.price || p.stock !== prev.stock || p.name !== prev.name;
+    });
+  if (changed) {
+    storefrontCache.setProducts(merged, 'local');
+  }
+  return { products: merged, changed };
+}
+
 /**
  * Fetches storefront products using shared TTL cache + in-flight request deduplication (`getDocs`),
  * avoiding open-ended real-time `onSnapshot` listeners for static catalog browsing.
@@ -303,32 +495,52 @@ export async function fetchStorefrontProducts(options?: {
   forceRefresh?: boolean;
   fallbackProducts?: Product[];
 }): Promise<{ products: Product[]; fromCache: boolean; isStale: boolean }> {
+  const localPersisted = readPersistedLocalProducts();
   const fallbackList =
     options?.fallbackProducts && options.fallbackProducts.length > 0
       ? options.fallbackProducts
+      : localPersisted.length > 0
+      ? localPersisted
       : INITIAL_PRODUCTS;
 
   const result = await storefrontCache.fetchWithCache<Product[]>(
     'products',
     async () => {
       updateSyncMeta({ isConnecting: true, hasServerError: false });
+      const overlayPromise = fetchServerCatalogOverlay(Boolean(options?.forceRefresh));
+
+      if (isFirestoreInQuotaCooldown()) {
+        const overlay = await overlayPromise.catch(() => serverOverlayState);
+        updateSyncMeta({
+          fromCache: true,
+          hasPendingWrites: false,
+          isConnecting: false,
+          hasServerError: false,
+          isQuotaLimited: true,
+        });
+        return mergeCloudWithInitialProducts([], overlay, INITIAL_PRODUCTS, fallbackList);
+      }
+
       try {
-        const snapshot = await getDocs(collection(db, PRODUCTS_COLLECTION));
+        const [snapshot, overlay] = await Promise.all([
+          getDocs(collection(db, PRODUCTS_COLLECTION)),
+          overlayPromise,
+        ]);
         const isFromCache = snapshot.metadata.fromCache;
 
         if (snapshot.empty) {
-          if (!isFromCache && !isFirestoreInQuotaCooldown()) {
+          if (!isFromCache && !isFirestoreInQuotaCooldown() && auth.currentUser) {
             seedInitialProductsToCloud().catch(() => {});
           }
           updateSyncMeta({
-            fromCache: true,
+            fromCache: overlay.records.length === 0,
             hasPendingWrites: false,
             isConnecting: false,
             hasServerError: false,
             isQuotaLimited: isFirestoreInQuotaCooldown(),
             ...(isFromCache ? {} : { lastSyncedAt: new Date() }),
           });
-          return fallbackList;
+          return mergeCloudWithInitialProducts([], overlay, INITIAL_PRODUCTS, fallbackList);
         }
 
         const cloudProducts: Product[] = [];
@@ -347,8 +559,9 @@ export async function fetchStorefrontProducts(options?: {
           ...(isFromCache ? {} : { lastSyncedAt: new Date() }),
         });
 
-        return mergeCloudWithInitialProducts(cloudProducts);
+        return mergeCloudWithInitialProducts(cloudProducts, overlay, INITIAL_PRODUCTS, fallbackList);
       } catch (error) {
+        const overlay = await overlayPromise.catch(() => serverOverlayState);
         const category = classifyFirestoreError(error);
         if (category === 'quota') {
           markFirestoreQuotaExceeded();
@@ -362,7 +575,7 @@ export async function fetchStorefrontProducts(options?: {
           if (shouldLogFirestoreQuotaWarning('products')) {
             console.warn('Firestore daily read quota reached; using local storefront catalog cache.');
           }
-          throw error;
+          return mergeCloudWithInitialProducts([], overlay, INITIAL_PRODUCTS, fallbackList);
         }
 
         if (category === 'network') {
@@ -375,7 +588,7 @@ export async function fetchStorefrontProducts(options?: {
           if (shouldLogFirestoreQuotaWarning('products_network')) {
             console.warn('Storefront products fetch offline; using local catalog cache.');
           }
-          throw error;
+          return mergeCloudWithInitialProducts([], overlay, INITIAL_PRODUCTS, fallbackList);
         }
 
         if (category === 'permission') {
@@ -385,7 +598,8 @@ export async function fetchStorefrontProducts(options?: {
             isConnecting: false,
             hasServerError: true,
           });
-          handleFirestoreError(error, OperationType.LIST, PRODUCTS_COLLECTION);
+          console.error('Firestore products read permission notice:', error);
+          return mergeCloudWithInitialProducts([], overlay, INITIAL_PRODUCTS, fallbackList);
         }
 
         updateSyncMeta({
@@ -394,15 +608,26 @@ export async function fetchStorefrontProducts(options?: {
           isConnecting: false,
           hasServerError: false,
         });
-        throw error;
+        return mergeCloudWithInitialProducts([], overlay, INITIAL_PRODUCTS, fallbackList);
       }
     },
     {
       forceRefresh: options?.forceRefresh,
-      fallbackData: fallbackList,
+      fallbackData: mergeCloudWithInitialProducts([], serverOverlayState, INITIAL_PRODUCTS, fallbackList),
       fallbackSource: 'local',
     }
   );
+
+  // Even on cache hit or quota cooldown short-circuit, merge durable server catalog overlay
+  // and locally deleted IDs so newly added/edited/deleted items appear immediately in cold browsers and tabs.
+  let productsData = result.data;
+  if (result.fromCache || !serverOverlayState.loaded) {
+    const hydrated = await hydrateProductsWithServerOverlay(
+      productsData,
+      Boolean(options?.forceRefresh || !serverOverlayState.loaded)
+    );
+    productsData = hydrated.products;
+  }
 
   if (result.fromCache) {
     updateSyncMeta({
@@ -413,7 +638,7 @@ export async function fetchStorefrontProducts(options?: {
   }
 
   return {
-    products: result.data,
+    products: productsData,
     fromCache: result.fromCache,
     isStale: result.isStale,
   };
@@ -433,6 +658,21 @@ export async function fetchProductByIdCachedOrCloud(
   const cachedMatch = storefrontCache.findProduct(normalized, candidateProducts);
   if (cachedMatch) {
     return cachedMatch;
+  }
+
+  const overlay = await fetchServerCatalogOverlay();
+  if (overlay.deletedIds.includes(normalized)) {
+    return null;
+  }
+  const serverMatch = overlay.records.find(
+    (r) =>
+      r.product.id === normalized ||
+      r.product.sku?.toLowerCase() === normalized.toLowerCase() ||
+      r.product.barcode?.toLowerCase() === normalized.toLowerCase()
+  );
+  if (serverMatch) {
+    storefrontCache.upsertProduct(serverMatch.product, 'local');
+    return serverMatch.product;
   }
 
   if (isFirestoreInQuotaCooldown()) {
@@ -556,30 +796,72 @@ export async function persistProductReviewToCloud(product: Product): Promise<voi
   }
 }
 
+function buildFirestoreWriteFailureResult(
+  error: unknown,
+  operationType: OperationType,
+  path: string
+): PersistProductResult {
+  if (isFirestorePermissionDeniedError(error)) {
+    emitPermissionDenied(
+      inferPermissionDeniedFromFirestoreError(
+        error,
+        operationType,
+        path,
+        auth.currentUser
+          ? {
+              email: auth.currentUser.email || undefined,
+              name: auth.currentUser.displayName || undefined,
+            }
+          : null
+      )
+    );
+  }
+  const msg = error instanceof Error ? error.message : String(error);
+  console.error(`Firestore ${operationType} failed at ${path}:`, error);
+  return {
+    persisted: false,
+    status: 'error',
+    errorMessage: msg,
+  };
+}
+
 /**
  * Saves or updates a product in the cloud Firestore database and immediately
  * patches the shared storefront cache. Cloud write requires an authenticated
  * Firebase session (`users/{uid}` with `role == 'super_admin'` and `'full_stock'`).
  */
-export async function persistProductToCloud(product: Product): Promise<void> {
+export async function persistProductToCloud(product: Product): Promise<PersistProductResult> {
   storefrontCache.upsertProduct(product, 'mutation');
 
-  if (!auth.currentUser || isFirestoreInQuotaCooldown()) {
-    return;
+  if (!auth.currentUser) {
+    return {
+      persisted: false,
+      status: 'skipped_unauthenticated',
+    };
   }
-  const docRef = doc(db, PRODUCTS_COLLECTION, product.id);
-  const cleaned = cleanProductForFirestore(product);
+  if (isFirestoreInQuotaCooldown()) {
+    return {
+      persisted: false,
+      status: 'skipped_quota',
+      errorMessage: 'Firestore daily write quota cooldown active.',
+    };
+  }
+
+  const safeDocId = sanitizeProductId(product.id);
+  const docRef = doc(db, PRODUCTS_COLLECTION, safeDocId);
+  const cleaned = cleanProductForFirestore({ ...product, id: safeDocId });
   const { payload, wasCompacted } = enforceFirestoreProductPayloadLimit(cleaned);
 
   if (wasCompacted) {
     console.warn(
-      `Compacted oversized media payload for products/${product.id} before Firestore write to stay below 1 MiB limit.`
+      `Compacted oversized media payload for products/${safeDocId} before Firestore write to stay below 1 MiB limit.`
     );
   }
 
   try {
     await setDoc(docRef, payload, { merge: true });
-    await persistInventoryRecordToCloud(product);
+    await persistInventoryRecordToCloud({ ...product, id: safeDocId });
+    return { persisted: true, status: 'saved' };
   } catch (error) {
     if (isFirestoreQuotaExceededError(error)) {
       markFirestoreQuotaExceeded();
@@ -587,7 +869,11 @@ export async function persistProductToCloud(product: Product): Promise<void> {
       if (shouldLogFirestoreQuotaWarning('products_write')) {
         console.warn('Firestore write deferred due to daily quota limit; product saved locally.');
       }
-      return;
+      return {
+        persisted: false,
+        status: 'skipped_quota',
+        errorMessage: 'Firestore daily write quota exceeded.',
+      };
     }
 
     if (isFirestoreDocumentSizeError(error)) {
@@ -612,37 +898,53 @@ export async function persistProductToCloud(product: Product): Promise<void> {
 
       try {
         await setDoc(docRef, emergencyPayload, { merge: true });
-        await persistInventoryRecordToCloud(product);
+        await persistInventoryRecordToCloud({ ...product, id: safeDocId });
         console.warn(
-          `Retried products/${product.id} write with stripped inline blobs after Firestore 1 MiB size error.`
+          `Retried products/${safeDocId} write with stripped inline blobs after Firestore 1 MiB size error.`
         );
-        return;
+        return { persisted: true, status: 'saved' };
       } catch (retryError) {
-        console.warn(
-          `Firestore size limit fallback preserved local product products/${product.id}:`,
-          retryError
+        return buildFirestoreWriteFailureResult(
+          retryError,
+          OperationType.WRITE,
+          `${PRODUCTS_COLLECTION}/${safeDocId}`
         );
-        return;
       }
     }
 
-    handleFirestoreError(error, OperationType.WRITE, `${PRODUCTS_COLLECTION}/${product.id}`);
+    return buildFirestoreWriteFailureResult(
+      error,
+      OperationType.WRITE,
+      `${PRODUCTS_COLLECTION}/${safeDocId}`
+    );
   }
 }
 
 /**
  * Deletes a product from the cloud Firestore database and immediately updates the shared cache.
  */
-export async function removeProductFromCloud(productId: string): Promise<void> {
+export async function removeProductFromCloud(productId: string): Promise<PersistProductResult> {
   storefrontCache.removeProduct(productId, 'mutation');
 
-  if (!auth.currentUser || isFirestoreInQuotaCooldown()) {
-    return;
+  if (!auth.currentUser) {
+    return {
+      persisted: false,
+      status: 'skipped_unauthenticated',
+    };
   }
-  const docRef = doc(db, PRODUCTS_COLLECTION, productId);
+  if (isFirestoreInQuotaCooldown()) {
+    return {
+      persisted: false,
+      status: 'skipped_quota',
+      errorMessage: 'Firestore daily write quota cooldown active.',
+    };
+  }
+  const safeDocId = sanitizeProductId(productId);
+  const docRef = doc(db, PRODUCTS_COLLECTION, safeDocId);
   try {
     await deleteDoc(docRef);
-    await removeInventoryRecordFromCloud(productId);
+    await removeInventoryRecordFromCloud(safeDocId);
+    return { persisted: true, status: 'saved' };
   } catch (error) {
     if (isFirestoreQuotaExceededError(error)) {
       markFirestoreQuotaExceeded();
@@ -650,9 +952,17 @@ export async function removeProductFromCloud(productId: string): Promise<void> {
       if (shouldLogFirestoreQuotaWarning('products_write')) {
         console.warn('Firestore delete deferred due to daily quota limit; removed locally.');
       }
-      return;
+      return {
+        persisted: false,
+        status: 'skipped_quota',
+        errorMessage: 'Firestore daily write quota exceeded.',
+      };
     }
-    handleFirestoreError(error, OperationType.DELETE, `${PRODUCTS_COLLECTION}/${productId}`);
+    return buildFirestoreWriteFailureResult(
+      error,
+      OperationType.DELETE,
+      `${PRODUCTS_COLLECTION}/${safeDocId}`
+    );
   }
 }
 
@@ -664,6 +974,48 @@ export function subscribeToLiveProducts(
   onUpdate: (products: Product[]) => void,
   onSeedNeeded?: () => void
 ): () => void {
+  let isDisposed = false;
+  let unsubscribeFn: (() => void) | null = null;
+  let lastCloudProducts: Product[] = [];
+  let hasReceivedSnapshot = false;
+  let snapshotSeq = 0;
+
+  const emitOverlayMerged = (overlay: ServerCatalogOverlayState) => {
+    if (isDisposed) return;
+    const localProducts = readPersistedLocalProducts();
+    if (lastCloudProducts.length > 0) {
+      const mergedList = mergeCloudWithInitialProducts(
+        lastCloudProducts,
+        overlay,
+        INITIAL_PRODUCTS,
+        localProducts
+      );
+      storefrontCache.setProducts(mergedList, 'firestore');
+      onUpdate(mergedList);
+      return;
+    }
+    if (overlay.records.length > 0 || overlay.deletedIds.length > 0 || localProducts.length > 0) {
+      const mergedList = mergeCloudWithInitialProducts(
+        [],
+        overlay,
+        INITIAL_PRODUCTS,
+        localProducts
+      );
+      storefrontCache.setProducts(mergedList, 'local');
+      onUpdate(mergedList);
+    }
+  };
+
+  // Always hydrate server catalog overlay before letting live snapshots overwrite local cache
+  const initialOverlayPromise = fetchServerCatalogOverlay(true)
+    .then((overlay) => {
+      if (!isDisposed && !hasReceivedSnapshot) {
+        emitOverlayMerged(overlay);
+      }
+      return overlay;
+    })
+    .catch(() => serverOverlayState);
+
   if (isFirestoreInQuotaCooldown()) {
     updateSyncMeta({
       fromCache: true,
@@ -672,20 +1024,21 @@ export function subscribeToLiveProducts(
       hasServerError: false,
       isQuotaLimited: true,
     });
-    return () => {};
+    return () => {
+      isDisposed = true;
+    };
   }
 
   const colRef = collection(db, PRODUCTS_COLLECTION);
   updateSyncMeta({ isConnecting: true, hasServerError: false });
 
-  let isDisposed = false;
-  let unsubscribeFn: (() => void) | null = null;
-
   unsubscribeFn = onSnapshot(
     colRef,
     { includeMetadataChanges: true },
-    (snapshot) => {
+    async (snapshot) => {
       if (isDisposed) return;
+      const currentSeq = ++snapshotSeq;
+      hasReceivedSnapshot = true;
 
       const isFromCache = snapshot.metadata.fromCache;
       const pendingWrites = snapshot.metadata.hasPendingWrites;
@@ -699,10 +1052,23 @@ export function subscribeToLiveProducts(
         ...(isFromCache ? {} : { lastSyncedAt: new Date() }),
       });
 
+      const overlay = await initialOverlayPromise;
+      if (isDisposed || currentSeq !== snapshotSeq) return;
+
+      const localProducts = readPersistedLocalProducts();
+
       if (snapshot.empty) {
         if (!isFromCache && !isFirestoreInQuotaCooldown() && onSeedNeeded) {
           onSeedNeeded();
         }
+        const mergedFallback = mergeCloudWithInitialProducts(
+          [],
+          overlay,
+          INITIAL_PRODUCTS,
+          localProducts
+        );
+        storefrontCache.setProducts(mergedFallback, 'local');
+        onUpdate(mergedFallback);
         return;
       }
 
@@ -712,8 +1078,14 @@ export function subscribeToLiveProducts(
           mapFirestoreDocToProduct(docSnap.id, docSnap.data() as Record<string, unknown>)
         );
       });
+      lastCloudProducts = cloudProducts;
 
-      const mergedList = mergeCloudWithInitialProducts(cloudProducts);
+      const mergedList = mergeCloudWithInitialProducts(
+        cloudProducts,
+        overlay,
+        INITIAL_PRODUCTS,
+        localProducts
+      );
       storefrontCache.setProducts(mergedList, 'firestore');
       onUpdate(mergedList);
     },

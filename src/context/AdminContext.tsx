@@ -15,6 +15,7 @@ import {
   clearAdminApiToken,
   exchangeFirebaseIdTokenForAdminSession,
   logoutAdminSession,
+  restoreAdminApiSession,
 } from '../services/authService';
 import { safeStorageSetItem } from '../utils/storageQuotaHelpers';
 import { fetchAdminActivityLogs, recordAdminActivity } from '../services/activityLogService';
@@ -273,9 +274,16 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     userRef.current = user;
   }, [user]);
 
-  // Ensure security credentials system is initialized and log stale boot expiration if any
+  // Ensure security credentials system is initialized and restore server session bearer token if active
   useEffect(() => {
-    initializeAdminAuth().catch(console.error);
+    initializeAdminAuth()
+      .then(() => {
+        if (initialSnapshot.user) {
+          return restoreAdminApiSession();
+        }
+        return { authenticated: false };
+      })
+      .catch(console.error);
 
     if (initialSnapshot.expiredUser) {
       const stale = initialSnapshot.expiredUser;
@@ -541,27 +549,27 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       setLoading(false);
       fetchAdminActivityLogs().catch(() => {});
 
-      // Attempt username-to-Firebase Email/Password sign-in seamlessly so Firestore
-      // inventory rules see a live `request.auth.uid` backed by `users/{uid}` when enabled.
-      signInWithResolvedPortalFirebaseAccount(username, password)
+      // Attempt username-to-Firebase Email/Password sign-in with bounded await so
+      // `request.auth.uid` and `users/{uid}` are ready before the Admin Portal opens.
+      const firebasePortalSync = signInWithResolvedPortalFirebaseAccount(username, password)
         .then(async (fbUser) => {
           if (logoutGuardRef.current || authEpochRef.current !== attemptEpoch) {
-            return;
+            return true;
           }
           if (!fbUser) {
             if (auth.currentUser) {
               await syncProvisionedAlaaAdminProfile(auth.currentUser.uid);
             }
-            return;
+            return true;
           }
           firebaseBackedRef.current = true;
           await syncSignedInSuperAdminProfile(fbUser);
           if (logoutGuardRef.current || authEpochRef.current !== attemptEpoch) {
-            return;
+            return true;
           }
           const firestoreProfile = await fetchFirestoreAdminProfile(fbUser.uid).catch(() => null);
           if (logoutGuardRef.current || authEpochRef.current !== attemptEpoch) {
-            return;
+            return true;
           }
           if (firestoreProfile?.isActive === false) {
             firebaseBackedRef.current = false;
@@ -584,15 +592,21 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
                 permissions: firestoreProfile.permissions,
               },
             });
-            return;
+            return false;
           }
           const nextAdminUser = buildAdminUserFromFirebaseUser(fbUser, firestoreProfile);
           if (nextAdminUser && firestoreProfile) {
             setUser(nextAdminUser);
           }
+          return true;
         })
-        .catch(() => {});
-      return true;
+        .catch(() => true);
+
+      const syncOutcome = await Promise.race([
+        firebasePortalSync,
+        new Promise<boolean>((resolve) => setTimeout(() => resolve(true), 4000)),
+      ]);
+      return syncOutcome;
     }
 
     if (DEMO_USERS[trimmedUser]) {

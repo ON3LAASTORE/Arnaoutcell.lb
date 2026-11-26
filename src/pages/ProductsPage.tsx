@@ -19,7 +19,11 @@ import {
   countProductsPerTier,
   BUDGET_TIERS,
 } from '../utils/priceFilterHelpers';
-import { matchesProductSearchQuery } from '../utils/globalSearchHelpers';
+import {
+  matchesProductSearchQuery,
+  filterProductsByCategorySlug,
+  getFilterModeLabels,
+} from '../utils/globalSearchHelpers';
 
 export const ProductsPage: React.FC = () => {
   const {
@@ -36,6 +40,8 @@ export const ProductsPage: React.FC = () => {
     setProductCollectionPreset,
     searchQuery,
     setSearchQuery,
+    searchFilterMode,
+    setSearchFilterMode,
     compareList,
     setIsCompareModalOpen,
   } = useShop();
@@ -101,16 +107,18 @@ export const ProductsPage: React.FC = () => {
     const filtered = products
       .filter((p) => p.isPublished)
       .filter((p) => {
-        // Search filter (name EN/AR, brand, category EN/AR/slug, subcategory, SKU)
+        // Search filter (name EN/AR, brand, category EN/AR/slug, subcategory, SKU, or active scope)
         if (searchQuery.trim()) {
-          if (!matchesProductSearchQuery(p, searchQuery, categories, 'all')) {
+          if (!matchesProductSearchQuery(p, searchQuery, categories, searchFilterMode)) {
             return false;
           }
         }
 
         // Category filter
-        if (selectedCategorySlug && activeCategory) {
-          if (p.category.toLowerCase() !== activeCategory.name.toLowerCase()) return false;
+        if (selectedCategorySlug) {
+          if (filterProductsByCategorySlug([p], categories, selectedCategorySlug).length === 0) {
+            return false;
+          }
         }
 
         // Brand filter
@@ -143,8 +151,8 @@ export const ProductsPage: React.FC = () => {
     products,
     categories,
     searchQuery,
+    searchFilterMode,
     selectedCategorySlug,
-    activeCategory,
     selectedBrandName,
     priceMin,
     priceMax,
@@ -155,11 +163,18 @@ export const ProductsPage: React.FC = () => {
     sortOption,
   ]);
 
+  const activeScopeLabel = useMemo(() => {
+    if (searchFilterMode === 'all') return null;
+    const match = getFilterModeLabels(lang).find((item) => item.mode === searchFilterMode);
+    return match?.label || null;
+  }, [lang, searchFilterMode]);
+
   const clearAllFilters = () => {
     selectCategory(null);
     selectBrand(null);
     setProductCollectionPreset('all');
     setSearchQuery('');
+    setSearchFilterMode('all');
     setPriceMin(0);
     setPriceMax(3000);
     setSelectedBudgetTiers([]);
@@ -186,14 +201,20 @@ export const ProductsPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-6 border-b border-[#DCE5F0] dark:border-[#1E293B]">
           <div>
             <h1 className="text-2xl sm:text-4xl font-black text-[#172033] dark:text-[#F8FAFC] tracking-tight">
-              {activeCategory
+              {activeCategory && searchQuery.trim()
+                ? `${lang === 'ar' ? activeCategory.nameAr : activeCategory.name} — "${searchQuery.trim()}"`
+                : activeCategory
                 ? lang === 'ar'
                   ? activeCategory.nameAr
                   : activeCategory.name
+                : selectedBrandName && searchQuery.trim()
+                ? `${selectedBrandName} — "${searchQuery.trim()}"`
                 : selectedBrandName
                 ? `${selectedBrandName} Tech Catalog`
-                : searchQuery
-                ? `${lang === 'ar' ? 'نتائج البحث عن:' : 'Search Results for:'} "${searchQuery}"`
+                : searchQuery.trim()
+                ? activeScopeLabel
+                  ? `${activeScopeLabel}: "${searchQuery.trim()}"`
+                  : `${lang === 'ar' ? 'نتائج البحث عن:' : 'Search Results for:'} "${searchQuery.trim()}"`
                 : lang === 'ar'
                 ? 'كافة المنتجات والإلكترونيات'
                 : 'All Products & Electronics'}
@@ -435,11 +456,19 @@ export const ProductsPage: React.FC = () => {
                   </span>
                 )}
                 {searchQuery && (
-                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#F5F8FC] dark:bg-[#111A2E] text-[#172033] dark:text-[#F8FAFC] border border-[#DCE5F0] dark:border-[#1E293B] text-xs font-semibold">
-                    "{searchQuery}"
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#F5F8FC] dark:bg-[#111A2E] text-[#172033] dark:text-[#F8FAFC] border border-[#DCE5F0] dark:border-[#1E293B] text-xs font-semibold">
+                    {activeScopeLabel && (
+                      <span className="text-[#007AFF] dark:text-[#38BDF8] font-bold">
+                        {activeScopeLabel}:
+                      </span>
+                    )}
+                    <span>"{searchQuery}"</span>
                     <X
                       className="w-3.5 h-3.5 cursor-pointer hover:text-[#007AFF] dark:hover:text-white"
-                      onClick={() => setSearchQuery('')}
+                      onClick={() => {
+                        setSearchQuery('');
+                        setSearchFilterMode('all');
+                      }}
                     />
                   </span>
                 )}
@@ -520,7 +549,7 @@ export const ProductsPage: React.FC = () => {
                     key={product.id}
                     product={product}
                     layout={viewMode === 'grid' ? 'grid' : 'column'}
-                    priority={idx < 8}
+                    priority={idx < 4}
                   />
                 ))}
               </div>

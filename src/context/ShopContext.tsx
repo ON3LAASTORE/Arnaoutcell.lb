@@ -12,6 +12,7 @@ import {
 } from '../types';
 import { translations } from '../locales/translations';
 import {
+  CATALOG_UPDATED_EVENT,
   initStorage,
   getProducts,
   getCategories,
@@ -24,6 +25,7 @@ import {
 } from '../services/storageService';
 import { fetchDynamicCategories } from '../services/categoryFirestoreService';
 import { initializeStorefrontData } from '../services/storefrontDataService';
+import { hydrateProductsWithServerOverlay } from '../services/productFirestoreService';
 import { deriveSpecialOfferProducts, storefrontCache } from '../utils/storefrontCacheHelpers';
 import {
   validateAddToCompare,
@@ -59,6 +61,15 @@ import {
   sanitizeCartQuantity,
   validateAndCalculatePromoDiscount,
 } from '../utils/checkoutHelpers';
+import type { SearchFilterMode } from '../utils/globalSearchHelpers';
+
+export interface CatalogFilterOptions {
+  categorySlug?: string | null;
+  brandName?: string | null;
+  searchQuery?: string;
+  searchFilterMode?: SearchFilterMode;
+  navigate?: boolean;
+}
 
 interface ShopContextType {
   lang: Language;
@@ -138,6 +149,9 @@ interface ShopContextType {
   setProductCollectionPreset: (preset: ProductCollectionPreset) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
+  searchFilterMode: SearchFilterMode;
+  setSearchFilterMode: (mode: SearchFilterMode) => void;
+  applyCatalogFilters: (options: CatalogFilterOptions) => void;
 
   // Modals & Active state
   quickViewProduct: Product | null;
@@ -235,7 +249,15 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [selectedCategorySlug, setSelectedCategorySlug] = useState<string | null>(null);
   const [selectedBrandName, setSelectedBrandName] = useState<string | null>(null);
   const [productCollectionPreset, setProductCollectionPreset] = useState<ProductCollectionPreset>('all');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchQuery, setSearchQueryState] = useState<string>('');
+  const [searchFilterMode, setSearchFilterMode] = useState<SearchFilterMode>('all');
+
+  const setSearchQuery = useCallback((query: string) => {
+    setSearchQueryState(query);
+    if (!query.trim()) {
+      setSearchFilterMode('all');
+    }
+  }, []);
 
   // Cart & Wishlist
   const [cart, setCart] = useState<CartItem[]>(() => {
@@ -345,8 +367,8 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const refreshData = useCallback(() => {
     const cachedProducts = storefrontCache.readEntry<Product[]>('products')?.data;
     const latestProducts = cachedProducts && cachedProducts.length > 0 ? cachedProducts : getProducts();
-    const cachedOffers = storefrontCache.readEntry<Product[]>('offers')?.data;
-    const latestOffers = cachedOffers ?? deriveSpecialOfferProducts(latestProducts);
+    const latestOffers = deriveSpecialOfferProducts(latestProducts);
+    storefrontCache.writeEntry('offers', latestOffers, 'local');
     const cachedCategories = storefrontCache.readEntry<Category[]>('categories')?.data;
     const latestCategories =
       cachedCategories && cachedCategories.length > 0 ? cachedCategories : getCategories();
@@ -434,15 +456,24 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setStorefrontLoading(true);
     setCategoriesLoading(true);
 
-    initializeStorefrontData()
-      .then((snapshot) => {
+    // Coordinate server catalog overlay hydration BEFORE storefront init completes so
+    // cold/refreshed browsers never flash or overwrite local/server additions with stale cache.
+    hydrateProductsWithServerOverlay(getProducts(), true)
+      .then((hydrated) => {
         if (!isMounted) return;
+        if (hydrated.changed) {
+          setProducts(hydrated.products);
+          setOffers(deriveSpecialOfferProducts(hydrated.products));
+          saveProducts(hydrated.products);
+        }
+        return initializeStorefrontData();
+      })
+      .then((snapshot) => {
+        if (!isMounted || !snapshot) return;
         if (snapshot.products.length > 0) {
           setProducts(snapshot.products);
           setOffers(snapshot.offers);
-          if (!snapshot.fromCache) {
-            saveProducts(snapshot.products);
-          }
+          saveProducts(snapshot.products);
         }
         if (snapshot.categories.length > 0) {
           setCategories(snapshot.categories);
@@ -486,9 +517,12 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     persistStoredLanguage(typeof window !== 'undefined' ? window.localStorage : null, lang);
   }, [lang, isSwitchingLanguage]);
 
-  // Synchronize language setting across tabs/windows when storage changes
+  // Synchronize language setting and catalog updates across views and tabs
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    const handleCatalogUpdate = () => {
+      refreshData();
+    };
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === LANGUAGE_STORAGE_KEY && event.newValue) {
         const synced = normalizeLanguage(event.newValue);
@@ -497,15 +531,23 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           applyDocumentLanguageDirection(synced, document.documentElement, document.body);
         }
       }
+      if (
+        event.key === 'arnaout_cell_products_v2' ||
+        event.key === 'arnaout_storefront_cache_v1_products'
+      ) {
+        refreshData();
+      }
     };
+    window.addEventListener(CATALOG_UPDATED_EVENT, handleCatalogUpdate);
     window.addEventListener('storage', handleStorageChange);
     return () => {
+      window.removeEventListener(CATALOG_UPDATED_EVENT, handleCatalogUpdate);
       window.removeEventListener('storage', handleStorageChange);
       if (langTransitionTimerRef.current !== null) {
         window.clearTimeout(langTransitionTimerRef.current);
       }
     };
-  }, []);
+  }, [refreshData]);
 
   // Persist cart & reset promo code if cart becomes empty
   useEffect(() => {
@@ -751,6 +793,7 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setProductCollectionPreset('all');
     if (slug) {
       setSearchQuery('');
+      setSearchFilterMode('all');
     }
     setCurrentView('products');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -762,10 +805,35 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setProductCollectionPreset('all');
     if (brandName) {
       setSearchQuery('');
+      setSearchFilterMode('all');
     }
     setCurrentView('products');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  const applyCatalogFilters = useCallback(
+    ({
+      categorySlug = null,
+      brandName = null,
+      searchQuery: nextQuery = '',
+      searchFilterMode: nextMode = 'all',
+      navigate = true,
+    }: CatalogFilterOptions) => {
+      const normalizedQuery = nextQuery.trim();
+      setSelectedCategorySlug(categorySlug || null);
+      setSelectedBrandName(brandName || null);
+      setProductCollectionPreset('all');
+      setSearchQueryState(nextQuery);
+      setSearchFilterMode(normalizedQuery ? nextMode : 'all');
+      if (navigate) {
+        setCurrentView('products');
+        if (typeof window !== 'undefined') {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }
+    },
+    []
+  );
 
   const submitOrder = (orderData: Omit<Order, 'id' | 'orderDate' | 'statusHistory'>): Order => {
     const order = createOrderStorage(orderData);
@@ -900,6 +968,9 @@ export const ShopProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setProductCollectionPreset,
         searchQuery,
         setSearchQuery,
+        searchFilterMode,
+        setSearchFilterMode,
+        applyCatalogFilters,
         quickViewProduct,
         setQuickViewProduct,
         recentlyViewedProducts,

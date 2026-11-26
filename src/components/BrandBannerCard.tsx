@@ -60,6 +60,7 @@ export const BrandBannerCard: React.FC<BrandBannerCardProps> = ({
                   height={240}
                   responsiveSizes="(max-width: 640px) 96px, 140px"
                   priority={priority}
+                  loading="lazy"
                   onError={() =>
                     setFailedImages((prev) => ({
                       ...prev,

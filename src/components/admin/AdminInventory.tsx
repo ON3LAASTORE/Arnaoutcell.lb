@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { useAdmin } from '../../context/AdminContext';
-import { saveProduct, deleteProduct, getOrders } from '../../services/storageService';
+import { saveProductAsync, deleteProductAsync, getOrders } from '../../services/storageService';
 import {
   fetchStockNotificationsOverview,
   maybeTriggerRestockNotifications,
@@ -70,8 +70,14 @@ export const AdminInventory: React.FC = () => {
         ...product,
         stock: newStock,
       };
-      saveProduct(updated);
+      const result = await saveProductAsync(updated);
       refreshData();
+      if (!result.ok) {
+        setInventoryError(
+          result.errorMessage || `Failed to save stock update for ${product.name}.`
+        );
+        return;
+      }
 
       const dispatchResult = await maybeTriggerRestockNotifications(previousStock, updated);
       await loadNotificationsOverview();
@@ -108,7 +114,7 @@ export const AdminInventory: React.FC = () => {
     setPendingDelete({ id: product.id, name: product.name, nameAr: product.nameAr });
   };
 
-  const confirmDeleteInventoryItem = () => {
+  const confirmDeleteInventoryItem = async () => {
     if (!pendingDelete) return;
     if (
       !requirePermission('full_stock', {
@@ -120,14 +126,21 @@ export const AdminInventory: React.FC = () => {
       setPendingDelete(null);
       return;
     }
-    deleteProduct(pendingDelete.id);
+    const target = pendingDelete;
+    setPendingDelete(null);
+    const result = await deleteProductAsync(target.id);
     refreshData();
+    if (!result.ok) {
+      setInventoryError(
+        result.errorMessage || `Failed to delete inventory item "${target.name}".`
+      );
+      return;
+    }
     setFeedback(
       lang === 'ar'
-        ? `تم حذف الصنف "${pendingDelete.nameAr || pendingDelete.name}" من المخزون وقاعدة البيانات.`
-        : `Deleted inventory item "${pendingDelete.name}" from stock & catalog.`
+        ? `تم حذف الصنف "${target.nameAr || target.name}" من المخزون وقاعدة البيانات.`
+        : `Deleted inventory item "${target.name}" from stock & catalog.`
     );
-    setPendingDelete(null);
     setTimeout(() => setFeedback(''), 5000);
   };
 
@@ -326,7 +339,9 @@ export const AdminInventory: React.FC = () => {
                           alt={p.name || 'Product'}
                           width={40}
                           height={40}
+                          responsiveSizes="40px"
                           priority={false}
+                          loading="lazy"
                           wrapperClassName="w-10 h-10 rounded-lg overflow-hidden bg-[#F5F8FC] border border-[#DCE5F0] flex-shrink-0"
                           className="w-full h-full object-cover"
                         />

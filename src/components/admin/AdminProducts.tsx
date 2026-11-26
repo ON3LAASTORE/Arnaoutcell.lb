@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useShop } from '../../context/ShopContext';
 import { useAdmin } from '../../context/AdminContext';
 import { Product, ProductSpec } from '../../types';
-import { saveProduct, deleteProduct } from '../../services/storageService';
+import { saveProductAsync, deleteProductAsync } from '../../services/storageService';
 import { maybeTriggerRestockNotifications } from '../../services/stockNotificationService';
+import { buildAdminProductRecord } from '../../utils/adminProductFormHelpers';
 import {
   Plus,
   Search,
@@ -15,6 +16,8 @@ import {
   Palette,
   ImagePlus,
   HardDrive,
+  AlertCircle,
+  Loader2,
 } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
 import ProductImageUploader from './ProductImageUploader';
@@ -51,7 +54,23 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
   const [selectedBrand, setSelectedBrand] = useState('all');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const isSavingRef = useRef(false);
+  const [modalError, setModalError] = useState<string | null>(null);
+  const modalErrorRef = useRef<HTMLDivElement>(null);
+  const modalScrollRef = useRef<HTMLDivElement>(null);
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; msg: string } | null>(null);
+
+  useEffect(() => {
+    if (modalError) {
+      if (modalScrollRef.current) {
+        modalScrollRef.current.scrollTop = 0;
+      }
+      if (modalErrorRef.current) {
+        modalErrorRef.current.scrollIntoView({ behavior: 'auto', block: 'nearest' });
+      }
+    }
+  }, [modalError]);
 
   // Form State
   const [formName, setFormName] = useState('');
@@ -129,6 +148,9 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormIsNewArrival(true);
     setFormIsBestSeller(false);
     setFormIsPublished(true);
+    setModalError(null);
+    setIsSaving(false);
+    isSavingRef.current = false;
     setIsModalOpen(true);
   };
 
@@ -173,6 +195,9 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormIsNewArrival(Boolean(p.isNewArrival));
     setFormIsBestSeller(Boolean(p.isBestSeller));
     setFormIsPublished(p.isPublished !== false);
+    setModalError(null);
+    setIsSaving(false);
+    isSavingRef.current = false;
     setIsModalOpen(true);
   };
 
@@ -334,8 +359,12 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormSpecs((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleSaveProduct = (e: React.FormEvent) => {
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSavingRef.current || isSaving) {
+      return;
+    }
+
     if (
       !requirePermission(['full_stock', 'manage_products'], {
         actionEn: editingProduct
@@ -348,15 +377,8 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     ) {
       return;
     }
-    if (!formName.trim() || !formSku.trim()) {
-      setFeedback({ type: 'error', msg: 'Product Name and SKU are required.' });
-      return;
-    }
 
-    const discountPercentage =
-      formOriginalPrice > formPrice
-        ? Math.round(((formOriginalPrice - formPrice) / formOriginalPrice) * 100)
-        : 0;
+    setModalError(null);
 
     const extractedStructuredData = extractStructuredProductVariantsAndColors(
       formColorVariants,
@@ -368,68 +390,98 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
       }
     );
 
-    const savedProduct: Product = {
-      id: editingProduct ? editingProduct.id : `prod-${Date.now()}`,
-      name: formName.trim(),
-      nameAr: formNameAr.trim() || formName.trim(),
-      brand: formBrand,
-      category: formCategory,
-      subcategory: formSubcategory.trim(),
-      sku: formSku.trim(),
-      barcode: formBarcode.trim() || formSku.trim(),
-      price: formPrice,
-      originalPrice: formOriginalPrice || formPrice,
-      discountPercentage,
-      stock: formStock,
-      lowStockThreshold: formLowStockThreshold,
-      images:
-        formImages.length > 0
-          ? formImages.map((img) => resolveFullResolutionImageUrl(img))
-          : [DEFAULT_FULL_RES_FALLBACK_IMAGE],
-      videoUrl: formVideoUrl.trim() || undefined,
-      description: formDesc.trim() || 'Genuine device with full Lebanese store warranty from ON ALAA STORE (Chouf) and express delivery to all Lebanon.',
-      descriptionAr:
-        formDescAr.trim() || 'جهاز أصلي مع كفالة متجر ON ALAA STORE الرسمية (الشوف) وتوصيل سريع متاح لجميع مناطق لبنان.',
-      specifications: formSpecs,
-      colors: extractedStructuredData.colors,
-      colorImages: extractedStructuredData.colorImages,
-      variants: extractedStructuredData.variants,
-      rating: editingProduct ? editingProduct.rating : 5.0,
-      reviewCount: editingProduct ? editingProduct.reviewCount : 1,
-      isSpecialOffer: formIsOffer,
-      isFeatured: formIsFeatured,
-      isNewArrival: formIsNewArrival,
-      isBestSeller: formIsBestSeller,
-      isPublished: formIsPublished,
-      warrantyMonths: formWarrantyMonths,
-      createdAt: editingProduct ? editingProduct.createdAt : new Date().toISOString(),
-    };
+    const built = buildAdminProductRecord(
+      {
+        name: formName,
+        nameAr: formNameAr,
+        brand: formBrand,
+        category: formCategory,
+        subcategory: formSubcategory,
+        sku: formSku,
+        barcode: formBarcode,
+        originalPrice: formOriginalPrice,
+        price: formPrice,
+        stock: formStock,
+        lowStockThreshold: formLowStockThreshold,
+        warrantyMonths: formWarrantyMonths,
+        images: formImages,
+        videoUrl: formVideoUrl,
+        description: formDesc,
+        descriptionAr: formDescAr,
+        specifications: formSpecs,
+        colors: extractedStructuredData.colors,
+        colorImages: extractedStructuredData.colorImages,
+        variants: extractedStructuredData.variants,
+        isSpecialOffer: formIsOffer,
+        isFeatured: formIsFeatured,
+        isNewArrival: formIsNewArrival,
+        isBestSeller: formIsBestSeller,
+        isPublished: formIsPublished,
+      },
+      { existingProduct: editingProduct }
+    );
 
-    const previousStock = editingProduct ? editingProduct.stock : savedProduct.stock;
-    saveProduct(savedProduct);
-    refreshData();
-    setIsModalOpen(false);
-    setFeedback({
-      type: 'success',
-      msg: `Product "${savedProduct.name}" saved and live in database.`,
-    });
-
-    if (editingProduct) {
-      maybeTriggerRestockNotifications(previousStock, savedProduct)
-        .then((dispatchResult) => {
-          if (dispatchResult && dispatchResult.dispatchedCount > 0) {
-            setFeedback({
-              type: 'success',
-              msg: `Product "${savedProduct.name}" restocked — Automated alert sent to ${dispatchResult.dispatchedCount} waiting subscriber(s)!`,
-            });
-          }
-        })
-        .catch(() => {
-          // Non-critical
-        });
+    if (!built.ok) {
+      const errorMsg = built.errors.join(' ');
+      setModalError(errorMsg);
+      setFeedback({ type: 'error', msg: errorMsg });
+      return;
     }
 
-    setTimeout(() => setFeedback(null), 4500);
+    const savedProduct = built.product;
+    const previousStock = editingProduct ? editingProduct.stock : savedProduct.stock;
+
+    isSavingRef.current = true;
+    setIsSaving(true);
+    try {
+      const result = await saveProductAsync(savedProduct);
+      refreshData();
+
+      if (!result.ok) {
+        const errMsg =
+          result.errorMessage ||
+          'Unable to persist product to database. Please check permissions and retry.';
+        console.error('Admin product save failed:', errMsg);
+        setModalError(errMsg);
+        setFeedback({ type: 'error', msg: errMsg });
+        return;
+      }
+
+      setIsModalOpen(false);
+      setModalError(null);
+      setFeedback({
+        type: 'success',
+        msg:
+          lang === 'ar'
+            ? `تم حفظ المنتج "${savedProduct.name}" وتحديث المتجر بنجاح.`
+            : `Product "${savedProduct.name}" saved and live in catalog.`,
+      });
+
+      if (editingProduct) {
+        maybeTriggerRestockNotifications(previousStock, savedProduct)
+          .then((dispatchResult) => {
+            if (dispatchResult && dispatchResult.dispatchedCount > 0) {
+              setFeedback({
+                type: 'success',
+                msg: `Product "${savedProduct.name}" restocked — Automated alert sent to ${dispatchResult.dispatchedCount} waiting subscriber(s)!`,
+              });
+            }
+          })
+          .catch(() => {
+            // Non-critical
+          });
+      }
+
+      setTimeout(() => setFeedback(null), 5000);
+    } catch (err) {
+      const errMsg = err instanceof Error ? err.message : 'Unexpected error saving product.';
+      console.error('Admin product save exception:', err);
+      setModalError(errMsg);
+      setFeedback({ type: 'error', msg: errMsg });
+    } finally {
+      isSavingRef.current = false;
+      setIsSaving(false);
+    }
   };
 
   const [pendingDelete, setPendingDelete] = useState<{ id: string; name: string } | null>(null);
@@ -447,7 +499,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setPendingDelete({ id, name });
   };
 
-  const confirmDeleteProduct = () => {
+  const confirmDeleteProduct = async () => {
     if (!pendingDelete) return;
     if (
       !requirePermission('full_stock', {
@@ -459,11 +511,22 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
       setPendingDelete(null);
       return;
     }
-    deleteProduct(pendingDelete.id);
-    refreshData();
-    setFeedback({ type: 'success', msg: `Product "${pendingDelete.name}" deleted and removed from live database.` });
+    const target = pendingDelete;
     setPendingDelete(null);
-    setTimeout(() => setFeedback(null), 3500);
+    const result = await deleteProductAsync(target.id);
+    refreshData();
+    if (!result.ok) {
+      setFeedback({
+        type: 'error',
+        msg: result.errorMessage || `Failed to delete "${target.name}".`,
+      });
+    } else {
+      setFeedback({
+        type: 'success',
+        msg: `Product "${target.name}" deleted and removed from live database.`,
+      });
+    }
+    setTimeout(() => setFeedback(null), 4000);
   };
 
   const q = search.toLowerCase();
@@ -590,7 +653,9 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                         alt={p.name || 'Product'}
                         width={40}
                         height={40}
+                        responsiveSizes="40px"
                         priority={false}
+                        loading="lazy"
                         wrapperClassName="w-10 h-10 rounded-lg overflow-hidden bg-[#F5F8FC] border border-[#DCE5F0] flex-shrink-0"
                         className="w-full h-full object-cover"
                       />
@@ -672,7 +737,10 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
       {/* Modal for Add / Edit Product */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-200">
-          <div className="relative w-full max-w-3xl bg-white border border-[#DCE5F0] rounded-3xl p-6 sm:p-8 space-y-6 my-8 max-h-[90vh] overflow-y-auto shadow-2xl">
+          <div
+            ref={modalScrollRef}
+            className="relative w-full max-w-3xl bg-white border border-[#DCE5F0] rounded-3xl p-6 sm:p-8 space-y-6 my-8 max-h-[90vh] overflow-y-auto shadow-2xl"
+          >
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-4 border-b border-[#DCE5F0]">
               <h2 className="text-lg font-black text-[#172033]">
@@ -686,15 +754,31 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
               </h2>
               <button
                 type="button"
-                onClick={() => setIsModalOpen(false)}
+                disabled={isSaving}
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setModalError(null);
+                }}
                 aria-label={lang === 'ar' ? 'إغلاق النافذة' : 'Close product modal'}
-                className="p-1.5 rounded-lg text-[#64748B] hover:text-[#172033] hover:bg-[#F5F8FC] cursor-pointer"
+                className="p-1.5 rounded-lg text-[#64748B] hover:text-[#172033] hover:bg-[#F5F8FC] cursor-pointer disabled:opacity-50"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSaveProduct} className="space-y-5">
+            <form onSubmit={handleSaveProduct} noValidate className="space-y-5">
+              {modalError && (
+                <div
+                  ref={modalErrorRef}
+                  role="alert"
+                  data-testid="admin-product-modal-error"
+                  className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-[#DC2626] text-xs font-semibold flex items-start gap-2.5"
+                >
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span className="flex-1">{modalError}</span>
+                </div>
+              )}
+
               {/* Names */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -703,10 +787,12 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                   </label>
                   <input
                     type="text"
-                    required
                     data-testid="admin-product-name-input"
                     value={formName}
-                    onChange={(e) => setFormName(e.target.value)}
+                    onChange={(e) => {
+                      setFormName(e.target.value);
+                      if (modalError) setModalError(null);
+                    }}
                     className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
                   />
                 </div>
@@ -828,6 +914,85 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                 </div>
               </div>
 
+              {/* SKU, Barcode & Warranty */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="text-xs text-[#172033] font-semibold block mb-1">
+                    SKU *
+                  </label>
+                  <input
+                    type="text"
+                    data-testid="admin-product-sku-input"
+                    placeholder="e.g. OAA-IP17P"
+                    value={formSku}
+                    onChange={(e) => {
+                      setFormSku(e.target.value);
+                      if (modalError) setModalError(null);
+                    }}
+                    className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-[#172033] font-semibold block mb-1">
+                    Barcode (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Auto-filled from SKU"
+                    value={formBarcode}
+                    onChange={(e) => setFormBarcode(e.target.value)}
+                    className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs text-[#172033] font-semibold block mb-1">
+                    Warranty (Months)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="120"
+                    value={formWarrantyMonths}
+                    onChange={(e) => {
+                      const n = e.target.value === '' ? 0 : Number(e.target.value);
+                      setFormWarrantyMonths(Number.isFinite(n) ? Math.max(0, Math.min(120, Math.round(n))) : 12);
+                    }}
+                    className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF] font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Descriptions */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs text-[#172033] font-semibold block mb-1">
+                    Product Description (English)
+                  </label>
+                  <textarea
+                    rows={2}
+                    data-testid="admin-product-desc-input"
+                    placeholder="Key highlights, warranty, and box contents..."
+                    value={formDesc}
+                    onChange={(e) => setFormDesc(e.target.value)}
+                    className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs text-[#172033] font-semibold block mb-1">
+                    وصف المنتج (بالعربية)
+                  </label>
+                  <textarea
+                    rows={2}
+                    placeholder="أبرز المواصفات والكفالة..."
+                    value={formDescAr}
+                    onChange={(e) => setFormDescAr(e.target.value)}
+                    className="w-full bg-[#FFFFFF] border border-[#DCE5F0] rounded-xl px-3 py-2 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
+                  />
+                </div>
+              </div>
+
               {/* Multi-Image Manager */}
               <div className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] space-y-4">
                 <div className="flex items-center justify-between">
@@ -841,7 +1006,17 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                   <div className="flex flex-wrap gap-3 p-2.5 rounded-xl bg-white border border-[#DCE5F0]">
                     {formImages.map((img, idx) => (
                       <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-[#DCE5F0] group bg-gray-50 flex-shrink-0">
-                        <img src={img} alt={`Product ${idx}`} className="w-full h-full object-cover" />
+                        <LazyImage
+                          src={img}
+                          alt={`Product ${idx}`}
+                          width={64}
+                          height={64}
+                          responsiveSizes="64px"
+                          priority={true}
+                          loading="lazy"
+                          wrapperClassName="w-full h-full flex items-center justify-center"
+                          className="w-full h-full object-cover"
+                        />
                         <button
                           type="button"
                           onClick={() => handleRemoveImage(idx)}
@@ -1162,9 +1337,15 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                             {/* Square Thumbnail Preview */}
                             <div className="flex items-center gap-2 flex-shrink-0">
                               <div className="w-12 h-12 rounded-xl border border-[#DCE5F0] bg-[#F8FAFC] overflow-hidden flex items-center justify-center p-1">
-                                <img
-                                  src={resolveFullResolutionImageUrl(previewSrc)}
+                                <LazyImage
+                                  src={previewSrc}
                                   alt={row.color || `Color ${idx + 1}`}
+                                  width={48}
+                                  height={48}
+                                  responsiveSizes="48px"
+                                  priority={true}
+                                  loading="lazy"
+                                  wrapperClassName="w-full h-full flex items-center justify-center"
                                   className="w-full h-full object-contain"
                                 />
                               </div>
@@ -1457,17 +1638,29 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
               <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#DCE5F0]">
                 <button
                   type="button"
-                  onClick={() => setIsModalOpen(false)}
-                  className="px-5 py-2.5 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0] text-[#172033] text-xs font-semibold hover:bg-slate-200"
+                  disabled={isSaving}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setModalError(null);
+                  }}
+                  className="px-5 py-2.5 rounded-xl bg-[#F5F8FC] border border-[#DCE5F0] text-[#172033] text-xs font-semibold hover:bg-slate-200 disabled:opacity-50"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
+                  disabled={isSaving}
                   data-testid="admin-save-product-btn"
-                  className="px-6 py-2.5 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-black shadow-xs cursor-pointer"
+                  className="px-6 py-2.5 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-black shadow-xs cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center gap-2"
                 >
-                  Save Product
+                  {isSaving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>
+                    {isSaving
+                      ? lang === 'ar'
+                        ? 'جارٍ الحفظ...'
+                        : 'Saving...'
+                      : 'Save Product'}
+                  </span>
                 </button>
               </div>
             </form>

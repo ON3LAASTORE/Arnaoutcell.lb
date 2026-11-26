@@ -709,8 +709,13 @@ export const ProductQrScannerModal: React.FC = () => {
                 <div className="w-20 h-20 rounded-xl bg-white dark:bg-[#0A0F1D] border border-[#E2E8F0] dark:border-[#1E293B] p-2 shrink-0 flex items-center justify-center">
                   <LazyImage
                     priority={true}
+                    loading="lazy"
+                    width={80}
+                    height={80}
+                    responsiveSizes="80px"
                     src={resolveFullResolutionImageUrl(matchedProduct.images?.[0]) || DEFAULT_FULL_RES_FALLBACK_IMAGE}
                     alt={isArabic ? matchedProduct.nameAr || matchedProduct.name : matchedProduct.name}
+                    wrapperClassName="w-full h-full flex items-center justify-center"
                     className="w-full h-full object-contain"
                   />
                 </div>

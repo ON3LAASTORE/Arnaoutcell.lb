@@ -20,13 +20,11 @@ import {
   Hash,
   Clock,
   Trash2,
+  Loader2,
 } from 'lucide-react';
 import { LazyImage } from './LazyImage';
 import {
-  filterProductsGlobally,
   filterProductsByCategorySlug,
-  getUniqueMatchingBrands,
-  getUniqueMatchingCategories,
   getFilterModeLabels,
   findProductSkuMatch,
   findExactSkuProductMatch,
@@ -40,6 +38,16 @@ import {
   addSearchHistoryTerm,
   splitHighlightedTextSegments,
 } from '../utils/quickSearchOverlayHelpers';
+import { normalizeSearchTerm } from '../utils/searchSuggestions';
+import {
+  AutocompleteSearchResult,
+  DEFAULT_AUTOCOMPLETE_DEBOUNCE_MS,
+  DEFAULT_AUTOCOMPLETE_MAX_RESULTS,
+  isStaleAutocompleteRequest,
+  mergeAndRankAutocompleteProducts,
+  shouldFetchLiveAutocomplete,
+} from '../utils/productAutocompleteHelpers';
+import { fetchProductAutocompleteMatches } from '../services/productAutocompleteService';
 import {
   getRecentSkuSearches,
   recordRecentSkuSearch,
@@ -74,10 +82,13 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
     products,
     brands,
     categories,
+    selectedCategorySlug: contextCategorySlug,
     selectBrand,
     selectCategory,
+    applyCatalogFilters,
     viewProductDetail,
     setSearchQuery,
+    setSearchFilterMode,
     setCurrentView,
     setIsQrScannerOpen,
   } = useShop();
@@ -86,17 +97,35 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
   const ArrowIcon = isArabic ? ArrowLeft : ArrowRight;
   const ChevronIcon = isArabic ? ChevronLeft : ChevronRight;
 
-  const [selectedCategorySlug, setSelectedCategorySlug] = useState<string>('all');
+  const [selectedCategorySlug, setSelectedCategorySlug] = useState<string>(
+    contextCategorySlug || 'all'
+  );
   const [query, setQuery] = useState('');
   const [filterMode, setFilterMode] = useState<SearchFilterMode>('all');
   const [isOpen, setIsOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number>(-1);
+  const [liveAutocompleteResult, setLiveAutocompleteResult] =
+    useState<AutocompleteSearchResult | null>(null);
+  const [isFetchingAutocomplete, setIsFetchingAutocomplete] = useState(false);
+
+  useEffect(() => {
+    setSelectedCategorySlug(contextCategorySlug || 'all');
+  }, [contextCategorySlug]);
   const [recentSkuEntries, setRecentSkuEntries] = useState<RecentSkuSearchEntry[]>(() =>
     getRecentSkuSearches()
   );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const itemRefs = useRef<Record<number, HTMLButtonElement | null>>({});
+  const requestSeqRef = useRef<number>(0);
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const listboxId = isMobile
+    ? 'mobile-global-search-listbox'
+    : variant === 'navbar'
+    ? 'desktop-global-search-listbox'
+    : 'standalone-global-search-listbox';
 
   // Restrict products to selected navbar category if chosen
   const scopedProducts = useMemo(() => {
@@ -118,22 +147,127 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
     return categories.filter((c) => c.slug === selectedCategorySlug);
   }, [categories, selectedCategorySlug]);
 
-  const matchingProducts = useMemo(() => {
-    return filterProductsGlobally(scopedProducts, query, filterMode, categories).slice(0, 6);
-  }, [scopedProducts, categories, query, filterMode]);
+  const scopedPreviewProducts = useMemo(() => {
+    return scopedProducts
+      .filter((p) => p.isPublished !== false)
+      .slice()
+      .sort((a, b) => {
+        const score = (p: Product) =>
+          (p.stock > 0 ? 10 : 0) +
+          (p.isFeatured ? 4 : 0) +
+          (p.isBestSeller ? 2 : 0) +
+          (Number(p.rating) || 0) * 0.2;
+        return score(b) - score(a);
+      })
+      .slice(0, 4);
+  }, [scopedProducts]);
 
-  // Compute matching categories and brands (keep compact when matching products exist so both sections appear immediately above the fold)
-  const matchingCategories = useMemo(() => {
-    if (filterMode === 'name' || filterMode === 'brand' || filterMode === 'sku') return [];
-    const maxCats = matchingProducts.length > 0 ? 3 : 4;
-    return getUniqueMatchingCategories(scopedProducts, scopedCategories, query).slice(0, maxCats);
-  }, [scopedProducts, scopedCategories, query, filterMode, matchingProducts.length]);
+  // Real-time debounced auto-complete fetch against Firestore + storefront cache
+  useEffect(() => {
+    if (!shouldFetchLiveAutocomplete(query)) {
+      requestSeqRef.current += 1;
+      abortControllerRef.current?.abort();
+      abortControllerRef.current = null;
+      setLiveAutocompleteResult(null);
+      setIsFetchingAutocomplete(false);
+      return;
+    }
 
-  const matchingBrands = useMemo(() => {
-    if (filterMode === 'name' || filterMode === 'category' || filterMode === 'sku') return [];
-    const maxBrands = matchingProducts.length > 0 ? 2 : 4;
-    return getUniqueMatchingBrands(scopedProducts, scopedBrands, query).slice(0, maxBrands);
-  }, [scopedProducts, scopedBrands, query, filterMode, matchingProducts.length]);
+    if (!isOpen) {
+      return;
+    }
+
+    const seq = ++requestSeqRef.current;
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    setIsFetchingAutocomplete(true);
+
+    const timer = window.setTimeout(() => {
+      fetchProductAutocompleteMatches({
+        query,
+        filterMode,
+        categorySlug: selectedCategorySlug,
+        categories,
+        brands: scopedBrands,
+        localProducts: products,
+        maxResults: DEFAULT_AUTOCOMPLETE_MAX_RESULTS,
+        signal: controller.signal,
+      })
+        .then((res) => {
+          if (isStaleAutocompleteRequest(seq, requestSeqRef.current)) return;
+          setLiveAutocompleteResult(res);
+          setIsFetchingAutocomplete(false);
+        })
+        .catch((err) => {
+          if (err && typeof err === 'object' && 'name' in err && err.name === 'AbortError') {
+            return;
+          }
+          if (isStaleAutocompleteRequest(seq, requestSeqRef.current)) return;
+          setIsFetchingAutocomplete(false);
+        });
+    }, DEFAULT_AUTOCOMPLETE_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query, filterMode, selectedCategorySlug, isOpen, categories, scopedBrands, products]);
+
+  const normalizedQueryText = useMemo(() => normalizeSearchTerm(query), [query]);
+
+  // Instant local suggestions fused seamlessly with real-time Firestore autocomplete results
+  const instantAutocomplete = useMemo(() => {
+    return mergeAndRankAutocompleteProducts({
+      localProducts: scopedProducts,
+      query,
+      filterMode,
+      categories,
+      brands: scopedBrands,
+      categorySlug: selectedCategorySlug,
+      maxResults: DEFAULT_AUTOCOMPLETE_MAX_RESULTS,
+    });
+  }, [scopedProducts, query, filterMode, categories, scopedBrands, selectedCategorySlug]);
+
+  const activeLiveAutocomplete =
+    liveAutocompleteResult &&
+    liveAutocompleteResult.normalizedQuery === normalizedQueryText
+      ? liveAutocompleteResult
+      : null;
+
+  const matchingProductSuggestions = activeLiveAutocomplete
+    ? activeLiveAutocomplete.suggestions
+    : instantAutocomplete.suggestions;
+
+  const totalProductMatchCount = activeLiveAutocomplete
+    ? activeLiveAutocomplete.totalMatchedCount
+    : instantAutocomplete.totalMatchedCount;
+
+  const matchingProducts = useMemo(
+    () => matchingProductSuggestions.map((item) => item.product),
+    [matchingProductSuggestions]
+  );
+
+  // Use live merged category and brand suggestions (includes direct matches + categories/brands inferred from matched products)
+  const matchingCategories = useMemo(
+    () =>
+      activeLiveAutocomplete?.categorySuggestions ?? instantAutocomplete.categorySuggestions,
+    [activeLiveAutocomplete, instantAutocomplete]
+  );
+
+  const totalCategoryMatchCount =
+    activeLiveAutocomplete?.totalCategoryMatchCount ??
+    instantAutocomplete.totalCategoryMatchCount;
+
+  const matchingBrands = useMemo(
+    () =>
+      activeLiveAutocomplete?.brandSuggestions ?? instantAutocomplete.brandSuggestions,
+    [activeLiveAutocomplete, instantAutocomplete]
+  );
+
+  const totalBrandMatchCount =
+    activeLiveAutocomplete?.totalBrandMatchCount ??
+    instantAutocomplete.totalBrandMatchCount;
 
   const resolvedRecentSkus = useMemo(() => {
     return recentSkuEntries.map((entry) => resolveRecentSkuLookup(entry, products));
@@ -161,6 +295,13 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
   useEffect(() => {
     setSelectedIndex(-1);
   }, [query, filterMode, selectedCategorySlug]);
+
+  // Scroll keyboard-highlighted category, brand, or product option cleanly into view
+  useEffect(() => {
+    if (selectedIndex >= 0) {
+      itemRefs.current[selectedIndex]?.scrollIntoView({ block: 'nearest' });
+    }
+  }, [selectedIndex]);
 
   // Keep recent SKU searches synced across desktop/mobile search instances & tabs
   useEffect(() => {
@@ -297,8 +438,17 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
       productMatchesCount: matchingProducts.length,
     });
     addSearchHistoryTerm(brandName);
-    selectBrand(brandName);
-    setCurrentView('products');
+    if (selectedCategorySlug && selectedCategorySlug !== 'all') {
+      applyCatalogFilters({
+        categorySlug: selectedCategorySlug,
+        brandName,
+        searchQuery: '',
+        searchFilterMode: 'all',
+      });
+    } else {
+      selectBrand(brandName);
+      setCurrentView('products');
+    }
     setIsOpen(false);
     setQuery('');
     if (onCloseMobileMenu) onCloseMobileMenu();
@@ -379,6 +529,15 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
       }
     }
 
+    const lower = trimmed.toLowerCase();
+    const matchedBrand = brands.find((b) => b.name.toLowerCase() === lower);
+    const matchedCategory = categories.find(
+      (c) =>
+        c.name.toLowerCase() === lower ||
+        (c.nameAr && c.nameAr.toLowerCase() === lower) ||
+        c.slug.toLowerCase() === lower
+    );
+
     if (selectedCategorySlug && selectedCategorySlug !== 'all') {
       if (trimmed) {
         addSearchHistoryTerm(trimmed);
@@ -389,12 +548,23 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
           productMatchesCount: matchingProducts.length,
         });
       }
-      selectCategory(selectedCategorySlug);
-      setSearchQuery(trimmed);
-      setCurrentView('products');
+      if ((filterMode === 'brand' || filterMode === 'all') && matchedBrand) {
+        applyCatalogFilters({
+          categorySlug: selectedCategorySlug,
+          brandName: matchedBrand.name,
+          searchQuery: '',
+          searchFilterMode: 'all',
+        });
+      } else {
+        applyCatalogFilters({
+          categorySlug: selectedCategorySlug,
+          brandName: null,
+          searchQuery: trimmed,
+          searchFilterMode: filterMode,
+        });
+      }
       setIsOpen(false);
       if (onCloseMobileMenu) onCloseMobileMenu();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -407,16 +577,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
         productMatchesCount: matchingProducts.length,
       });
 
-      const lower = trimmed.toLowerCase();
-      const matchedBrand = brands.find((b) => b.name.toLowerCase() === lower);
-      const matchedCategory = categories.find(
-        (c) =>
-          c.name.toLowerCase() === lower ||
-          (c.nameAr && c.nameAr.toLowerCase() === lower) ||
-          c.slug.toLowerCase() === lower
-      );
-
-      if (filterMode === 'brand' && (matchedBrand || matchingBrands.length > 0)) {
+      if (filterMode === 'brand' && (matchedBrand || matchingBrands.length === 1)) {
         selectBrand(matchedBrand ? matchedBrand.name : matchingBrands[0].name);
       } else if (filterMode === 'category' && (matchedCategory || matchingCategories.length === 1)) {
         const target = matchedCategory || matchingCategories[0];
@@ -426,15 +587,19 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
       } else if (filterMode === 'all' && matchedCategory) {
         selectCategory(matchedCategory.slug);
       } else {
-        selectCategory(null);
-        setSearchQuery(trimmed);
-        setCurrentView('products');
+        applyCatalogFilters({
+          categorySlug: null,
+          brandName: null,
+          searchQuery: trimmed,
+          searchFilterMode: filterMode,
+        });
       }
 
       setIsOpen(false);
       if (onCloseMobileMenu) onCloseMobileMenu();
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
+      setSearchFilterMode('all');
       selectCategory(null);
       setSearchQuery('');
       setCurrentView('products');
@@ -472,12 +637,18 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
 
   // Top featured categories and brands for quick 1-click filtering when input is empty
   const featuredCategories = useMemo(() => {
+    if (selectedCategorySlug !== 'all') {
+      return scopedCategories;
+    }
     return categories.filter((c) => c.featured).slice(0, 6);
-  }, [categories]);
+  }, [categories, scopedCategories, selectedCategorySlug]);
 
   const featuredBrands = useMemo(() => {
+    if (selectedCategorySlug !== 'all') {
+      return scopedBrands.slice(0, 6);
+    }
     return brands.filter((b) => b.featured).slice(0, 6);
-  }, [brands]);
+  }, [brands, scopedBrands, selectedCategorySlug]);
 
   const selectedCategoryRecord = useMemo(() => {
     if (selectedCategorySlug === 'all') return null;
@@ -509,11 +680,11 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
     }
     if (variant === 'navbar') {
       if (isArabic) {
-        return 'ابحث بالاسم، الماركة، أو رمز SKU...';
+        return 'ابحث بالاسم، الماركة، القسم، أو SKU...';
       }
       return isMobile
-        ? 'Search product, brand, or SKU...'
-        : 'Search by name, brand, or SKU code...';
+        ? 'Search name, brand, category, SKU...'
+        : 'Search by name, brand, category, or SKU...';
     }
     return t.searchPlaceholder || 'Search by name, brand, category, or SKU...';
   }, [filterMode, isArabic, isMobile, variant, t.searchPlaceholder]);
@@ -584,6 +755,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
               placeholder={placeholderText}
               aria-label={placeholderText}
               aria-expanded={isOpen}
+              aria-controls={isOpen && hasQuery ? listboxId : undefined}
               role="combobox"
               aria-autocomplete="list"
               data-testid="mobile-global-search-input"
@@ -649,8 +821,11 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
               <select
                 value={selectedCategorySlug}
                 onChange={(e) => {
-                  setSelectedCategorySlug(e.target.value);
-                  if (query.trim()) setIsOpen(true);
+                  const nextSlug = e.target.value;
+                  setSelectedCategorySlug(nextSlug);
+                  if (nextSlug !== 'all' || query.trim()) {
+                    setIsOpen(true);
+                  }
                 }}
                 data-testid="global-search-category-select"
                 aria-label={isArabic ? 'اختر القسم للبحث' : 'Select category filter'}
@@ -686,6 +861,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                 placeholder={placeholderText}
                 aria-label={placeholderText}
                 aria-expanded={isOpen}
+                aria-controls={isOpen && hasQuery ? listboxId : undefined}
                 role="combobox"
                 aria-autocomplete="list"
                 data-testid="global-search-input"
@@ -974,8 +1150,77 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                 </div>
               )}
 
+              {/* Category-scoped Top Products preview when user picks a category in the navbar selector */}
+              {selectedCategoryRecord && scopedPreviewProducts.length > 0 && filterMode !== 'sku' && (
+                <div data-testid="global-search-scoped-category-products">
+                  <div className="text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between gap-2">
+                    <span className="flex items-center gap-1.5">
+                      <Box className="w-3 h-3 text-[#007AFF]" />
+                      <span>
+                        {isArabic
+                          ? `منتجات قسم ${selectedCategoryRecord.nameAr}`
+                          : `Top in ${selectedCategoryRecord.name}`}
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectCategory(selectedCategoryRecord)}
+                      className="text-[11px] font-bold normal-case text-[#007AFF] hover:underline cursor-pointer"
+                    >
+                      {isArabic ? 'عرض كل القسم' : 'View category'}
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                    {scopedPreviewProducts.map((p) => {
+                      const thumb = resolveProductThumbnailUrl(p);
+                      const title = isArabic ? p.nameAr || p.name : p.name;
+                      return (
+                        <button
+                          key={p.id}
+                          type="button"
+                          onClick={() => handleSelectProduct(p)}
+                          className="p-2 rounded-xl bg-[#F5F8FC] dark:bg-[#162038] hover:bg-[#EAF3FF] dark:hover:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] hover:border-[#007AFF] text-left rtl:text-right transition-all cursor-pointer group flex items-center gap-2.5"
+                        >
+                          <div className="w-9 h-9 rounded-lg bg-white dark:bg-[#0E1726] border border-[#DCE5F0] dark:border-[#1E293B] overflow-hidden shrink-0 flex items-center justify-center">
+                            {thumb ? (
+                              <LazyImage
+                                src={thumb}
+                                alt={title}
+                                priority={true}
+                                loading="lazy"
+                                width={36}
+                                height={36}
+                                responsiveSizes="36px"
+                                wrapperClassName="w-full h-full flex items-center justify-center"
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <Smartphone className="w-4 h-4 text-[#64748B]" />
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[10px] font-bold text-[#007AFF] dark:text-[#38BDF8] truncate">
+                              {p.brand}
+                            </p>
+                            <p className="text-xs font-semibold text-[#172033] dark:text-[#F8FAFC] truncate">
+                              {title}
+                            </p>
+                          </div>
+                          <span className="text-xs font-extrabold text-[#172033] dark:text-[#F8FAFC] tabular-nums shrink-0">
+                            ${p.price}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Quick Category Shortcuts with Thumbnails */}
-              {featuredCategoriesWithThumbnails.length > 0 && filterMode !== 'sku' && (
+              {selectedCategorySlug === 'all' &&
+                featuredCategoriesWithThumbnails.length > 0 &&
+                filterMode !== 'sku' &&
+                filterMode !== 'brand' && (
                 <div>
                   <div className="text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <Folder className="w-3 h-3 text-[#007AFF]" />
@@ -996,8 +1241,10 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                                 src={image}
                                 alt={isArabic ? cat.nameAr : cat.name}
                                 priority={true}
+                                loading="lazy"
                                 width={28}
                                 height={28}
+                                responsiveSizes="28px"
                                 wrapperClassName="w-full h-full flex items-center justify-center"
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                               />
@@ -1017,7 +1264,7 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
               )}
 
               {/* Quick Brand Filter Shortcuts */}
-              {featuredBrands.length > 0 && filterMode !== 'sku' && (
+              {featuredBrands.length > 0 && filterMode !== 'sku' && filterMode !== 'category' && (
                 <div>
                   <div className="text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                     <Tag className="w-3 h-3 text-[#007AFF]" />
@@ -1050,38 +1297,93 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                 <span className="font-semibold text-[#007AFF] whitespace-nowrap">ON ALAA STORE</span>
               </div>
             </div>
-          ) : hasResults ? (
-            /* Case 2: Real-Time Predictive Results Overlay */
+          ) : hasQuery && !hasResults && isFetchingAutocomplete ? (
+            /* Case 2a: Real-time Fetch Loading State (Prevents empty-state flicker before Firestore resolves) */
             <div
-              role="listbox"
-              aria-label={isArabic ? 'نتائج البحث الفوري' : 'Predictive search results'}
-              className="max-h-[520px] overflow-y-auto divide-y divide-[#DCE5F0]/60 dark:divide-[#1E293B]/60"
+              role="status"
+              aria-live="polite"
+              data-testid="global-search-autocomplete-loading"
+              className="p-3 space-y-2.5 bg-white dark:bg-[#0E1726]"
             >
-              {/* Live Predictive Result Summary Bar */}
-              <div className="px-3 py-1.5 bg-[#F8FAFC] dark:bg-[#111A2E] flex items-center justify-between gap-2 text-[11px] text-[#64748B] dark:text-slate-400">
+              <div className="flex items-center gap-2 px-1 text-xs font-medium text-[#64748B] dark:text-slate-400">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-[#007AFF]" aria-hidden="true" />
                 <span>
                   {isArabic
-                    ? `نتائج فورية لـ "${query.trim()}"`
-                    : `Live matches for "${query.trim()}"`}
+                    ? `جاري البحث الفوري عن "${query.trim()}"...`
+                    : `Searching products for "${query.trim()}"...`}
                 </span>
-                <span className="font-semibold tabular-nums text-[#007AFF] dark:text-[#38BDF8]">
+              </div>
+              <div className="space-y-2">
+                {[0, 1, 2].map((skeletonIdx) => (
+                  <div
+                    key={skeletonIdx}
+                    className="flex items-center gap-3 p-2 rounded-xl bg-[#F8FAFC] dark:bg-[#111A2E] animate-pulse"
+                  >
+                    <div className="w-12 h-12 rounded-lg bg-slate-200 dark:bg-slate-700 shrink-0" />
+                    <div className="flex-1 space-y-1.5 min-w-0">
+                      <div className="h-2.5 w-24 bg-slate-200 dark:bg-slate-700 rounded" />
+                      <div className="h-3 w-3/4 bg-slate-200 dark:bg-slate-700 rounded" />
+                      <div className="h-2.5 w-16 bg-slate-200 dark:bg-slate-700 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ) : hasResults ? (
+            /* Case 2b: Real-Time Auto-Complete Results Overlay */
+            <div
+              id={listboxId}
+              role="listbox"
+              aria-label={isArabic ? 'نتائج الإكمال التلقائي للمنتجات' : 'Product autocomplete results'}
+              className="max-h-[min(72vh,540px)] overflow-y-auto divide-y divide-[#DCE5F0]/60 dark:divide-[#1E293B]/60"
+            >
+              {/* Live Auto-Complete Result Summary Bar */}
+              <div
+                aria-live="polite"
+                className="px-3 py-1.5 bg-[#F8FAFC] dark:bg-[#111A2E] flex items-center justify-between gap-2 text-[11px] text-[#64748B] dark:text-slate-400"
+              >
+                <span className="inline-flex items-center gap-1.5 min-w-0 truncate">
+                  {isFetchingAutocomplete && (
+                    <Loader2
+                      data-testid="global-search-autocomplete-spinner"
+                      className="w-3 h-3 animate-spin text-[#007AFF] shrink-0"
+                      aria-hidden="true"
+                    />
+                  )}
+                  <span className="truncate">
+                    {isFetchingAutocomplete
+                      ? isArabic
+                        ? `جاري تحديث نتائج "${query.trim()}"...`
+                        : `Updating matches for "${query.trim()}"...`
+                      : isArabic
+                      ? `نتائج الإكمال التلقائي لـ "${query.trim()}"`
+                      : `Live matches for "${query.trim()}"`}
+                  </span>
+                </span>
+                <span className="font-semibold tabular-nums text-[#007AFF] dark:text-[#38BDF8] shrink-0">
                   {isArabic
                     ? [
-                        matchingCategories.length > 0 ? `${matchingCategories.length} أقسام` : null,
-                        matchingBrands.length > 0 ? `${matchingBrands.length} ماركات` : null,
-                        matchingProducts.length > 0 ? `${matchingProducts.length} منتجات` : null,
+                        totalCategoryMatchCount > 0 ? `${totalCategoryMatchCount} أقسام` : null,
+                        totalBrandMatchCount > 0 ? `${totalBrandMatchCount} ماركات` : null,
+                        matchingProductSuggestions.length > 0
+                          ? totalProductMatchCount > matchingProductSuggestions.length
+                            ? `أفضل ${matchingProductSuggestions.length} من ${totalProductMatchCount} منتج`
+                            : `${matchingProductSuggestions.length} منتجات`
+                          : null,
                       ]
                         .filter(Boolean)
                         .join(' · ')
                     : [
-                        matchingCategories.length > 0
-                          ? `${matchingCategories.length} ${matchingCategories.length === 1 ? 'category' : 'categories'}`
+                        totalCategoryMatchCount > 0
+                          ? `${totalCategoryMatchCount} ${totalCategoryMatchCount === 1 ? 'category' : 'categories'}`
                           : null,
-                        matchingBrands.length > 0
-                          ? `${matchingBrands.length} ${matchingBrands.length === 1 ? 'brand' : 'brands'}`
+                        totalBrandMatchCount > 0
+                          ? `${totalBrandMatchCount} ${totalBrandMatchCount === 1 ? 'brand' : 'brands'}`
                           : null,
-                        matchingProducts.length > 0
-                          ? `${matchingProducts.length} ${matchingProducts.length === 1 ? 'product' : 'products'}`
+                        matchingProductSuggestions.length > 0
+                          ? totalProductMatchCount > matchingProductSuggestions.length
+                            ? `Top ${matchingProductSuggestions.length} of ${totalProductMatchCount} products`
+                            : `${matchingProductSuggestions.length} ${matchingProductSuggestions.length === 1 ? 'product' : 'products'}`
                           : null,
                       ]
                         .filter(Boolean)
@@ -1091,43 +1393,70 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
 
               {/* SECTION 1: MATCHING CATEGORIES WITH THUMBNAILS */}
               {matchingCategories.length > 0 && (
-                <div className="p-2 bg-[#F8FAFC]/60 dark:bg-[#111A2E]/60">
-                  <div className="px-2 py-1 text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-                    <Folder className="w-3 h-3 text-[#007AFF]" />
-                    <span>{isArabic ? 'الأقسام المطابقة' : 'Matching Categories'}</span>
+                <div
+                  data-testid="global-search-autocomplete-categories"
+                  className="p-2 bg-[#F8FAFC]/60 dark:bg-[#111A2E]/60"
+                >
+                  <div className="px-2 py-0.5 text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider flex items-center justify-between gap-2 mb-1">
+                    <span className="flex items-center gap-1.5">
+                      <Folder className="w-3 h-3 text-[#007AFF]" />
+                      <span>{isArabic ? 'الأقسام المقترحة' : 'Suggested Categories'}</span>
+                    </span>
+                    <span className="text-[10px] font-medium normal-case text-[#64748B] dark:text-slate-400">
+                      {isArabic ? 'اضغط للتصفح' : 'Browse department'}
+                    </span>
                   </div>
-                  <div className="space-y-1">
+                  <div
+                    className={`grid gap-1.5 ${
+                      matchingCategories.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'
+                    }`}
+                  >
                     {matchingCategories.map((cat, catIdx) => {
                       const isHighlighted = selectedIndex === catIdx;
                       const catTitle = isArabic ? cat.nameAr : cat.name;
+                      const secondaryText =
+                        cat.matchKind === 'related'
+                          ? isArabic
+                            ? `قسم مرتبط بـ "${query.trim()}"`
+                            : `Department for "${query.trim()}"`
+                          : `${isArabic ? cat.name : cat.nameAr}${
+                              cat.subcategories && cat.subcategories.length > 0
+                                ? ` · ${cat.subcategories.slice(0, 2).join(', ')}`
+                                : ''
+                            }`;
                       return (
                         <button
                           key={cat.id}
+                          ref={(el) => {
+                            itemRefs.current[catIdx] = el;
+                          }}
                           type="button"
                           role="option"
                           aria-selected={isHighlighted}
                           data-testid={`global-search-category-${cat.slug}`}
                           onClick={() => handleSelectCategory(cat)}
-                          className={`w-full text-left rtl:text-right px-3 py-2 rounded-xl transition-all flex items-center justify-between cursor-pointer group ${
+                          className={`w-full text-left rtl:text-right px-2.5 py-1.5 rounded-xl transition-all flex items-center justify-between gap-2 cursor-pointer group ${
                             isHighlighted
                               ? 'bg-[#EAF3FF] dark:bg-[#1E293B] text-[#007AFF] dark:text-[#38BDF8] ring-1 ring-[#007AFF]/30'
                               : 'hover:bg-white dark:hover:bg-[#162038] text-[#172033] dark:text-[#F8FAFC]'
                           }`}
                         >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-lg bg-white dark:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] text-[#007AFF] dark:text-[#38BDF8] overflow-hidden flex-shrink-0 flex items-center justify-center">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-8 h-8 rounded-lg bg-white dark:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] text-[#007AFF] dark:text-[#38BDF8] overflow-hidden flex-shrink-0 flex items-center justify-center">
                               {cat.image ? (
                                 <LazyImage
                                   src={cat.image}
                                   alt={catTitle}
                                   priority={true}
-                                  width={40}
-                                  height={40}
+                                  loading="lazy"
+                                  width={32}
+                                  height={32}
+                                  responsiveSizes="32px"
                                   wrapperClassName="w-full h-full flex items-center justify-center"
                                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                                 />
                               ) : (
-                                <Folder className="w-4 h-4" />
+                                <Folder className="w-3.5 h-3.5" />
                               )}
                             </div>
                             <div className="min-w-0 truncate">
@@ -1135,15 +1464,12 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                                 {renderHighlightedText(catTitle)}
                               </p>
                               <p className="text-[10px] text-[#64748B] dark:text-slate-400 truncate mt-0.5">
-                                {isArabic ? cat.name : cat.nameAr}
-                                {cat.subcategories && cat.subcategories.length > 0
-                                  ? ` · ${cat.subcategories.slice(0, 2).join(', ')}`
-                                  : ''}
+                                {secondaryText}
                               </p>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
                             <span className="text-[11px] font-semibold text-[#007AFF] dark:text-[#38BDF8] tabular-nums whitespace-nowrap">
                               {isArabic
                                 ? `${cat.count} منتج`
@@ -1162,42 +1488,61 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
 
               {/* SECTION 2: MATCHING BRANDS */}
               {matchingBrands.length > 0 && (
-                <div className="p-2 bg-[#F8FAFC]/40 dark:bg-[#111A2E]/40">
-                  <div className="px-2 py-1 text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5 mb-1">
-                    <Tag className="w-3 h-3 text-[#00D26A]" />
-                    <span>{isArabic ? 'الماركات المطابقة' : 'Matching Brands'}</span>
+                <div
+                  data-testid="global-search-autocomplete-brands"
+                  className="p-2 bg-[#F8FAFC]/40 dark:bg-[#111A2E]/40"
+                >
+                  <div className="px-2 py-0.5 text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider flex items-center justify-between gap-2 mb-1">
+                    <span className="flex items-center gap-1.5">
+                      <Tag className="w-3 h-3 text-[#00D26A]" />
+                      <span>{isArabic ? 'الماركات المقترحة' : 'Suggested Brands'}</span>
+                    </span>
+                    <span className="text-[10px] font-medium normal-case text-[#64748B] dark:text-slate-400">
+                      {isArabic ? 'تصفية حسب الماركة' : 'Filter by brand'}
+                    </span>
                   </div>
-                  <div className="space-y-1">
+                  <div
+                    className={`grid gap-1.5 ${
+                      matchingBrands.length > 1 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1'
+                    }`}
+                  >
                     {matchingBrands.map((b, bIdx) => {
                       const globalIdx = matchingCategories.length + bIdx;
                       const isHighlighted = selectedIndex === globalIdx;
+                      const brandSlug = b.name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                       return (
                         <button
                           key={b.name}
+                          ref={(el) => {
+                            itemRefs.current[globalIdx] = el;
+                          }}
                           type="button"
                           role="option"
                           aria-selected={isHighlighted}
+                          data-testid={`global-search-brand-${brandSlug}`}
                           onClick={() => handleSelectBrand(b.name)}
-                          className={`w-full text-left rtl:text-right px-3 py-2 rounded-xl transition-all flex items-center justify-between cursor-pointer group ${
+                          className={`w-full text-left rtl:text-right px-2.5 py-1.5 rounded-xl transition-all flex items-center justify-between gap-2 cursor-pointer group ${
                             isHighlighted
                               ? 'bg-[#EAF3FF] dark:bg-[#1E293B] text-[#007AFF] dark:text-[#38BDF8] ring-1 ring-[#007AFF]/30'
                               : 'hover:bg-white dark:hover:bg-[#162038] text-[#172033] dark:text-[#F8FAFC]'
                           }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            <div className="w-9 h-9 rounded-lg bg-white dark:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] overflow-hidden flex-shrink-0 flex items-center justify-center p-1">
+                            <div className="w-8 h-8 rounded-lg bg-white dark:bg-[#1E293B] border border-[#DCE5F0] dark:border-[#1E293B] overflow-hidden flex-shrink-0 flex items-center justify-center p-1">
                               {b.logo ? (
                                 <LazyImage
                                   src={b.logo}
                                   alt={b.name}
                                   priority={true}
-                                  width={32}
-                                  height={32}
+                                  loading="lazy"
+                                  width={28}
+                                  height={28}
+                                  responsiveSizes="28px"
                                   wrapperClassName="w-full h-full flex items-center justify-center"
                                   className="w-full h-full object-contain"
                                 />
                               ) : (
-                                <Tag className="w-4 h-4 text-[#00D26A]" />
+                                <Tag className="w-3.5 h-3.5 text-[#00D26A]" />
                               )}
                             </div>
                             <div className="truncate">
@@ -1205,14 +1550,18 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                                 {renderHighlightedText(b.name)}
                               </p>
                               <p className="text-[10px] text-[#64748B] dark:text-slate-400 truncate mt-0.5">
-                                {isArabic
-                                  ? `عرض كافة أجهزة ${b.name}`
+                                {b.matchKind === 'related'
+                                  ? isArabic
+                                    ? `ماركة ذات صلة · أجهزة ${b.name}`
+                                    : `Related brand · ${b.name}`
+                                  : isArabic
+                                  ? `عرض أجهزة ${b.name}`
                                   : `Browse all ${b.name} products`}
                               </p>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
                             {b.count > 0 && (
                               <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums whitespace-nowrap">
                                 {isArabic
@@ -1232,8 +1581,11 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
               )}
 
               {/* SECTION 3: MATCHING PRODUCTS */}
-              {matchingProducts.length > 0 && (
-                <div className="p-2 bg-white dark:bg-[#0E1726]">
+              {matchingProductSuggestions.length > 0 && (
+                <div
+                  data-testid="global-search-autocomplete-products"
+                  className="p-2 bg-white dark:bg-[#0E1726]"
+                >
                   <div className="px-2 py-1 text-[11px] font-bold text-[#64748B] dark:text-slate-400 uppercase tracking-wider flex items-center justify-between gap-2 mb-1">
                     <span className="flex items-center gap-1.5">
                       <Box className="w-3 h-3 text-[#007AFF]" />
@@ -1254,31 +1606,29 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                     )}
                   </div>
                   <div className="space-y-1">
-                    {matchingProducts.map((p, pIdx) => {
+                    {matchingProductSuggestions.map((suggestion, pIdx) => {
+                      const p = suggestion.product;
                       const globalIdx =
                         matchingCategories.length + matchingBrands.length + pIdx;
                       const isHighlighted = selectedIndex === globalIdx;
-                      const skuMatch = findProductSkuMatch(p, query);
-                      const displayPrice =
-                        skuMatch?.matchedVariant && Number.isFinite(skuMatch.matchedVariant.price)
-                          ? skuMatch.matchedVariant.price
-                          : p.price;
-                      const displayStock =
-                        skuMatch?.matchedVariant && typeof skuMatch.matchedVariant.stock === 'number'
-                          ? skuMatch.matchedVariant.stock
-                          : p.stock;
-                      const displaySku = skuMatch ? skuMatch.matchedSku : p.sku;
-                      const isExactSku = skuMatch?.matchKind === 'exact';
-                      const hasDiscount = !skuMatch?.matchedVariant && p.originalPrice > p.price;
-                      const isLowStock = displayStock > 0 && displayStock <= (p.lowStockThreshold || 3);
-                      const isOutOfStock = displayStock === 0;
-                      const productThumb =
-                        skuMatch?.matchedVariant?.image?.trim() || resolveProductThumbnailUrl(p);
+                      const {
+                        skuMatch,
+                        displayPrice,
+                        hasDiscount,
+                        isLowStock,
+                        isOutOfStock,
+                        displaySku,
+                        isExactSku,
+                        thumbnailUrl: productThumb,
+                      } = suggestion;
                       const productTitle = isArabic ? p.nameAr || p.name : p.name;
 
                       return (
                         <button
                           key={p.id}
+                          ref={(el) => {
+                            itemRefs.current[globalIdx] = el;
+                          }}
                           type="button"
                           role="option"
                           aria-selected={isHighlighted}
@@ -1299,8 +1649,10 @@ export const GlobalSearch: React.FC<GlobalSearchProps> = ({
                                 src={productThumb}
                                 alt={productTitle}
                                 priority={true}
+                                loading="lazy"
                                 width={48}
                                 height={48}
+                                responsiveSizes="48px"
                                 wrapperClassName="w-full h-full flex items-center justify-center"
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
                               />

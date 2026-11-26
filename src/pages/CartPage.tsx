@@ -105,7 +105,9 @@ export const CartPage: React.FC = () => {
                           alt={item.product.name}
                           width={80}
                           height={80}
+                          responsiveSizes="80px"
                           priority={idx < 2}
+                          loading="lazy"
                           wrapperClassName="w-20 h-20 rounded-2xl overflow-hidden bg-[#F5F8FC] dark:bg-[#111A2E] border border-[#DCE5F0] dark:border-[#1E293B] flex-shrink-0"
                           className="w-full h-full object-cover"
                         />

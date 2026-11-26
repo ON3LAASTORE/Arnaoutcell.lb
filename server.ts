@@ -22,7 +22,7 @@ import {
   createAdminSessionToken,
   extractBearerOrCookieToken,
   isSameOriginMutationRequest,
-  resolveEphemeralOrEnvSecret,
+  resolvePersistentOrEnvSecret,
   verifyAdminSessionToken,
   verifyFirebaseAdminIdToken,
 } from './src/utils/adminSessionHelpers';
@@ -56,6 +56,14 @@ import {
   executeWithGeminiRetryAndFallback,
   parseGeminiSdkError,
 } from './src/utils/geminiErrorHelpers';
+import type { CatalogOverlayRecord } from './src/utils/catalogMergeHelpers';
+import {
+  DEFAULT_DESCRIPTION_AR,
+  DEFAULT_DESCRIPTION_EN,
+  sanitizeProductId,
+  validateAdminProductForm,
+} from './src/utils/adminProductFormHelpers';
+import type { Product } from './src/types';
 
 // Load environment variables (override stale process values when .env is updated)
 dotenv.config({ override: true });
@@ -356,11 +364,71 @@ function saveRestockStore(state: RestockStoreState): void {
 
 const restockStore = loadRestockStore();
 
+const CATALOG_PRODUCTS_FILE = path.resolve(__dirname, '.catalog_products.json');
+
+interface CatalogStoreState {
+  records: CatalogOverlayRecord[];
+  deletedIds: string[];
+}
+
+function loadCatalogStore(): CatalogStoreState {
+  try {
+    if (fs.existsSync(CATALOG_PRODUCTS_FILE)) {
+      const parsed = JSON.parse(fs.readFileSync(CATALOG_PRODUCTS_FILE, 'utf-8')) as Partial<CatalogStoreState>;
+      const records = Array.isArray(parsed?.records)
+        ? parsed.records.filter(
+            (r): r is CatalogOverlayRecord =>
+              Boolean(r && typeof r === 'object' && r.product && typeof r.product.id === 'string')
+          )
+        : [];
+      const deletedIds = Array.isArray(parsed?.deletedIds)
+        ? Array.from(
+            new Set(
+              parsed.deletedIds
+                .filter((id): id is string => typeof id === 'string' && id.trim().length > 0)
+                .map((id) => id.trim())
+            )
+          )
+        : [];
+      return { records, deletedIds };
+    }
+  } catch {
+    // Initialize fresh catalog overlay store
+  }
+  return { records: [], deletedIds: [] };
+}
+
+function saveCatalogStore(state: CatalogStoreState): boolean {
+  try {
+    fs.writeFileSync(
+      CATALOG_PRODUCTS_FILE,
+      JSON.stringify(
+        {
+          records: state.records.slice(0, 500),
+          deletedIds: state.deletedIds.slice(0, 500),
+        },
+        null,
+        2
+      ),
+      'utf-8'
+    );
+    return true;
+  } catch (err) {
+    console.error('Failed to persist catalog products store:', err);
+    return false;
+  }
+}
+
+const catalogStore: CatalogStoreState = loadCatalogStore();
+
 async function startServer() {
   const app = express();
   app.set('trust proxy', 1);
   const PORT = parseInt(process.env.PORT || '3000', 10);
-  const adminSessionSecret = resolveEphemeralOrEnvSecret(process.env.ADMIN_SESSION_SECRET);
+  const adminSessionSecret = resolvePersistentOrEnvSecret(
+    process.env.ADMIN_SESSION_SECRET,
+    path.resolve(__dirname, '.admin_session_secret')
+  );
 
   const resolveFirebaseProjectId = (): string => {
     const envProject = process.env.VITE_FIREBASE_PROJECT_ID?.trim();
@@ -494,6 +562,32 @@ async function startServer() {
     } catch {
       res.status(500).json({ initialized: false, algorithm: 'bcrypt' });
     }
+  });
+
+  app.get('/api/admin/auth/session', (req: Request, res: Response) => {
+    res.setHeader('Cache-Control', 'no-store');
+    const { token } = extractBearerOrCookieToken({
+      authorization: typeof req.headers.authorization === 'string' ? req.headers.authorization : undefined,
+      cookie: typeof req.headers.cookie === 'string' ? req.headers.cookie : undefined,
+    });
+    if (!token) {
+      res.json({ authenticated: false });
+      return;
+    }
+    const payload = verifyAdminSessionToken(token, adminSessionSecret);
+    if (!payload) {
+      res.json({ authenticated: false });
+      return;
+    }
+    res.json({
+      authenticated: true,
+      token,
+      session: {
+        email: payload.email,
+        role: payload.role,
+        authType: payload.authType,
+      },
+    });
   });
 
   app.post('/api/admin/auth/verify', async (req: Request, res: Response) => {
@@ -2232,6 +2326,205 @@ async function startServer() {
         error: parsed.userMessage,
       });
     }
+  });
+
+  // =========================================================================
+  // 3b. PERSISTENT CATALOG PRODUCTS OVERLAY API
+  // =========================================================================
+  app.get('/api/catalog/products', (_req: Request, res: Response) => {
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({
+      success: true,
+      records: catalogStore.records,
+      deletedIds: catalogStore.deletedIds,
+    });
+  });
+
+  app.put('/api/catalog/products/:id', requireAdminAuth, (req: Request, res: Response) => {
+    const session = (req as Request & { adminSession?: AdminSessionPayload }).adminSession;
+    if (!session || !['super_admin', 'editor', 'manager'].includes(session.role)) {
+      res.status(403).json({
+        success: false,
+        error: 'Insufficient permissions to modify catalog products.',
+      });
+      return;
+    }
+
+    const rawParamId = typeof req.params.id === 'string' ? req.params.id.trim() : '';
+    if (!/^[a-zA-Z0-9_-]{1,128}$/.test(rawParamId)) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid product ID format. Use letters, numbers, hyphens, or underscores.',
+      });
+      return;
+    }
+
+    const bodyProduct = req.body?.product as Partial<Product> | undefined;
+    if (!bodyProduct || typeof bodyProduct !== 'object') {
+      res.status(400).json({
+        success: false,
+        error: 'Product payload is required.',
+      });
+      return;
+    }
+
+    const validation = validateAdminProductForm({
+      name: String(bodyProduct.name || ''),
+      nameAr: typeof bodyProduct.nameAr === 'string' ? bodyProduct.nameAr : undefined,
+      brand: String(bodyProduct.brand || ''),
+      category: String(bodyProduct.category || ''),
+      subcategory: typeof bodyProduct.subcategory === 'string' ? bodyProduct.subcategory : undefined,
+      sku: String(bodyProduct.sku || rawParamId),
+      barcode: typeof bodyProduct.barcode === 'string' ? bodyProduct.barcode : undefined,
+      price: bodyProduct.price ?? 0,
+      originalPrice: bodyProduct.originalPrice ?? bodyProduct.price ?? 0,
+      stock: bodyProduct.stock ?? 0,
+      lowStockThreshold: bodyProduct.lowStockThreshold ?? 3,
+      warrantyMonths: bodyProduct.warrantyMonths ?? 12,
+      images: Array.isArray(bodyProduct.images) ? bodyProduct.images : undefined,
+      videoUrl: typeof bodyProduct.videoUrl === 'string' ? bodyProduct.videoUrl : undefined,
+      description:
+        typeof bodyProduct.description === 'string' && bodyProduct.description.trim()
+          ? bodyProduct.description
+          : DEFAULT_DESCRIPTION_EN,
+      descriptionAr:
+        typeof bodyProduct.descriptionAr === 'string' && bodyProduct.descriptionAr.trim()
+          ? bodyProduct.descriptionAr
+          : DEFAULT_DESCRIPTION_AR,
+    });
+
+    if (!validation.valid) {
+      res.status(400).json({
+        success: false,
+        error: validation.errors[0] || 'Invalid product fields.',
+        errors: validation.errors,
+      });
+      return;
+    }
+
+    const n = validation.normalized;
+    const sanitizedProduct: Product = {
+      id: sanitizeProductId(rawParamId),
+      name: n.name,
+      nameAr: n.nameAr,
+      brand: n.brand,
+      category: n.category,
+      subcategory: n.subcategory,
+      sku: n.sku,
+      barcode: n.barcode,
+      price: n.price,
+      originalPrice: n.originalPrice,
+      discountPercentage: n.discountPercentage,
+      stock: n.stock,
+      lowStockThreshold: n.lowStockThreshold,
+      images: n.images,
+      ...(n.videoUrl ? { videoUrl: n.videoUrl } : {}),
+      description: n.description,
+      descriptionAr: n.descriptionAr,
+      specifications: Array.isArray(bodyProduct.specifications)
+        ? bodyProduct.specifications.slice(0, 60)
+        : [],
+      colors: Array.isArray(bodyProduct.colors) ? bodyProduct.colors.slice(0, 30) : [],
+      colorImages:
+        bodyProduct.colorImages && typeof bodyProduct.colorImages === 'object'
+          ? bodyProduct.colorImages
+          : {},
+      variants: Array.isArray(bodyProduct.variants) ? bodyProduct.variants.slice(0, 50) : [],
+      rating:
+        typeof bodyProduct.rating === 'number' && Number.isFinite(bodyProduct.rating)
+          ? bodyProduct.rating
+          : 5.0,
+      reviewCount:
+        typeof bodyProduct.reviewCount === 'number' && Number.isFinite(bodyProduct.reviewCount)
+          ? Math.max(0, Math.round(bodyProduct.reviewCount))
+          : 0,
+      soldCount:
+        typeof bodyProduct.soldCount === 'number' && Number.isFinite(bodyProduct.soldCount)
+          ? Math.max(0, Math.round(bodyProduct.soldCount))
+          : 0,
+      ...(Array.isArray(bodyProduct.reviews) ? { reviews: bodyProduct.reviews.slice(0, 50) } : {}),
+      isSpecialOffer: Boolean(bodyProduct.isSpecialOffer),
+      ...(typeof bodyProduct.offerExpiresAt === 'string' && bodyProduct.offerExpiresAt.trim()
+        ? { offerExpiresAt: bodyProduct.offerExpiresAt.trim() }
+        : {}),
+      isFeatured: Boolean(bodyProduct.isFeatured),
+      isNewArrival: Boolean(bodyProduct.isNewArrival),
+      isBestSeller: Boolean(bodyProduct.isBestSeller),
+      isPublished: bodyProduct.isPublished !== false,
+      warrantyMonths: n.warrantyMonths,
+      ...(typeof bodyProduct.warrantyTerms === 'string' && bodyProduct.warrantyTerms.trim()
+        ? { warrantyTerms: bodyProduct.warrantyTerms.trim() }
+        : {}),
+      createdAt:
+        typeof bodyProduct.createdAt === 'string' && bodyProduct.createdAt.trim()
+          ? bodyProduct.createdAt.trim()
+          : new Date().toISOString(),
+    };
+
+    const nextRecord: CatalogOverlayRecord = {
+      product: sanitizedProduct,
+      updatedAtMs: Date.now(),
+      syncedToFirestore: Boolean(req.body?.syncedToFirestore),
+    };
+
+    const idx = catalogStore.records.findIndex((r) => r.product.id === sanitizedProduct.id);
+    if (idx >= 0) {
+      catalogStore.records[idx] = nextRecord;
+    } else {
+      catalogStore.records.unshift(nextRecord);
+    }
+    catalogStore.deletedIds = catalogStore.deletedIds.filter((id) => id !== sanitizedProduct.id);
+
+    if (!saveCatalogStore(catalogStore)) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to write catalog product to server disk storage.',
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      record: nextRecord,
+    });
+  });
+
+  app.delete('/api/catalog/products/:id', requireAdminAuth, (req: Request, res: Response) => {
+    const session = (req as Request & { adminSession?: AdminSessionPayload }).adminSession;
+    if (!session || session.role !== 'super_admin') {
+      res.status(403).json({
+        success: false,
+        error: 'Only Super Admin users with Full Stock permission can delete catalog products.',
+      });
+      return;
+    }
+
+    const rawParamId = typeof req.params.id === 'string' ? req.params.id.trim() : '';
+    if (!/^[a-zA-Z0-9_-]{1,128}$/.test(rawParamId)) {
+      res.status(400).json({
+        success: false,
+        error: 'Invalid product ID format.',
+      });
+      return;
+    }
+
+    catalogStore.records = catalogStore.records.filter((r) => r.product.id !== rawParamId);
+    if (!catalogStore.deletedIds.includes(rawParamId)) {
+      catalogStore.deletedIds.unshift(rawParamId);
+    }
+
+    if (!saveCatalogStore(catalogStore)) {
+      res.status(500).json({
+        success: false,
+        error: 'Failed to persist catalog product deletion to server disk storage.',
+      });
+      return;
+    }
+
+    res.json({
+      success: true,
+      deletedId: rawParamId,
+    });
   });
 
   // Health and System Status Endpoint

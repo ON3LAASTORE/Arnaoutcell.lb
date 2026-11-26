@@ -392,7 +392,9 @@ export const AdminCategoriesBrands: React.FC = () => {
                       alt={b.name}
                       width={32}
                       height={32}
+                      responsiveSizes="32px"
                       priority={false}
+                      loading="lazy"
                       wrapperClassName="w-8 h-8 rounded-full overflow-hidden bg-[#F5F8FC] border border-[#DCE5F0] flex-shrink-0"
                       className="w-full h-full object-cover"
                     />
