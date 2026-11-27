@@ -85,18 +85,173 @@ export async function verifyPasswordWithBcrypt(candidate: string, hash: string):
   return bcrypt.compare(candidate, hash);
 }
 
+export const LEGACY_ADMIN_STORAGE_KEYS = [
+  'arnaout_admin_security_v1',
+  LEGACY_AUTH_STORAGE_KEY,
+  'arnaout_admin_security',
+  LEGACY_SESSION_TOKEN_KEY,
+  'onalaa_admin_session_token',
+  'admin_session_token',
+  'onalaa_admin_session',
+  'arnaout_admin_password',
+  'admin_password',
+  'onalaa_admin_password',
+  'arnaout_admin_pass',
+  'admin_pass',
+  'arnaout_admin_credentials',
+  'onalaa_admin_credentials',
+  'admin_credentials',
+  'arnaout_admin_users',
+  'onalaa_admin_users',
+  'admin_users',
+  'arnaout_admin_hash',
+  'arnaout_admin_salt',
+  'admin_password_hash',
+  'admin_salt',
+] as const;
+
+const LEGACY_SECRET_KEY_PATTERN =
+  /^(arnaout|onalaa|admin)[_-].*(pass|cred|hash|salt|secret|token)/i;
+
+const SENSITIVE_PROFILE_FIELDS = [
+  'password',
+  'passwordHash',
+  'salt',
+  'hash',
+  'secret',
+  'token',
+  'credentials',
+] as const;
+
+interface StorageLike {
+  length: number;
+  key: (index: number) => string | null;
+  getItem: (key: string) => string | null;
+  setItem: (key: string, value: string) => void;
+  removeItem: (key: string) => void;
+}
+
+function purgeStorageTarget(store: StorageLike | null | undefined): string[] {
+  const removed: string[] = [];
+  if (!store) return removed;
+
+  for (const legacyKey of LEGACY_ADMIN_STORAGE_KEYS) {
+    try {
+      if (store.getItem(legacyKey) !== null) {
+        removed.push(legacyKey);
+      }
+      store.removeItem(legacyKey);
+    } catch {
+      // ignore storage access errors
+    }
+  }
+
+  try {
+    const dynamicKeys: string[] = [];
+    for (let i = 0; i < store.length; i++) {
+      const k = store.key(i);
+      if (k && LEGACY_SECRET_KEY_PATTERN.test(k)) {
+        dynamicKeys.push(k);
+      }
+    }
+    for (const k of dynamicKeys) {
+      if (!removed.includes(k)) removed.push(k);
+      store.removeItem(k);
+    }
+  } catch {
+    // ignore storage enumeration errors
+  }
+
+  return removed;
+}
+
+/**
+ * Purges any stale/legacy administrator passwords, hashes, credentials, or
+ * session token keys from both localStorage and sessionStorage, and strips any
+ * sensitive or outdated RBAC fields from `arnaout_admin_user`.
+ */
+export function purgeLegacyAdminAuthStorage(
+  localStore: StorageLike | null | undefined =
+    typeof window !== 'undefined' ? window.localStorage : undefined,
+  sessionStore: StorageLike | null | undefined =
+    typeof window !== 'undefined' ? window.sessionStorage : undefined
+): { removedKeys: string[]; migratedUserProfile: boolean } {
+  const removedKeys = [
+    ...purgeStorageTarget(localStore),
+    ...purgeStorageTarget(sessionStore),
+  ];
+  let migratedUserProfile = false;
+
+  if (localStore) {
+    try {
+      const rawUser = localStore.getItem('arnaout_admin_user');
+      if (rawUser) {
+        const parsed = JSON.parse(rawUser) as Record<string, unknown> | null;
+        if (!parsed || typeof parsed !== 'object') {
+          localStore.removeItem('arnaout_admin_user');
+          migratedUserProfile = true;
+        } else {
+          let dirty = false;
+          const cleanProfile: Record<string, unknown> = { ...parsed };
+          for (const sensitiveKey of SENSITIVE_PROFILE_FIELDS) {
+            if (sensitiveKey in cleanProfile) {
+              delete cleanProfile[sensitiveKey];
+              dirty = true;
+            }
+          }
+
+          const usernameLower =
+            typeof cleanProfile.username === 'string'
+              ? cleanProfile.username.trim().toLowerCase()
+              : '';
+          if (usernameLower === 'admin' || usernameLower === 'alaa') {
+            const expectedUsername = usernameLower === 'alaa' ? 'Alaa' : 'admin';
+            if (cleanProfile.username !== expectedUsername) {
+              cleanProfile.username = expectedUsername;
+              dirty = true;
+            }
+            if (cleanProfile.role !== 'super_admin') {
+              cleanProfile.role = 'super_admin';
+              dirty = true;
+            }
+            const currentPerms = Array.isArray(cleanProfile.permissions)
+              ? cleanProfile.permissions.map(String)
+              : [];
+            if (!currentPerms.includes('full_stock') || !currentPerms.includes('full_admin')) {
+              const merged = Array.from(
+                new Set(['full_stock', 'full_admin', ...currentPerms])
+              );
+              cleanProfile.permissions = merged;
+              dirty = true;
+            }
+          }
+
+          if (dirty) {
+            localStore.setItem('arnaout_admin_user', JSON.stringify(cleanProfile));
+            migratedUserProfile = true;
+          }
+        }
+      }
+    } catch {
+      try {
+        localStore.removeItem('arnaout_admin_user');
+        migratedUserProfile = true;
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  return { removedKeys, migratedUserProfile };
+}
+
 /**
  * Ensures any legacy client-side credential artifacts are removed and confirms
  * server-side bcrypt auth store readiness.
  */
 export async function initializeAdminAuth(): Promise<{ initialized: boolean; algorithm: string }> {
   if (typeof window !== 'undefined') {
-    try {
-      localStorage.removeItem(LEGACY_AUTH_STORAGE_KEY);
-      sessionStorage.removeItem(LEGACY_SESSION_TOKEN_KEY);
-    } catch {
-      // ignore
-    }
+    purgeLegacyAdminAuthStorage();
   }
 
   if (typeof fetch === 'undefined') {

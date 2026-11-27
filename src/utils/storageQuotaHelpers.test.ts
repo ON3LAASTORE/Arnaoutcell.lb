@@ -130,9 +130,11 @@ test('compactProductsForStorage strips huge inline data URLs cleanly', () => {
   const hugeImage = `data:image/jpeg;base64,${'C'.repeat(150_000)}`;
   const compacted = compactProductsForStorage([
     { ...baseProduct, images: [hugeImage] },
+    { ...baseProduct, id: 'prod-empty-imgs', images: [] },
   ]);
-  assert.equal(compacted.length, 1);
+  assert.equal(compacted.length, 2);
   assert.equal(compacted[0].images[0].startsWith('https://'), true);
+  assert.deepEqual(compacted[1].images, []);
 });
 
 test('purgeStaleFirestoreWebStorageKeys removes legacy firestore multi-tab keys while preserving storefront data', () => {

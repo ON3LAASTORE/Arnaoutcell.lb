@@ -92,3 +92,21 @@ test('buildAdminProductRecord coerces numeric fields, computes discount, and pre
     assert.equal(built.product.isPublished, true);
   }
 });
+
+test('buildAdminProductRecord preserves intentionally empty images array when all photos are deleted', () => {
+  const built = buildAdminProductRecord({
+    name: 'No Photo Product',
+    brand: 'Apple',
+    category: 'Phones',
+    sku: 'NO-IMG-1',
+    price: 299,
+    originalPrice: 299,
+    stock: 5,
+    images: [],
+  });
+
+  assert.equal(built.ok, true);
+  if (built.ok) {
+    assert.deepEqual(built.product.images, []);
+  }
+});

@@ -231,4 +231,37 @@ test('getProductColorOptions and structured capacity/price helpers work seamless
   assert.equal(extracted.variants[1].name, '256GB');
 });
 
+test('getProductColorOptions and extractStructuredProductVariantsAndColors guarantee unique IDs on slug or explicit ID collisions', () => {
+  const collidingProduct: Pick<Product, 'images' | 'colors' | 'colorImages' | 'variants'> = {
+    images: ['https://example.com/main.jpg'],
+    colors: [
+      { id: 'color-white-titanium', name: 'White Titanium', imageUrl: 'https://example.com/wt1.jpg' },
+      { id: 'color-white-titanium', name: 'White-Titanium', imageUrl: 'https://example.com/wt2.jpg' },
+      'White  Titanium',
+    ],
+    colorImages: {},
+    variants: [],
+  };
+
+  const options = getProductColorOptions(collidingProduct);
+  const optionIds = options.map((opt) => opt.id);
+  assert.equal(optionIds.length, 3);
+  assert.equal(new Set(optionIds).size, 3);
+  assert.equal(optionIds[0], 'color-white-titanium');
+
+  const extracted = extractStructuredProductVariantsAndColors(
+    [
+      { id: 'color-white-titanium', color: 'White Titanium', price: 1299 },
+      { id: 'color-white-titanium', color: 'White-Titanium', price: 1319 },
+    ],
+    [],
+    { price: 1299, sku: 'SKU', stock: 5 }
+  );
+  const extractedIds = extracted.colors.map((c) => c.id);
+  assert.equal(extractedIds.length, 2);
+  assert.equal(new Set(extractedIds).size, 2);
+  const extractedVarIds = extracted.variants.map((v) => v.id);
+  assert.equal(new Set(extractedVarIds).size, extractedVarIds.length);
+});
+
 

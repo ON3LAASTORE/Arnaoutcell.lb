@@ -10,6 +10,7 @@ import {
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { AdminRole, AdminUser, FirestoreAdminProfile, FirestoreUserProfile } from '../types';
 import {
+  buildAdminFirestoreUserPayload,
   buildAlaaFirestoreUserPayload,
   getEffectivePermissions,
   normalizeAdminUserProfile,
@@ -197,22 +198,21 @@ export async function syncSignedInSuperAdminProfile(
     return syncProvisionedAlaaAdminProfile(fbUser.uid);
   }
 
-  if (emailLower !== 'optimatech.lb@gmail.com') {
+  const isBootstrappedOwner =
+    emailLower === 'optimatech.lb@gmail.com' ||
+    emailLower === 'admin@arnaoutcell.com' ||
+    emailLower === 'admin@onalaastore.com';
+
+  if (!isBootstrappedOwner) {
     return false;
   }
 
   const nowIso = new Date().toISOString();
-  const basePayload: FirestoreUserProfile = {
-    id: fbUser.uid,
-    uid: fbUser.uid,
-    username: 'admin',
-    name: fbUser.displayName || '3Laa Hassan',
+  const basePayload: FirestoreUserProfile = buildAdminFirestoreUserPayload(fbUser.uid, {
     email: emailLower,
-    role: 'super_admin',
-    permissions: [...SUPER_ADMIN_PERMISSIONS],
-    isActive: true,
-    updatedAt: nowIso,
-  };
+    name: fbUser.displayName || '3Laa Hassan',
+    nowIso,
+  });
 
   try {
     for (const collectionName of [USERS_COLLECTION, ADMINS_COLLECTION]) {
@@ -275,7 +275,10 @@ export function buildAdminUserFromFirebaseUser(
 
   const emailLower = (fbUser.email || '').toLowerCase();
   const isAlaaEmail = emailLower === 'alaa@onalaastore.com';
-  const isPrimaryOwner = emailLower === 'optimatech.lb@gmail.com';
+  const isPrimaryOwner =
+    emailLower === 'optimatech.lb@gmail.com' ||
+    emailLower === 'admin@arnaoutcell.com' ||
+    emailLower === 'admin@onalaastore.com';
 
   if (firestoreProfile && firestoreProfile.isActive !== false) {
     return normalizeAdminUserProfile({
@@ -303,7 +306,7 @@ export function buildAdminUserFromFirebaseUser(
   const role = isPrimaryOwner ? 'super_admin' : 'product_manager';
   return normalizeAdminUserProfile({
     id: fbUser.uid,
-    username: fbUser.email?.split('@')[0] || 'admin',
+    username: isPrimaryOwner ? 'admin' : fbUser.email?.split('@')[0] || 'admin',
     name: fbUser.displayName || (isPrimaryOwner ? '3Laa Hassan' : 'Authorized Admin'),
     role,
     email: fbUser.email || 'optimatech.lb@gmail.com',

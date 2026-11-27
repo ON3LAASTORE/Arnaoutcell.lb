@@ -1,8 +1,5 @@
 import { Product, ProductColorEntry, ProductSpec, ProductVariant } from '../types';
-import {
-  DEFAULT_FULL_RES_FALLBACK_IMAGE,
-  resolveFullResolutionImageUrl,
-} from './imageResolutionHelpers';
+import { resolveFullResolutionImageUrl } from './imageResolutionHelpers';
 
 export const MAX_PRODUCT_PRICE = 1_000_000;
 export const MAX_PRODUCT_STOCK = 1_000_000;
@@ -209,8 +206,7 @@ export function validateAdminProductForm(
         .map((img) => resolveFullResolutionImageUrl(img.trim()) || img.trim())
     : [];
 
-  const images =
-    normalizedImages.length > 0 ? normalizedImages : [DEFAULT_FULL_RES_FALLBACK_IMAGE];
+  const images = normalizedImages;
 
   const videoUrl =
     typeof input.videoUrl === 'string' && input.videoUrl.trim()

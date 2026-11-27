@@ -83,4 +83,17 @@ test('buildAdminUserFromFirebaseUser resolves Alaa as super_admin with full_stoc
   assert.equal(resolvedWithDoc.role, 'super_admin');
   assert.equal(resolvedWithDoc.permissions?.includes('full_stock'), true);
   assert.equal(resolvedWithDoc.permissions?.includes('manage_settings'), true);
+
+  const fbAdmin = makeMockFirebaseUser({
+    uid: 'uid-admin-live',
+    email: 'admin@arnaoutcell.com',
+    displayName: '3Laa Hassan',
+  });
+  const resolvedAdminWithoutDoc = buildAdminUserFromFirebaseUser(fbAdmin, null);
+  assert.ok(resolvedAdminWithoutDoc);
+  assert.equal(resolvedAdminWithoutDoc.username, 'admin');
+  assert.equal(resolvedAdminWithoutDoc.role, 'super_admin');
+  assert.equal(resolvedAdminWithoutDoc.permissions?.includes('full_stock'), true);
+  assert.equal(resolvedAdminWithoutDoc.permissions?.includes('full_admin'), true);
 });
+

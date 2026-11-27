@@ -7,6 +7,7 @@ export interface ProductImageUploaderProps {
   maxSizeBytes?: number;
   title?: string;
   className?: string;
+  resetAfterUpload?: boolean;
 }
 
 export default function ProductImageUploader({
@@ -14,6 +15,7 @@ export default function ProductImageUploader({
   maxSizeBytes = 2 * 1024 * 1024,
   title = 'Upload Product Image',
   className = '',
+  resetAfterUpload = false,
 }: ProductImageUploaderProps) {
   const [imageBase64, setImageBase64] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
@@ -21,6 +23,7 @@ export default function ProductImageUploader({
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = '';
     if (!file) return;
 
     // Validate size and format
@@ -40,7 +43,12 @@ export default function ProductImageUploader({
       preserveOriginal: false,
     })
       .then((base64String) => {
-        setImageBase64(base64String);
+        if (!resetAfterUpload) {
+          setImageBase64(base64String);
+        } else {
+          setImageBase64('');
+          setFileName('');
+        }
         if (onImageConverted) {
           onImageConverted(base64String, file.name);
         }

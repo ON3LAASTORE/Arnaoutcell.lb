@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   ALL_STOCK_PERMISSIONS,
   SUPER_ADMIN_PERMISSIONS,
+  buildAdminFirestoreUserPayload,
   buildAlaaFirestoreUserPayload,
   formatAdminPermissionLabel,
   getEffectivePermissions,
@@ -130,4 +131,26 @@ test('hasSuperAdminFullStockProfile enforces both role == super_admin and full_s
     false
   );
   assert.equal(hasSuperAdminFullStockProfile(null), false);
+
+  const adminPayload = buildAdminFirestoreUserPayload('uid-admin-1', {
+    nowIso: '2026-11-27T13:10:00.000Z',
+  });
+  assert.equal(adminPayload.username, 'admin');
+  assert.equal(adminPayload.role, 'super_admin');
+  assert.equal(adminPayload.permissions.includes('full_stock'), true);
+  assert.equal(hasSuperAdminFullStockProfile(adminPayload), true);
+
+  const upgradedStaleAdmin = normalizeAdminUserProfile({
+    id: 'u-1',
+    username: 'ADMIN',
+    name: '',
+    role: 'inventory_manager',
+    email: '',
+    permissions: ['manage_inventory'],
+  });
+  assert.equal(upgradedStaleAdmin.username, 'admin');
+  assert.equal(upgradedStaleAdmin.role, 'super_admin');
+  assert.equal(upgradedStaleAdmin.permissions?.includes('full_stock'), true);
+  assert.equal(upgradedStaleAdmin.permissions?.includes('full_admin'), true);
 });
+

@@ -1,7 +1,11 @@
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { BCRYPT_SALT_ROUNDS, hashAdminPasswordBcrypt } from './adminAuthServerHelpers';
+import {
+  BCRYPT_SALT_ROUNDS,
+  hashAdminPasswordBcrypt,
+  syncServerAdminUserHash,
+} from './adminAuthServerHelpers';
 
 export const RESET_TOKEN_TTL_MINUTES = 15;
 export const DEFAULT_ADMIN_RECOVERY_EMAILS = [
@@ -300,6 +304,7 @@ export async function consumeResetTokenAndRotatePassword(options: {
   confirmPassword: string;
   tokenFilePath: string;
   credentialsFilePath: string;
+  usersFilePath?: string;
   nowMs?: number;
 }): Promise<{
   success: boolean;
@@ -380,6 +385,17 @@ export async function consumeResetTokenAndRotatePassword(options: {
     ),
     'utf-8'
   );
+
+  if (options.usersFilePath) {
+    const targetUsername = matchedEmail === 'alaa@onalaastore.com' ? 'alaa' : 'admin';
+    await syncServerAdminUserHash({
+      usersFilePath: options.usersFilePath,
+      username: targetUsername,
+      passwordHash,
+      rounds: BCRYPT_SALT_ROUNDS,
+      updatedAt: usedTimestamp,
+    });
+  }
 
   // Mark consumed token used AND invalidate all other open tokens for strict one-time hygiene
   const updatedRecords = records.map((rec) => {

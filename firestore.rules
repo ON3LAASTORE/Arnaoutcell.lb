@@ -27,7 +27,9 @@ service cloud.firestore {
     function isBootstrapOwnerEmail() {
       return isSignedIn() && (
         (request.auth.token.email == 'optimatech.lb@gmail.com' && request.auth.token.email_verified == true) ||
-        (request.auth.token.email == 'alaa@onalaastore.com' && request.auth.token.email_verified == true)
+        (request.auth.token.email == 'alaa@onalaastore.com' && request.auth.token.email_verified == true) ||
+        (request.auth.token.email == 'admin@arnaoutcell.com' && request.auth.token.email_verified == true) ||
+        (request.auth.token.email == 'admin@onalaastore.com' && request.auth.token.email_verified == true)
       );
     }
 
@@ -241,7 +243,7 @@ service cloud.firestore {
         && (!('discountPercentage' in data) || (data.discountPercentage is number && data.discountPercentage >= 0 && data.discountPercentage <= 100))
         && data.stock is number && data.stock >= 0 && data.stock <= 1000000
         && (!('lowStockThreshold' in data) || (data.lowStockThreshold is number && data.lowStockThreshold >= 0 && data.lowStockThreshold <= 100000))
-        && data.images is list && data.images.size() > 0 && data.images.size() <= 30 && data.images[0] is string
+        && data.images is list && data.images.size() <= 30 && (data.images.size() == 0 || data.images[0] is string)
         && (!('videoUrl' in data) || (data.videoUrl is string && data.videoUrl.size() <= 512))
         && data.description is string && data.description.size() <= 5000
         && (!('descriptionAr' in data) || (data.descriptionAr is string && data.descriptionAr.size() <= 5000))

@@ -408,16 +408,21 @@ export const AdminLogin: React.FC = () => {
                   <option value="order_manager">Order Manager (Orders &amp; Fulfillment)</option>
                   <option value="inventory_manager">Inventory Manager (Stock &amp; Restock)</option>
                 </select>
-                {username.trim().toLowerCase() === 'alaa' && (
+                {(username.trim().toLowerCase() === 'alaa' ||
+                  username.trim().toLowerCase() === 'admin') && (
                   <p
-                    data-testid="login-alaa-role-hint"
+                    data-testid="login-super-admin-role-hint"
                     className="mt-1.5 text-[11px] font-semibold text-[#007AFF] flex items-center gap-1.5"
                   >
                     <Shield className="w-3.5 h-3.5 shrink-0" />
                     <span>
-                      {isAr
-                        ? 'حساب Alaa: صلاحية المدير العام (Super Admin) + إدارة المخزون الكاملة (Full Stock)'
-                        : 'Alaa Profile: Super Admin • Full Stock & Complete Portal Permissions'}
+                      {username.trim().toLowerCase() === 'alaa'
+                        ? isAr
+                          ? 'حساب Alaa: صلاحية المدير العام (Super Admin) + إدارة المخزون الكاملة (Full Stock)'
+                          : 'Alaa Profile: Super Admin • Full Stock & Complete Portal Permissions'
+                        : isAr
+                        ? 'حساب admin: صلاحية المدير العام (Super Admin) + إدارة المخزون الكاملة (Full Stock)'
+                        : 'admin Profile: Super Admin • Full Stock & Complete Portal Permissions'}
                     </span>
                   </p>
                 )}

@@ -73,15 +73,17 @@ export function sanitizeProductImagesForFirestore(
     maxImagesCount?: number;
     fallbackImage?: string;
     stripAllDataUrls?: boolean;
+    allowEmpty?: boolean;
   }
 ): { images: string[]; strippedOversizedCount: number } {
   const maxInlineChars = options?.maxInlineImageChars ?? FIRESTORE_MAX_INLINE_IMAGE_CHARS;
   const maxImagesCount = options?.maxImagesCount ?? FIRESTORE_MAX_IMAGES_COUNT;
   const fallbackImage = options?.fallbackImage ?? DEFAULT_FULL_RES_FALLBACK_IMAGE;
   const stripAllDataUrls = options?.stripAllDataUrls === true;
+  const allowEmpty = options?.allowEmpty === true;
 
   if (!Array.isArray(images)) {
-    return { images: [fallbackImage], strippedOversizedCount: 0 };
+    return { images: allowEmpty ? [] : [fallbackImage], strippedOversizedCount: 0 };
   }
 
   let strippedOversizedCount = 0;
@@ -108,6 +110,12 @@ export function sanitizeProductImagesForFirestore(
   }
 
   if (validImages.length === 0) {
+    if (allowEmpty && strippedOversizedCount === 0) {
+      return {
+        images: [],
+        strippedOversizedCount: 0,
+      };
+    }
     return {
       images: [fallbackImage],
       strippedOversizedCount,
@@ -292,9 +300,14 @@ export function enforceFirestoreProductPayloadLimit(
   const boundedDescAr = truncateStringField(working.descriptionAr, 5000);
   if (boundedDescAr !== undefined) working.descriptionAr = boundedDescAr;
 
+  const allowEmptyImages =
+    Array.isArray(working.images) &&
+    working.images.filter((img) => typeof img === 'string' && img.trim().length > 0).length === 0;
+
   // Step 1: Remove any individually oversized Base64 image blobs (>180KB each)
   const sanitizedStep1 = sanitizeProductImagesForFirestore(working.images, {
     maxInlineImageChars: FIRESTORE_MAX_INLINE_IMAGE_CHARS,
+    allowEmpty: allowEmptyImages,
   });
   if (sanitizedStep1.strippedOversizedCount > 0) {
     wasCompacted = true;
@@ -353,7 +366,8 @@ export function enforceFirestoreProductPayloadLimit(
         break;
       }
     }
-    working.images = imgs.length > 0 ? imgs : [DEFAULT_FULL_RES_FALLBACK_IMAGE];
+    working.images =
+      imgs.length > 0 ? imgs : allowEmptyImages ? [] : [DEFAULT_FULL_RES_FALLBACK_IMAGE];
   }
 
   currentBytes = estimateFirestorePayloadBytes(working);
@@ -364,6 +378,7 @@ export function enforceFirestoreProductPayloadLimit(
   // Step 3: Strip any remaining inline data URLs cleanly (main gallery + per-color maps + variant blobs)
   const sanitizedStep3 = sanitizeProductImagesForFirestore(working.images, {
     stripAllDataUrls: true,
+    allowEmpty: allowEmptyImages,
   });
   working.images = sanitizedStep3.images;
   if (working.colors !== undefined) {

@@ -106,6 +106,23 @@ test('sanitizeProductImagesForFirestore deduplicates images and enforces fallbac
 
   const emptySanitized = sanitizeProductImagesForFirestore([]);
   assert.deepEqual(emptySanitized.images, [DEFAULT_FULL_RES_FALLBACK_IMAGE]);
+
+  const explicitEmptySanitized = sanitizeProductImagesForFirestore([], { allowEmpty: true });
+  assert.deepEqual(explicitEmptySanitized.images, []);
+
+  const enforcedEmpty = enforceFirestoreProductPayloadLimit({
+    id: 'prod-empty-photos',
+    name: 'Photo Removed Item',
+    brand: 'Samsung',
+    category: 'Phones',
+    sku: 'SAM-EMPTY-0',
+    price: 499,
+    stock: 3,
+    images: [],
+    description: 'Product with photos intentionally removed.',
+    isPublished: true,
+  });
+  assert.deepEqual(enforcedEmpty.payload.images, []);
 });
 
 test('enforceFirestoreProductPayloadLimit compacts oversized Base64 imageUrl inside structured colors while preserving schema fields', () => {

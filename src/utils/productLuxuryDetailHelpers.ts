@@ -47,8 +47,10 @@ export function computeLuxurySubtotal(unitPrice: number, quantity: number): numb
  */
 export function buildLuxuryCarouselImages(
   product: Pick<Product, 'images' | 'colors' | 'colorImages' | 'variants'>,
-  preferredColorImage?: string
+  preferredColorImage?: string,
+  options?: { includeFallback?: boolean }
 ): string[] {
+  const includeFallback = options?.includeFallback !== false;
   const urls: string[] = [];
   const seen = new Set<string>();
 
@@ -91,7 +93,7 @@ export function buildLuxuryCarouselImages(
 
   pushUnique(preferredColorImage);
 
-  if (urls.length === 0) {
+  if (urls.length === 0 && includeFallback) {
     urls.push(DEFAULT_FULL_RES_FALLBACK_IMAGE);
   }
 

@@ -8,7 +8,29 @@ import {
   hashPasswordWithSalt,
   hashPasswordWithBcrypt,
   verifyPasswordWithBcrypt,
-} from './authService.ts';
+  purgeLegacyAdminAuthStorage,
+} from './authService';
+
+function createMemoryStorage(initial: Record<string, string> = {}) {
+  const map = new Map<string, string>(Object.entries(initial));
+  return {
+    get length() {
+      return map.size;
+    },
+    key(index: number) {
+      return Array.from(map.keys())[index] ?? null;
+    },
+    getItem(k: string) {
+      return map.has(k) ? map.get(k)! : null;
+    },
+    setItem(k: string, v: string) {
+      map.set(k, String(v));
+    },
+    removeItem(k: string) {
+      map.delete(k);
+    },
+  };
+}
 
 test('evaluatePasswordStrength identifies weak passwords', () => {
   const result = evaluatePasswordStrength('abc');
@@ -48,6 +70,51 @@ test('hashPasswordWithBcrypt and verifyPasswordWithBcrypt hash securely and reje
   assert.equal(await verifyPasswordWithBcrypt('admin123', hash), false);
 });
 
+test('purgeLegacyAdminAuthStorage clears stale password/credential/token keys and upgrades cached admin profile', () => {
+  const localStore = createMemoryStorage({
+    arnaout_admin_password: 'legacy-cached-password',
+    admin_password: 'old-password',
+    arnaout_admin_security_v2: '{"hash":"old"}',
+    onalaa_admin_credentials: '{"u":"admin"}',
+    admin_custom_secret_v1: 'stale',
+    arnaout_cart: '[{"id":"p1"}]',
+    arnaout_admin_user: JSON.stringify({
+      id: 'u-1',
+      username: 'ADMIN',
+      role: 'inventory_manager',
+      password: 'legacy-inline-password',
+      passwordHash: '$2b$12$stale',
+      token: 'stale-token',
+      permissions: ['manage_inventory'],
+    }),
+  });
+  const sessionStore = createMemoryStorage({
+    arnaout_admin_session_token: 'stale-session-jwt',
+    onalaa_admin_password: 'stale-session-password',
+  });
+
+  const outcome = purgeLegacyAdminAuthStorage(localStore, sessionStore);
+  assert.equal(outcome.migratedUserProfile, true);
+  assert.equal(localStore.getItem('arnaout_admin_password'), null);
+  assert.equal(localStore.getItem('admin_password'), null);
+  assert.equal(localStore.getItem('arnaout_admin_security_v2'), null);
+  assert.equal(localStore.getItem('onalaa_admin_credentials'), null);
+  assert.equal(localStore.getItem('admin_custom_secret_v1'), null);
+  assert.equal(sessionStore.getItem('arnaout_admin_session_token'), null);
+  assert.equal(sessionStore.getItem('onalaa_admin_password'), null);
+  // Non-auth storefront storage stays untouched
+  assert.equal(localStore.getItem('arnaout_cart'), '[{"id":"p1"}]');
+
+  const migratedUser = JSON.parse(localStore.getItem('arnaout_admin_user') || '{}');
+  assert.equal(migratedUser.username, 'admin');
+  assert.equal(migratedUser.role, 'super_admin');
+  assert.equal(migratedUser.permissions.includes('full_stock'), true);
+  assert.equal(migratedUser.permissions.includes('full_admin'), true);
+  assert.equal('password' in migratedUser, false);
+  assert.equal('passwordHash' in migratedUser, false);
+  assert.equal('token' in migratedUser, false);
+});
+
 test('authService.ts contains no hardcoded plaintext administrator passwords', () => {
   const source = fs.readFileSync(path.resolve(process.cwd(), 'src/services/authService.ts'), 'utf-8');
   assert.equal(source.includes('admin123'), false);
@@ -55,4 +122,6 @@ test('authService.ts contains no hardcoded plaintext administrator passwords', (
   assert.equal(source.includes('Alaa123321a'), false);
   assert.equal(source.includes('A1234554321alaa'), false);
   assert.equal(source.includes('Alaahassan1'), false);
+  assert.equal(source.includes('Admin123321'), false);
 });
+

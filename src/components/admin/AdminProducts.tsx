@@ -18,10 +18,21 @@ import {
   HardDrive,
   AlertCircle,
   Loader2,
+  ImageOff,
+  Star,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
 import ProductImageUploader from './ProductImageUploader';
 import { DEFAULT_FULL_RES_FALLBACK_IMAGE, resolveFullResolutionImageUrl } from '../../utils/imageResolutionHelpers';
+import {
+  collectRemovedMediaUrls,
+  moveGalleryImage,
+  removeGalleryImageAt,
+  setPrimaryGalleryImage,
+} from '../../utils/productMediaHelpers';
+import { cleanupRemovedProductMedia } from '../../services/productMediaService';
 import {
   buildCapacityVariantConfigs,
   buildColorVariantConfigs,
@@ -86,6 +97,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
   const [formLowStockThreshold, setFormLowStockThreshold] = useState(3);
   const [formImages, setFormImages] = useState<string[]>([]);
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [photoActionNotice, setPhotoActionNotice] = useState<string | null>(null);
   const [formVideoUrl, setFormVideoUrl] = useState('');
   const [formDesc, setFormDesc] = useState('');
   const [formDescAr, setFormDescAr] = useState('');
@@ -126,6 +138,8 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormStock(15);
     setFormLowStockThreshold(3);
     setFormImages([DEFAULT_FULL_RES_FALLBACK_IMAGE]);
+    setNewImageUrl('');
+    setPhotoActionNotice(null);
     setFormVideoUrl('');
     setFormDesc('');
     setFormDescAr('');
@@ -180,6 +194,8 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     setFormStock(safeStock);
     setFormLowStockThreshold(Number.isFinite(Number(p.lowStockThreshold)) ? Number(p.lowStockThreshold) : 3);
     setFormImages(Array.isArray(p.images) ? p.images : []);
+    setNewImageUrl('');
+    setPhotoActionNotice(null);
     setFormVideoUrl(p.videoUrl || '');
     setFormDesc(p.description || '');
     setFormDescAr(p.descriptionAr || '');
@@ -203,13 +219,60 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
 
   const handleAddImageUrl = () => {
     if (newImageUrl.trim()) {
-      setFormImages((prev) => [...prev, resolveFullResolutionImageUrl(newImageUrl.trim())]);
+      const resolved = resolveFullResolutionImageUrl(newImageUrl.trim()) || newImageUrl.trim();
+      setFormImages((prev) => (prev.includes(resolved) ? prev : [...prev, resolved]));
       setNewImageUrl('');
+      setPhotoActionNotice(null);
     }
   };
 
   const handleRemoveImage = (index: number) => {
-    setFormImages((prev) => prev.filter((_, i) => i !== index));
+    setFormImages((prev) => {
+      const next = removeGalleryImageAt(prev, index);
+      if (index === 0 && next.length > 0) {
+        setPhotoActionNotice(
+          lang === 'ar'
+            ? 'تمت إزالة الصورة الرئيسية وترقية الصورة التالية تلقائياً. اضغط حفظ لتثبيت التغيير.'
+            : 'Primary photo removed — next photo promoted automatically. Click Save to persist.'
+        );
+      } else if (next.length === 0) {
+        setPhotoActionNotice(
+          lang === 'ar'
+            ? 'تمت إزالة كافة الصور. اضغط حفظ لتخزين المنتج بدون صور.'
+            : 'All photos removed. Click Save to store product with no photos.'
+        );
+      } else {
+        setPhotoActionNotice(
+          lang === 'ar'
+            ? 'تمت إزالة الصورة من المعرض. اضغط حفظ لتأكيد التغييرات.'
+            : 'Photo removed from gallery. Click Save to persist changes.'
+        );
+      }
+      return next;
+    });
+  };
+
+  const handleSetPrimaryImage = (index: number) => {
+    setFormImages((prev) => setPrimaryGalleryImage(prev, index));
+    setPhotoActionNotice(
+      lang === 'ar'
+        ? 'تم تعيين الصورة كصورة رئيسية للمنتج. اضغط حفظ لتثبيت الترتيب.'
+        : 'Updated primary storefront photo. Click Save to persist.'
+    );
+  };
+
+  const handleMoveImage = (fromIndex: number, toIndex: number) => {
+    setFormImages((prev) => moveGalleryImage(prev, fromIndex, toIndex));
+    setPhotoActionNotice(null);
+  };
+
+  const handleClearAllImages = () => {
+    setFormImages([]);
+    setPhotoActionNotice(
+      lang === 'ar'
+        ? 'تمت إزالة جميع صور المعرض. اضغط حفظ لتخزين المنتج بدون صور.'
+        : 'All gallery photos cleared. Click Save to persist empty gallery.'
+    );
   };
 
   const handleAddColor = (presetColor?: string) => {
@@ -233,10 +296,19 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
     );
     if (!exists) {
       const slug = candidate.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || `${Date.now()}`;
-      setFormColorVariants((prev) => [
-        ...prev,
-        { id: `color-${slug}`, color: candidate, priceAdjustment: 0 },
-      ]);
+      setFormColorVariants((prev) => {
+        const usedIds = new Set(prev.map((row) => row.id).filter(Boolean));
+        let nextId = `color-${slug}`;
+        let suffix = 2;
+        while (usedIds.has(nextId)) {
+          nextId = `color-${slug}-${suffix}`;
+          suffix += 1;
+        }
+        return [
+          ...prev,
+          { id: nextId, color: candidate, priceAdjustment: 0 },
+        ];
+      });
     }
     if (!presetColor) {
       setNewColorInput('');
@@ -447,8 +519,16 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
         return;
       }
 
+      if (editingProduct) {
+        const removedMediaUrls = collectRemovedMediaUrls(editingProduct, savedProduct);
+        if (removedMediaUrls.length > 0) {
+          cleanupRemovedProductMedia(removedMediaUrls).catch(() => {});
+        }
+      }
+
       setIsModalOpen(false);
       setModalError(null);
+      setPhotoActionNotice(null);
       setFeedback({
         type: 'success',
         msg:
@@ -648,20 +728,37 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                 <tr key={p.id} className="hover:bg-[#F5F8FC] transition-colors">
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-3">
-                      <LazyImage
-                        src={p.images?.[0] || DEFAULT_FULL_RES_FALLBACK_IMAGE}
-                        alt={p.name || 'Product'}
-                        width={40}
-                        height={40}
-                        responsiveSizes="40px"
-                        priority={false}
-                        loading="lazy"
-                        wrapperClassName="w-10 h-10 rounded-lg overflow-hidden bg-[#F5F8FC] border border-[#DCE5F0] flex-shrink-0"
-                        className="w-full h-full object-cover"
-                      />
+                      {p.images?.[0] ? (
+                        <LazyImage
+                          src={p.images[0]}
+                          alt={p.name || 'Product'}
+                          width={40}
+                          height={40}
+                          responsiveSizes="40px"
+                          priority={false}
+                          loading="lazy"
+                          wrapperClassName="w-10 h-10 rounded-lg overflow-hidden bg-[#F5F8FC] border border-[#DCE5F0] flex-shrink-0"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          data-testid={`admin-product-no-photo-${p.id}`}
+                          className="w-10 h-10 rounded-lg bg-[#F5F8FC] border border-dashed border-[#CBD5E1] text-[#94A3B8] flex items-center justify-center flex-shrink-0"
+                          title={lang === 'ar' ? 'بدون صورة' : 'No photos attached'}
+                        >
+                          <ImageOff className="w-4 h-4" />
+                        </div>
+                      )}
                       <div className="min-w-0">
                         <div className="font-bold text-[#172033] line-clamp-1">{p.name}</div>
-                        <div className="text-[10px] text-[#64748B] font-mono">SKU: {p.sku}</div>
+                        <div className="text-[10px] text-[#64748B] font-mono flex items-center gap-2">
+                          <span>SKU: {p.sku}</span>
+                          {(!p.images || p.images.length === 0) && (
+                            <span className="text-amber-600 font-sans font-semibold">
+                              • {lang === 'ar' ? 'بدون صور' : 'No photos'}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </td>
@@ -994,47 +1091,173 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
               </div>
 
               {/* Multi-Image Manager */}
-              <div className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] space-y-4">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-[#172033] block">
-                    Product Images ({formImages.length} attached)
-                  </span>
-                  <span className="text-[10px] text-[#64748B] font-medium">Persistent Base64 & Cloud URLs</span>
+              <div
+                data-testid="admin-product-images-section"
+                className="p-4 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0] space-y-4"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div>
+                    <span
+                      data-testid="admin-product-images-count"
+                      className="text-xs font-bold text-[#172033] block"
+                    >
+                      {lang === 'ar'
+                        ? `صور المنتج (${formImages.length} مرفقة)`
+                        : `Product Images (${formImages.length} attached)`}
+                    </span>
+                    <span className="text-[10px] text-[#64748B] font-medium">
+                      {lang === 'ar'
+                        ? 'احذف أو أعد ترتيب الصور — الصورة الأولى هي الصورة الرئيسية في المتجر'
+                        : 'Delete, promote, or reorder photos — Photo #1 is the primary storefront thumbnail'}
+                    </span>
+                  </div>
+                  {formImages.length > 0 && (
+                    <button
+                      type="button"
+                      data-testid="admin-clear-all-images"
+                      onClick={handleClearAllImages}
+                      className="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-[#DC2626] text-[#DC2626] hover:text-white border border-red-200 text-[11px] font-bold inline-flex items-center gap-1 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>{lang === 'ar' ? 'حذف الكل' : 'Remove All'}</span>
+                    </button>
+                  )}
                 </div>
 
-                {formImages.length > 0 && (
-                  <div className="flex flex-wrap gap-3 p-2.5 rounded-xl bg-white border border-[#DCE5F0]">
+                {photoActionNotice && (
+                  <div
+                    role="status"
+                    data-testid="admin-photo-action-notice"
+                    className="px-3 py-2 rounded-xl bg-[#EAF3FF] border border-[#BAE6FD] text-[#0369A1] text-[11px] font-semibold"
+                  >
+                    {photoActionNotice}
+                  </div>
+                )}
+
+                {formImages.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3 rounded-xl bg-white border border-[#DCE5F0]">
                     {formImages.map((img, idx) => (
-                      <div key={idx} className="relative w-16 h-16 rounded-xl overflow-hidden border border-[#DCE5F0] group bg-gray-50 flex-shrink-0">
-                        <LazyImage
-                          src={img}
-                          alt={`Product ${idx}`}
-                          width={64}
-                          height={64}
-                          responsiveSizes="64px"
-                          priority={true}
-                          loading="lazy"
-                          wrapperClassName="w-full h-full flex items-center justify-center"
-                          className="w-full h-full object-cover"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveImage(idx)}
-                          className="absolute inset-0 bg-red-900/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                          title="Remove image"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                      <div
+                        key={`${idx}-${img.slice(0, 48)}`}
+                        data-testid={`admin-image-card-${idx}`}
+                        className={`relative rounded-xl overflow-hidden border bg-[#F8FAFC] flex flex-col ${
+                          idx === 0 ? 'border-[#007AFF] ring-1 ring-[#007AFF]/20' : 'border-[#DCE5F0]'
+                        }`}
+                      >
+                        <div className="relative aspect-square w-full bg-white overflow-hidden">
+                          <LazyImage
+                            src={img}
+                            alt={`Product photo ${idx + 1}`}
+                            width={140}
+                            height={140}
+                            responsiveSizes="140px"
+                            priority={true}
+                            loading="lazy"
+                            wrapperClassName="w-full h-full flex items-center justify-center"
+                            className="w-full h-full object-contain p-1"
+                          />
+
+                          {/* Primary / Index Badge */}
+                          <span
+                            data-testid={idx === 0 ? 'admin-primary-image-badge' : `admin-image-index-badge-${idx}`}
+                            className={`absolute top-1.5 left-1.5 z-20 px-1.5 py-0.5 rounded-md text-[10px] font-bold shadow-2xs ${
+                              idx === 0
+                                ? 'bg-[#007AFF] text-white'
+                                : 'bg-[#0F172A]/75 text-white'
+                            }`}
+                          >
+                            {idx === 0 ? (lang === 'ar' ? 'رئيسية' : 'Primary') : `#${idx + 1}`}
+                          </span>
+
+                          {/* Always-Visible Delete Button */}
+                          <button
+                            type="button"
+                            data-testid={`admin-remove-image-${idx}`}
+                            onClick={() => handleRemoveImage(idx)}
+                            aria-label={`Remove photo ${idx + 1}${idx === 0 ? ' (Primary)' : ''}`}
+                            title={lang === 'ar' ? 'حذف هذه الصورة' : 'Remove this photo'}
+                            className="absolute top-1.5 right-1.5 z-20 w-7 h-7 rounded-lg bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-sm cursor-pointer transition-colors"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Reorder / Promote Toolbar */}
+                        {formImages.length > 1 && (
+                          <div className="flex items-center justify-between gap-1 px-1.5 py-1 border-t border-[#E2E8F0] bg-[#F8FAFC]">
+                            <div className="flex items-center gap-0.5">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                data-testid={`admin-move-image-left-${idx}`}
+                                onClick={() => handleMoveImage(idx, idx - 1)}
+                                aria-label={`Move photo ${idx + 1} earlier`}
+                                title="Move left"
+                                className="p-1 rounded bg-white border border-[#DCE5F0] text-[#475569] hover:text-[#007AFF] disabled:opacity-35 disabled:cursor-not-allowed cursor-pointer"
+                              >
+                                <ChevronLeft className="w-3 h-3" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === formImages.length - 1}
+                                data-testid={`admin-move-image-right-${idx}`}
+                                onClick={() => handleMoveImage(idx, idx + 1)}
+                                aria-label={`Move photo ${idx + 1} later`}
+                                title="Move right"
+                                className="p-1 rounded bg-white border border-[#DCE5F0] text-[#475569] hover:text-[#007AFF] disabled:opacity-35 disabled:cursor-not-allowed cursor-pointer"
+                              >
+                                <ChevronRight className="w-3 h-3" />
+                              </button>
+                            </div>
+
+                            {idx > 0 ? (
+                              <button
+                                type="button"
+                                data-testid={`admin-set-primary-image-${idx}`}
+                                onClick={() => handleSetPrimaryImage(idx)}
+                                aria-label={`Make photo ${idx + 1} primary`}
+                                title="Make Primary"
+                                className="px-1.5 py-0.5 rounded bg-white hover:bg-[#EAF3FF] border border-[#DCE5F0] hover:border-[#007AFF] text-[10px] font-bold text-[#007AFF] inline-flex items-center gap-0.5 cursor-pointer"
+                              >
+                                <Star className="w-2.5 h-2.5" />
+                                <span>{lang === 'ar' ? 'رئيسية' : 'Primary'}</span>
+                              </button>
+                            ) : (
+                              <span className="text-[10px] font-bold text-[#16A34A] px-1">
+                                {lang === 'ar' ? 'الأساسية' : 'Main'}
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ))}
+                  </div>
+                ) : (
+                  <div
+                    data-testid="admin-empty-images-state"
+                    className="p-4 rounded-xl bg-white border border-dashed border-[#CBD5E1] text-center space-y-1"
+                  >
+                    <ImageOff className="w-6 h-6 text-[#94A3B8] mx-auto" />
+                    <p className="text-xs font-semibold text-[#475569]">
+                      {lang === 'ar'
+                        ? 'لا توجد صور مرفقة حالياً بهذا المنتج.'
+                        : 'No photos attached to this product.'}
+                    </p>
+                    <p className="text-[11px] text-[#64748B]">
+                      {lang === 'ar'
+                        ? 'يمكنك حفظ المنتج بدون صور أو رفع صورة / إضافة رابط أدناه.'
+                        : 'Save now to store without photos, or upload / add a photo URL below.'}
+                    </p>
                   </div>
                 )}
 
                 {/* Product Image Uploader Component */}
                 <ProductImageUploader
-                  title="Upload Product Image (Base64)"
+                  title={lang === 'ar' ? 'رفع صورة منتج (Base64)' : 'Upload Product Image (Base64)'}
+                  resetAfterUpload={true}
                   onImageConverted={(base64) => {
                     setFormImages((prev) => [...prev, base64]);
+                    setPhotoActionNotice(null);
                   }}
                 />
 
@@ -1042,13 +1265,21 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
                 <div className="flex gap-2 pt-1">
                   <input
                     type="url"
+                    data-testid="admin-add-image-url-input"
                     placeholder="Or enter image URL (https://...)"
                     value={newImageUrl}
                     onChange={(e) => setNewImageUrl(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddImageUrl();
+                      }
+                    }}
                     className="flex-1 bg-white border border-[#DCE5F0] rounded-xl px-3 py-1.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
                   />
                   <button
                     type="button"
+                    data-testid="admin-add-image-url-btn"
                     onClick={handleAddImageUrl}
                     className="px-3 py-1.5 bg-white border border-[#DCE5F0] hover:bg-[#EAF3FF] text-[#172033] hover:text-[#007AFF] text-xs font-semibold rounded-xl cursor-pointer transition-colors"
                   >
@@ -1329,7 +1560,7 @@ export const AdminProducts: React.FC<AdminProductsProps> = ({ onShareProduct }) 
 
                       return (
                         <div
-                          key={row.id || `${idx}`}
+                          key={`${row.id || 'color'}-${idx}`}
                           data-testid={`admin-color-row-${idx}`}
                           className="p-3 rounded-xl bg-white border border-[#DCE5F0] space-y-2.5 shadow-2xs"
                         >

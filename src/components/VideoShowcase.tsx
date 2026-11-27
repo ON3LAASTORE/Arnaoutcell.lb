@@ -3,6 +3,7 @@ import { useShop } from '../context/ShopContext';
 import { MarketingVideo } from '../types';
 import { Play, Video, ShoppingCart, X, Eye, AlertTriangle, RefreshCw } from 'lucide-react';
 import { LazyImage } from './LazyImage';
+import { DEFAULT_FULL_RES_FALLBACK_IMAGE } from '../utils/imageResolutionHelpers';
 
 export const VideoShowcase: React.FC = () => {
   const { lang, marketingVideos, products, viewProductDetail } = useShop();
@@ -98,7 +99,7 @@ export const VideoShowcase: React.FC = () => {
                       <div className="flex items-center justify-between gap-3">
                         <div className="flex items-center gap-2.5 min-w-0">
                           <LazyImage
-                            src={linkedProduct.images[0]}
+                            src={linkedProduct.images?.[0] || DEFAULT_FULL_RES_FALLBACK_IMAGE}
                             alt={linkedProduct.name}
                             width={40}
                             height={40}

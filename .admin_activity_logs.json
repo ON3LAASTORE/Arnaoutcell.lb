@@ -1,5 +1,166 @@
 [
   {
+    "id": "audit-1795791508438-4nv26e",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (admin)",
+    "titleAr": "تم تسجيل دخول المدير (admin) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-27T14:58:28.438Z"
+  },
+  {
+    "id": "audit-1795785793045-stpa9q",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-27T13:23:13.045Z"
+  },
+  {
+    "id": "audit-1795785792366-d1751k",
+    "action": "auth_logout",
+    "titleEn": "Administrator signed out",
+    "titleAr": "تم تسجيل خروج المدير",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Admin portal session terminated by user.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-27T13:23:12.366Z"
+  },
+  {
+    "id": "audit-1795785789418-em5tfq",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (admin)",
+    "titleAr": "تم تسجيل دخول المدير (admin) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-27T13:23:09.418Z"
+  },
+  {
+    "id": "audit-1795785788819-heycef",
+    "action": "auth_logout",
+    "titleEn": "Administrator signed out",
+    "titleAr": "تم تسجيل خروج المدير",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Admin portal session terminated by user.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-27T13:23:08.819Z"
+  },
+  {
+    "id": "audit-1795785785717-ihkvtg",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (admin)",
+    "titleAr": "تم تسجيل دخول المدير (admin) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (admin)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "3Laa Hassan",
+      "username": "admin",
+      "role": "super_admin",
+      "email": "admin@arnaoutcell.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-27T13:23:05.717Z"
+  },
+  {
+    "id": "audit-1795785784934-asecca",
+    "action": "auth_login_failed",
+    "titleEn": "Failed administrator login attempt",
+    "titleAr": "محاولة تسجيل دخول فاشلة للمدير",
+    "category": "security",
+    "severity": "warning",
+    "target": "Admin Portal (admin)",
+    "details": "Invalid administrator password submitted for provisioned user account.",
+    "actor": {
+      "name": "admin",
+      "username": "admin",
+      "role": "super_admin"
+    },
+    "source": "server",
+    "timestamp": "2026-11-27T13:23:04.934Z"
+  },
+  {
+    "id": "audit-1795775400546-up3x8f",
+    "action": "product_created",
+    "titleEn": "Added new product: QA Persist Photo Test Device",
+    "titleAr": "تمت إضافة منتج جديد: QA Persist Photo Test Device",
+    "category": "catalog",
+    "severity": "info",
+    "target": "QA Persist Photo Test Device (prod-1795775398540)",
+    "details": "Brand: Apple • Category: Phones • Price: $249 • Stock: 7",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "client",
+    "timestamp": "2026-11-27T10:30:00.545Z"
+  },
+  {
+    "id": "audit-1795775087796-5fx68u",
+    "action": "auth_login_success",
+    "titleEn": "Administrator signed in (Alaa)",
+    "titleAr": "تم تسجيل دخول المدير (Alaa) بنجاح",
+    "category": "security",
+    "severity": "info",
+    "target": "Admin Portal (Alaa)",
+    "details": "Verified bcrypt authentication succeeded for super_admin with permissions: full_stock, full_admin, manage_products, manage_orders, manage_inventory, manage_categories, manage_content, manage_customers, manage_settings, view_analytics, view_audit_logs.",
+    "actor": {
+      "name": "Alaa",
+      "username": "Alaa",
+      "role": "super_admin",
+      "email": "alaa@onalaastore.com"
+    },
+    "source": "server",
+    "timestamp": "2026-11-27T10:24:47.796Z"
+  },
+  {
     "id": "audit-1795683102098-73uutz",
     "action": "product_deleted",
     "titleEn": "Deleted product: Galaxy Fold Test Pro",

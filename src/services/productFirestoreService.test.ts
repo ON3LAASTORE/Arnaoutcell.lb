@@ -44,10 +44,11 @@ test('cleanProductForFirestore preserves warrantyMonths: 0 and enforces firestor
   assert.equal(cleaned.lowStockThreshold, 0);
   assert.equal(cleaned.rating, 5);
   assert.equal(cleaned.reviewCount, 0);
-  assert.ok(Array.isArray(cleaned.images) && cleaned.images.length === 1);
+  assert.deepEqual(cleaned.images, []);
 
   const roundTripped = mapFirestoreDocToProduct('prod-test-1', cleaned);
   assert.equal(roundTripped.warrantyMonths, 0);
+  assert.deepEqual(roundTripped.images, []);
 });
 
 test('cleanCategoryForFirestore generates non-empty valid slug for Arabic-only category names', () => {

@@ -8,9 +8,13 @@ export interface StoredAdminCredentialRecord {
   algorithm: 'bcrypt';
   rounds: number;
   passwordHash: string;
-  source: 'env' | 'user';
+  source: 'env' | 'user' | 'seeded_hash';
   updatedAt: string;
 }
+
+// Precomputed salted cost-12 bcrypt hash for provisioned Super Admin 'admin' (no plaintext stored)
+export const ADMIN_DEFAULT_BCRYPT_HASH =
+  '$2b$12$IUAFvfmJjEh2qcepT.TPH.Wk8.Ob02ci2srwD2pBK/oljD1lgDUOi';
 
 export function isValidBcryptHash(hash: unknown): hash is string {
   return typeof hash === 'string' && /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(hash);
@@ -39,21 +43,31 @@ export async function verifyAdminPasswordBcrypt(
 /**
  * Ensures the server-side admin credential file exists and contains a valid bcrypt hash.
  * Raw passwords from `.env` (`ADMIN_PASSWORD`) are hashed immediately with bcrypt and
- * NEVER persisted in plaintext. If `source === 'env'` and `.env`'s ADMIN_PASSWORD changes,
- * the stored bcrypt hash automatically synchronizes to match the updated `.env` credential.
+ * NEVER persisted in plaintext. If `ADMIN_PASSWORD` is unset, falls back to the provisioned
+ * `ADMIN_DEFAULT_BCRYPT_HASH` unless rotated by the user (`source === 'user'`).
  */
+function sanitizeEnvPassword(raw?: string): string {
+  const trimmed = typeof raw === 'string' ? raw.trim() : '';
+  if (!trimmed || trimmed === 'CHANGE_ME_STRONG_ADMIN_PASSWORD') {
+    return '';
+  }
+  return trimmed;
+}
+
 export async function ensureAdminCredentialRecord(options: {
   credentialsFilePath: string;
   envAdminPassword?: string;
+  defaultAdminHash?: string;
   rounds?: number;
 }): Promise<StoredAdminCredentialRecord | null> {
   const {
     credentialsFilePath,
     envAdminPassword,
+    defaultAdminHash = ADMIN_DEFAULT_BCRYPT_HASH,
     rounds = BCRYPT_SALT_ROUNDS,
   } = options;
 
-  const trimmedEnvPassword = typeof envAdminPassword === 'string' ? envAdminPassword.trim() : '';
+  const trimmedEnvPassword = sanitizeEnvPassword(envAdminPassword);
 
   let existing: StoredAdminCredentialRecord | null = null;
   try {
@@ -65,7 +79,10 @@ export async function ensureAdminCredentialRecord(options: {
           algorithm: 'bcrypt',
           rounds: typeof parsed.rounds === 'number' ? parsed.rounds : rounds,
           passwordHash: parsed.passwordHash,
-          source: parsed.source === 'user' ? 'user' : 'env',
+          source:
+            parsed.source === 'user' || parsed.source === 'seeded_hash'
+              ? parsed.source
+              : 'env',
           updatedAt: parsed.updatedAt || new Date().toISOString(),
         };
       }
@@ -75,7 +92,7 @@ export async function ensureAdminCredentialRecord(options: {
   }
 
   if (existing) {
-    if (existing.source === 'env' && trimmedEnvPassword) {
+    if (existing.source !== 'user' && trimmedEnvPassword) {
       const matchesCurrentEnv = await bcrypt.compare(trimmedEnvPassword, existing.passwordHash);
       if (!matchesCurrentEnv) {
         const updatedHash = await hashAdminPasswordBcrypt(trimmedEnvPassword, rounds);
@@ -89,12 +106,34 @@ export async function ensureAdminCredentialRecord(options: {
         writeCredentialRecord(credentialsFilePath, syncedRecord);
         return syncedRecord;
       }
+    } else if (
+      existing.source === 'seeded_hash' &&
+      !trimmedEnvPassword &&
+      existing.passwordHash !== defaultAdminHash
+    ) {
+      const syncedRecord: StoredAdminCredentialRecord = {
+        algorithm: 'bcrypt',
+        rounds,
+        passwordHash: defaultAdminHash,
+        source: 'seeded_hash',
+        updatedAt: new Date().toISOString(),
+      };
+      writeCredentialRecord(credentialsFilePath, syncedRecord);
+      return syncedRecord;
     }
     return existing;
   }
 
   if (!trimmedEnvPassword) {
-    return null;
+    const seededRecord: StoredAdminCredentialRecord = {
+      algorithm: 'bcrypt',
+      rounds,
+      passwordHash: defaultAdminHash,
+      source: 'seeded_hash',
+      updatedAt: new Date().toISOString(),
+    };
+    writeCredentialRecord(credentialsFilePath, seededRecord);
+    return seededRecord;
   }
 
   const passwordHash = await hashAdminPasswordBcrypt(trimmedEnvPassword, rounds);
@@ -110,7 +149,7 @@ export async function ensureAdminCredentialRecord(options: {
   return seededRecord;
 }
 
-function writeCredentialRecord(filePath: string, record: StoredAdminCredentialRecord): void {
+export function writeCredentialRecord(filePath: string, record: StoredAdminCredentialRecord): void {
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
@@ -147,7 +186,7 @@ export async function rotateServerAdminPassword(options: {
   credentialsFilePath: string;
   envAdminPassword?: string;
   rounds?: number;
-}): Promise<{ success: boolean; messageEn: string; messageAr: string }> {
+}): Promise<{ success: boolean; messageEn: string; messageAr: string; passwordHash?: string }> {
   const {
     currentPassword,
     newPassword,
@@ -218,6 +257,7 @@ export async function rotateServerAdminPassword(options: {
     success: true,
     messageEn: 'Administrator password changed and hashed with bcrypt successfully.',
     messageAr: 'تم تغيير كلمة مرور المدير وتشفيرها باستخدام bcrypt بنجاح.',
+    passwordHash,
   };
 }
 
@@ -300,39 +340,33 @@ function readUsersRegistry(filePath: string): Record<string, StoredAdminAccountR
   }
 }
 
-/**
- * Ensures the server-side `.admin_users.json` registry exists and contains
- * the provisioned Super Admin account for `Alaa` (`full_stock` + `super_admin`),
- * hashed strictly with bcrypt. Supports optional `envAlaaPassword` override.
- */
-export async function ensureAdminUsersRegistry(options: {
-  usersFilePath: string;
-  envAlaaPassword?: string;
-  defaultAlaaHash?: string;
-  rounds?: number;
-}): Promise<Record<string, StoredAdminAccountRecord>> {
-  const {
-    usersFilePath,
-    envAlaaPassword,
-    defaultAlaaHash = ALAA_DEFAULT_BCRYPT_HASH,
-    rounds = BCRYPT_SALT_ROUNDS,
-  } = options;
+async function ensureSeededSuperAdminEntry(options: {
+  registry: Record<string, StoredAdminAccountRecord>;
+  key: 'alaa' | 'admin';
+  defaults: {
+    id: string;
+    username: string;
+    name: string;
+    email: string;
+  };
+  envPassword?: string;
+  defaultHash: string;
+  rounds: number;
+}): Promise<boolean> {
+  const { registry, key, defaults, envPassword, defaultHash, rounds } = options;
+  const trimmedEnvPassword = sanitizeEnvPassword(envPassword);
+  const existing = registry[key];
 
-  const trimmedEnvPassword = typeof envAlaaPassword === 'string' ? envAlaaPassword.trim() : '';
-  const registry = readUsersRegistry(usersFilePath);
-  let dirty = false;
-
-  const existingAlaa = registry.alaa;
-  if (!existingAlaa) {
+  if (!existing) {
     const passwordHash = trimmedEnvPassword
       ? await hashAdminPasswordBcrypt(trimmedEnvPassword, rounds)
-      : defaultAlaaHash;
+      : defaultHash;
 
-    registry.alaa = {
-      id: 'admin-alaa',
-      username: 'Alaa',
-      name: 'Alaa',
-      email: 'alaa@onalaastore.com',
+    registry[key] = {
+      id: defaults.id,
+      username: defaults.username,
+      name: defaults.name,
+      email: defaults.email,
       role: 'super_admin',
       permissions: [...ALAA_FULL_PERMISSIONS],
       algorithm: 'bcrypt',
@@ -341,43 +375,109 @@ export async function ensureAdminUsersRegistry(options: {
       source: trimmedEnvPassword ? 'env' : 'seeded_hash',
       updatedAt: new Date().toISOString(),
     };
-    dirty = true;
-  } else {
-    if (existingAlaa.role !== 'super_admin') {
-      existingAlaa.role = 'super_admin';
-      dirty = true;
-    }
-    for (const perm of ALAA_FULL_PERMISSIONS) {
-      if (!existingAlaa.permissions.includes(perm)) {
-        existingAlaa.permissions.push(perm);
-        dirty = true;
-      }
-    }
-    if (trimmedEnvPassword && existingAlaa.source !== 'user') {
-      const matchesCurrentEnv = await bcrypt.compare(
-        trimmedEnvPassword,
-        existingAlaa.passwordHash
-      );
-      if (!matchesCurrentEnv) {
-        existingAlaa.passwordHash = await hashAdminPasswordBcrypt(trimmedEnvPassword, rounds);
-        existingAlaa.rounds = rounds;
-        existingAlaa.source = 'env';
-        existingAlaa.updatedAt = new Date().toISOString();
-        dirty = true;
-      }
-    } else if (
-      !trimmedEnvPassword &&
-      existingAlaa.source === 'seeded_hash' &&
-      existingAlaa.passwordHash !== defaultAlaaHash
-    ) {
-      existingAlaa.passwordHash = defaultAlaaHash;
-      existingAlaa.rounds = rounds;
-      existingAlaa.updatedAt = new Date().toISOString();
-      dirty = true;
+    return true;
+  }
+
+  let changed = false;
+  if (existing.username !== defaults.username) {
+    existing.username = defaults.username;
+    changed = true;
+  }
+  if (!existing.name) {
+    existing.name = defaults.name;
+    changed = true;
+  }
+  if (!existing.email) {
+    existing.email = defaults.email;
+    changed = true;
+  }
+  if (existing.role !== 'super_admin') {
+    existing.role = 'super_admin';
+    changed = true;
+  }
+  for (const perm of ALAA_FULL_PERMISSIONS) {
+    if (!existing.permissions.includes(perm)) {
+      existing.permissions.push(perm);
+      changed = true;
     }
   }
 
-  if (dirty || !fs.existsSync(usersFilePath)) {
+  if (trimmedEnvPassword && existing.source !== 'user') {
+    const matchesCurrentEnv = await bcrypt.compare(trimmedEnvPassword, existing.passwordHash);
+    if (!matchesCurrentEnv) {
+      existing.passwordHash = await hashAdminPasswordBcrypt(trimmedEnvPassword, rounds);
+      existing.rounds = rounds;
+      existing.source = 'env';
+      existing.updatedAt = new Date().toISOString();
+      changed = true;
+    }
+  } else if (
+    !trimmedEnvPassword &&
+    existing.source === 'seeded_hash' &&
+    existing.passwordHash !== defaultHash
+  ) {
+    existing.passwordHash = defaultHash;
+    existing.rounds = rounds;
+    existing.source = 'seeded_hash';
+    existing.updatedAt = new Date().toISOString();
+    changed = true;
+  }
+
+  return changed;
+}
+
+/**
+ * Ensures the server-side `.admin_users.json` registry exists and contains
+ * the provisioned Super Admin accounts for `Alaa` and `admin` (`full_stock` + `super_admin`),
+ * hashed strictly with bcrypt. Supports optional `envAlaaPassword` / `envAdminPassword` overrides.
+ */
+export async function ensureAdminUsersRegistry(options: {
+  usersFilePath: string;
+  envAlaaPassword?: string;
+  envAdminPassword?: string;
+  defaultAlaaHash?: string;
+  defaultAdminHash?: string;
+  rounds?: number;
+}): Promise<Record<string, StoredAdminAccountRecord>> {
+  const {
+    usersFilePath,
+    envAlaaPassword,
+    envAdminPassword,
+    defaultAlaaHash = ALAA_DEFAULT_BCRYPT_HASH,
+    defaultAdminHash = ADMIN_DEFAULT_BCRYPT_HASH,
+    rounds = BCRYPT_SALT_ROUNDS,
+  } = options;
+
+  const registry = readUsersRegistry(usersFilePath);
+  const alaaDirty = await ensureSeededSuperAdminEntry({
+    registry,
+    key: 'alaa',
+    defaults: {
+      id: 'admin-alaa',
+      username: 'Alaa',
+      name: 'Alaa',
+      email: 'alaa@onalaastore.com',
+    },
+    envPassword: envAlaaPassword,
+    defaultHash: defaultAlaaHash,
+    rounds,
+  });
+
+  const adminDirty = await ensureSeededSuperAdminEntry({
+    registry,
+    key: 'admin',
+    defaults: {
+      id: 'u-1',
+      username: 'admin',
+      name: '3Laa Hassan',
+      email: 'admin@arnaoutcell.com',
+    },
+    envPassword: envAdminPassword,
+    defaultHash: defaultAdminHash,
+    rounds,
+  });
+
+  if (alaaDirty || adminDirty || !fs.existsSync(usersFilePath)) {
     writeUsersRegistry(usersFilePath, registry);
   }
 
@@ -389,6 +489,7 @@ export async function verifyServerAdminUserLogin(options: {
   candidate: string;
   usersFilePath: string;
   envAlaaPassword?: string;
+  envAdminPassword?: string;
 }): Promise<{
   accountFound: boolean;
   valid: boolean;
@@ -403,6 +504,7 @@ export async function verifyServerAdminUserLogin(options: {
   const registry = await ensureAdminUsersRegistry({
     usersFilePath: options.usersFilePath,
     envAlaaPassword: options.envAlaaPassword,
+    envAdminPassword: options.envAdminPassword,
   });
 
   const record = registry[normalizedUsername];
@@ -436,8 +538,9 @@ export async function rotateServerAdminUserPassword(options: {
   confirmPassword: string;
   usersFilePath: string;
   envAlaaPassword?: string;
+  envAdminPassword?: string;
   rounds?: number;
-}): Promise<{ success: boolean; messageEn: string; messageAr: string }> {
+}): Promise<{ success: boolean; messageEn: string; messageAr: string; passwordHash?: string }> {
   const normalizedUsername =
     typeof options.username === 'string' ? options.username.trim().toLowerCase() : '';
   const rounds = options.rounds ?? BCRYPT_SALT_ROUNDS;
@@ -463,6 +566,7 @@ export async function rotateServerAdminUserPassword(options: {
     candidate: options.currentPassword,
     usersFilePath: options.usersFilePath,
     envAlaaPassword: options.envAlaaPassword,
+    envAdminPassword: options.envAdminPassword,
   });
 
   if (!verified.accountFound || !verified.valid) {
@@ -507,7 +611,8 @@ export async function rotateServerAdminUserPassword(options: {
     };
   }
 
-  existing.passwordHash = await hashAdminPasswordBcrypt(options.newPassword, rounds);
+  const passwordHash = await hashAdminPasswordBcrypt(options.newPassword, rounds);
+  existing.passwordHash = passwordHash;
   existing.rounds = rounds;
   existing.source = 'user';
   existing.updatedAt = new Date().toISOString();
@@ -517,6 +622,32 @@ export async function rotateServerAdminUserPassword(options: {
     success: true,
     messageEn: 'Administrator password changed and hashed with bcrypt successfully.',
     messageAr: 'تم تغيير كلمة مرور المدير وتشفيرها باستخدام bcrypt بنجاح.',
+    passwordHash,
   };
 }
+
+export async function syncServerAdminUserHash(options: {
+  usersFilePath: string;
+  username: string;
+  passwordHash: string;
+  rounds?: number;
+  updatedAt?: string;
+}): Promise<void> {
+  const normalizedUsername =
+    typeof options.username === 'string' ? options.username.trim().toLowerCase() : '';
+  if (!normalizedUsername || !isValidBcryptHash(options.passwordHash)) return;
+
+  const registry = await ensureAdminUsersRegistry({
+    usersFilePath: options.usersFilePath,
+  });
+  const existing = registry[normalizedUsername];
+  if (!existing) return;
+
+  existing.passwordHash = options.passwordHash;
+  existing.rounds = options.rounds ?? BCRYPT_SALT_ROUNDS;
+  existing.source = 'user';
+  existing.updatedAt = options.updatedAt || new Date().toISOString();
+  writeUsersRegistry(options.usersFilePath, registry);
+}
+
 

@@ -215,13 +215,18 @@ export function compactProductsForStorage(
   maxInlineImageChars = 120_000
 ): Product[] {
   return products.map((product) => {
-    const cleanImages = Array.isArray(product.images)
-      ? product.images.filter(
-          (img) => !(typeof img === 'string' && img.startsWith('data:') && img.length > maxInlineImageChars)
-        )
-      : [];
+    const originalImages = Array.isArray(product.images) ? product.images : [];
+    const cleanImages = originalImages.filter(
+      (img) => !(typeof img === 'string' && img.startsWith('data:') && img.length > maxInlineImageChars)
+    );
 
     const fallbackImage = DEFAULT_FULL_RES_FALLBACK_IMAGE;
+    const nextImages =
+      cleanImages.length > 0
+        ? cleanImages
+        : originalImages.length > 0
+        ? [fallbackImage]
+        : [];
 
     let cleanColorImages: Record<string, string> | undefined = product.colorImages;
     if (product.colorImages && typeof product.colorImages === 'object') {
@@ -246,7 +251,7 @@ export function compactProductsForStorage(
 
     return {
       ...product,
-      images: cleanImages.length > 0 ? cleanImages : [fallbackImage],
+      images: nextImages,
       ...(cleanColorImages ? { colorImages: cleanColorImages } : {}),
       ...(cleanVariants ? { variants: cleanVariants } : {}),
     };

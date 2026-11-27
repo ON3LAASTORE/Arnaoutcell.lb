@@ -7,12 +7,13 @@ import fs from 'fs';
 import compression from 'compression';
 import { GoogleGenAI } from '@google/genai';
 import {
+  BCRYPT_SALT_ROUNDS,
   ensureAdminCredentialRecord,
   verifyServerAdminLogin,
-  rotateServerAdminPassword,
   ensureAdminUsersRegistry,
   verifyServerAdminUserLogin,
   rotateServerAdminUserPassword,
+  writeCredentialRecord,
 } from './src/utils/adminAuthServerHelpers';
 import {
   ADMIN_SESSION_COOKIE_NAME,
@@ -525,10 +526,9 @@ async function startServer() {
     next();
   };
 
-  // Hash ADMIN_PASSWORD from .env into bcrypt store on boot (never stores plaintext)
+  // Ensure bcrypt credential stores are initialized with ADMIN_DEFAULT_BCRYPT_HASH / ALAA_DEFAULT_BCRYPT_HASH
   await ensureAdminCredentialRecord({
     credentialsFilePath: ADMIN_CREDENTIALS_FILE,
-    envAdminPassword: process.env.ADMIN_PASSWORD,
   });
   await ensureAdminUsersRegistry({
     usersFilePath: ADMIN_USERS_FILE,
@@ -549,14 +549,13 @@ async function startServer() {
     try {
       const record = await ensureAdminCredentialRecord({
         credentialsFilePath: ADMIN_CREDENTIALS_FILE,
-        envAdminPassword: process.env.ADMIN_PASSWORD,
       });
       const registry = await ensureAdminUsersRegistry({
         usersFilePath: ADMIN_USERS_FILE,
         envAlaaPassword: process.env.ADMIN_ALAA_PASSWORD,
       });
       res.json({
-        initialized: Boolean(record || registry?.alaa),
+        initialized: Boolean(record || registry?.alaa || registry?.admin),
         algorithm: 'bcrypt',
       });
     } catch {
@@ -604,7 +603,7 @@ async function startServer() {
         return;
       }
 
-      // Check per-user bcrypt account registry first (e.g. 'Alaa' -> super_admin + full_stock)
+      // Check per-user bcrypt account registry first (e.g. 'admin', 'Alaa' -> super_admin + full_stock)
       const userAccountCheck = await verifyServerAdminUserLogin({
         username: requestedUsername,
         candidate,
@@ -671,7 +670,6 @@ async function startServer() {
       const valid = await verifyServerAdminLogin({
         candidate,
         credentialsFilePath: ADMIN_CREDENTIALS_FILE,
-        envAdminPassword: process.env.ADMIN_PASSWORD,
       });
 
       if (valid) {
@@ -738,7 +736,10 @@ async function startServer() {
       const claims = await verifyFirebaseAdminIdToken(idToken, projectId);
       const claimEmail = claims?.email?.toLowerCase();
       const isAuthorizedFirebaseAdmin =
-        claimEmail === 'optimatech.lb@gmail.com' || claimEmail === 'alaa@onalaastore.com';
+        claimEmail === 'optimatech.lb@gmail.com' ||
+        claimEmail === 'alaa@onalaastore.com' ||
+        claimEmail === 'admin@arnaoutcell.com' ||
+        claimEmail === 'admin@onalaastore.com';
 
       if (!claims || !isAuthorizedFirebaseAdmin) {
         res.status(403).json({ success: false, error: 'Unauthorized Firebase administrator account.' });
@@ -770,6 +771,17 @@ async function startServer() {
                 permissions: ['full_stock', 'full_admin'],
               },
             }
+          : claimEmail === 'admin@arnaoutcell.com' || claimEmail === 'admin@onalaastore.com'
+          ? {
+              user: {
+                id: claims.sub || 'u-1',
+                username: 'admin',
+                name: '3Laa Hassan',
+                email: claims.email,
+                role: 'super_admin',
+                permissions: ['full_stock', 'full_admin'],
+              },
+            }
           : {}),
       });
     } catch {
@@ -793,24 +805,28 @@ async function startServer() {
       const sessionEmail = session?.email?.toLowerCase() || '';
       const actorUsername = typeof actorMeta?.username === 'string' ? actorMeta.username.trim().toLowerCase() : '';
       const targetUserRegistryKey =
-        actorUsername === 'alaa' || sessionEmail === 'alaa@onalaastore.com' ? 'alaa' : '';
+        actorUsername === 'alaa' || sessionEmail === 'alaa@onalaastore.com'
+          ? 'alaa'
+          : 'admin';
 
-      const result = targetUserRegistryKey
-        ? await rotateServerAdminUserPassword({
-            username: targetUserRegistryKey,
-            currentPassword,
-            newPassword,
-            confirmPassword,
-            usersFilePath: ADMIN_USERS_FILE,
-            envAlaaPassword: process.env.ADMIN_ALAA_PASSWORD,
-          })
-        : await rotateServerAdminPassword({
-            currentPassword,
-            newPassword,
-            confirmPassword,
-            credentialsFilePath: ADMIN_CREDENTIALS_FILE,
-            envAdminPassword: process.env.ADMIN_PASSWORD,
-          });
+      const result = await rotateServerAdminUserPassword({
+        username: targetUserRegistryKey,
+        currentPassword,
+        newPassword,
+        confirmPassword,
+        usersFilePath: ADMIN_USERS_FILE,
+        envAlaaPassword: process.env.ADMIN_ALAA_PASSWORD,
+      });
+
+      if (result.success && targetUserRegistryKey === 'admin' && result.passwordHash) {
+        writeCredentialRecord(ADMIN_CREDENTIALS_FILE, {
+          algorithm: 'bcrypt',
+          rounds: BCRYPT_SALT_ROUNDS,
+          passwordHash: result.passwordHash,
+          source: 'user',
+          updatedAt: new Date().toISOString(),
+        });
+      }
 
       if (result.success) {
         appendServerActivityLog({
@@ -1104,6 +1120,7 @@ async function startServer() {
         confirmPassword,
         tokenFilePath: ADMIN_RESET_TOKENS_FILE,
         credentialsFilePath: ADMIN_CREDENTIALS_FILE,
+        usersFilePath: ADMIN_USERS_FILE,
       });
 
       if (result.success) {

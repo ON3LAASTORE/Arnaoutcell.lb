@@ -144,6 +144,12 @@ export function getEffectivePermissions(
 export function normalizeAdminUserProfile(user: AdminUser): AdminUser {
   const normalizedUsername = normalizePortalUsername(user.username);
   const directoryMatch = PORTAL_USER_DIRECTORY[normalizedUsername];
+  const isProvisionedSuperAccount =
+    normalizedUsername === 'admin' || normalizedUsername === 'alaa';
+
+  const resolvedRole: AdminRole = isProvisionedSuperAccount
+    ? 'super_admin'
+    : user.role || directoryMatch?.role || 'product_manager';
 
   const canonicalName =
     directoryMatch && normalizedUsername === 'alaa'
@@ -154,14 +160,19 @@ export function normalizeAdminUserProfile(user: AdminUser): AdminUser {
 
   const canonicalUsername = directoryMatch ? directoryMatch.username : user.username;
   const effectivePermissions = getEffectivePermissions({
-    role: user.role,
-    permissions: user.permissions ?? directoryMatch?.permissions,
+    role: resolvedRole,
+    permissions: isProvisionedSuperAccount
+      ? [...SUPER_ADMIN_PERMISSIONS, ...(Array.isArray(user.permissions) ? user.permissions : [])]
+      : user.permissions ?? directoryMatch?.permissions,
   });
 
+  // Explicitly construct clean AdminUser without any legacy password/token fields from stale storage
   return {
-    ...user,
+    id: user.id || directoryMatch?.id || `u-${normalizedUsername || 'admin'}`,
     username: canonicalUsername,
     name: canonicalName,
+    role: resolvedRole,
+    email: user.email || directoryMatch?.email || `${normalizedUsername || 'admin'}@onalaastore.com`,
     permissions: effectivePermissions,
   };
 }
@@ -255,6 +266,32 @@ export function buildAlaaFirestoreUserPayload(
     username: 'Alaa',
     name: 'Alaa',
     email: 'alaa@onalaastore.com',
+    role: 'super_admin' as const,
+    permissions: [...SUPER_ADMIN_PERMISSIONS],
+    isActive: true,
+    createdAt: options?.createdAt || nowIso,
+    updatedAt: nowIso,
+  };
+}
+
+export function buildAdminFirestoreUserPayload(
+  uid: string,
+  options?: {
+    docId?: string;
+    email?: string;
+    name?: string;
+    createdAt?: string;
+    nowIso?: string;
+  }
+) {
+  const nowIso = options?.nowIso || new Date().toISOString();
+  const docId = options?.docId || uid;
+  return {
+    id: docId,
+    uid,
+    username: 'admin',
+    name: options?.name || '3Laa Hassan',
+    email: (options?.email || 'admin@arnaoutcell.com').toLowerCase(),
     role: 'super_admin' as const,
     permissions: [...SUPER_ADMIN_PERMISSIONS],
     isActive: true,

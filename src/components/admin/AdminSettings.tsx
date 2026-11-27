@@ -3,7 +3,10 @@ import { useShop } from '../../context/ShopContext';
 import { useAdmin } from '../../context/AdminContext';
 import { saveStoreSettings } from '../../services/storageService';
 import { evaluatePasswordStrength } from '../../services/authService';
-import { syncProvisionedAlaaAdminProfile } from '../../services/adminProfileService';
+import {
+  syncProvisionedAlaaAdminProfile,
+  syncSignedInSuperAdminProfile,
+} from '../../services/adminProfileService';
 import { formatAdminPermissionLabel } from '../../utils/adminPermissionHelpers';
 import { auth } from '../../firebase';
 import { StoreOpeningSchedule, StoreSettings } from '../../types';
@@ -1082,8 +1085,8 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
                     <div className="pt-1 flex items-center justify-between gap-2">
                       <span className="text-[11px] text-[#64748B]">
                         {lang === 'ar'
-                          ? 'مزامنة سجل صلاحيات Alaa في Firestore (/users و /admins)'
-                          : 'Firebase session active — synchronize Alaa RBAC record to Firestore (/users & /admins)'}
+                          ? `مزامنة سجل صلاحيات ${user.username} في Firestore (/users و /admins)`
+                          : `Firebase session active — synchronize ${user.username} RBAC record to Firestore (/users & /admins)`}
                       </span>
                       <button
                         type="button"
@@ -1091,15 +1094,18 @@ export const AdminSettings: React.FC<AdminSettingsProps> = ({ onNavigateTab }) =
                         onClick={async () => {
                           setRbacSyncBusy(true);
                           setSecurityError('');
-                          const synced = await syncProvisionedAlaaAdminProfile(
-                            auth.currentUser?.uid
-                          );
+                          const currentFbUser = auth.currentUser;
+                          const synced = currentFbUser
+                            ? user.username.toLowerCase() === 'alaa'
+                              ? await syncProvisionedAlaaAdminProfile(currentFbUser.uid)
+                              : await syncSignedInSuperAdminProfile(currentFbUser)
+                            : false;
                           setRbacSyncBusy(false);
                           if (synced) {
                             setSecuritySuccess(
                               lang === 'ar'
-                                ? 'تمت مزامنة ملف Alaa بصلاحية Super Admin و Full Stock في Firestore (/users و /admins) بنجاح.'
-                                : 'Alaa Super Admin & Full Stock profile synchronized to Firestore (/users & /admins) successfully.'
+                                ? `تمت مزامنة ملف ${user.username} بصلاحية Super Admin و Full Stock في Firestore (/users و /admins) بنجاح.`
+                                : `${user.username} Super Admin & Full Stock profile synchronized to Firestore (/users & /admins) successfully.`
                             );
                           } else {
                             setSecurityError(

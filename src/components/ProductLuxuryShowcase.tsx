@@ -14,6 +14,7 @@ import {
   ExternalLink,
   Scale,
   Share2,
+  ImageOff,
 } from 'lucide-react';
 import { Language, Product, ProductColorOption, ProductVariant } from '../types';
 import { LazyImage } from './LazyImage';
@@ -118,7 +119,9 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
   const initialColorOption = colorOptions.find((opt) => opt.name === initialColor);
   const initialColorImage =
     initialColorOption?.imageUrl || resolveColorShowcaseImage(product, initialColor);
-  const carouselImages = buildLuxuryCarouselImages(product, initialColorImage);
+  const carouselImages = buildLuxuryCarouselImages(product, initialColorImage, {
+    includeFallback: false,
+  });
 
   const [carouselIndex, setCarouselIndex] = useState<number>(() =>
     findCarouselIndexForColor(product, carouselImages, initialColor)
@@ -178,7 +181,9 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
     const nextColor = matchedColorOpt?.name || nextColorOpts[0]?.name;
     const nextColorImg =
       matchedColorOpt?.imageUrl || resolveColorShowcaseImage(product, nextColor);
-    const nextImages = buildLuxuryCarouselImages(product, nextColorImg);
+    const nextImages = buildLuxuryCarouselImages(product, nextColorImg, {
+      includeFallback: false,
+    });
     const nextColorVariant = nextColor ? findVariantForColor(product, nextColor) : undefined;
     const allowedCap = resolveAllowedCapacityForColor(
       nextCaps,
@@ -211,7 +216,9 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
     : colorOptions[0];
   const activeColorShowcase =
     activeColorOption?.imageUrl || resolveColorShowcaseImage(product, selectedColor);
-  const activeImages = buildLuxuryCarouselImages(product, activeColorShowcase);
+  const activeImages = buildLuxuryCarouselImages(product, activeColorShowcase, {
+    includeFallback: false,
+  });
   const safeCarouselIdx =
     carouselIndex >= 0 && carouselIndex < activeImages.length ? carouselIndex : 0;
   const activeHeroImageUrl = activeImages[safeCarouselIdx] || activeImages[0];
@@ -256,7 +263,9 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
   const handleSelectColor = (colorOpt: ProductColorOption) => {
     setSelectedColor(colorOpt.name);
     const targetImg = colorOpt.imageUrl || resolveColorShowcaseImage(product, colorOpt.name);
-    const nextList = buildLuxuryCarouselImages(product, targetImg);
+    const nextList = buildLuxuryCarouselImages(product, targetImg, {
+      includeFallback: false,
+    });
     if (targetImg) {
       const resolvedTarget = resolveFullResolutionImageUrl(targetImg) || targetImg;
       const foundIdx = nextList.findIndex((img) => img === resolvedTarget);
@@ -443,16 +452,28 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
             className="w-full h-[240px] sm:h-[400px] flex items-center justify-center px-10"
             data-testid="pdp-hero-showcase"
           >
-            <LazyImage
-              src={activeHeroImageUrl}
-              alt={`${rawTitle}${selectedColor ? ` - ${selectedColor}` : ''}`}
-              priority={true}
-              loading={mode === 'modal' ? 'lazy' : 'eager'}
-              responsiveSizes="(max-width: 1024px) 100vw, 50vw"
-              data-testid={mode === 'modal' ? 'quickview-main-image' : 'pdp-hero-image'}
-              wrapperClassName="w-full h-full flex items-center justify-center"
-              className="max-h-full max-w-full w-auto h-auto object-contain select-none"
-            />
+            {activeHeroImageUrl ? (
+              <LazyImage
+                src={activeHeroImageUrl}
+                alt={`${rawTitle}${selectedColor ? ` - ${selectedColor}` : ''}`}
+                priority={true}
+                loading={mode === 'modal' ? 'lazy' : 'eager'}
+                responsiveSizes="(max-width: 1024px) 100vw, 50vw"
+                data-testid={mode === 'modal' ? 'quickview-main-image' : 'pdp-hero-image'}
+                wrapperClassName="w-full h-full flex items-center justify-center"
+                className="max-h-full max-w-full w-auto h-auto object-contain select-none"
+              />
+            ) : (
+              <div
+                data-testid={mode === 'modal' ? 'quickview-no-image-placeholder' : 'pdp-no-image-placeholder'}
+                className="flex flex-col items-center justify-center gap-2 text-[#94A3B8]"
+              >
+                <ImageOff className="w-12 h-12 opacity-60" />
+                <span className="text-xs font-semibold">
+                  {lang === 'ar' ? 'لا توجد صورة للمنتج' : 'No product photo'}
+                </span>
+              </div>
+            )}
           </div>
 
           {activeImages.length > 1 && (
@@ -492,14 +513,14 @@ export const ProductLuxuryShowcase: React.FC<ProductLuxuryShowcaseProps> = ({
             </div>
 
             <div className="flex flex-wrap items-start gap-3">
-              {colorOptions.map((colorOpt) => {
+              {colorOptions.map((colorOpt, idx) => {
                 const isSelected = selectedColor === colorOpt.name;
                 const explicitThumb = colorOpt.imageUrl || resolveColorShowcaseImage(product, colorOpt.name);
                 const fallbackThumb = explicitThumb || activeImages[0];
                 const adj = Number(colorOpt.priceAdjustment) || 0;
 
                 return (
-                  <div key={colorOpt.id} className="flex flex-col items-center gap-1">
+                  <div key={`${colorOpt.id}-${idx}`} className="flex flex-col items-center gap-1">
                     <button
                       type="button"
                       onClick={() => handleSelectColor(colorOpt)}

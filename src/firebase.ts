@@ -40,6 +40,7 @@ const firebaseConfig = resolveAndValidateFirebaseConfig(rawFirebaseConfig, {
 });
 
 const app = initializeApp(firebaseConfig);
+export const firebaseApp = app;
 
 // Suppress internal transport reconnection log notices while keeping actionable errors
 if (typeof window !== 'undefined') {

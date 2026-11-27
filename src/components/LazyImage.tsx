@@ -212,7 +212,7 @@ export const LazyImage: React.FC<LazyImageProps> = ({
       ref={containerRef}
       data-lazy-state={lazyState}
       data-lazy-priority={priority ? 'true' : 'false'}
-      className={`relative overflow-hidden inline-flex items-center justify-center ${wrapperClassName}`}
+      className={`relative isolate overflow-hidden inline-flex items-center justify-center ${wrapperClassName}`}
       style={wrapperStyle}
     >
       {/* Smooth Shimmer Skeleton Placeholder while element is outside viewport or loading */}

@@ -113,7 +113,10 @@ function canSyncToAdminFirestore(): boolean {
   const emailLower = (currentUser.email || '').toLowerCase();
   return (
     emailLower === 'alaa@onalaastore.com' ||
-    (emailLower === 'optimatech.lb@gmail.com' && currentUser.emailVerified)
+    ((emailLower === 'optimatech.lb@gmail.com' ||
+      emailLower === 'admin@arnaoutcell.com' ||
+      emailLower === 'admin@onalaastore.com') &&
+      currentUser.emailVerified)
   );
 }
 

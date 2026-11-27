@@ -10,10 +10,18 @@ import {
 } from '../../services/stockNotificationService';
 import { downloadInventoryCsvReport } from '../../services/csvReportService';
 import { Product } from '../../types';
-import { Warehouse, AlertTriangle, AlertCircle, Search, BellRing, MailCheck, Download, Send, RefreshCw, X, Trash2 } from 'lucide-react';
+import { Warehouse, AlertTriangle, AlertCircle, Search, BellRing, MailCheck, Download, Send, RefreshCw, X, Trash2, ImageOff, Image as ImageIcon, Star, ChevronLeft, ChevronRight, Loader2 } from 'lucide-react';
 import { LazyImage } from '../LazyImage';
 import { ConfirmDialog } from '../ConfirmDialog';
-import { DEFAULT_FULL_RES_FALLBACK_IMAGE } from '../../utils/imageResolutionHelpers';
+import ProductImageUploader from './ProductImageUploader';
+import { resolveFullResolutionImageUrl } from '../../utils/imageResolutionHelpers';
+import {
+  collectRemovedMediaUrls,
+  moveGalleryImage,
+  removeGalleryImageAt,
+  setPrimaryGalleryImage,
+} from '../../utils/productMediaHelpers';
+import { cleanupRemovedProductMedia } from '../../services/productMediaService';
 
 export const AdminInventory: React.FC = () => {
   const { lang, products, brands, refreshData } = useShop();
@@ -33,6 +41,11 @@ export const AdminInventory: React.FC = () => {
   const [inventoryError, setInventoryError] = useState('');
   const [subscriptions, setSubscriptions] = useState<StockNotificationRecord[]>([]);
   const [dispatchLogs, setDispatchLogs] = useState<RestockDispatchLogEntry[]>([]);
+  const [photoModalProduct, setPhotoModalProduct] = useState<Product | null>(null);
+  const [photoModalImages, setPhotoModalImages] = useState<string[]>([]);
+  const [photoModalNewUrl, setPhotoModalNewUrl] = useState('');
+  const [isSavingPhotos, setIsSavingPhotos] = useState(false);
+  const [photoModalError, setPhotoModalError] = useState('');
 
   const loadNotificationsOverview = useCallback(async () => {
     try {
@@ -142,6 +155,66 @@ export const AdminInventory: React.FC = () => {
         : `Deleted inventory item "${target.name}" from stock & catalog.`
     );
     setTimeout(() => setFeedback(''), 5000);
+  };
+
+  const openPhotoModal = (product: Product) => {
+    if (
+      !requirePermission(['full_stock', 'manage_products', 'manage_inventory'], {
+        actionEn: `Manage photos for "${product.name}"`,
+        actionAr: `إدارة صور "${product.nameAr || product.name}"`,
+      })
+    ) {
+      return;
+    }
+    setPhotoModalProduct(product);
+    setPhotoModalImages(Array.isArray(product.images) ? [...product.images] : []);
+    setPhotoModalNewUrl('');
+    setPhotoModalError('');
+  };
+
+  const handleAddPhotoModalUrl = () => {
+    if (!photoModalNewUrl.trim()) return;
+    const resolved =
+      resolveFullResolutionImageUrl(photoModalNewUrl.trim()) || photoModalNewUrl.trim();
+    setPhotoModalImages((prev) => (prev.includes(resolved) ? prev : [...prev, resolved]));
+    setPhotoModalNewUrl('');
+  };
+
+  const handleSavePhotoModal = async () => {
+    if (!photoModalProduct || isSavingPhotos) return;
+    setIsSavingPhotos(true);
+    setPhotoModalError('');
+    try {
+      const updatedProduct: Product = {
+        ...photoModalProduct,
+        images: [...photoModalImages],
+      };
+      const result = await saveProductAsync(updatedProduct);
+      refreshData();
+      if (!result.ok) {
+        setPhotoModalError(
+          result.errorMessage || `Failed to save photo updates for ${photoModalProduct.name}.`
+        );
+        return;
+      }
+      const removedMediaUrls = collectRemovedMediaUrls(photoModalProduct, updatedProduct);
+      if (removedMediaUrls.length > 0) {
+        cleanupRemovedProductMedia(removedMediaUrls).catch(() => {});
+      }
+      setPhotoModalProduct(null);
+      setFeedback(
+        lang === 'ar'
+          ? `تم تحديث صور "${updatedProduct.nameAr || updatedProduct.name}" بنجاح.`
+          : `Updated photos for "${updatedProduct.name}" permanently.`
+      );
+      setTimeout(() => setFeedback(''), 5000);
+    } catch (err) {
+      setPhotoModalError(
+        err instanceof Error ? err.message : 'Unable to save product photos.'
+      );
+    } finally {
+      setIsSavingPhotos(false);
+    }
   };
 
   const safeProducts = products || [];
@@ -334,17 +407,27 @@ export const AdminInventory: React.FC = () => {
                   <tr key={p.id} className="hover:bg-[#F5F8FC] transition-colors">
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-3">
-                        <LazyImage
-                          src={p.images?.[0] || DEFAULT_FULL_RES_FALLBACK_IMAGE}
-                          alt={p.name || 'Product'}
-                          width={40}
-                          height={40}
-                          responsiveSizes="40px"
-                          priority={false}
-                          loading="lazy"
-                          wrapperClassName="w-10 h-10 rounded-lg overflow-hidden bg-[#F5F8FC] border border-[#DCE5F0] flex-shrink-0"
-                          className="w-full h-full object-cover"
-                        />
+                        {p.images?.[0] ? (
+                          <LazyImage
+                            src={p.images[0]}
+                            alt={p.name || 'Product'}
+                            width={40}
+                            height={40}
+                            responsiveSizes="40px"
+                            priority={false}
+                            loading="lazy"
+                            wrapperClassName="w-10 h-10 rounded-lg overflow-hidden bg-[#F5F8FC] border border-[#DCE5F0] flex-shrink-0"
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div
+                            data-testid={`inventory-no-photo-${p.id}`}
+                            className="w-10 h-10 rounded-lg bg-[#F5F8FC] border border-dashed border-[#CBD5E1] text-[#94A3B8] flex items-center justify-center flex-shrink-0"
+                            title={lang === 'ar' ? 'بدون صورة' : 'No photos attached'}
+                          >
+                            <ImageOff className="w-4 h-4" />
+                          </div>
+                        )}
                         <div>
                           <div className="font-bold text-[#172033] line-clamp-1">{p.name || 'Unnamed Product'}</div>
                           <div className="text-[10px] text-[#007AFF] font-medium">{p.brand || '—'} • {p.category || '—'}</div>
@@ -407,6 +490,17 @@ export const AdminInventory: React.FC = () => {
                           title="Restock 10"
                         >
                           +10
+                        </button>
+                        <button
+                          type="button"
+                          data-testid={`inventory-manage-photos-${p.id}`}
+                          onClick={() => openPhotoModal(p)}
+                          aria-label={`Manage photos for ${p.name}`}
+                          title={lang === 'ar' ? 'إدارة وحذف الصور' : 'Manage / Remove Photos'}
+                          className="px-2 py-1 rounded-lg bg-[#F5F8FC] hover:bg-[#EAF3FF] border border-[#DCE5F0] text-[#475569] hover:text-[#007AFF] text-[11px] font-bold inline-flex items-center gap-1 transition-colors cursor-pointer"
+                        >
+                          <ImageIcon className="w-3 h-3" />
+                          <span>{Array.isArray(p.images) ? p.images.length : 0}</span>
                         </button>
                         <button
                           type="button"
@@ -519,6 +613,213 @@ export const AdminInventory: React.FC = () => {
         onConfirm={confirmDeleteInventoryItem}
         onCancel={() => setPendingDelete(null)}
       />
+
+      {photoModalProduct && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 overflow-y-auto">
+          <div
+            data-testid="inventory-photo-modal"
+            className="relative w-full max-w-2xl bg-white border border-[#DCE5F0] rounded-3xl p-6 space-y-5 shadow-2xl max-h-[90vh] overflow-y-auto"
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-[#DCE5F0]">
+              <div>
+                <h2 className="text-base font-black text-[#172033]">
+                  {lang === 'ar' ? 'إدارة صور المنتج' : 'Manage Product Photos'}
+                </h2>
+                <p className="text-xs text-[#64748B] truncate max-w-md">
+                  {photoModalProduct.name} ({photoModalImages.length}{' '}
+                  {lang === 'ar' ? 'صور' : 'attached'})
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={isSavingPhotos}
+                onClick={() => setPhotoModalProduct(null)}
+                aria-label="Close photo manager"
+                className="p-1.5 rounded-lg text-[#64748B] hover:text-[#172033] hover:bg-[#F5F8FC] cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {photoModalError && (
+              <div
+                role="alert"
+                className="p-3 rounded-xl bg-red-50 border border-red-200 text-[#DC2626] text-xs font-semibold flex items-center gap-2"
+              >
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{photoModalError}</span>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[#172033]">
+                {lang === 'ar' ? 'الصور الحالية' : 'Gallery Photos'}
+              </span>
+              {photoModalImages.length > 0 && (
+                <button
+                  type="button"
+                  data-testid="inventory-photo-clear-all"
+                  onClick={() => setPhotoModalImages([])}
+                  className="px-2.5 py-1 rounded-lg bg-red-50 hover:bg-[#DC2626] text-[#DC2626] hover:text-white border border-red-200 text-[11px] font-bold inline-flex items-center gap-1 transition-colors cursor-pointer"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  <span>{lang === 'ar' ? 'حذف الكل' : 'Remove All'}</span>
+                </button>
+              )}
+            </div>
+
+            {photoModalImages.length > 0 ? (
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 rounded-2xl bg-[#F5F8FC] border border-[#DCE5F0]">
+                {photoModalImages.map((img, idx) => (
+                  <div
+                    key={`${idx}-${img.slice(0, 48)}`}
+                    data-testid={`inventory-photo-card-${idx}`}
+                    className={`rounded-xl overflow-hidden border bg-white flex flex-col ${
+                      idx === 0 ? 'border-[#007AFF] ring-1 ring-[#007AFF]/20' : 'border-[#DCE5F0]'
+                    }`}
+                  >
+                    <div className="relative aspect-square bg-white">
+                      <LazyImage
+                        src={img}
+                        alt={`Product photo ${idx + 1}`}
+                        width={140}
+                        height={140}
+                        responsiveSizes="140px"
+                        priority={true}
+                        loading="lazy"
+                        wrapperClassName="w-full h-full flex items-center justify-center"
+                        className="w-full h-full object-contain p-1"
+                      />
+                      <span
+                        className={`absolute top-1.5 left-1.5 z-20 px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
+                          idx === 0 ? 'bg-[#007AFF] text-white' : 'bg-[#0F172A]/75 text-white'
+                        }`}
+                      >
+                        {idx === 0 ? 'Primary' : `#${idx + 1}`}
+                      </span>
+                      <button
+                        type="button"
+                        data-testid={`inventory-remove-photo-${idx}`}
+                        onClick={() =>
+                          setPhotoModalImages((prev) => removeGalleryImageAt(prev, idx))
+                        }
+                        aria-label={`Remove photo ${idx + 1}`}
+                        className="absolute top-1.5 right-1.5 z-20 w-7 h-7 rounded-lg bg-red-600 hover:bg-red-700 text-white flex items-center justify-center shadow-sm cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    {photoModalImages.length > 1 && (
+                      <div className="flex items-center justify-between gap-1 px-1.5 py-1 border-t border-[#E2E8F0] bg-[#F8FAFC]">
+                        <div className="flex items-center gap-0.5">
+                          <button
+                            type="button"
+                            disabled={idx === 0}
+                            onClick={() =>
+                              setPhotoModalImages((prev) => moveGalleryImage(prev, idx, idx - 1))
+                            }
+                            aria-label={`Move photo ${idx + 1} earlier`}
+                            className="p-1 rounded bg-white border border-[#DCE5F0] text-[#475569] disabled:opacity-35 cursor-pointer"
+                          >
+                            <ChevronLeft className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={idx === photoModalImages.length - 1}
+                            onClick={() =>
+                              setPhotoModalImages((prev) => moveGalleryImage(prev, idx, idx + 1))
+                            }
+                            aria-label={`Move photo ${idx + 1} later`}
+                            className="p-1 rounded bg-white border border-[#DCE5F0] text-[#475569] disabled:opacity-35 cursor-pointer"
+                          >
+                            <ChevronRight className="w-3 h-3" />
+                          </button>
+                        </div>
+                        {idx > 0 && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setPhotoModalImages((prev) => setPrimaryGalleryImage(prev, idx))
+                            }
+                            className="px-1.5 py-0.5 rounded bg-white hover:bg-[#EAF3FF] border border-[#DCE5F0] text-[10px] font-bold text-[#007AFF] inline-flex items-center gap-0.5 cursor-pointer"
+                          >
+                            <Star className="w-2.5 h-2.5" />
+                            <span>Primary</span>
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div
+                data-testid="inventory-empty-photos-state"
+                className="p-4 rounded-2xl bg-[#F5F8FC] border border-dashed border-[#CBD5E1] text-center space-y-1"
+              >
+                <ImageOff className="w-6 h-6 text-[#94A3B8] mx-auto" />
+                <p className="text-xs font-semibold text-[#475569]">
+                  {lang === 'ar'
+                    ? 'لا توجد صور مرفقة حالياً.'
+                    : 'No photos attached. Save changes to store with no photos, or add a photo below.'}
+                </p>
+              </div>
+            )}
+
+            <ProductImageUploader
+              title={lang === 'ar' ? 'رفع صورة جديدة' : 'Upload Photo (Base64)'}
+              resetAfterUpload={true}
+              onImageConverted={(base64) =>
+                setPhotoModalImages((prev) => [...prev, base64])
+              }
+            />
+
+            <div className="flex gap-2">
+              <input
+                type="url"
+                placeholder="Or enter image URL (https://...)"
+                value={photoModalNewUrl}
+                onChange={(e) => setPhotoModalNewUrl(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddPhotoModalUrl();
+                  }
+                }}
+                className="flex-1 bg-white border border-[#DCE5F0] rounded-xl px-3 py-1.5 text-xs text-[#172033] focus:outline-none focus:border-[#007AFF]"
+              />
+              <button
+                type="button"
+                onClick={handleAddPhotoModalUrl}
+                className="px-3 py-1.5 bg-white border border-[#DCE5F0] hover:bg-[#EAF3FF] text-[#172033] hover:text-[#007AFF] text-xs font-semibold rounded-xl cursor-pointer"
+              >
+                Add URL
+              </button>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t border-[#DCE5F0]">
+              <button
+                type="button"
+                disabled={isSavingPhotos}
+                onClick={() => setPhotoModalProduct(null)}
+                className="px-4 py-2 rounded-xl border border-[#DCE5F0] text-xs font-bold text-[#475569] hover:bg-[#F5F8FC] cursor-pointer"
+              >
+                {lang === 'ar' ? 'إلغاء' : 'Cancel'}
+              </button>
+              <button
+                type="button"
+                disabled={isSavingPhotos}
+                data-testid="inventory-save-photos-btn"
+                onClick={handleSavePhotoModal}
+                className="px-5 py-2 rounded-xl bg-[#007AFF] hover:bg-[#0066D6] text-white text-xs font-bold inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+              >
+                {isSavingPhotos && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{lang === 'ar' ? 'حفظ التغييرات' : 'Save Photo Changes'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

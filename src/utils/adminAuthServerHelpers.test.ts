@@ -4,6 +4,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import {
+  ADMIN_DEFAULT_BCRYPT_HASH,
   ALAA_DEFAULT_BCRYPT_HASH,
   isValidBcryptHash,
   hashAdminPasswordBcrypt,
@@ -119,9 +120,10 @@ test('rotateServerAdminPassword validates current password, updates bcrypt hash,
   assert.equal(fileText.includes('NewStrongPass99!'), false);
 });
 
-test('ensureAdminUsersRegistry seeds Alaa with valid bcrypt hash, super_admin role, and full_stock permission', async () => {
+test('ensureAdminUsersRegistry seeds Alaa and admin with valid bcrypt hashes, super_admin role, and full_stock permission', async () => {
   const usersPath = makeTempCredsPath('.admin_users.json');
   assert.equal(isValidBcryptHash(ALAA_DEFAULT_BCRYPT_HASH), true);
+  assert.equal(isValidBcryptHash(ADMIN_DEFAULT_BCRYPT_HASH), true);
 
   const registry = await ensureAdminUsersRegistry({
     usersFilePath: usersPath,
@@ -134,9 +136,17 @@ test('ensureAdminUsersRegistry seeds Alaa with valid bcrypt hash, super_admin ro
   assert.equal(registry.alaa.email, 'alaa@onalaastore.com');
   assert.equal(registry.alaa.permissions.includes('full_stock'), true);
   assert.equal(isValidBcryptHash(registry.alaa.passwordHash), true);
+
+  assert.ok(registry.admin);
+  assert.equal(registry.admin.username, 'admin');
+  assert.equal(registry.admin.role, 'super_admin');
+  assert.equal(registry.admin.email, 'admin@arnaoutcell.com');
+  assert.equal(registry.admin.permissions.includes('full_stock'), true);
+  assert.equal(registry.admin.permissions.includes('full_admin'), true);
+  assert.equal(isValidBcryptHash(registry.admin.passwordHash), true);
 });
 
-test('verifyServerAdminUserLogin authenticates per-user record (case-insensitive) and isolates from legacy usernames', async () => {
+test('verifyServerAdminUserLogin authenticates per-user record (case-insensitive) and rejects unknown usernames', async () => {
   const usersPath = makeTempCredsPath('.admin_users.json');
   const testPass = 'TempAlaaTestPass#2027';
 
@@ -165,13 +175,21 @@ test('verifyServerAdminUserLogin authenticates per-user record (case-insensitive
   assert.equal(badPass.valid, false);
   assert.equal(badPass.user, undefined);
 
-  const legacyFallback = await verifyServerAdminUserLogin({
+  const adminWithAlaaPass = await verifyServerAdminUserLogin({
     username: 'admin',
     candidate: testPass,
     usersFilePath: usersPath,
   });
-  assert.equal(legacyFallback.accountFound, false);
-  assert.equal(legacyFallback.valid, false);
+  assert.equal(adminWithAlaaPass.accountFound, true);
+  assert.equal(adminWithAlaaPass.valid, false);
+
+  const unknownUser = await verifyServerAdminUserLogin({
+    username: 'unknown_staff',
+    candidate: testPass,
+    usersFilePath: usersPath,
+  });
+  assert.equal(unknownUser.accountFound, false);
+  assert.equal(unknownUser.valid, false);
 });
 
 test('rotateServerAdminUserPassword updates only the targeted user bcrypt hash', async () => {
@@ -270,5 +288,64 @@ test('verifyServerAdminUserLogin authenticates Alaa with default seeded password
   assert.equal(wrong.accountFound, true);
   assert.equal(wrong.valid, false);
 });
+
+test('verifyServerAdminUserLogin authenticates admin with Admin123321 (case-insensitive) and upgrades stale env/seeded hashes', async () => {
+  const usersPath = makeTempCredsPath('.admin_users.json');
+  const staleHash = await hashAdminPasswordBcrypt('Alaahassan1', 8);
+
+  fs.writeFileSync(
+    usersPath,
+    JSON.stringify(
+      {
+        users: {
+          admin: {
+            id: 'u-1',
+            username: 'admin',
+            name: '3Laa Hassan',
+            email: 'admin@arnaoutcell.com',
+            role: 'product_manager',
+            permissions: ['manage_products'],
+            algorithm: 'bcrypt',
+            rounds: 8,
+            passwordHash: staleHash,
+            source: 'seeded_hash',
+            updatedAt: '2026-01-01T00:00:00.000Z',
+          },
+        },
+      },
+      null,
+      2
+    ),
+    'utf-8'
+  );
+
+  const okExact = await verifyServerAdminUserLogin({
+    username: 'admin',
+    candidate: 'Admin123321',
+    usersFilePath: usersPath,
+  });
+  assert.equal(okExact.accountFound, true);
+  assert.equal(okExact.valid, true);
+  assert.equal(okExact.user?.username, 'admin');
+  assert.equal(okExact.user?.role, 'super_admin');
+  assert.equal(okExact.user?.permissions.includes('full_stock'), true);
+  assert.equal(okExact.user?.permissions.includes('full_admin'), true);
+
+  const okUpper = await verifyServerAdminUserLogin({
+    username: 'ADMIN',
+    candidate: 'Admin123321',
+    usersFilePath: usersPath,
+  });
+  assert.equal(okUpper.valid, true);
+
+  const oldRejected = await verifyServerAdminUserLogin({
+    username: 'admin',
+    candidate: 'Alaahassan1',
+    usersFilePath: usersPath,
+  });
+  assert.equal(oldRejected.accountFound, true);
+  assert.equal(oldRejected.valid, false);
+});
+
 
 

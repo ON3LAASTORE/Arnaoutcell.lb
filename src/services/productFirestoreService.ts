@@ -11,10 +11,7 @@ import {
 import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { FirestoreInventoryRecord, Product } from '../types';
 import { INITIAL_PRODUCTS } from '../data/initialData';
-import {
-  DEFAULT_FULL_RES_FALLBACK_IMAGE,
-  resolveFullResolutionImageUrl,
-} from '../utils/imageResolutionHelpers';
+import { resolveFullResolutionImageUrl } from '../utils/imageResolutionHelpers';
 import {
   classifyFirestoreError,
   isFirestoreInQuotaCooldown,
@@ -268,10 +265,11 @@ export function mapFirestoreDocToProduct(
     lowStockThreshold: Number.isFinite(Number(data.lowStockThreshold))
       ? Math.max(0, Number(data.lowStockThreshold))
       : 3,
-    images:
-      Array.isArray(data.images) && data.images.length > 0
-        ? data.images.map((img: string) => resolveFullResolutionImageUrl(img) || img)
-        : [DEFAULT_FULL_RES_FALLBACK_IMAGE],
+    images: Array.isArray(data.images)
+      ? data.images
+          .filter((img): img is string => typeof img === 'string' && img.trim().length > 0)
+          .map((img: string) => resolveFullResolutionImageUrl(img.trim()) || img.trim())
+      : [],
     videoUrl: typeof data.videoUrl === 'string' && data.videoUrl ? data.videoUrl : undefined,
     description: typeof data.description === 'string' ? data.description : '',
     descriptionAr: typeof data.descriptionAr === 'string' ? data.descriptionAr : '',
@@ -370,7 +368,7 @@ export function cleanProductForFirestore(product: Product): Record<string, unkno
     discountPercentage: Math.round(clampNumber(product.discountPercentage, 0, 100, 0)),
     stock: Math.round(clampNumber(product.stock, 0, 1_000_000, 0)),
     lowStockThreshold: Math.round(clampNumber(product.lowStockThreshold, 0, 100_000, 3)),
-    images: safeImages.length > 0 ? safeImages : [DEFAULT_FULL_RES_FALLBACK_IMAGE],
+    images: safeImages,
     description:
       (product.description || '').trim().slice(0, 5000) ||
       'Genuine device with official warranty.',
@@ -877,8 +875,11 @@ export async function persistProductToCloud(product: Product): Promise<PersistPr
     }
 
     if (isFirestoreDocumentSizeError(error)) {
+      const hadEmptyImages =
+        Array.isArray(payload.images) && payload.images.length === 0;
       const strippedImages = sanitizeProductImagesForFirestore(payload.images, {
         stripAllDataUrls: true,
+        allowEmpty: hadEmptyImages,
       }).images;
       const strippedColors = sanitizeProductColorsForFirestore(payload.colors, {
         stripAllDataUrls: true,

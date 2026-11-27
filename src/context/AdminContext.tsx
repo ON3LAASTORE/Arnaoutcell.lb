@@ -12,6 +12,7 @@ import {
   verifyAdminCredentials,
   changeAdminPassword,
   initializeAdminAuth,
+  purgeLegacyAdminAuthStorage,
   clearAdminApiToken,
   exchangeFirebaseIdTokenForAdminSession,
   logoutAdminSession,
@@ -193,6 +194,7 @@ function readInitialAdminSnapshot(): InitialAuthSnapshot {
   }
 
   try {
+    purgeLegacyAdminAuthStorage();
     const rawUser = localStorage.getItem('arnaout_admin_user');
     if (!rawUser) {
       return {
@@ -204,7 +206,15 @@ function readInitialAdminSnapshot(): InitialAuthSnapshot {
       };
     }
 
-    const parsedUser = normalizeAdminUserProfile(JSON.parse(rawUser) as AdminUser);
+    const parsedRaw = JSON.parse(rawUser) as Record<string, unknown>;
+    const parsedUser = normalizeAdminUserProfile(parsedRaw as unknown as AdminUser);
+    const needsSyncWrite =
+      parsedRaw.role !== parsedUser.role ||
+      parsedRaw.username !== parsedUser.username ||
+      JSON.stringify(parsedRaw.permissions || []) !== JSON.stringify(parsedUser.permissions || []);
+    if (needsSyncWrite) {
+      safeStorageSetItem(window.localStorage, 'arnaout_admin_user', JSON.stringify(parsedUser));
+    }
 
     const storedLastActivity = parseStoredActivityTimestamp(
       localStorage.getItem(ADMIN_LAST_ACTIVITY_STORAGE_KEY)
@@ -387,6 +397,7 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
       try {
         localStorage.removeItem('arnaout_admin_user');
         localStorage.removeItem(ADMIN_LAST_ACTIVITY_STORAGE_KEY);
+        purgeLegacyAdminAuthStorage();
       } catch {
         // ignore
       }
@@ -514,6 +525,10 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     const trimmedUser = normalizePortalUsername(username);
     if (!trimmedUser) return false;
 
+    if (typeof window !== 'undefined') {
+      purgeLegacyAdminAuthStorage();
+    }
+
     // Always require and verify administrator password securely via backend bcrypt endpoint
     if (!password) {
       return false;
@@ -558,7 +573,11 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           }
           if (!fbUser) {
             if (auth.currentUser) {
-              await syncProvisionedAlaaAdminProfile(auth.currentUser.uid);
+              if (trimmedUser === 'alaa') {
+                await syncProvisionedAlaaAdminProfile(auth.currentUser.uid);
+              } else {
+                await syncSignedInSuperAdminProfile(auth.currentUser);
+              }
             }
             return true;
           }
@@ -700,7 +719,9 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
         const isSuperFirebaseEmail =
           fbUser.email?.toLowerCase() === 'optimatech.lb@gmail.com' ||
-          fbUser.email?.toLowerCase() === 'alaa@onalaastore.com';
+          fbUser.email?.toLowerCase() === 'alaa@onalaastore.com' ||
+          fbUser.email?.toLowerCase() === 'admin@arnaoutcell.com' ||
+          fbUser.email?.toLowerCase() === 'admin@onalaastore.com';
 
         firebaseBackedRef.current = true;
         logoutGuardRef.current = false;
@@ -773,7 +794,9 @@ export const AdminProvider: React.FC<{ children: ReactNode }> = ({ children }) =
 
         const isSuperFirebaseEmail =
           result.user.email?.toLowerCase() === 'optimatech.lb@gmail.com' ||
-          result.user.email?.toLowerCase() === 'alaa@onalaastore.com';
+          result.user.email?.toLowerCase() === 'alaa@onalaastore.com' ||
+          result.user.email?.toLowerCase() === 'admin@arnaoutcell.com' ||
+          result.user.email?.toLowerCase() === 'admin@onalaastore.com';
 
         firebaseBackedRef.current = true;
         logoutGuardRef.current = false;

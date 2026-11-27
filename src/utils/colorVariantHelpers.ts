@@ -43,6 +43,21 @@ function slugifyColorId(name: string, index?: number): string {
   return `color-${(index ?? 0) + 1}`;
 }
 
+function makeUniqueColorId(candidateId: string, usedIds: Set<string>): string {
+  const base = candidateId.trim() || 'color';
+  if (!usedIds.has(base)) {
+    usedIds.add(base);
+    return base;
+  }
+  let suffix = 2;
+  while (usedIds.has(`${base}-${suffix}`)) {
+    suffix += 1;
+  }
+  const uniqueId = `${base}-${suffix}`;
+  usedIds.add(uniqueId);
+  return uniqueId;
+}
+
 function normalizeOptionalImage(url: string | undefined): string | undefined {
   if (typeof url !== 'string') return undefined;
   const trimmed = url.trim();
@@ -304,6 +319,7 @@ export function getProductColorOptions(
 ): ProductColorOption[] {
   const options: ProductColorOption[] = [];
   const seenKeys = new Set<string>();
+  const seenIds = new Set<string>();
   const rawColors = Array.isArray(product.colors) ? product.colors : [];
 
   rawColors.forEach((entry, index) => {
@@ -326,12 +342,13 @@ export function getProductColorOptions(
         typeof entry.priceAdjustment === 'number' && Number.isFinite(entry.priceAdjustment)
           ? entry.priceAdjustment
           : 0;
+      const rawId =
+        typeof entry.id === 'string' && entry.id.trim()
+          ? entry.id.trim()
+          : slugifyColorId(name, index);
 
       options.push({
-        id:
-          typeof entry.id === 'string' && entry.id.trim()
-            ? entry.id.trim()
-            : slugifyColorId(name, index),
+        id: makeUniqueColorId(rawId, seenIds),
         name,
         ...(typeof entry.hex === 'string' && entry.hex.trim()
           ? { hex: entry.hex.trim() }
@@ -353,7 +370,7 @@ export function getProductColorOptions(
 
       const resolvedImg = resolveColorShowcaseImage(product, name) || '';
       options.push({
-        id: slugifyColorId(name, index),
+        id: makeUniqueColorId(slugifyColorId(name, index), seenIds),
         name,
         imageUrl: resolvedImg,
       });
@@ -369,7 +386,7 @@ export function getProductColorOptions(
       seenKeys.add(key);
       const resolvedImg = normalizeOptionalImage(rawUrl) || '';
       options.push({
-        id: slugifyColorId(name, options.length),
+        id: makeUniqueColorId(slugifyColorId(name, options.length), seenIds),
         name,
         imageUrl: resolvedImg,
       });
@@ -470,6 +487,7 @@ export function buildColorVariantConfigs(
 ): ColorVariantConfig[] {
   const configs: ColorVariantConfig[] = [];
   const seenKeys = new Set<string>();
+  const seenIds = new Set<string>();
 
   const rawColors = Array.isArray(product.colors) ? product.colors : [];
   for (const rawColor of rawColors) {
@@ -485,7 +503,7 @@ export function buildColorVariantConfigs(
         resolveExplicitColorImage(product, trimmed);
 
       configs.push({
-        ...(rawColor.id ? { id: rawColor.id } : {}),
+        ...(rawColor.id ? { id: makeUniqueColorId(rawColor.id, seenIds) } : {}),
         color: trimmed,
         ...(rawColor.hex ? { hex: rawColor.hex } : {}),
         ...(explicitImage ? { image: explicitImage } : {}),
@@ -669,6 +687,8 @@ export function extractStructuredProductVariantsAndColors(
   const colorImages: Record<string, string> = {};
   const colorVariants: ProductVariant[] = [];
   const seenColorKeys = new Set<string>();
+  const seenColorIds = new Set<string>();
+  const seenColorVariantIds = new Set<string>();
 
   colorRows.forEach((row, idx) => {
     const cleanColor = typeof row.color === 'string' ? row.color.trim() : '';
@@ -677,10 +697,11 @@ export function extractStructuredProductVariantsAndColors(
     if (seenColorKeys.has(key)) return;
     seenColorKeys.add(key);
 
-    const cleanId =
+    const rawId =
       typeof row.id === 'string' && row.id.trim()
         ? row.id.trim()
         : slugifyColorId(cleanColor, idx);
+    const cleanId = makeUniqueColorId(rawId, seenColorIds);
     const cleanImg = normalizeOptionalImage(row.image) || '';
     if (cleanImg) {
       colorImages[cleanColor] = cleanImg;
@@ -716,7 +737,7 @@ export function extractStructuredProductVariantsAndColors(
     if (hasCustomPrice || hasCustomSku || hasCustomStock) {
       const slug = key.replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'color';
       colorVariants.push({
-        id: `var-color-${slug}`,
+        id: makeUniqueColorId(`var-color-${slug}`, seenColorVariantIds),
         name: cleanColor,
         color: cleanColor,
         price: hasCustomPrice ? Number(row.price) : Number(baseDefaults.price) || 0,
